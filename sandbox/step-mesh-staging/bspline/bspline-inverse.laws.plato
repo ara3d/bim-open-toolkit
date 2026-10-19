@@ -1,0 +1,114 @@
+//==
+// # BsplineInverseLaws
+//
+// Track F (TKT-327): laws on layer 1's inverse evaluation by search
+// (ClosestParameterBySearch, ProjectBySearch, ProjectNearBySearch,
+// PcurveClosestParameterBySearch), reached through the library's
+// ClosestParameter, Project and ProjectNear on the fixtures of
+// bspline-witnesses.library.plato. Most are layer 1's own laws applied to a
+// fixture arena; the bump patch adds a known inverse (x = u, y = v), which
+// the library's Law_ProjectRecoversParameter cannot use because a spline is
+// not injective by construction.
+//
+// Sections, in order:
+//  - Space curves
+//  - Pcurves
+//  - Surfaces
+
+library BsplineInverseLaws
+{
+    //==
+    // # Space curves
+
+    // The closest parameter of a curve point gives that point back, on every
+    // B-spline fixture and on the search arena's ellipse, parabola, spline
+    // and trimmed spline (layer 1's Law_ClosestParameterRecoversPoint).
+    Law_Bspline_ClosestParameterRecoversPoint(k: Integer, t: Number): Boolean
+        => Law_ClosestParameterRecoversPoint(k.CurveFixtureSet, CurveIndex(0), t, Tolerances.Witness_Tolerances)
+            && Law_ClosestParameterRecoversPoint(Integer.SearchCurveSet, CurveIndex(k.FixtureIndex(4)), t, Tolerances.Witness_Tolerances);
+
+    // The closest parameter is in the canonical window (layer 1's
+    // Law_ClosestParameterIsCanonical), on the same curves.
+    Law_Bspline_ClosestParameterIsCanonical(k: Integer, t: Number): Boolean
+        => Law_ClosestParameterIsCanonical(k.CurveFixtureSet, CurveIndex(0), t, Tolerances.Witness_Tolerances)
+            && Law_ClosestParameterIsCanonical(Integer.SearchCurveSet, CurveIndex(k.FixtureIndex(4)), t, Tolerances.Witness_Tolerances);
+
+    // For any point, on the curve or off it, the closest parameter is no
+    // worse than the sample s and the offset is orthogonal to the tangent at
+    // an interior minimizer (layer 1's NoWorseThanSample and IsStationary).
+    Law_Bspline_ClosestParameterIsMinimal(k: Integer, p: Point3D, s: Number): Boolean
+        => Law_ClosestParameterNoWorseThanSample(k.CurveFixtureSet, CurveIndex(0), p, s)
+            && Law_ClosestParameterIsStationary(k.CurveFixtureSet, CurveIndex(0), p)
+            && Law_ClosestParameterNoWorseThanSample(Integer.SearchCurveSet, CurveIndex(k.FixtureIndex(4)), p, s)
+            && Law_ClosestParameterIsStationary(Integer.SearchCurveSet, CurveIndex(k.FixtureIndex(4)), p);
+
+    // A clamped closed curve (fixture 2's control polygon closed into a
+    // loop) whose join is the nearest point answers its range start, as the
+    // contract of ClosestParameter says.
+    Law_Bspline_ClosedCurveJoinIsRangeStart(_: Integer): Boolean
+    {
+        var d = BSplineCurveData(SplineBasis(2, KnotVector([0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0])),
+            [Point3D(0.0, 0.0, 0.0), Point3D(1.0, 1.0, 0.0), Point3D(0.0, 2.0, 0.0), Point3D(-1.0, 1.0, 0.0), Point3D(0.0, 0.0, 0.0)],
+            [1.0, 1.0, 1.0, 1.0, 1.0]);
+        var g = GeometrySet([BrepCurve.BSpline(d)], [], [], [], [ClosureMark.ClosedCurve(CurveIndex(0))]);
+        return g.ClosestParameter(CurveIndex(0), Point3D(0.0, -1.0, 0.0)) == 0.0;
+    }
+
+    //==
+    // # Pcurves
+
+    // A pcurve's closest parameter of one of its own space points gives the
+    // point back, within the length tolerance, on both parameter-plane
+    // fixtures lying on the bump patch.
+    Law_Bspline_PcurveClosestParameterRecoversPoint(k: Integer, t: Number): Boolean
+    {
+        var g = k.PcurveFixtureSet;
+        var p = PcurveIndex(0);
+        var q = g.Eval(p, g.Domain(p).SampleIn(t));
+        return g.Eval(p, g.ClosestParameter(p, q)).Coincident(q, Tolerances.Witness_Tolerances.Length);
+    }
+
+    // The pcurve's closest parameter is finite and bounded (layer 1's
+    // Law_PcurveClosestParameterIsBounded).
+    Law_Bspline_PcurveClosestParameterIsBounded(k: Integer, t: Number): Boolean
+        => Law_PcurveClosestParameterIsBounded(k.PcurveFixtureSet, PcurveIndex(0), t, Tolerances.Witness_Tolerances);
+
+    //==
+    // # Surfaces
+
+    // Project gives a surface point back, on every surface fixture (layer
+    // 1's Law_ProjectRecoversPoint), and its answer is canonical
+    // (Law_ProjectIsCanonical).
+    Law_Bspline_ProjectRecoversPoint(k: Integer, u: Number, v: Number): Boolean
+        => Law_ProjectRecoversPoint(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v), Tolerances.Witness_Tolerances)
+            && Law_ProjectIsCanonical(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v), Tolerances.Witness_Tolerances);
+
+    // For any point p, Project is no worse than the sample uv, and the
+    // offset is orthogonal to both partials at an interior minimizer (layer
+    // 1's NoWorseThanSample and IsStationary).
+    Law_Bspline_ProjectIsMinimal(k: Integer, p: Point3D, u: Number, v: Number): Boolean
+        => Law_ProjectNoWorseThanSample(k.SurfaceFixtureSet, SurfaceIndex(0), p, UvCoordinate(u, v))
+            && Law_ProjectIsStationary(k.SurfaceFixtureSet, SurfaceIndex(0), p, SurfaceParameter.ParameterU)
+            && Law_ProjectIsStationary(k.SurfaceFixtureSet, SurfaceIndex(0), p, SurfaceParameter.ParameterV);
+
+    // ProjectNear recovers uv from its own point, seeded at uv and seeded
+    // NearSeedOffset away (layer 1's two ProjectNear laws).
+    Law_Bspline_ProjectNearRecoversParameter(k: Integer, u: Number, v: Number, du: Number, dv: Number): Boolean
+        => Law_ProjectNearRecoversParameter(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v), Tolerances.Witness_Tolerances)
+            && Law_ProjectNearRecoversFromNearbySeed(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v), du, dv, Tolerances.Witness_Tolerances);
+
+    // On the bump patch, where x = u and y = v, Project recovers uv from
+    // its point within the parameter tolerance at uv, and a point above or
+    // below the patch near its middle projects to where the normal through
+    // it meets the patch: (1/2, 1/2) for any point on the vertical through
+    // the bump's top, by symmetry.
+    Law_Bspline_BumpProjectRecoversParameter(u: Number, v: Number, h: Number): Boolean
+    {
+        var g = 0.SurfaceFixtureSet;
+        var s = SurfaceIndex(0);
+        var uv = g.Domain(s).SampleIn(UvCoordinate(u.UnitFraction, v.UnitFraction));
+        var above = Point3D(0.5, 0.5, 1.125 + h.UnitFraction * 0.5);
+        return g.Domain(s).SameParameter(g.Project(s, g.Eval(s, uv)), uv, g.UvToleranceAt(s, uv, Tolerances.Witness_Tolerances))
+            && g.Domain(s).SameParameter(g.Project(s, above), UvCoordinate(0.5, 0.5), g.UvToleranceAt(s, UvCoordinate(0.5, 0.5), Tolerances.Witness_Tolerances));
+    }
+}

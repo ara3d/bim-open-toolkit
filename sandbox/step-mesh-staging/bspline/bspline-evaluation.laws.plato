@@ -1,0 +1,158 @@
+//==
+// # BsplineEvaluationLaws
+//
+// Track F (TKT-327): laws on layer 1's B-spline evaluation, run on the
+// fixtures of bspline-witnesses.library.plato. They call the library's names
+// (BSplinePoint, BSplineDerivative, BSplinePartial, and Eval, Derivative,
+// Partial through a one-record arena), so they hold of whatever body the
+// library is wired to. Three kinds of evidence: the definition (layer 1's
+// Cox-de Boor oracles), central differences (layer 1's own derivative laws,
+// which take no tolerance), and closed forms (the bump patch, the rational
+// circle and cylinder), which share nothing with either.
+//
+// Sections, in order:
+//  - Against the definition
+//  - Against central differences
+//  - Against closed forms
+
+library BsplineEvaluationLaws
+{
+    //==
+    // # Against the definition
+
+    // A space curve's point is the basis-weighted sum of its control points
+    // (Oracle_BSplineCurvePoint), within layer 1's rounding allowance, at any
+    // parameter of its domain: layer 1's Law_BSplineCurveMatchesBasisSum on
+    // each fixture.
+    Law_Bspline_CurvePointMatchesDefinition(k: Integer, t: Number): Boolean
+        => Law_BSplineCurveMatchesBasisSum(k.CurveFixtureSet, CurveIndex(0), t);
+
+    // A parameter-plane curve's point is the basis-weighted sum of its
+    // control points: layer 1's Law_BSplineCurve2DMatchesBasisSum on each
+    // fixture.
+    Law_Bspline_Curve2DPointMatchesDefinition(k: Integer, t: Number): Boolean
+        => Law_BSplineCurve2DMatchesBasisSum(GeometrySet([], [BrepCurve2D.BSpline(k.Curve2DFixture)], [], [], []), Curve2DIndex(0), t);
+
+    // A surface's point is the tensor-product basis sum over its net: layer
+    // 1's Law_BSplineSurfaceMatchesBasisSum on each fixture.
+    Law_Bspline_SurfacePointMatchesDefinition(k: Integer, u: Number, v: Number): Boolean
+        => Law_BSplineSurfaceMatchesBasisSum(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v));
+
+    // At the two ends of a clamped curve's domain the point is the first and
+    // last control point, exactly up to rounding: the end interpolation of a
+    // clamped knot vector (every fixture but the unclamped one, 3).
+    Law_Bspline_ClampedCurveInterpolatesEnds(k: Integer): Boolean
+    {
+        var d = k.CurveFixture;
+        var tol = ResolutionAt(4.0 * d.ControlPoints.Reduce(0.0, (m, p) => m.Max(p.PositionVector.Length)));
+        return k.FixtureIndex(Integer.CurveFixtureCount) == 3
+            ? true
+            : d.BSplinePoint(d.Basis.SplineDomain.Start).Distance(d.ControlPoints.First) <= tol
+                && d.BSplinePoint(d.Basis.SplineDomain.End).Distance(d.ControlPoints.Last) <= tol;
+    }
+
+    //==
+    // # Against central differences
+
+    // A space curve's first and second derivatives agree with central
+    // differences of its points and first derivative within Richardson's
+    // estimate: layer 1's two derivative laws on each fixture, which skip a
+    // sample whose difference interval holds a knot.
+    Law_Bspline_CurveDerivativesMatchDifferences(k: Integer, t: Number): Boolean
+        => Law_DerivativeMatchesCentralDifference(k.CurveFixtureSet, CurveIndex(0), t)
+            && Law_SecondDerivativeMatchesCentralDifference(k.CurveFixtureSet, CurveIndex(0), t);
+
+    // The same for a parameter-plane curve.
+    Law_Bspline_Curve2DDerivativesMatchDifferences(k: Integer, t: Number): Boolean
+        => Law_Curve2DDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(k.Curve2DFixture)], [], [], []), Curve2DIndex(0), t)
+            && Law_Curve2DSecondDerivativeMatchesCentralDifference(GeometrySet([], [BrepCurve2D.BSpline(k.Curve2DFixture)], [], [], []), Curve2DIndex(0), t);
+
+    // A surface's two first partials agree with central differences of its
+    // points: layer 1's Law_PartialMatchesCentralDifference in u and in v.
+    Law_Bspline_SurfacePartialsMatchDifferences(k: Integer, u: Number, v: Number): Boolean
+        => Law_PartialMatchesCentralDifference(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v), SurfaceParameter.ParameterU)
+            && Law_PartialMatchesCentralDifference(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v), SurfaceParameter.ParameterV);
+
+    // A surface's second partials agree with central differences of its
+    // first partials, within Richardson's estimate plus the rounding of the
+    // first partials over the step: S_uu and S_uv from the u-difference of
+    // S_u and S_v, S_vv from the v-difference of S_v, at a point kept a step
+    // inside the domain. The fixtures' interior knots are simple, so the
+    // second partials are continuous and no sample is skipped.
+    Law_Bspline_SurfaceSecondPartialsMatchDifferences(k: Integer, u: Number, v: Number): Boolean
+    {
+        var d = k.SurfaceFixture;
+        var h = 1.0 / 256.0;
+        var uv = UvCoordinate(
+            d.U.SplineDomain.Start + h + (d.U.SplineDomain.End - d.U.SplineDomain.Start - 2.0 * h) * u.UnitFraction,
+            d.V.SplineDomain.Start + h + (d.V.SplineDomain.End - d.V.SplineDomain.Start - 2.0 * h) * v.UnitFraction);
+        var scale = 64.0 * d.ControlPoints.Elements.Reduce(0.0, (m, p) => m.Max(p.PositionVector.Length));
+        return WithinRichardson(
+                d.PartialDifference(uv, 1, 0, SurfaceParameter.ParameterU, h), d.PartialDifference(uv, 1, 0, SurfaceParameter.ParameterU, h * 0.5),
+                d.BSplinePartial(uv, 2, 0), ResolutionAt(scale) / h)
+            && WithinRichardson(
+                d.PartialDifference(uv, 0, 1, SurfaceParameter.ParameterU, h), d.PartialDifference(uv, 0, 1, SurfaceParameter.ParameterU, h * 0.5),
+                d.BSplinePartial(uv, 1, 1), ResolutionAt(scale) / h)
+            && WithinRichardson(
+                d.PartialDifference(uv, 0, 1, SurfaceParameter.ParameterV, h), d.PartialDifference(uv, 0, 1, SurfaceParameter.ParameterV, h * 0.5),
+                d.BSplinePartial(uv, 0, 2), ResolutionAt(scale) / h);
+    }
+
+    // The central difference along `which`, with step h, of the partial of
+    // order (a, b) at uv.
+    PartialDifference(d: BSplineSurfaceData, uv: UvCoordinate, a: Integer, b: Integer, which: SurfaceParameter, h: Number): Vector3D
+        => (d.BSplinePartial(uv.WithCoordinate(which, uv.Coordinate(which) + h), a, b)
+                - d.BSplinePartial(uv.WithCoordinate(which, uv.Coordinate(which) - h), a, b)) * (0.5 / h);
+
+    //==
+    // # Against closed forms
+
+    // Every point of the rational quarter circle is at distance 1 from the
+    // origin, and its tangent is orthogonal to the radius, to rounding.
+    Law_Bspline_QuarterCircleIsRound(t: Number): Boolean
+    {
+        var d = BSplineCurveData.QuarterCircle;
+        var x = d.Basis.DomainAt(t);
+        var p = d.BSplinePoint(x);
+        var tangent = d.BSplineDerivative(x, 1);
+        return (p.PositionVector.Length - 1.0).Abs <= ResolutionAt(2.0)
+            && p.PositionVector.Dot(tangent).Abs <= ResolutionAt(2.0 * tangent.Length + 2.0);
+    }
+
+    // The bump patch is z(u, v) = 1 + 4 b u (1 - u) v (1 - v) over x = u,
+    // y = v, with b = 1/2 (layer 7's Witness_BSplinePatchSolid comment): its
+    // point and all five partials of order 1 and 2 match the polynomial's.
+    Law_Bspline_BumpPatchMatchesPolynomial(u: Number, v: Number): Boolean
+    {
+        var d = BSplineSurfaceData.BumpPatch(0.5);
+        var b = 0.5;
+        var x = u.UnitFraction;
+        var y = v.UnitFraction;
+        var uv = UvCoordinate(x, y);
+        var tol = ResolutionAt(16.0);
+        return d.BSplinePoint(uv).Distance(Point3D(x, y, 1.0 + 4.0 * b * x * (1.0 - x) * y * (1.0 - y))) <= tol
+            && (d.BSplinePartial(uv, 1, 0) - Vector3D(1.0, 0.0, 4.0 * b * (1.0 - 2.0 * x) * y * (1.0 - y))).Length <= tol
+            && (d.BSplinePartial(uv, 0, 1) - Vector3D(0.0, 1.0, 4.0 * b * x * (1.0 - x) * (1.0 - 2.0 * y))).Length <= tol
+            && (d.BSplinePartial(uv, 2, 0) - Vector3D(0.0, 0.0, -8.0 * b * y * (1.0 - y))).Length <= tol
+            && (d.BSplinePartial(uv, 1, 1) - Vector3D(0.0, 0.0, 4.0 * b * (1.0 - 2.0 * x) * (1.0 - 2.0 * y))).Length <= tol
+            && (d.BSplinePartial(uv, 0, 2) - Vector3D(0.0, 0.0, -8.0 * b * x * (1.0 - x))).Length <= tol;
+    }
+
+    // Every point of the quarter-cylinder fixture is at distance 1 from the
+    // z axis at height v; its u partial is horizontal and orthogonal to
+    // the radius, its v partial is (0, 0, 1), and its mixed partial vanishes.
+    Law_Bspline_CylinderPatchIsRound(u: Number, v: Number): Boolean
+    {
+        var d = 1.SurfaceFixture;
+        var uv = UvCoordinate(u.UnitFraction, v.UnitFraction * 2.0);
+        var p = d.BSplinePoint(uv);
+        var su = d.BSplinePartial(uv, 1, 0);
+        var tol = ResolutionAt(8.0);
+        return (Vector2D(p.X, p.Y).Length - 1.0).Abs <= tol
+            && (p.Z - uv.V).Abs <= tol
+            && su.Z.Abs <= tol
+            && (su.X * p.X + su.Y * p.Y).Abs <= ResolutionAt(8.0 * su.Length + 8.0)
+            && (d.BSplinePartial(uv, 0, 1) - Vector3D(0.0, 0.0, 1.0)).Length <= tol
+            && d.BSplinePartial(uv, 1, 1).Length <= ResolutionAt(8.0 * su.Length + 8.0);
+    }
+}
