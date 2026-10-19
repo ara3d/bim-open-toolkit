@@ -1,0 +1,110 @@
+//==
+// # BsplineSidesLaws
+//
+// Track F (TKT-327): laws on layer 1's BSplineSideCollapses and
+// BSplineSidesCoincide, which face meshing reaches for every B-spline face
+// (degenerate sides, closed directions). A true answer is a promise
+// (geometry.spec.plato), checked here on sampled side points; two
+// fixtures have known answers.
+//
+// Sections, in order:
+//  - Fixtures
+//  - Known answers
+//  - The promises
+
+library BsplineSidesLaws
+{
+    //==
+    // # Fixtures
+
+    // A quadratic-by-linear patch whose u = 0 column is one point, (0, 0, 1):
+    // its side UMin collapses, like a cone's apex.
+    ApexPatch(_: BSplineSurfaceData): BSplineSurfaceData
+        => BSplineSurfaceData(
+            SplineBasis(2, KnotVector([0.0, 0.0, 0.0, 1.0, 1.0, 1.0])),
+            SplineBasis(1, KnotVector([0.0, 0.0, 1.0, 1.0])),
+            MakeArray2D(3, 2, (c, r) => c == 0 ? Point3D(0.0, 0.0, 1.0) : Point3D(c.ToNumber * 0.5, r.ToNumber, 0.0)),
+            MakeArray2D(3, 2, (c, r) => c == 1 ? 2.0 : 1.0));
+
+    // A linear-by-quadratic patch whose first and last rows are the same
+    // points with the same weights: its sides VMin and VMax coincide, so it
+    // is closed in v.
+    PillowPatch(_: BSplineSurfaceData): BSplineSurfaceData
+        => BSplineSurfaceData(
+            SplineBasis(1, KnotVector([0.0, 0.0, 1.0, 1.0])),
+            SplineBasis(2, KnotVector([0.0, 0.0, 0.0, 1.0, 1.0, 1.0])),
+            MakeArray2D(2, 3, (c, r) => r == 1 ? Point3D(c.ToNumber, 0.5, 1.0) : Point3D(c.ToNumber, 0.0, 0.0)),
+            MakeArray2D(2, 3, (c, r) => r == 1 ? 0.5 : 1.0));
+
+    // Surface k of the side laws: 0 to 2 the surface fixtures, 3 the apex
+    // patch, 4 the pillow.
+    SideFixture(k: Integer): BSplineSurfaceData
+        => k.FixtureIndex(5) < 3 ? k.FixtureIndex(5).SurfaceFixture
+            : (k.FixtureIndex(5) == 3 ? BSplineSurfaceData.ApexPatch : BSplineSurfaceData.PillowPatch);
+
+    // Side k of the four.
+    SideAt(k: Integer): DomainSide
+        => k.FixtureIndex(4) == 0 ? DomainSide.UMin
+            : (k.FixtureIndex(4) == 1 ? DomainSide.UMax : (k.FixtureIndex(4) == 2 ? DomainSide.VMin : DomainSide.VMax));
+
+    // The domain the side contract is written over.
+    SplineSurfaceDomain(d: BSplineSurfaceData): SurfaceDomain
+        => SurfaceDomain(BoundedDomain(d.U.SplineDomain), BoundedDomain(d.V.SplineDomain));
+
+    //==
+    // # Known answers
+
+    // The apex patch collapses at UMin and nowhere else; the pillow's v
+    // sides coincide and its u sides do not; the bump patch has no
+    // collapsed side and no coinciding pair.
+    Law_Bspline_SideTestsKnownAnswers(_: Integer): Boolean
+    {
+        var tol = Tolerances.Witness_Tolerances.Length;
+        var apex = BSplineSurfaceData.ApexPatch;
+        var pillow = BSplineSurfaceData.PillowPatch;
+        var bump = 0.SurfaceFixture;
+        return apex.BSplineSideCollapses(DomainSide.UMin, tol)
+            && !apex.BSplineSideCollapses(DomainSide.UMax, tol)
+            && !apex.BSplineSideCollapses(DomainSide.VMin, tol)
+            && pillow.BSplineSidesCoincide(SurfaceParameter.ParameterV, tol)
+            && !pillow.BSplineSidesCoincide(SurfaceParameter.ParameterU, tol)
+            && 4.Range.All(s => !bump.BSplineSideCollapses(s.SideAt, tol))
+            && !bump.BSplineSidesCoincide(SurfaceParameter.ParameterU, tol)
+            && !bump.BSplineSidesCoincide(SurfaceParameter.ParameterV, tol);
+    }
+
+    //==
+    // # The promises
+
+    // When a side is said to collapse, its point at the fraction a along it
+    // is within twice the tolerance (and rounding) of its start point.
+    Law_Bspline_CollapsedSideIsOnePoint(k: Integer, side: Integer, a: Number): Boolean
+    {
+        var d = k.SideFixture;
+        var s = side.SideAt;
+        var dom = d.SplineSurfaceDomain;
+        var r = dom.SideRange(s);
+        var tol = Tolerances.Witness_Tolerances.Length;
+        return d.BSplineSideCollapses(s, tol)
+            ? d.BSplinePoint(dom.SidePoint(s, r.Start + (r.End - r.Start) * a.UnitFraction)).Distance(d.BSplinePoint(dom.SidePoint(s, r.Start)))
+                <= tol.Value + tol.Value + ResolutionAt(4.0)
+            : true;
+    }
+
+    // When the two sides across a parameter are said to coincide, their
+    // points at the same fraction along them coincide within the
+    // tolerance (and rounding).
+    Law_Bspline_CoincidentSidesAgree(k: Integer, which: Integer, a: Number): Boolean
+    {
+        var d = k.SideFixture;
+        var p = which.FixtureIndex(2) == 0 ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV;
+        var q = which.FixtureIndex(2) == 0 ? SurfaceParameter.ParameterV : SurfaceParameter.ParameterU;
+        var x = d.BasisAlong(q).DomainAt(a);
+        var tol = Tolerances.Witness_Tolerances.Length;
+        return d.BSplineSidesCoincide(p, tol)
+            ? d.BSplinePoint(UvCoordinate(0.0, 0.0).WithCoordinate(p, d.BasisAlong(p).SplineDomain.Start).WithCoordinate(q, x))
+                .Distance(d.BSplinePoint(UvCoordinate(0.0, 0.0).WithCoordinate(p, d.BasisAlong(p).SplineDomain.End).WithCoordinate(q, x)))
+                <= tol.Value + ResolutionAt(4.0)
+            : true;
+    }
+}

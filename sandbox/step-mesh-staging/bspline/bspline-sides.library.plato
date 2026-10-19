@@ -1,0 +1,86 @@
+//==
+// # BsplineSides
+//
+// Track F (TKT-327): bodies for layer 1's deferred BSplineSideCollapses and
+// BSplineSidesCoincide (geometry-splines.library.plato, "Collapsed and
+// coincident sides"). The boundary curve of a spline surface at a side is
+// itself a spline in the other parameter, whose homogeneous control row is
+// every row of the net (or column) evaluated at the side's parameter: the
+// result of knot insertion to full multiplicity there, read off by de Boor
+// (BsplineEvaluation's HomogeneousDerivative of order 0). With positive
+// weights the boundary curve lies in the convex hull of that row's
+// projections, so a row within tol of one point is a side within tol of it.
+//
+// Sections, in order:
+//  - Boundary rows
+//  - Bodies
+
+library BsplineSides
+{
+    //==
+    // # Boundary rows
+
+    // The homogeneous control row of the boundary curve where the given
+    // parameter takes the value x: for ParameterU, entry j is the u-curve
+    // through row j of the net evaluated at u = x; for ParameterV, entry i
+    // is the v-curve through column i evaluated at v = x.
+    BoundaryRow(d: BSplineSurfaceData, which: SurfaceParameter, x: Number): Array<HomogeneousPoint3D>
+        => match (which)
+        {
+            ParameterU => d.ControlPoints.RowCount.MapRange(j => d.U.HomogeneousDerivative(
+                d.ControlPoints.ColumnCount.MapRange(i => d.ControlPoints.At(i, j).Weighted(d.Weights.At(i, j))), 0, x));
+            ParameterV => d.ControlPoints.ColumnCount.MapRange(i => d.V.HomogeneousDerivative(
+                d.ControlPoints.RowCount.MapRange(j => d.ControlPoints.At(i, j).Weighted(d.Weights.At(i, j))), 0, x));
+        };
+
+    // The parameter a side holds fixed, and its value.
+    SideParameter(s: DomainSide): SurfaceParameter
+        => match (s)
+        {
+            UMin => SurfaceParameter.ParameterU;
+            UMax => SurfaceParameter.ParameterU;
+            VMin => SurfaceParameter.ParameterV;
+            VMax => SurfaceParameter.ParameterV;
+        };
+
+    // The value of the fixed parameter on the side: its basis's domain start
+    // or end.
+    SideKnot(d: BSplineSurfaceData, s: DomainSide): Number
+        => match (s)
+        {
+            UMin => d.U.SplineDomain.Start;
+            UMax => d.U.SplineDomain.End;
+            VMin => d.V.SplineDomain.Start;
+            VMax => d.V.SplineDomain.End;
+        };
+
+    // The Cartesian point of a homogeneous control value.
+    Projected(h: HomogeneousPoint3D): Point3D
+        => (h.Spatial * (1.0 / h.W)).ToPoint;
+
+    //==
+    // # Bodies
+
+    // Body of layer 1's BSplineSideCollapses: true when every point of the
+    // side's boundary control row lies within tol of the first, so by the
+    // convex hull property the whole side lies within tol of that point.
+    BSplineSideCollapsesBody(d: BSplineSurfaceData, side: DomainSide, tol: LengthTolerance): Boolean
+    {
+        var row = d.BoundaryRow(side.SideParameter, d.SideKnot(side));
+        return row.All(h => h.Projected.Distance(row[0].Projected) <= tol.Value);
+    }
+
+    // Body of layer 1's BSplineSidesCoincide: true when the boundary rows at
+    // the two ends of the parameter have the same weights and their points
+    // agree within tol entry by entry. The difference of the two boundary
+    // curves is then a convex combination of the entries' differences, so
+    // the curves agree within tol everywhere. Rows with different weights
+    // answer false, which promises nothing (the contract's reading).
+    BSplineSidesCoincideBody(d: BSplineSurfaceData, which: SurfaceParameter, tol: LengthTolerance): Boolean
+    {
+        var low = d.BoundaryRow(which, d.BasisAlong(which).SplineDomain.Start);
+        var high = d.BoundaryRow(which, d.BasisAlong(which).SplineDomain.End);
+        return low.Count.Range.All(j => (low[j].W - high[j].W).Abs <= ResolutionAt(low[j].W.Abs + high[j].W.Abs)
+            && low[j].Projected.Distance(high[j].Projected) <= tol.Value);
+    }
+}

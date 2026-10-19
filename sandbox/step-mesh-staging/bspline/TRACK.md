@@ -5,6 +5,7 @@ Status: working
 
 ## Done
 
+- side bodies (`bspline-sides.library.plato`), not in the brief's list but on the meshing path of every B-spline face (layer 5's degenerate sides reach `BSplineSideCollapses`): boundary control rows by de Boor at the side's knot, then convex-hull tests. `BsplineSidesLaws` on the wired copy: 3 obligation before, 3 pass after.
 - sagitta body (`bspline-sagitta.library.plato`): branch and bound over Bezier pieces (blossom extraction), exact on polylines, a sampled estimate on other curves. `BsplineSagittaLaws` on the wired copy: 3 obligation before, 3 pass after; with a piece budget of 1 (the raw hull bound) 2 fail.
 - inverse bodies (`bspline-inverse.library.plato`, `bspline-inverse.types.plato`): global search per smooth piece with regula falsi on the slope (curves, pcurves) and damped, projected Gauss-Newton (surfaces); local Gauss-Newton from a seed. `BsplineInverseLaws` (11 laws) on the wired copy: 10 obligation before (the eleventh was added with the bodies), first run 9 error (an `&&` guard that indexes -1), then 2 fail (stop at 32 roundoffs), then 11 pass. A mutation that keeps the first local minimum fails 4 laws.
 - evaluation bodies (`bspline-evaluation.library.plato`): de Boor over homogeneous values, derivatives by the hodograph, the quotient rule, blossoms for Bezier extraction. `BsplineEvaluationLaws` on the wired copy: 11 obligation before, 11 pass after.
@@ -50,6 +51,7 @@ Each line gives a deferred library function the body on the right (the same para
 | Evaluation bodies and mutations | 20 min | 3 CLI runs |
 | Inverse bodies, two fixes, mutations | 35 min | 8 CLI runs |
 | Sagitta body and mutation | 10 min | 3 CLI runs |
+| Side bodies (found on the meshing path) | 10 min | 3 CLI runs |
 
 ## Lessons
 
