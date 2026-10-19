@@ -54,6 +54,7 @@ After each merge the supervisor adds one row per track to the ledger and reviews
 
 | Wave | Track | Claim to ready | Law runs | Builds | Regressions at merge | Cross-track requests | Lesson |
 |---|---|---|---|---|---|---|---|
+| 1 | P (TKT-344) | about 45 min | not recorded | private builds only | 0 | 0 | One warm program per folder set: a one-body edit answers in 4.0 to 4.6 s while another track's program stays warm |
 
 ### Rule changes
 
@@ -61,3 +62,9 @@ After each merge the supervisor adds one row per track to the ledger and reviews
 |---|---|---|
 | 2026-10-18 | Staging folders replace direct edits in shared layers | Version 1 log: shared-file requests and the parse-error outage |
 | 2026-10-18 | Status and requests go in `TRACK.md`, not messages | The ten-message limit, hit once |
+| 2026-10-18 | Servers and pinned CLIs are built from clean exports of committed Plato, never from the working tree | TKT-315's uncommitted Intrinsics edits sat in the Plato tree when the TKT-344 server was built |
+| 2026-10-18 | Whole-model laws over the torus need `--budget` above 900 s, or wait for step C | The topology track's request ran past the script's 1800 s timeout on the torus witness |
+
+## Log
+
+- 2026-10-18, 23:55: server on 8768 replaced by Plato f2b20722 and studio 60abd7fb (TKT-344), from clean exports, kept in `C:\Users\cdigg\.plato-cli\navmcp-f2b20722-60abd7fb`, default profile `gpu32`, `--law-programs=8`. Checked: a staging folder compiles once (2.7 s on a warm parse cache) and the library's own program stays warm alongside it.
