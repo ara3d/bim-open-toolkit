@@ -35,8 +35,12 @@ const samples = process.env.NRC_PAGES_SAMPLES ? resolve(process.env.NRC_PAGES_SA
  * buildings of bim-open-data.
  */
 const MODEL_FOLDERS = [resolve(repo, "samples/nrc"), resolve(repo, "deps/bim-open-data/samples/public")];
-/** The notebooks that stay out of the site: s10-snowdon works on the Snowdon Towers model (CC BY-NC-SA 3.0, private). */
-const OMITTED = ["s10-snowdon.notebook.json"];
+/**
+ * The notebooks that stay out of the site: s10-snowdon works on the Snowdon Towers model (CC BY-NC-SA 3.0,
+ * private), and s11-editing-history is kept out by the owner's plan for the NRC notebooks
+ * (nrc/paper/planning/notebooks-plan.md, section 4).
+ */
+const OMITTED = ["s10-snowdon.notebook.json", "s11-editing-history.notebook.json"];
 /** The folder the site is written to, and the scratch folder the notebooks to publish are gathered in. */
 const outDir = resolve(repo, "artifacts/nrc-site");
 const stage = resolve(repo, "artifacts/nrc-site-stage");

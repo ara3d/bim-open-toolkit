@@ -47,7 +47,7 @@ https://ara3d.github.io/nrc-ifc-llm/ by the workflow in the `nrc-ifc-llm` reposi
 holds `index.html` (a redirect to `nrc.html`), `nrc.html`, `notebook.html`, `graphs.md`
 (the graph list), `NOTICE.md` (the building licences), and `notebooks/`: every notebook
 in `samples/notebooks` except `s10-snowdon` (its model is private, CC BY-NC-SA 3.0; the
-landing page says so), `index.json`, `catalog.json`, `node-catalog.json` (a copy of
+landing page says so) and `s11-editing-history` (kept out by the owner's plan for the NRC notebooks), `index.json`, `catalog.json`, `node-catalog.json` (a copy of
 `docs/nodes.catalog.json`, so graph cells draw their wires), and `models/` (the `.bos`
 file each 3D view names, looked up in `samples/nrc`, then in
 `deps/bim-open-data/samples/public`). The folder takes whatever notebooks are in
@@ -63,8 +63,10 @@ commands for a local host.
 A 3D view draws on the static site only when its notebook recorded the model file and the
 rows (`model` and `snapshot` on the embed). The notebook package's
 `write-sample-notebooks.ts` records them when a `.bos` sits beside the model's `.duckdb`.
-`samples/nrc/*.bos` are built by the host and not committed, so the build stops with a
-message when a notebook names one that is missing. `gates/nrc-pages-smoke.mjs` fails on a
+`samples/nrc/duplex-enriched.bos` and `duplex-base.bos` are committed (`git add -f`, since `*.bos` is ignored) so a clean checkout, such as the Pages build, has the models; the host
+rebuilds the enriched one from `duplex-enriched.ifc` (its stamp file is ignored), and
+`duplex-base.bos` comes from `BuildingModel.Workflows.Cli convert-ifc`. The build stops with a
+message when a notebook names a model file that is missing. `gates/nrc-pages-smoke.mjs` fails on a
 view that does not draw. `NRC_PAGES_SAMPLES=<folder>` builds from another folder of
 notebooks, to try one out.
 
