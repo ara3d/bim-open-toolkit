@@ -2,7 +2,8 @@
 id: TKT-315
 title: A 64-bit Number compilation profile for Plato's C# backend
 status: open
-depends_on: [TKT-299]
+depends_on: []
+related: [TKT-299, TKT-323]
 owner:
 fence: [../plato/**]
 workflow: [W3, W4]
@@ -21,3 +22,5 @@ Owner approval 2026-10-17. Work happens in the Plato repository (C:\Users\cdigg\
 ## Log
 
 - 2026-10-18, paused by the owner: Plato commits b875bbc0 2eb70fb3 80e7f207 3bb6d954 (Number profile, docs, tests), 40a7d5a8 5c2ad367 3d5d21d9 c0abb82a cb274ffc ced94312 a2d41c7b 54a3996a afb1f304 (tracker issues, writer fixes plato-454 to plato-458, compiler-461, regenerated output); not done: 64-bit Integer, fix 6 (plato-459), stdlib-460, the CS0305 generic-constructor defect.
+
+- 2026-10-18, resumed: the owner lifted the pause ("plain floats until doubles are ready, have an agent work on that"). Plan docs/plans/step-mesher-v2.md, track D2; merged alone, after which the default profile becomes cpu64.

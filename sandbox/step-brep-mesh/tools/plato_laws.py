@@ -2,6 +2,7 @@
 
     python -I sandbox/step-brep-mesh/tools/plato_laws.py "Law_A,Law_B" [--types all] [--report FILE] [--baseline FILE]
     python -I sandbox/step-brep-mesh/tools/plato_laws.py none        # type check only
+    python -I sandbox/step-brep-mesh/tools/plato_laws.py "Law_X" --staging sandbox/step-mesh-staging/poles
 
 A session reads its MCP tool list when it starts, so agents that were running before the server
 on 127.0.0.1:8768 gained plato_laws (Plato 38f2031a, studio b7598e75) cannot call it as a tool.
@@ -14,10 +15,20 @@ understood.
 """
 import argparse
 import json
+import os
 import sys
 import urllib.request
 
 URL = "http://127.0.0.1:8768/mcp"
+# Plain 32-bit floats until the 64-bit Number profile lands (TKT-315); then cpu64.
+PROFILE = "gpu32"
+# The server's own law folders, in order; a track's staging folder is compiled after them.
+LIBRARY = [
+    "C:/Users/cdigg/git/plato/stdlib/foundation",
+    "C:/Users/cdigg/git/plato/stdlib/geometry",
+    "C:/Users/cdigg/git/plato/stdlib/graphics",
+    "C:/Users/cdigg/git/bim-open-toolkit/sandbox/step-brep-mesh",
+]
 
 
 def post(body, session=None):
@@ -40,6 +51,10 @@ def main():
     parser.add_argument("--types", choices=["changed", "all"], default=None)
     parser.add_argument("--report")
     parser.add_argument("--baseline")
+    parser.add_argument("--staging", action="append", default=[],
+                        help="a track's staging folder, compiled after the library (repeatable)")
+    parser.add_argument("--profile", default=PROFILE,
+                        help=f"Number profile; default {PROFILE} until 64-bit Number lands (TKT-315)")
     args = parser.parse_args()
 
     _, session = post({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
@@ -47,7 +62,9 @@ def main():
         "clientInfo": {"name": "plato_laws.py", "version": "1"}}})
     post({"jsonrpc": "2.0", "method": "notifications/initialized"}, session)
 
-    arguments = {"filter": args.filter}
+    arguments = {"filter": args.filter, "profile": args.profile}
+    if args.staging:
+        arguments["folders"] = ",".join(LIBRARY + [os.path.abspath(s) for s in args.staging])
     for key in ("types", "report", "baseline"):
         if getattr(args, key):
             arguments[key] = getattr(args, key)
