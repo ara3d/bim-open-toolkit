@@ -442,6 +442,22 @@ library BrepWitnesses
             Tolerances.Witness_Tolerances,
             LengthUnit.Metre);
 
+    // A solid sphere of radius r cut at its equator: vertex V0 = (r, 0, 0), the equator E0 closed
+    // at V0, the northern face bounded by [E0+] and the southern by [E0-], neither touching its
+    // pole. V = 1, E = 1, F = 2, L = 2, chi = 2, area 4 pi r^2, volume 4 pi r^3 / 3. Each face
+    // needs its pole added (WithMissingPole).
+    Witness_Hemispheres(_: BrepModel, r: Number): BrepModel
+        => BrepModel(
+            GeometrySet([BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)], [], [], [BrepSurface.Sphere(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)], []),
+            [BrepVertex(Point3D(r, 0.0, 0.0))],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(0, true)]), BrepLoop.EdgeLoop([CoedgeOf(0, false)])],
+            [SingleLoopFace(0, 0, true), SingleLoopFace(0, 1, true)],
+            [ClosedShellOf([0, 1])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
     //==
     // # The torus
 
@@ -474,6 +490,22 @@ library BrepWitnesses
     // The torus of major radius 2 and minor radius 1/2.
     Witness_Torus(_: BrepModel): BrepModel
         => BrepModel.Witness_Torus(2.0, 0.5);
+
+    // A solid ring torus of major radius R and minor radius r < R with no edge: one face bounded by
+    // a single vertex loop at P = (R + r, 0, 0). STEP needs a bound on every face, so this is the
+    // whole torus as a file can state it. V = 1, E = 0, F = 1, L = 1, chi = 0, genus 1, area
+    // 4 pi^2 R r, volume 2 pi^2 R r^2.
+    Witness_TorusAtVertex(_: BrepModel, major: Number, minor: Number): BrepModel
+        => BrepModel(
+            GeometrySet([], [], [], [BrepSurface.Torus(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), major, minor, TorusPart.Full)], []),
+            [BrepVertex(Point3D(major + minor, 0.0, 0.0))],
+            [],
+            [BrepLoop.VertexLoop(BrepVertexIndex(0))],
+            [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, false)])],
+            [ClosedShellOf([0])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
 
     //==
     // # The cone

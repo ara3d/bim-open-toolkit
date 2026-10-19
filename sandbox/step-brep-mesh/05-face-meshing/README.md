@@ -8,7 +8,7 @@ faces again.
 
 The design is written against [VOCABULARY.md](../VOCABULARY.md) revision 2 and against the names
 layers 00 to 04 export as they stood on 2026-10-17 (listed under "Names used from layers 00 to 04").
-Algorithms were deferred by the design pass, every one with a contract in `face-meshing.spec.plato`; implementation chunk A gave six of them bodies (see "Implementation, chunk A"). Chunk B gave `CompletePeriodicRegion`, `QuadSidesOf`, `QuadGrid` and `MatchingFloors` their bodies, and replaced the bodies of `TriangulateRegion` and `RefineToSurface` (see "Implementation, chunk B"). Still bodiless: `ExpandedPoles` and `CutWholePeriods`, the pole segments and the whole-period cuts of `CompletePeriodicRegion` (chunk C).
+Algorithms were deferred by the design pass, every one with a contract in `face-meshing.spec.plato`; implementation chunk A gave six of them bodies (see "Implementation, chunk A"). Chunk B gave `CompletePeriodicRegion`, `QuadSidesOf`, `QuadGrid` and `MatchingFloors` their bodies, and replaced the bodies of `TriangulateRegion` and `RefineToSurface` (see "Implementation, chunk B"). Step C (TKT-325) gave `ExpandedPoles` and `CutWholePeriods` their bodies (`pole-segments.library.plato`, library `PolesSegments`; `whole-periods.library.plato`, library `PolesWholePeriods`), and `WithSeamCut` also cuts a whole torus bounded by one vertex. No function of this layer is bodiless now.
 
 ## Files
 

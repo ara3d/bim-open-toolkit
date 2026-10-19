@@ -370,13 +370,6 @@ library UvRegions
     WithPoleSegments(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
         => m.HasCollapsedLine(f) ? m.ExpandedPoles(f, loops, c) : loops;
 
-    // deferred (chunk C): the pole segments of the contract: a loop point on a
-    // collapsed line replaced by the segment of that line from the free
-    // parameter where the loop arrives to the one where it leaves, its points
-    // Pole sources (or the pole vertex's) sampled under the criteria; a face
-    // with no edges at a pole given the whole segment.
-    ExpandedPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>;
-
     // How far one traversal of loop l moves it in face f's parameter plane:
     // its winding times the period, in each direction.
     LoopDisplacement(m: BrepModel, f: BrepFaceIndex, l: UvLoop): UvCoordinate
@@ -418,23 +411,19 @@ library UvRegions
 
     // The loops with the band pair, when there is one, replaced by one loop
     // joined along a synthetic seam cut (JoinedByCut), first; unchanged when
-    // no loop winds. Every other arrangement of winding loops (a whole torus,
-    // several bands) goes to CutWholePeriods.
+    // no loop winds, except a whole-period region pinned at a vertex (a whole
+    // torus, whose one loop does not wind), which gets its cuts. Every other
+    // arrangement of winding loops (several bands) goes to CutWholePeriods.
     WithSeamCut(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
     {
         var winding = m.WindingLoops(f, loops);
         var others = loops.Count.Range.FlatMap(k => winding.Any(w => w == k) ? loops.Take(0) : [loops[k]]);
         return winding.Count == 0
-            ? loops
+            ? (m.IsWholePeriodAtVertex(f, loops) ? m.CutWholePeriods(f, loops, c) : loops)
             : (m.IsBandPair(f, loops, winding)
                 ? [m.JoinedByCut(f, loops[winding[0]], loops[winding[1]], c)].Concatenate(others)
                 : m.CutWholePeriods(f, loops, c));
     }
-
-    // deferred (chunk C): the synthetic cuts of the other arrangements of
-    // winding loops: a whole-period region with no loop (a whole torus, two
-    // cuts), and loops that wind round both directions.
-    CutWholePeriods(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>;
 
     // The pair of positions (i in a, j in b), coded i * b.Count + j, whose
     // surface points are nearest in 3D: where the cut between the two loops

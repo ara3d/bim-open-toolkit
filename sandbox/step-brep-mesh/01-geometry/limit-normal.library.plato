@@ -1,7 +1,7 @@
 //==
-// # The limit normal (step C, staged)
+// # The limit normal
 //
-// The body of layer 01's LimitNormal (geometry-surfaces.library.plato), staged for TKT-325. At a
+// The body of layer 01's LimitNormal (geometry-surfaces.library.plato). At a
 // regular point the surface normal; on a collapsed line (a sphere's pole, a cone's apex) the limit
 // of the normal along the transverse parameter, which a face's mesh stores at every point of a
 // pole segment (layer 05's Lift).
@@ -17,7 +17,7 @@ library PolesLimitNormal
 
     // Body of LimitNormal(g, s, uv), from its contract and deferred note: NormalOr where the
     // area element is positive; on a collapsed line, the surface's limit there (CollapsedNormal).
-    LimitNormalBody(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Direction3D
+    LimitNormal(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Direction3D
         => g.AreaElement(s, uv) > 0.0
             ? g.NormalOr(s, uv, g.SurfaceAt(s).CollapsedNormal(g, uv))
             : g.SurfaceAt(s).CollapsedNormal(g, uv);

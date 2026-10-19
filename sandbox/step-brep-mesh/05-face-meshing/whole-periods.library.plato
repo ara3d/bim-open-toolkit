@@ -1,7 +1,7 @@
 //==
-// # Whole-period regions (step C, staged)
+// # Whole-period regions
 //
-// The body of layer 05's CutWholePeriods (uv-regions.library.plato), staged for TKT-325: the
+// The body of layer 05's CutWholePeriods (uv-regions.library.plato): the
 // synthetic cuts for the arrangements of loops that step B's WithSeamCut does not join. A face
 // bounded by two loops that wind opposite ways is a band, which WithSeamCut joins; a face whose
 // region wraps a whole period in both directions (a whole torus) needs two cuts, one per
@@ -24,22 +24,8 @@ library PolesWholePeriods
     // (WholePeriodRectangle). Every other arrangement is returned unchanged; the region then has
     // a loop that winds, which RegionOf's laws report (finding in TRACK.md: AddMissingSeamsAndPoles
     // has no outcome through which to diagnose it).
-    CutWholePeriodsBody(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
+    CutWholePeriods(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
         => m.IsWholePeriodAtVertex(f, loops) ? [m.WholePeriodRectangle(f, loops[0], c)] : loops;
-
-    // Replacement for layer 05's WithSeamCut: the same, except that a whole-period region pinned at
-    // a vertex, whose one loop does not wind, also gets its cuts. WithSeamCut returns loops that do
-    // not wind unchanged, so it never reaches CutWholePeriods for a whole torus.
-    WithSeamCutAll(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
-    {
-        var winding = m.WindingLoops(f, loops);
-        var others = loops.Count.Range.FlatMap(k => winding.Any(w => w == k) ? loops.Take(0) : [loops[k]]);
-        return winding.Count == 0
-            ? (m.IsWholePeriodAtVertex(f, loops) ? m.CutWholePeriodsBody(f, loops, c) : loops)
-            : (m.IsBandPair(f, loops, winding)
-                ? [m.JoinedByCut(f, loops[winding[0]], loops[winding[1]], c)].Concatenate(others)
-                : m.CutWholePeriodsBody(f, loops, c));
-    }
 
     // Whether the loops are one vertex loop on a surface with a seam in both directions, off the
     // collapsed lines.

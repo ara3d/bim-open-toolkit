@@ -1,7 +1,7 @@
 //==
-// # Pole segments (step C, staged)
+// # Pole segments
 //
-// The body of layer 05's ExpandedPoles (uv-regions.library.plato), staged for TKT-325. On a
+// The body of layer 05's ExpandedPoles (uv-regions.library.plato). On a
 // surface that collapses an iso-line to one point (a sphere's pole, a cone's apex), a loop that
 // reaches the line arrives along one value of the line's free parameter and leaves along another.
 // In parameter space the point is the segment of the line between the two (polar coordinates),
@@ -28,7 +28,7 @@ library PolesSegments
     // point of a segment keeps the source of the point it replaces (the pole vertex's, in every
     // witness), so Lift identifies them and the triangles with two corners on one segment are
     // dropped. One loop per loop, in order.
-    ExpandedPolesBody(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
+    ExpandedPoles(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
         => m.WithMissingPole(f, loops.Count.MapRange(k =>
             (loops[k].Points.Count == 1 ? m.IsOnCollapsedLine(f, loops[k].Points[0]) : false)
                 ? m.WholePoleSegment(f, loops, k, c)

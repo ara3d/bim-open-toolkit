@@ -22,11 +22,12 @@ files present that day.
 | `geometry-scaling.library.plato` | the arena scaled about the origin: `ScaledCurve`, `ScaledSurface`, `ScaledPcurve`, `ParameterScaleFactor`, `ScaledGeometry` | `BrepGeometryScaling` |
 | `geometry-motion.library.plato` | the arena carried by a rigid motion: `MovedVector`, `MovedDirection`, `MovedFrame`, `Moved` (curve, surface), `MovedGeometry` (from layer 2 in the name review) | `BrepGeometryMotion` |
 | `geometry-splines.library.plato` | spline domains, shape predicates, breakpoints; evaluation, side tests and inverse search bodies in `bspline-*.library.plato` | `BrepGeometrySplines` |
+| `limit-normal.library.plato` | `LimitNormal`: the surface normal, and its limit on a sphere's pole or a cone's apex (step C, TKT-325) | `PolesLimitNormal` |
 | `geometry.laws.plato` | 95 laws, 3 oracles, their helpers and measures | `BrepGeometryLaws` |
 | `geometry.spec.plato` | invariants, contracts, theorems (SPEC-DSL.md section 3 only) | |
 
-Counts after the fix wave: 19 types, 3 interfaces, 262 library functions (256 with a body, 6
-deferred), 95 laws, 46 `spec` blocks, 10 theorems and no conjecture.
+Counts after the fix wave: 19 types, 3 interfaces, 262 library functions (257 with a body, 5
+deferred; `LimitNormal` got its body in step C, `limit-normal.library.plato`, library `PolesLimitNormal`), 95 laws, 46 `spec` blocks, 10 theorems and no conjecture.
 
 ## The objects
 

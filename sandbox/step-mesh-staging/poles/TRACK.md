@@ -1,7 +1,9 @@
 # poles: mesh the sphere, torus and cone (poles, two seams, the cone's tip)
 
 Ticket: TKT-325
-Status: ready to merge
+Status: merged
+
+Merged into the library 2026-10-19 (see the merge commit): bodies and the seven findings now live in `sandbox/step-brep-mesh` and `reviews/FINDINGS.md` (F-57). The laws are `Law_*` in `07-validation/poles.laws.plato`.
 
 ## Done
 - faca6918 and the commit that sets this status: `LimitNormalBody`, `ExpandedPolesBody` (with `WithMissingPole` for a pole the face encloses without touching), `CutWholePeriodsBody` with `WithSeamCutAll`, the test mirrors, two new witnesses (`PolesTorusAtVertex`, `PolesHemispheres`), and 26 `Law_Poles_*` laws.

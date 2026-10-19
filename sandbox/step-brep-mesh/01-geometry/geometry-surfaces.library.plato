@@ -237,13 +237,6 @@ library BrepGeometrySurfaces
             Offset(basis, distance) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).Length;
         };
 
-    // deferred: the basis normal extended by continuity (ISO 10303-42 4.5.86):
-    // NormalOr where the basis's partials span a plane; on a collapsed line,
-    // the limit of NormalOr along the transverse parameter toward uv, which
-    // exists for a sphere's pole (one direction) and a cone's apex (one
-    // direction per u, the ruling's normal).
-    LimitNormal(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Direction3D;
-
     //==
     // # Inverse evaluation
 
