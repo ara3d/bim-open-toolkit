@@ -1,14 +1,16 @@
 ---
 id: TKT-325
 title: STEP mesher in Plato, step C: mesh the sphere, torus and cone (poles, surfaces closed in two directions, the cone's tip)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 81f546ae
+session: 81f546ae-4c48-48bb-aa18-dfabd21e83ad
 fence: [sandbox/step-brep-mesh/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-324, TKT-315]
 confidence: high
 created: 2026-10-18
+claimed: 2026-10-18
 ---
 
 ## Acceptance criteria

@@ -1,0 +1,144 @@
+//==
+// # Pole segments (step C, staged)
+//
+// The body of layer 05's ExpandedPoles (uv-regions.library.plato), staged for TKT-325. On a
+// surface that collapses an iso-line to one point (a sphere's pole, a cone's apex), a loop that
+// reaches the line arrives along one value of the line's free parameter and leaves along another.
+// In parameter space the point is the segment of the line between the two (polar coordinates),
+// and every point of that segment lifts to the one 3D point. A vertex loop on the line, a face
+// bounded there by a single vertex, becomes the whole segment, one period long.
+//
+// Sections, in order:
+//  - The body
+//  - A point on a collapsed line
+//  - A vertex loop on a collapsed line
+
+library PolesSegments
+{
+    //==
+    // # The body
+
+    // Body of ExpandedPoles(m, f, loops, c), from its contract in face-meshing.spec.plato: each
+    // loop of one point on a collapsed line becomes the whole pole segment (WholePoleSegment);
+    // in every other loop each point on a collapsed line becomes the segment from the free
+    // parameter where the loop arrives to the one where it leaves (WithPolePointsExpanded). Every
+    // point of a segment keeps the source of the point it replaces (the pole vertex's, in every
+    // witness), so Lift identifies them and the triangles with two corners on one segment are
+    // dropped. One loop per loop, in order.
+    ExpandedPolesBody(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
+        => loops.Count.MapRange(k =>
+            (loops[k].Points.Count == 1 ? m.IsOnCollapsedLine(f, loops[k].Points[0]) : false)
+                ? m.WholePoleSegment(f, loops, k, c)
+                : m.WithPolePointsExpanded(f, loops[k], c));
+
+    // The parameter that is free along the collapsed line through uv: u on a line of constant v
+    // (a sphere's pole, a cone's apex), v on a line of constant u.
+    FreeParameterAt(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate): SurfaceParameter
+        => m.IsOnCollapsedLineAlong(f, uv, SurfaceParameter.ParameterV) ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV;
+
+    // The other parameter: the one a collapsed line holds constant.
+    OtherParameter(which: SurfaceParameter): SurfaceParameter
+        => which.Along(SurfaceParameter.ParameterV, SurfaceParameter.ParameterU);
+
+    // The largest step, in the free parameter, between consecutive points of a pole segment: the
+    // surface angular bound, so that the fan of elements at a pole turns no faster than any
+    // element elsewhere (a pole's free parameter is an angle on every analytic surface).
+    PoleStep(c: FaceMeshingCriteria): Number
+        => c.SurfaceAngular.Radians;
+
+    // The number of equal steps a pole segment of the given extent in its free parameter takes:
+    // the least count whose step is at most PoleStep, at least one.
+    PoleStepCount(extent: Number, c: FaceMeshingCriteria): Integer
+        => (extent.Abs / c.PoleStep).Ceiling.ToInteger.Max(1);
+
+    // The samples from `from` to `to` along parameter `which`, both included, the other parameter
+    // held at uv's, in PoleStepCount equal steps, every one with source s.
+    PoleSegmentSamples(uv: UvCoordinate, which: SurfaceParameter, from: Number, to: Number, s: UvPointSource, c: FaceMeshingCriteria): Array<UvSample>
+    {
+        var n = (to - from).PoleStepCount(c);
+        return (n + 1).MapRange(k => UvSample(uv.WithCoordinate(which, from + (to - from) * k.ToNumber / n.ToNumber), s));
+    }
+
+    //==
+    // # A point on a collapsed line
+
+    // Loop l with every point on a collapsed line of face f's surface replaced by its pole segment
+    // (ExpandedPoint); every other point kept.
+    WithPolePointsExpanded(m: BrepModel, f: BrepFaceIndex, l: UvLoop, c: FaceMeshingCriteria): UvLoop
+        => l.Points.Count.Range.FlatMap(i => m.ExpandedPoint(f, l, i, c)).ToUvLoop;
+
+    // Point i of loop l as samples: the point itself, unless it lies on a collapsed line and its
+    // neighbours reach the line along different values of the free parameter; then the pole
+    // segment from the predecessor's value (where the loop arrives) to the successor's (where it
+    // leaves), at the point's own value of the fixed parameter. Unwrap has placed the neighbours,
+    // so the two values may be a period apart (a seam's two copies meeting at a pole).
+    ExpandedPoint(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer, c: FaceMeshingCriteria): Array<UvSample>
+    {
+        var n = l.Points.Count;
+        var uv = l.Points[i];
+        var which = m.FreeParameterAt(f, uv);
+        var arriving = l.Points[(i + n - 1) % n].Coordinate(which);
+        var leaving = l.Points[(i + 1) % n].Coordinate(which);
+        var expands = (n >= 2 ? m.IsOnCollapsedLine(f, uv) : false)
+            ? (leaving - arriving).Abs > m.PointToleranceAlong(f, uv, which)
+            : false;
+        return expands
+            ? uv.PoleSegmentSamples(which, arriving, leaving, l.Sources[i], c)
+            : [UvSample(uv, l.Sources[i])];
+    }
+
+    // The parameter tolerance at uv of face f in direction `which`.
+    PointToleranceAlong(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate, which: SurfaceParameter): Number
+        => which.Along(m.PointTolerance(f, uv).U.Value, m.PointTolerance(f, uv).V.Value);
+
+    //==
+    // # A vertex loop on a collapsed line
+
+    // Loop k, one point on a collapsed line, as the whole pole segment: one period of the free
+    // parameter (the free direction's range when it has no period), from the point's own value,
+    // traversed so that the face lies to its left in the face's chart (PoleTraversal). Like any
+    // loop that winds, it leaves its end, one period from its start, to the closing step: its
+    // last point is one step short of it. So the loop winds once and the seam cut joins it to
+    // the face's other winding loop (a sphere bounded only by its two pole vertices).
+    WholePoleSegment(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, k: Integer, c: FaceMeshingCriteria): UvLoop
+    {
+        var uv = loops[k].Points[0];
+        var which = m.FreeParameterAt(f, uv);
+        var d = m.SurfaceDomainOf(f).DomainAlong(which);
+        var period = d.Periodicity.PeriodOr(0.0);
+        var extent = period > 0.0 ? period : d.Range.End - d.Range.Start;
+        var from = period > 0.0 ? uv.Coordinate(which) : d.Range.Start;
+        var to = from + extent * m.PoleTraversal(f, loops, k, which);
+        var samples = uv.PoleSegmentSamples(which, from, to, loops[k].Sources[0], c);
+        return samples.Take(samples.Count - 1).ToUvLoop;
+    }
+
+    // +1 or -1: the direction along the free parameter `which` in which the pole segment of loop
+    // k runs with the face on its left in the chart (u negated when the chart is mirrored). The
+    // face lies on the side of the collapsed line where the face's other loops are, or, with no
+    // other loop, toward the middle of the domain (FaceSideAcross). Moving along +u in the chart,
+    // the left is +v; moving along +v, the left is -u.
+    PoleTraversal(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, k: Integer, which: SurfaceParameter): Number
+    {
+        var fixedDir = which.OtherParameter;
+        var fixedValue = loops[k].Points[0].Coordinate(fixedDir);
+        var faceAbove = m.FaceSideAcross(f, loops, k, fixedDir) > fixedValue;
+        var mirror = m.IsChartMirrored(f) ? -1.0 : 1.0;
+        return which.Along(
+            (faceAbove ? 1.0 : -1.0) * mirror,
+            (faceAbove ? 1.0 : -1.0) * mirror * (-1.0));
+    }
+
+    // A value of the fixed parameter `fixedDir` on the face's side of loop k's collapsed line: the
+    // mean of that parameter over the other loops' points, or with none the middle of the
+    // domain's range in that direction (0 when unbounded).
+    FaceSideAcross(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, k: Integer, fixedDir: SurfaceParameter): Number
+    {
+        var others = loops.Count.Range.FlatMap(j => j == k ? loops.Take(0) : [loops[j]]).FlatMap(l => l.Points);
+        var d = m.SurfaceDomainOf(f).DomainAlong(fixedDir);
+        var middle = (d.Range.Start + d.Range.End) * 0.5;
+        return others.Count > 0
+            ? others.Map(uv => uv.Coordinate(fixedDir)).SumOf / others.Count.ToNumber
+            : (middle.IsFinite ? middle : 0.0);
+    }
+}

@@ -1,0 +1,85 @@
+//==
+// # Whole-period regions (step C, staged)
+//
+// The body of layer 05's CutWholePeriods (uv-regions.library.plato), staged for TKT-325: the
+// synthetic cuts for the arrangements of loops that step B's WithSeamCut does not join. A face
+// bounded by two loops that wind opposite ways is a band, which WithSeamCut joins; a face whose
+// region wraps a whole period in both directions (a whole torus) needs two cuts, one per
+// direction, crossing at one point.
+//
+// Sections, in order:
+//  - The body
+//  - The whole torus at a vertex
+
+library PolesWholePeriods
+{
+    //==
+    // # The body
+
+    // Body of CutWholePeriods(m, f, loops, c), from its contract in face-meshing.spec.plato, for
+    // the one arrangement version 1 cuts: a single vertex loop on a surface periodic (or closed)
+    // in both directions, off every collapsed line, which bounds the whole surface pinned at that
+    // vertex (STEP requires a face to have a bound, so a whole torus is bounded by a vertex):
+    // the rectangle of one period in each direction with its corners at the vertex
+    // (WholePeriodRectangle). Every other arrangement is returned unchanged; the region then has
+    // a loop that winds, which RegionOf's laws report (finding in TRACK.md: AddMissingSeamsAndPoles
+    // has no outcome through which to diagnose it).
+    CutWholePeriodsBody(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
+        => m.IsWholePeriodAtVertex(f, loops) ? [m.WholePeriodRectangle(f, loops[0], c)] : loops;
+
+    // Replacement for layer 05's WithSeamCut: the same, except that a whole-period region pinned at
+    // a vertex, whose one loop does not wind, also gets its cuts. WithSeamCut returns loops that do
+    // not wind unchanged, so it never reaches CutWholePeriods for a whole torus.
+    WithSeamCutAll(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, c: FaceMeshingCriteria): Array<UvLoop>
+    {
+        var winding = m.WindingLoops(f, loops);
+        var others = loops.Count.Range.FlatMap(k => winding.Any(w => w == k) ? loops.Take(0) : [loops[k]]);
+        return winding.Count == 0
+            ? (m.IsWholePeriodAtVertex(f, loops) ? m.CutWholePeriodsBody(f, loops, c) : loops)
+            : (m.IsBandPair(f, loops, winding)
+                ? [m.JoinedByCut(f, loops[winding[0]], loops[winding[1]], c)].Concatenate(others)
+                : m.CutWholePeriodsBody(f, loops, c));
+    }
+
+    // Whether the loops are one vertex loop on a surface with a seam in both directions, off the
+    // collapsed lines.
+    IsWholePeriodAtVertex(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>): Boolean
+        => (loops.Count == 1 && m.SurfaceDomainOf(f).U.HasSeam && m.SurfaceDomainOf(f).V.HasSeam)
+            ? (loops[0].Points.Count == 1 ? m.IsOnCollapsedLine(f, loops[0].Points[0]).Not : false)
+            : false;
+
+    //==
+    // # The whole torus at a vertex
+
+    // The rectangle of one period in each direction whose four corners are copies of the vertex
+    // loop's point p, counter-clockwise in the face's chart: from p along u to p + (pu, 0), along
+    // v to p + (pu, pv), back along u to p + (0, pv), back along v to p. The two copies of the
+    // cut along u (the sides at v and v + pv) carry SeamCut(VMin, k) and SeamCut(VMax, k), the two
+    // copies of the cut along v carry SeamCut(UMin, k) and SeamCut(UMax, k), each pair traversed
+    // in opposite orders; each cut is sampled once under the criteria (layer 05's
+    // CutSegmentCount). All four corners keep the vertex's source, so Lift makes them one vertex.
+    WholePeriodRectangle(m: BrepModel, f: BrepFaceIndex, l: UvLoop, c: FaceMeshingCriteria): UvLoop
+    {
+        var p = l.Points[0];
+        var s = l.Sources[0];
+        var d = m.SurfaceDomainOf(f);
+        var pu = d.U.Periodicity.PeriodOr(0.0);
+        var pv = d.V.Periodicity.PeriodOr(0.0);
+        var a = p;
+        var b = UvCoordinate(p.U + pu, p.V);
+        var e = UvCoordinate(p.U + pu, p.V + pv);
+        var g = UvCoordinate(p.U, p.V + pv);
+        var nu = m.CutSegmentCount(f, a, b, c);
+        var nv = m.CutSegmentCount(f, b, e, c);
+        var ccw = UvLoop(
+            [a].Concatenate((nu - 1).MapRange(k => a.CutPoint(b, nu, k + 1)))
+                .Concatenate([b]).Concatenate((nv - 1).MapRange(k => b.CutPoint(e, nv, k + 1)))
+                .Concatenate([e]).Concatenate((nu - 1).MapRange(k => a.CutPoint(b, nu, nu - 1 - k).ShiftedBy(UvCoordinate(0.0, pv))))
+                .Concatenate([g]).Concatenate((nv - 1).MapRange(k => a.CutPoint(g, nv, nv - 1 - k))),
+            [s].Concatenate((nu - 1).MapRange(k => UvPointSource.SeamCut(DomainSide.VMin, k + 1)))
+                .Concatenate([s]).Concatenate((nv - 1).MapRange(k => UvPointSource.SeamCut(DomainSide.UMax, k + 1)))
+                .Concatenate([s]).Concatenate((nu - 1).MapRange(k => UvPointSource.SeamCut(DomainSide.VMax, nu - 1 - k)))
+                .Concatenate([s]).Concatenate((nv - 1).MapRange(k => UvPointSource.SeamCut(DomainSide.UMin, nv - 1 - k))));
+        return m.IsChartMirrored(f) ? ccw.ReversedLoop : ccw;
+    }
+}

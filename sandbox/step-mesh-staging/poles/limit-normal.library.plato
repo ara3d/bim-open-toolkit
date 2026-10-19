@@ -1,0 +1,72 @@
+//==
+// # The limit normal (step C, staged)
+//
+// The body of layer 01's LimitNormal (geometry-surfaces.library.plato), staged for TKT-325. At a
+// regular point the surface normal; on a collapsed line (a sphere's pole, a cone's apex) the limit
+// of the normal along the transverse parameter, which a face's mesh stores at every point of a
+// pole segment (layer 05's Lift).
+//
+// Sections, in order:
+//  - The body
+//  - Collapsed points
+
+library PolesLimitNormal
+{
+    //==
+    // # The body
+
+    // Body of LimitNormal(g, s, uv), from its contract and deferred note: NormalOr where the
+    // area element is positive; on a collapsed line, the surface's limit there (CollapsedNormal).
+    LimitNormalBody(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Direction3D
+        => g.AreaElement(s, uv) > 0.0
+            ? g.NormalOr(s, uv, g.SurfaceAt(s).CollapsedNormal(g, uv))
+            : g.SurfaceAt(s).CollapsedNormal(g, uv);
+
+    //==
+    // # Collapsed points
+
+    // The normal's limit at a point where the partials do not span a plane. A sphere's closed-form
+    // normal is continuous at its poles, so it is its own limit. A cone's normal is constant along
+    // each ruling of one nappe; at the apex the limit for parameter u is the ruling's normal on the
+    // nappe that holds the reference circle (radius + v tan(semi-angle) > 0), where STEP places a
+    // cone's faces. Every other surface: the normal a small step into the domain along the
+    // transverse parameter (NudgedNormal), an approximation good to the step times the curvature.
+    CollapsedNormal(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Direction3D
+        => match (surface)
+        {
+            Plane(placement) => surface.NudgedNormal(g, uv);
+            Cylinder(placement, radius) => surface.NudgedNormal(g, uv);
+            Cone(placement, radius, semiAngle) => surface.NormalOr(g, UvCoordinate(uv.U, (1.0 - radius) / semiAngle.Tan), Direction3D(placement.ZAxis.Vector));
+            Sphere(placement, radius) => surface.NormalOr(g, uv, Direction3D(placement.ZAxis.Vector));
+            Torus(placement, major, minor, part) => surface.NudgedNormal(g, uv);
+            Revolution(profile, axis) => surface.NudgedNormal(g, uv);
+            LinearExtrusion(profile, extrusion) => surface.NudgedNormal(g, uv);
+            BSpline(data) => surface.NudgedNormal(g, uv);
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => surface.NudgedNormal(g, uv);
+            Offset(basis, distance) => surface.NudgedNormal(g, uv);
+        };
+
+    // The normal at uv moved a thousandth of a unit of parameter toward the middle of each bounded
+    // direction (toward 0 in an unbounded one), first in v, then in u when that is not enough: the
+    // collapsed line's transverse parameter is the one whose move gives a positive area element.
+    // The fallback, the frame's z axis, is reached only where neither move leaves the collapse.
+    NudgedNormal(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate): Direction3D
+    {
+        var d = surface.Domain(g);
+        var alongV = UvCoordinate(uv.U, uv.V + d.V.TowardMiddle(uv.V) * 0.001);
+        var alongU = UvCoordinate(uv.U + d.U.TowardMiddle(uv.U) * 0.001, uv.V);
+        var fallback = Direction3D(Vector3D.UnitZ);
+        return surface.AreaElement(g, alongV) > 0.0
+            ? surface.NormalOr(g, alongV, fallback)
+            : surface.NormalOr(g, alongU, fallback);
+    }
+
+    // +1 or -1: the direction from t toward the middle of the domain's range when it is bounded,
+    // toward 0 when it is not; +1 at the middle itself.
+    TowardMiddle(d: CurveDomain, t: Number): Number
+    {
+        var middle = (d.Range.Start + d.Range.End) * 0.5;
+        var target = middle.IsFinite ? middle : 0.0;
+        return t > target ? -1.0 : 1.0;
+    }
+}

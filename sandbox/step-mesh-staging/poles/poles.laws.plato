@@ -1,0 +1,217 @@
+//==
+// # Step C laws (staged)
+//
+// Laws for TKT-325 over layer 07's sphere, torus and cone witnesses and one new literal, the whole
+// torus pinned at a vertex. Each law meshes one model at the witness options (chordal 0.01, 15
+// degrees) through the test mirrors (poles-mirrors.library.plato; the library's MeshFace and
+// RegionOf after merge), so one case stays inside the runner's per-law budget.
+//
+// Sections, in order:
+//  - Witnesses and options
+//  - The limit normal
+//  - Regions
+//  - Meshes
+
+library PolesLaws
+{
+    //==
+    // # Witnesses and options
+
+    // The options the laws mesh with: layer 08's DefaultMeshingOptions at a chordal bound of a
+    // hundredth of a unit, triangles, or quads when asked.
+    PolesOptions(quads: Boolean): MeshingOptions
+        => PolesOptionsAt(0.01, quads);
+
+    // The same at another chordal bound. The whole-model laws on the sphere and the torus use
+    // 0.05: at 0.01 the torus of radii 2 and 0.5 meshes to 6,784 triangles and one law case takes
+    // about 450 s in the interpreter, far past the runner's 60 s budget.
+    PolesOptionsAt(chordal: Number, quads: Boolean): MeshingOptions
+    {
+        var o = DefaultMeshingOptions(chordal);
+        return MeshingOptions(
+            FaceMeshingCriteria(o.Face.Discretization, o.Face.SurfaceChordal, o.Face.SurfaceAngular, quads),
+            o.Level, o.MaxRefinementRounds, o.Decode, o.Quality);
+    }
+
+    // A solid ring torus of major radius R and minor radius r < R with no edge: one face bounded by
+    // a single vertex loop at P = (R + r, 0, 0). STEP needs a bound on every face, so this is the
+    // whole torus as a file can state it. V = 1, E = 0, F = 1, L = 1, chi = 0, genus 1, area
+    // 4 pi^2 R r, volume 2 pi^2 R r^2. Moves to layer 07 at merge as Witness_TorusAtVertex.
+    PolesTorusAtVertex(major: Number, minor: Number): BrepModel
+        => BrepModel(
+            GeometrySet([], [], [], [BrepSurface.Torus(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), major, minor, TorusPart.Full)], []),
+            [BrepVertex(Point3D(major + minor, 0.0, 0.0))],
+            [],
+            [BrepLoop.VertexLoop(BrepVertexIndex(0))],
+            [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, false)])],
+            [ClosedShellOf([0])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    // The face 0 of model m meshed under the triangle options, its edges discretized canonically.
+    FaceMeshOf(m: BrepModel, f: Integer, quads: Boolean): FaceMeshOutcome
+        => m.MeshFacePoles(BrepFaceIndex(f), m.DiscretizeAll(PolesOptions(quads).Face.Discretization, SegmentFloors.NoFloors), PolesOptions(quads).Face);
+
+    // The region of face f of model m under the triangle options.
+    RegionOfFace(m: BrepModel, f: Integer): UvRegion
+        => m.RegionOfPoles(BrepFaceIndex(f), m.DiscretizeAll(PolesOptions(false).Face.Discretization, SegmentFloors.NoFloors), PolesOptions(false).Face);
+
+    //==
+    // # The limit normal
+
+    // At the poles of the unit sphere the limit normal is the axis, +z at the north pole and -z
+    // at the south, whatever the free parameter, to the rounding of a unit vector.
+    Law_Poles_LimitNormalAtSpherePoles(_: BrepModel): Boolean
+    {
+        var g = BrepModel.Witness_Sphere.Geometry;
+        return 8.Range.All(k =>
+            g.LimitNormalBody(SurfaceIndex(0), UvCoordinate(k.ToNumber * 0.8, Number.HalfPi)).Vector.Z >= 1.0 - 4.0 * ResolutionAt(1.0)
+            && g.LimitNormalBody(SurfaceIndex(0), UvCoordinate(k.ToNumber * 0.8, 0.0 - Number.HalfPi)).Vector.Z <= 4.0 * ResolutionAt(1.0) - 1.0);
+    }
+
+    // At the apex of the unit cone the limit normal for parameter u is the normal of the ruling
+    // at u, which is constant along it: the normal halfway up the lateral face.
+    Law_Poles_LimitNormalAtConeApexIsRulingNormal(_: BrepModel): Boolean
+    {
+        var g = BrepModel.Witness_Cone.Geometry;
+        return 8.Range.All(k =>
+            g.LimitNormalBody(SurfaceIndex(0), UvCoordinate(k.ToNumber * 0.8, -1.0))
+                .AngleBetweenDirections(g.NormalOr(SurfaceIndex(0), UvCoordinate(k.ToNumber * 0.8, -0.5), Direction3D(Vector3D.UnitZ)))
+                .Radians <= 1.0e-5);
+    }
+
+    // Off the collapsed lines the limit normal is NormalOr, at every witness surface sampled on a
+    // grid of parameters inside the face.
+    Law_Poles_LimitNormalIsNormalWhereRegular(_: BrepModel): Boolean
+        => [BrepModel.Witness_Sphere, BrepModel.Witness_Torus, BrepModel.Witness_Cone, BrepModel.Witness_Cylinder].All(m =>
+            25.Range.All(k =>
+                m.Geometry.LimitNormalBody(SurfaceIndex(0), UvCoordinate((k % 5).ToNumber * 1.2 + 0.1, (k / 5).ToNumber * 0.2 - 0.45))
+                    == m.Geometry.NormalOr(SurfaceIndex(0), UvCoordinate((k % 5).ToNumber * 1.2 + 0.1, (k / 5).ToNumber * 0.2 - 0.45), Direction3D(Vector3D.UnitZ))));
+
+    //==
+    // # Regions
+
+    // The region of face 0 closes in the plane, winds positive, and is simple, and every pole
+    // point lies on a collapsed line: the contract of AddMissingSeamsAndPoles and RegionOf.
+    RegionIsWellFormed(m: BrepModel): Boolean
+    {
+        var f = BrepFaceIndex(0);
+        var r = m.RegionOfFace(0);
+        return r.NumberOfLoops.Range.All(k => m.Law_RegionLoopClosesInPlane(f, r, k))
+            && m.UvRegionWindingPositive(f, r)
+            && r.Outer.Points.Count.Range.All(i => Law_SeamCutCopiesRunOpposite(r, i))
+            && r.IsSimpleRegion(m.RegionTolerance(f, m.ChartOf(f, r)))
+            && r.Outer.Sources.Count.Range.All(i => r.Outer.Sources[i].IsPolePoint ? m.IsOnCollapsedLine(f, r.Outer.Points[i]) : true);
+    }
+
+    // The seamed sphere's region: the seam's two copies and the two pole segments.
+    Law_Poles_SphereRegionIsWellFormed(_: BrepModel): Boolean
+        => BrepModel.Witness_Sphere.RegionIsWellFormed;
+
+    // The sphere bounded by two pole vertex loops: two whole pole segments joined by a cut.
+    Law_Poles_SphereByPoleLoopsRegionIsWellFormed(_: BrepModel): Boolean
+        => BrepModel.Witness_SphereByPoleLoops(1.0).RegionIsWellFormed;
+
+    // The torus with two seams: the square of one period each way.
+    Law_Poles_TorusRegionIsWellFormed(_: BrepModel): Boolean
+        => BrepModel.Witness_Torus.RegionIsWellFormed;
+
+    // The cone: the base circle, the seam's two copies, and the apex segment.
+    Law_Poles_ConeRegionIsWellFormed(_: BrepModel): Boolean
+        => BrepModel.Witness_Cone.RegionIsWellFormed;
+
+    // The whole torus at a vertex: the rectangle of two cuts through the vertex.
+    Law_Poles_TorusAtVertexRegionIsWellFormed(_: BrepModel): Boolean
+        => PolesTorusAtVertex(2.0, 0.5).RegionIsWellFormed;
+
+    //==
+    // # Meshes
+
+    // The names of the face checks of layer 07's ValidateFaceMesh at Geometric that fail on face f
+    // of model m.
+    FaceCheckFailures(m: BrepModel, f: Integer, chordal: Number, quads: Boolean): Array<String>
+    {
+        var o = PolesOptionsAt(chordal, quads);
+        var d = m.DiscretizeAll(o.Face.Discretization, SegmentFloors.NoFloors);
+        var fm = m.MeshFacePoles(BrepFaceIndex(f), d, o.Face).Mesh;
+        return m.ValidateFaceMesh(d, fm, o.Face, ConformanceLevel.Geometric).Checks.FlatMap(c => c.Holds ? [c.Law].Take(0) : [c.Law]);
+    }
+
+    // Model m meshed whole under the chordal bound is closed, consistently oriented, has Euler
+    // characteristic chi, and encloses its exact volume within the tube of the criteria (layer
+    // 07's SolidVolumeWithinTube).
+    MeshIsSound(m: BrepModel, chordal: Number, chi: Integer): Boolean
+    {
+        var mesh = m.ModelMeshPoles(PolesOptionsAt(chordal, false));
+        return mesh.IsClosed
+            && mesh.IsConsistentlyOriented
+            && mesh.EulerCharacteristic == chi
+            && m.SolidVolumeWithinTube(mesh, PolesOptionsAt(chordal, false).Face, BodyIndex(0));
+    }
+
+    // Gauss-Bonnet on model m meshed whole under the chordal bound: the angle defects of its one
+    // shell sum to 2 pi times its Euler characteristic (layer 07's AngleDefectMatchesBrepEuler).
+    // Under gpu32 this fails on every curved witness, step B's cylinder included, because layer
+    // 07's Oracle_AngleDefectSum adds thousands of corner angles in 32-bit floats against a
+    // total near 2 pi times the vertex count (TRACK.md, findings); under cpu64 the gaps are below
+    // 1e-10.
+    GaussBonnetHolds(m: BrepModel, chordal: Number): Boolean
+        => m.AngleDefectMatchesBrepEuler(m.ModelMeshPoles(PolesOptionsAt(chordal, false)), ShellIndex(0));
+
+    Law_Poles_SphereMeshIsSound(_: BrepModel): Boolean
+        => BrepModel.Witness_Sphere.MeshIsSound(0.05, 2);
+
+    Law_Poles_SphereByPoleLoopsMeshIsSound(_: BrepModel): Boolean
+        => BrepModel.Witness_SphereByPoleLoops(1.0).MeshIsSound(0.05, 2);
+
+    // The torus has Euler characteristic 0, and its volume oracle holds over a boundary that
+    // wraps in v.
+    Law_Poles_TorusMeshIsSound(_: BrepModel): Boolean
+        => BrepModel.Witness_Torus.MeshIsSound(0.05, 0);
+
+    Law_Poles_ConeMeshIsSound(_: BrepModel): Boolean
+        => BrepModel.Witness_Cone.MeshIsSound(0.01, 2);
+
+    Law_Poles_TorusAtVertexMeshIsSound(_: BrepModel): Boolean
+        => PolesTorusAtVertex(2.0, 0.5).MeshIsSound(0.05, 0);
+
+    // The negative witness meshes as the seamed sphere does: its redundant vertex loops are
+    // dropped before the region (layer 02's KeptBounds), so its mesh is closed, oriented, of
+    // Euler characteristic 2, and within the tube of the sphere's exact volume. The volume is
+    // judged against the seamed sphere's oracle: layer 07's Oracle_BodyVolume gives this model
+    // 8.378, twice the sphere's 4.189, counting its redundant loops (TRACK.md, findings).
+    Law_Poles_RedundantPoleLoopsMeshIsSound(_: BrepModel): Boolean
+    {
+        var o = PolesOptionsAt(0.05, false);
+        var mesh = BrepModel.Witness_SphereWithRedundantPoleLoops(1.0).ModelMeshPoles(o);
+        return mesh.IsClosed && mesh.IsConsistentlyOriented && mesh.EulerCharacteristic == 2
+            && BrepModel.Witness_Sphere.SolidVolumeWithinTube(mesh, o.Face, BodyIndex(0));
+    }
+
+    Law_Poles_SphereGaussBonnet(_: BrepModel): Boolean
+        => BrepModel.Witness_Sphere.GaussBonnetHolds(0.05);
+
+    Law_Poles_TorusGaussBonnet(_: BrepModel): Boolean
+        => BrepModel.Witness_Torus.GaussBonnetHolds(0.05);
+
+    Law_Poles_ConeGaussBonnet(_: BrepModel): Boolean
+        => BrepModel.Witness_Cone.GaussBonnetHolds(0.01);
+
+    // Every face check of layer 07 at Geometric holds on every face of each witness.
+    Law_Poles_SphereFaceChecksHold(_: BrepModel): Boolean
+        => BrepModel.Witness_Sphere.FaceCheckFailures(0, 0.01, false).Count == 0;
+
+    Law_Poles_SphereByPoleLoopsFaceChecksHold(_: BrepModel): Boolean
+        => BrepModel.Witness_SphereByPoleLoops(1.0).FaceCheckFailures(0, 0.01, false).Count == 0;
+
+    Law_Poles_TorusFaceChecksHold(_: BrepModel): Boolean
+        => BrepModel.Witness_Torus.FaceCheckFailures(0, 0.05, false).Count == 0;
+
+    Law_Poles_ConeFaceChecksHold(_: BrepModel): Boolean
+        => BrepModel.Witness_Cone.FaceCheckFailures(0, 0.01, false).Count == 0
+            && BrepModel.Witness_Cone.FaceCheckFailures(1, 0.01, false).Count == 0;
+
+    Law_Poles_TorusAtVertexFaceChecksHold(_: BrepModel): Boolean
+        => PolesTorusAtVertex(2.0, 0.5).FaceCheckFailures(0, 0.05, false).Count == 0;
+}
