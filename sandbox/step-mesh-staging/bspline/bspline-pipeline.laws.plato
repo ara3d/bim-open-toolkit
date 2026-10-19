@@ -1,0 +1,185 @@
+//==
+// # BsplinePipelineLaws
+//
+// Track F (TKT-327): the ticket's meshing criteria and layer 8's general
+// laws on the two B-spline models, both meshed by MeshModel under layer 8's
+// witness options (chordal 1/100, 15 degrees, validation at Oracle).
+// Layer 7's Witness_BSplinePatchSolid is a closed solid whose top is a
+// Bezier patch and whose edges are lines; Witness_BsplineCrescentSheet
+// (bspline-witnesses.library.plato) is a one-face sheet whose two
+// B-spline edges are close enough that their first polylines cross in the
+// parameter plane.
+//
+// Sections, in order:
+//  - Models and options
+//  - The bump patch solid
+//  - The crescent: self-intersecting loops
+//  - Layer 8's general laws on both
+
+library BsplinePipelineLaws
+{
+    //==
+    // # Models and options
+
+    // Model k of this file: 0 the bump patch solid with bump 1/2, 1 the
+    // crescent sheet.
+    BsplineMeshModel(k: Integer): BrepModel
+        => k.FixtureIndex(2) == 0 ? BrepModel.Witness_BSplinePatchSolid(0.5) : BrepModel.Witness_BsplineCrescentSheet;
+
+    // The witness options with the given round limit.
+    WithRounds(o: MeshingOptions, rounds: Integer): MeshingOptions
+        => MeshingOptions(o.Face, o.Level, rounds, o.Decode, o.Quality);
+
+    // True when some finding of the outcome has the code and is located at
+    // face f.
+    HasFinding(outcome: MeshOutcome, code: String, f: BrepFaceIndex): Boolean
+        => outcome.Report.Diagnostics.Any(d => d.Code == code && d.Where == Provenance.KernelFace(f));
+
+    //==
+    // # The bump patch solid
+
+    // Witness_BSplinePatchSolid(1/2) meshes Ok in round 0 to a closed,
+    // consistently oriented mesh of Euler characteristic 2, and the mesh of
+    // its top is within layer 7's area bound: inside the witness's bracket
+    // [1, 1 + 16 b^2 / 45] (Law_BSplineTopAreaInBracket) widened by layer
+    // 7's FaceAreaTolerance for the options' criteria.
+    Law_Bspline_BumpSolidMeshesClosedWithinAreaBound(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_BSplinePatchSolid(0.5);
+        var outcome = m.WitnessOutcome;
+        var mesh = outcome.Mesh;
+        var top = BrepFaceIndex(1);
+        var slack = m.FaceAreaTolerance(top, MeshingOptions.WitnessOptions.Face);
+        var area = mesh.MeshFaceArea(top);
+        return outcome.Ok && outcome.Rounds == 0
+            && mesh.IsClosed && mesh.IsConsistentlyOriented && mesh.EulerCharacteristic == 2
+            && area >= 1.0 - slack && area <= 1.0 + 16.0 * 0.25 / 45.0 + slack;
+    }
+
+    // Layer 8's witness laws on layer 7's witness 7, the bump patch solid:
+    // it meshes Ok, its mesh cross-checks clean against the B-rep, and it
+    // validates clean, all at the Oracle level.
+    Law_Bspline_BumpSolidPassesWitnessLaws(_: Integer): Boolean
+        => Law_WitnessMeshesOk(7) && Law_WitnessMeshCrossChecksClean(7) && Law_WitnessMeshValidatesClean(7);
+
+    // With no refinement round allowed, the bump patch solid meshes the
+    // same, Ok: none of its faces asks for refinement (its edges are lines
+    // and its top's square loop is simple), so a round limit of 0 has
+    // nothing to stop. The ticket's "MaxRefinementRounds 0 variant reports
+    // PIPELINE-FACE-UNRESOLVED" holds of the crescent instead (below).
+    Law_Bspline_BumpSolidNeedsNoRound(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_BSplinePatchSolid(0.5);
+        var outcome = m.MeshModel(MeshingOptions.WitnessOptions.WithRounds(0));
+        return outcome.Ok && outcome.Mesh.Triangles.Count == m.WitnessMesh.Triangles.Count;
+    }
+
+    //==
+    // # The crescent: self-intersecting loops
+
+    // The crescent's first polylines cross in the parameter plane, so face
+    // meshing asks, for each of its two edges, a LoopSelfIntersects
+    // refinement with a chordal bound below the edge's current largest
+    // sagitta.
+    Law_Bspline_CrossingLoopAsksLoopSelfIntersects(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_BsplineCrescentSheet;
+        var s = m.InitialState(MeshingOptions.WitnessOptions, m.AllFaces);
+        var requests = s.Outcomes[BrepFaceIndex(0)].Requests;
+        return requests.Count == 2
+            && requests.All(r => r.Reason.ReasonName == "LoopSelfIntersects"
+                && r.Chordal < m.LargestSagitta(s.Discretizations.ByEdge[r.Edge]))
+            && requests.Any(r => r.Edge == BrepEdgeIndex(0)) && requests.Any(r => r.Edge == BrepEdgeIndex(1));
+    }
+
+    // With no refinement round allowed, the crescent's face stays
+    // unresolved: the run is not Ok and reports PIPELINE-FACE-UNRESOLVED
+    // at the face.
+    Law_Bspline_NoRoundsLeaveCrossingFaceUnresolved(_: Integer): Boolean
+    {
+        var outcome = BrepModel.Witness_BsplineCrescentSheet.MeshModel(MeshingOptions.WitnessOptions.WithRounds(0));
+        return !outcome.Ok && outcome.HasFinding("PIPELINE-FACE-UNRESOLVED", BrepFaceIndex(0));
+    }
+
+    // Under the witness options (5 rounds) one round resolves the crescent:
+    // the run is Ok, and the face's mesh area is the crescent's, 0.4
+    // (4/3 (0.004) + 0.3 (2/5 - 2/7)) = 0.0158476..., within layer 7's
+    // FaceAreaTolerance.
+    Law_Bspline_OneRoundResolvesCrossingFace(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_BsplineCrescentSheet;
+        var outcome = m.WitnessOutcome;
+        var exact = 0.4 * (4.0 / 3.0 * 0.004 + 0.3 * (2.0 / 5.0 - 2.0 / 7.0));
+        return outcome.Ok && outcome.Rounds == 1
+            && (outcome.Mesh.MeshFaceArea(BrepFaceIndex(0)) - exact).Abs <= m.FaceAreaTolerance(BrepFaceIndex(0), MeshingOptions.WitnessOptions.Face);
+    }
+
+    //==
+    // # Layer 8's general laws on both
+    //
+    // Steps A to C's laws of pipeline.laws.plato on model k (0 the bump
+    // solid, 1 the crescent), under the witness options; the indexed ones
+    // reduce their index into range themselves or are vacuous out of it.
+
+    // Determinism, Ok exactly when clean, the round limit, a terminal loop,
+    // closure and orientation when every shell is closed, and shell
+    // reversal negating volume.
+    Law_Bspline_ModelLaws(k: Integer): Boolean
+    {
+        var m = k.BsplineMeshModel;
+        var o = MeshingOptions.WitnessOptions;
+        return Law_MeshModelIsDeterministic(m, o) && Law_OkExactlyWhenClean(m, o) && Law_RoundsWithinLimit(m, o)
+            && Law_LoopEndsTerminal(m, o) && Law_ClosedWhenEveryShellClosedAndNoFaceEmpty(m, o)
+            && Law_OrientedWhenEveryShellClosedAndNoFaceEmpty(m, o) && Law_ShellReversalNegatesVolume(m, o);
+    }
+
+    // Every diagnostic is located and every measure is non-negative, at
+    // finding j.
+    Law_Bspline_DiagnosticLaws(k: Integer, j: Integer): Boolean
+        => Law_EveryDiagnosticIsLocated(k.BsplineMeshModel, MeshingOptions.WitnessOptions, j)
+            && Law_MeasureIsNeverNegative(k.BsplineMeshModel, MeshingOptions.WitnessOptions, j);
+
+    // The per-edge laws at edge e: reversing it preserves the mesh, the
+    // final discretizations meet their floors, and a discretization is
+    // empty exactly when the edge is unusable, at round r.
+    Law_Bspline_EdgeLaws(k: Integer, e: Integer, r: Integer): Boolean
+    {
+        var m = k.BsplineMeshModel;
+        var o = MeshingOptions.WitnessOptions;
+        var edge = BrepEdgeIndex(e.FixtureIndex(m.Edges.Count));
+        return Law_EdgeReversalPreservesMesh(m, o, edge) && Law_FinalDiscretizationsMeetFloors(m, o, edge)
+            && Law_EmptyDiscretizationExactlyWhenEdgeUnusable(m, o, r.FixtureIndex(3), edge);
+    }
+
+    // The per-face and per-round laws at face f and round r: outcomes are
+    // current, an empty face is diagnosed, a failed face leaves others
+    // unchanged, a step decreases the loop's measure, refinement never
+    // coarsens, and only faces of changed edges are remeshed.
+    Law_Bspline_RoundLaws(k: Integer, f: Integer, r: Integer, j: Integer): Boolean
+    {
+        var m = k.BsplineMeshModel;
+        var o = MeshingOptions.WitnessOptions;
+        var face = BrepFaceIndex(f.FixtureIndex(m.Faces.Count));
+        var round = r.FixtureIndex(3);
+        var edge = BrepEdgeIndex(j.FixtureIndex(m.Edges.Count));
+        return Law_OutcomesAreCurrent(m, o, round, face) && Law_EmptyFaceIsDiagnosed(m, o, face)
+            && Law_FailedFaceLeavesOthersUnchanged(m, o, face, BrepFaceIndex(j.FixtureIndex(m.Faces.Count)))
+            && Law_StepDecreasesMeasure(m, o, round) && Law_RefinementNeverCoarsens(m, o, round, edge, j)
+            && Law_OnlyFacesOfChangedEdgesAreRemeshed(m, o, round, face);
+    }
+
+    // The state laws on the initial state, whose pending requests (the
+    // crescent's two) must each be in some outcome, and each outcome of its
+    // face.
+    Law_Bspline_StateLaws(k: Integer, q: Integer): Boolean
+    {
+        var m = k.BsplineMeshModel;
+        var s = m.InitialState(MeshingOptions.WitnessOptions, m.AllFaces);
+        return Law_OutcomeIsOfItsFace(s, q) && Law_PendingRequestIsInSomeOutcome(s, q);
+    }
+
+    // A tighter chordal bound stays within the looser one's bound, at 0.01,
+    // 0.005 and 0.0025.
+    Law_Bspline_TighterChordalStaysWithinLooserBound(k: Integer, c: Integer): Boolean
+        => Law_TighterChordalStaysWithinLooserBound(k.BsplineMeshModel, MeshingOptions.WitnessOptions, 0.01 * (0.5).Pow(c.FixtureIndex(3).ToNumber));
+}

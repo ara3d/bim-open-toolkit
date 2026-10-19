@@ -184,4 +184,52 @@ library BsplineWitnesses
             [], [], [], [],
             Tolerances.Witness_Tolerances,
             LengthUnit.Metre);
+
+    // A sheet of one face on the flat patch x = u, y = v, z = 0 over
+    // [0, 1]^2: the thin crescent between two arcs from A = (0.1, 0.5, 0) to
+    // B = (0.9, 0.5, 0), both with x = 0.1 + 0.8 t, s = 2 t - 1. Edge 0, the
+    // upper arc, is the quadratic Bezier on (0.5, 0.7): y = 0.5 + 0.1 (1 -
+    // s^2), which the witness options cut into 4 segments (vertices every
+    // 0.2 in x) whose chords dip up to 0.1 / 16 = 0.00625 below it. Edge 1,
+    // the lower, is y = 0.5 + 0.1 (1 - s^2) - (1 - s^2)(0.004 + 0.3 s^4):
+    // at least 0.004 below the upper arc away from A and B, so twice gpu32's
+    // region tolerance (0.0019, the witness tolerances' parameter floor),
+    // and meeting it at A and B at about 72 degrees. It is the degree 6
+    // Bezier of that polynomial with a knot of multiplicity 6 inserted at t
+    // = 0.375 (the same curve; the literals match it to 4e-16), so layer 4
+    // seeds it at x = 0.4, the middle of an upper segment, where the lower
+    // arc is 0.00485 below the upper and the upper chord 0.00625: the first
+    // polylines cross, face meshing asks for LoopSelfIntersects refinement,
+    // one round of it (chordal 0.00625 / 3) separates them, and with no
+    // round the face stays unresolved. The loop runs counter-clockwise
+    // about +z, the surface normal: the lower arc from A to B, then the
+    // upper back.
+    Witness_BsplineCrescentSheet(_: BrepModel): BrepModel
+        => BrepModel(
+            GeometrySet(
+                [BrepCurve.BSpline(BSplineCurveData(SplineBasis(2, KnotVector([0.0, 0.0, 0.0, 1.0, 1.0, 1.0])),
+                    [Point3D(0.1, 0.5, 0.0), Point3D(0.5, 0.7, 0.0), Point3D(0.9, 0.5, 0.0)], [1.0, 1.0, 1.0])),
+                 BrepCurve.BSpline(BSplineCurveData(
+                    SplineBasis(6, KnotVector([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.375, 0.375, 0.375, 0.375, 0.375, 0.375, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])),
+                    [Point3D(0.1, 0.5, 0.0), Point3D(0.15, 0.449, 0.0), Point3D(0.2, 0.49565, 0.0), Point3D(0.25, 0.5387, 0.0),
+                     Point3D(0.3, 0.56549375, 0.0), Point3D(0.35, 0.58077734375, 0.0), Point3D(0.4, 0.588901367187, 0.0),
+                     Point3D(0.483333333333, 0.60244140625, 0.0), Point3D(0.566666666667, 0.59609375, 0.0), Point3D(0.65, 0.59, 0.0),
+                     Point3D(0.733333333333, 0.60125, 0.0), Point3D(0.816666666667, 0.415, 0.0), Point3D(0.9, 0.5, 0.0)],
+                    13.MapRange(i => 1.0)))],
+                [], [],
+                [BrepSurface.BSpline(BSplineSurfaceData(
+                    SplineBasis(1, KnotVector([0.0, 0.0, 1.0, 1.0])),
+                    SplineBasis(1, KnotVector([0.0, 0.0, 1.0, 1.0])),
+                    MakeArray2D(2, 2, (c, r) => Point3D(c.ToNumber, r.ToNumber, 0.0)),
+                    MakeArray2D(2, 2, (c, r) => 1.0)))],
+                []),
+            [BrepVertex(Point3D(0.1, 0.5, 0.0)), BrepVertex(Point3D(0.9, 0.5, 0.0))],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0), true),
+             BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(1), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(1, true), CoedgeOf(0, false)])],
+            [SingleLoopFace(0, 0, true)],
+            [BrepShell([BrepFaceIndex(0)], false)],
+            [BrepBody.ShellSet([ShellIndex(0)])],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
 }

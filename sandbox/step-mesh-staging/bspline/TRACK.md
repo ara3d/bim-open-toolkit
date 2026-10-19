@@ -5,6 +5,8 @@ Status: working
 
 ## Done
 
+- pipeline laws (`bspline-pipeline.laws.plato`) and the crescent witness (`Witness_BsplineCrescentSheet` in `bspline-witnesses.library.plato`): the ticket's three criteria and layer 8's general laws of steps A to C on both models. On the wired copy: 12 obligation before, 12 pass after (73 s). Facts: `Witness_BSplinePatchSolid(1/2)` meshes Ok in round 0, closed, oriented, Euler 2, 162 triangles, top area 1.0410 (bracket [1, 1.0889]), volume 1.0531 (exact 19/18 = 1.0556), and layer 8's three witness laws pass on witness 7; the crescent asks two `LoopSelfIntersects` requests, reports `PIPELINE-FACE-UNRESOLVED` with 0 rounds, and meshes Ok in 1 round under the witness options.
+
 - layer 7 oracle bodies (`bspline-oracles.library.plato`), also not in the brief's list: validating the bump solid at the Oracle level reaches `AreaSegmentByQuadrature`, `SampledCurvatureBound` and `EdgeLengthByQuadrature` for any face or edge without a closed form. `BsplineOraclesLaws` (flat-patch potential, layer 7's area bracket at three bumps, the bump's principal curvatures, the quarter circle's length) on the wired copy: 4 obligation before, 4 pass after.
 - side bodies (`bspline-sides.library.plato`), not in the brief's list but on the meshing path of every B-spline face (layer 5's degenerate sides reach `BSplineSideCollapses`): boundary control rows by de Boor at the side's knot, then convex-hull tests. `BsplineSidesLaws` on the wired copy: 3 obligation before, 3 pass after.
 - sagitta body (`bspline-sagitta.library.plato`): branch and bound over Bezier pieces (blossom extraction), exact on polylines, a sampled estimate on other curves. `BsplineSagittaLaws` on the wired copy: 3 obligation before, 3 pass after; with a piece budget of 1 (the raw hull bound) 2 fail.
@@ -34,6 +36,11 @@ Each line gives a deferred library function the body on the right (the same para
 
 ## Findings
 
+- The ticket's "its MaxRefinementRounds 0 variant reports PIPELINE-FACE-UNRESOLVED" cannot hold of `Witness_BSplinePatchSolid`: its edges are lines and its top's loop is a simple square, so no face asks for refinement and 0 rounds mesh it the same, Ok (`Law_Bspline_BumpSolidNeedsNoRound`). The criterion is met on the crescent sheet instead, the model that also gives the `LoopSelfIntersects` request. The supervisor or owner may want to reword the criterion.
+- Under gpu32 the region tolerance of face meshing is 0.0019, the witness tolerances' parameter floor (computed for coordinates up to 1000). Two boundary segments closer than that collide, so any face with a near-tangent corner never resolves: the first crescent, whose arcs met at 0.1 degrees, stayed unresolved after 5 rounds as refinement made its corner segments shorter. Under cpu64 the floor is about 1e-11 and the same face would resolve. Witnesses that must resolve under both profiles need gaps above 0.0019 everywhere.
+- The bump solid's validation reports Warnings only: `Law_LengthToleranceResolvable` (gpu32, as above), four triangle-quality thresholds (track T's territory), and `CornerNormalIsFaceNormal`, not investigated here.
+- Ticket criterion 3 (every law of steps A to C on the B-spline witness through the interpreter and the C# backend under cpu64, agreeing law by law) is not met: the laws pass in the interpreter under gpu32 only; cpu64 waits on TKT-315, and the C# backend run on track E.
+
 - `SagittaByHullBound` is a certificate only on B-splines and polylines. Hyperbolas, parabolas, ellipse arcs of half a turn or more, offsets, composites, trimmed and surface curves get `EstimatedSagitta` (64 samples and golden-section search), which can miss a second hump between samples. A follow-up could map trimmed and composite segments onto their basis's certificate.
 
 - gpu32 cannot honour `Tolerances.Witness_Tolerances` (length 1e-6) away from the origin: one float32 step at magnitude 8 is 9.5e-7, and layer 0's own ResolutionAt(1) is 1.9e-6, so `IsResolvable` is false for the witness tolerances under gpu32 everywhere above magnitude 0.5. Recovery laws pass only because the fixtures stay within about 4 of the origin (the search fixture's parabola was shrunk to focal distance 0.02 for this). Expect recovery-law verdicts to change when cpu64 lands; under gpu32 they test luck as much as code.
@@ -54,7 +61,12 @@ Each line gives a deferred library function the body on the right (the same para
 | Sagitta body and mutation | 10 min | 3 CLI runs |
 | Side bodies (found on the meshing path) | 10 min | 3 CLI runs |
 | Layer 7 oracle bodies (found on the meshing path) | 20 min | 4 CLI runs |
+| Bump solid meshing, crescent witness (three designs) | 60 min | 9 CLI runs, 1 to 1.5 min each |
+| Pipeline laws | 10 min | 2 CLI runs (14 s, 73 s) |
 
 ## Lessons
+
+- The brief listed 8 bodies; meshing a B-spline face reached 5 more deferred functions (two side tests, three layer 7 oracles). Running the target witness end to end on a wired copy early would have shown the whole list on the first day; a brief could name "everything the witness's pipeline reaches" instead of a list.
+- A `--call` probe that returns the discretizations and colliding segment pairs found the gpu32 region tolerance in one run, after two witness designs built on a guess about the cause.
 
 - The shared server on 8768 gave no answer in 45 minutes while four tracks used it; the pinned CLI (`C:/Users/cdigg/.plato-cli/93907bd7/Plato.CLI.dll run ... --laws --profile=gpu32`) compiles the library plus this folder in 15 s. Use the CLI when the server is loaded.
