@@ -1,0 +1,426 @@
+//==
+// # BsplineInverse
+//
+// Track F (TKT-327): bodies for layer 1's deferred inverse evaluation by
+// search, staged as <Name>Body: ClosestParameterBySearch (space curves),
+// PcurveClosestParameterBySearch, ProjectBySearch and ProjectNearBySearch
+// (surfaces). They serve every curve and surface without a closed form, not
+// only splines, and reach the geometry only through layer 1's Eval,
+// Derivative, PartialU, PartialV, Domain and Breaks.
+//
+// A global search samples every smooth piece (the pieces between the
+// knots, Breaks of order SearchBreakOrder), keeps each sample that is a
+// local minimum of the distance, polishes it, and takes the best, ties
+// within rounding to the smaller parameter. A curve sample is polished by
+// regula falsi (the Illinois variant) on the slope (X(t) - p) . X'(t)
+// wherever the slope changes sign across the sample's neighbours, so the
+// result is stationary to rounding, which a search on the distance alone
+// would not give; a surface sample by Gauss-Newton on the two normal
+// equations, damped so the distance never grows and projected onto the
+// window's sides. Neither needs a second derivative, which several curve
+// kinds do not have yet.
+//
+// Sections, in order:
+//  - Constants
+//  - Search windows
+//  - One parameter: sampling and polishing
+//  - Space curves and pcurves
+//  - Surfaces: polishing
+//  - Surfaces: global and local
+
+library BsplineInverse
+{
+    //==
+    // # Constants
+
+    // The break order the searches split pieces at: every distinct interior
+    // knot of a spline of degree up to 8 (layer 1's IsBreakKnot), so each
+    // piece is one polynomial span and a few samples find its minima.
+    SearchBreakOrder(_: Integer): Integer
+        => 8;
+
+    // The samples per piece of a curve search: 24 on a curve of one piece
+    // (an ellipse's whole turn), falling with the piece count so the total
+    // stays near 256, and never below 4.
+    CurveSamplesPerPiece(pieces: Integer): Integer
+        => (256 / pieces.Max(1)).Min(24).Max(4);
+
+    // The samples per piece along one direction of a surface search: 8 on
+    // one patch, falling with the piece count so a direction holds near 64,
+    // and never below 2.
+    SurfaceSamplesPerPiece(pieces: Integer): Integer
+        => (64 / pieces.Max(1)).Min(8).Max(2);
+
+    // The iterations a polish may take; regula falsi and Gauss-Newton both
+    // converge in far fewer on the fixtures (8 to 15).
+    PolishIterations(_: Integer): Integer
+        => 60;
+
+    //==
+    // # Search windows
+
+    // The interval a global search over domain d samples: the range when
+    // it is finite (the whole window of a periodic one), else the range cut
+    // to [anchor - L, anchor + L] where its ends are infinite, anchor the
+    // finite end or 0, and L doubled from 1 until both ends of the cut lie
+    // farther from X(anchor) than twice p's distance from it. Beyond that
+    // every point is farther from p than X(anchor) is (the triangle
+    // inequality), provided the curve leaves every ball, as the unbounded
+    // curves of ISO 10303-42 (lines, parabolas, hyperbola branches) do.
+    SearchWindow(d: CurveDomain, eval: Function1<Number, Point3D>, p: Point3D): NumberInterval
+    {
+        var lowFinite = d.Range.Start.IsFinite && d.Range.Start > Number.MinValue;
+        var highFinite = d.Range.End.IsFinite && d.Range.End < Number.MaxValue;
+        var anchor = lowFinite ? d.Range.Start : (highFinite ? d.Range.End : 0.0);
+        var reach = 2.0 * eval(anchor).Distance(p);
+        var span = 1.0;
+        var n = 0;
+        while (n < 100 && !((lowFinite || eval(anchor - span).Distance(eval(anchor)) > reach)
+            && (highFinite || eval(anchor + span).Distance(eval(anchor)) > reach)))
+        {
+            span = span * 2.0;
+            n = n + 1;
+        }
+        return NumberInterval(lowFinite ? d.Range.Start : anchor - span, highFinite ? d.Range.End : anchor + span);
+    }
+
+    // The cuts of a search window: its ends and every break strictly inside
+    // it, ascending, without repeats.
+    WindowCuts(w: NumberInterval, breaks: Array<Number>): Array<Number>
+        => [w.Start].Concatenate(breaks.FlatMap(b => b > w.Start && b < w.End ? [b] : breaks.Take(0)).Sort((a, b) => a <= b)
+                .Concatenate([w.End]))
+            .Unrepeated;
+
+    // xs with every element equal to the one before it dropped.
+    Unrepeated(xs: Array<Number>): Array<Number>
+        => xs.Count.Range.FlatMap(i => (i > 0 ? xs[i] == xs[i - 1] : false) ? xs.Take(0) : [xs[i]]);
+
+    // The sample parameters of a partition: perPiece uniform samples of
+    // each piece from its start, and the last cut.
+    PieceSamples(cuts: Array<Number>, perPiece: Integer): Array<Number>
+        => (cuts.Count - 1).Range.FlatMap(i => perPiece.MapRange(j => cuts[i] + (cuts[i + 1] - cuts[i]) * (j.ToNumber / perPiece.ToNumber)))
+            .Concatenate([cuts.Last]);
+
+    //==
+    // # One parameter: sampling and polishing
+
+    // Half the derivative of |X(t) - p|^2: (X(t) - p) . X'(t).
+    DistanceSlope(eval: Function1<Number, Point3D>, deriv: Function1<Number, Vector3D>, p: Point3D, t: Number): Number
+        => (eval(t) - p).Dot(deriv(t));
+
+    // The zero of the slope in [lo, hi], where it is negative at lo and
+    // positive at hi, by regula falsi with the Illinois halving (an end
+    // retained twice has its value halved), stopped when the bracket is four
+    // unit roundoffs of its ends wide or the slope is exactly zero; the
+    // answer is the bracket end with the smaller slope. A stop at layer 0's
+    // ResolutionAt (32 roundoffs) leaves a slope the stationarity law
+    // rejects at a distance of a few units (track finding).
+    PolishRoot(eval: Function1<Number, Point3D>, deriv: Function1<Number, Vector3D>, p: Point3D, lo: Number, hi: Number): Number
+    {
+        var a = lo;
+        var b = hi;
+        var fa = DistanceSlope(eval, deriv, p, a);
+        var fb = DistanceSlope(eval, deriv, p, b);
+        var x = 0.5 * (a + b);
+        var side = 0;
+        // x is the latest iterate; a and b always bracket the zero.
+        var n = 0;
+        while (n < Integer.PolishIterations && b - a > 4.0 * Number.RoundingUnit * a.Abs.Max(b.Abs).Max(Number.SmallestNormal))
+        {
+            x = (a * fb - b * fa) / (fb - fa);
+            x = x > a && x < b ? x : 0.5 * (a + b);
+            var fx = DistanceSlope(eval, deriv, p, x);
+            if (fx == 0.0)
+            {
+                a = x;
+                b = x;
+            }
+            else
+            {
+                if (fx < 0.0)
+                {
+                    a = x;
+                    fa = fx;
+                    if (side == -1)
+                    {
+                        fb = fb * 0.5;
+                    }
+                    side = -1;
+                }
+                else
+                {
+                    b = x;
+                    fb = fx;
+                    if (side == 1)
+                    {
+                        fa = fa * 0.5;
+                    }
+                    side = 1;
+                }
+            }
+            n = n + 1;
+        }
+        return fa.Abs <= fb.Abs ? a : b;
+    }
+
+    // The candidate sample j of ts polishes to: the slope's zero between
+    // its neighbours when the slope changes sign from negative to positive
+    // there, otherwise the sample itself (a minimum at a window end or at a
+    // corner).
+    PolishSample(eval: Function1<Number, Point3D>, deriv: Function1<Number, Vector3D>, p: Point3D, ts: Array<Number>, j: Integer): Number
+    {
+        var lo = ts[(j - 1).Max(0)];
+        var hi = ts[(j + 1).Min(ts.Count - 1)];
+        return DistanceSlope(eval, deriv, p, lo) < 0.0 && DistanceSlope(eval, deriv, p, hi) > 0.0
+            ? PolishRoot(eval, deriv, p, lo, hi)
+            : ts[j];
+    }
+
+    // True when sample j's distance is no larger than either neighbour's.
+    // Conditionals, not || guards: Plato's || evaluates both sides.
+    IsSampledMinimum(ds: Array<Number>, j: Integer): Boolean
+        => (j == 0 ? true : ds[j] <= ds[j - 1]) && (j == ds.Count - 1 ? true : ds[j] <= ds[j + 1]);
+
+    // The best of the candidates, ascending: a later one replaces the best
+    // only when it is closer by more than rounding, so ties go to the
+    // smaller parameter.
+    BestCandidate(eval: Function1<Number, Point3D>, p: Point3D, candidates: Array<Number>): Number
+        => candidates.Reduce(candidates[0], (best, t) =>
+            eval(t).Distance(p) < eval(best).Distance(p) - ResolutionAt(eval(best).PositionVector.Length + p.PositionVector.Length) ? t : best);
+
+    // A global minimizer of |X(t) - p| over the cuts' window: every sampled
+    // local minimum polished, then the best, ties to the smaller parameter.
+    MinimizeOverCuts(eval: Function1<Number, Point3D>, deriv: Function1<Number, Vector3D>, p: Point3D, cuts: Array<Number>): Number
+    {
+        var ts = cuts.PieceSamples((cuts.Count - 1).CurveSamplesPerPiece);
+        var ds = ts.Map(t => eval(t).Distance(p));
+        var candidates = ts.Count.Range.FlatMap(j => ds.IsSampledMinimum(j) ? [PolishSample(eval, deriv, p, ts, j)] : ts.Take(0));
+        return BestCandidate(eval, p, candidates.Sort((a, b) => a <= b));
+    }
+
+    // A global minimizer over domain d with the given breaks, wrapped into
+    // the canonical window; on a domain with a seam, the range start when
+    // it is as close as the minimizer to rounding (the join).
+    MinimizeOverDomain(eval: Function1<Number, Point3D>, deriv: Function1<Number, Vector3D>, p: Point3D, d: CurveDomain, breaks: Array<Number>): Number
+    {
+        var t = MinimizeOverCuts(eval, deriv, p, d.SearchWindow(eval, p).WindowCuts(breaks));
+        var wrapped = d.HasSeam ? d.Wrap(t) : t;
+        return d.HasSeam && eval(d.Range.Start).Distance(p) <= eval(wrapped).Distance(p) + ResolutionAt(eval(wrapped).PositionVector.Length + p.PositionVector.Length)
+            ? d.Range.Start
+            : wrapped;
+    }
+
+    //==
+    // # Space curves and pcurves
+
+    // Body of layer 1's ClosestParameterBySearch: a global minimizer of
+    // |Eval(t) - p| over the curve's domain, sampled per piece between its
+    // knots, polished by regula falsi on the slope, compared with the
+    // window's ends, wrapped into the canonical window, ties to the smaller
+    // parameter.
+    ClosestParameterBySearchBody(curve: BrepCurve, g: GeometrySet, p: Point3D): Number
+        => MinimizeOverDomain(t => curve.Eval(g, t), t => curve.Derivative(g, t), p,
+            curve.Domain(g), curve.Breaks(g, Integer.SearchBreakOrder));
+
+    // Body of layer 1's PcurveClosestParameterBySearch: the same search
+    // over the pcurve as a space curve. When its space point repeats with a
+    // parameter period T on a domain that does not say so (a 2D line along a
+    // periodic direction), the search covers [0, T] and the answer is in
+    // [0, T); otherwise it covers the pcurve's domain.
+    PcurveClosestParameterBySearchBody(g: GeometrySet, p: PcurveIndex, q: Point3D): Number
+    {
+        var period = g.PcurveParameterPeriod(p);
+        var d = period > 0.0 && !g.Domain(p).Periodicity.IsPeriodic
+            ? CurveDomain(NumberInterval(0.0, period), Periodicity.Periodic(period))
+            : g.Domain(p);
+        return MinimizeOverDomain(t => g.Eval(p, t), t => g.Derivative(p, t), q, d,
+            g.Curve2DAt(g.PcurveAt(p).Curve).Breaks(g, Integer.SearchBreakOrder));
+    }
+
+    //==
+    // # Surfaces: polishing
+
+    // uv clamped into the window w in each direction.
+    ClampInto(uv: UvCoordinate, w: SurfaceWindow): UvCoordinate
+        => UvCoordinate(uv.U.Clamp(w.U.Start, w.U.End), uv.V.Clamp(w.V.Start, w.V.End));
+
+    // The Gauss-Newton step for the normal equations (S - p) . S_u = 0,
+    // (S - p) . S_v = 0 at uv, with the first fundamental form as the
+    // Jacobian: the solution of [a b; b c] (du, dv) = -(F_u, F_v). Where the
+    // form is singular (a collapsed line) the step moves the coordinate
+    // whose partial is not zero alone.
+    GaussNewtonStep(surface: BrepSurface, g: GeometrySet, p: Point3D, uv: UvCoordinate): Vector2D
+    {
+        var r = surface.Eval(g, uv) - p;
+        var su = surface.PartialU(g, uv);
+        var sv = surface.PartialV(g, uv);
+        var a = su.Dot(su);
+        var b = su.Dot(sv);
+        var c = sv.Dot(sv);
+        var fu = r.Dot(su);
+        var fv = r.Dot(sv);
+        var det = a * c - b * b;
+        return det > ResolutionAt(a * c)
+            ? Vector2D((b * fv - c * fu) / det, (b * fu - a * fv) / det)
+            : Vector2D(a > 0.0 ? -fu / a : 0.0, c > 0.0 ? -fv / c : 0.0);
+    }
+
+    // The step limited to the trust region: each coordinate's move at most
+    // its radius.
+    Limited(step: Vector2D, radius: Vector2D): Vector2D
+        => Vector2D(step.X.Clamp(-radius.X, radius.X), step.Y.Clamp(-radius.Y, radius.Y));
+
+    // The point reached from uv by the step, clamped into the window; when
+    // a coordinate stops on a side, the other is re-solved alone along the
+    // side (a projected step), so a minimum on a side is reached.
+    ProjectedStep(surface: BrepSurface, g: GeometrySet, p: Point3D, uv: UvCoordinate, step: Vector2D, w: SurfaceWindow): UvCoordinate
+    {
+        var target = UvCoordinate(uv.U + step.X, uv.V + step.Y).ClampInto(w);
+        var r = surface.Eval(g, uv) - p;
+        var su = surface.PartialU(g, uv);
+        var sv = surface.PartialV(g, uv);
+        var pinnedU = target.U != uv.U + step.X;
+        var pinnedV = target.V != uv.V + step.Y;
+        return pinnedU && !pinnedV && sv.Dot(sv) > 0.0
+            ? UvCoordinate(target.U, uv.V - r.Dot(sv) / sv.Dot(sv)).ClampInto(w)
+            : (pinnedV && !pinnedU && su.Dot(su) > 0.0
+                ? UvCoordinate(uv.U - r.Dot(su) / su.Dot(su), target.V).ClampInto(w)
+                : target);
+    }
+
+    // Damped, projected Gauss-Newton from start inside window w, each step
+    // at most radius per coordinate and halved (up to 12 times) until the
+    // distance does not grow by more than rounding; stops when a step moves
+    // neither coordinate by more than its rounding or no halving helps.
+    PolishProjection(surface: BrepSurface, g: GeometrySet, p: Point3D, start: UvCoordinate, w: SurfaceWindow, radius: Vector2D): UvCoordinate
+    {
+        var uv = start.ClampInto(w);
+        var n = 0;
+        var moving = true;
+        while (moving && n < Integer.PolishIterations)
+        {
+            var here = surface.Eval(g, uv).Distance(p);
+            var slack = ResolutionAt(surface.Eval(g, uv).PositionVector.Length + p.PositionVector.Length);
+            var step = surface.GaussNewtonStep(g, p, uv).Limited(radius);
+            var next = surface.ProjectedStep(g, p, uv, step, w);
+            var halvings = 0;
+            while (halvings < 12 && surface.Eval(g, next).Distance(p) > here + slack)
+            {
+                step = step * 0.5;
+                next = surface.ProjectedStep(g, p, uv, step, w);
+                halvings = halvings + 1;
+            }
+            moving = surface.Eval(g, next).Distance(p) <= here + slack
+                && ((next.U - uv.U).Abs > ResolutionAt(uv.U.Abs + w.U.End.Abs.Min(w.U.Start.Abs))
+                    || (next.V - uv.V).Abs > ResolutionAt(uv.V.Abs + w.V.End.Abs.Min(w.V.Start.Abs)));
+            uv = surface.Eval(g, next).Distance(p) <= here + slack ? next : uv;
+            n = n + 1;
+        }
+        return uv;
+    }
+
+    //==
+    // # Surfaces: global and local
+
+    // The window of a global surface search: each direction's SearchWindow
+    // along the iso-line through the other direction's anchor.
+    SurfaceSearchWindow(surface: BrepSurface, g: GeometrySet, p: Point3D): SurfaceWindow
+    {
+        var d = surface.Domain(g);
+        var u0 = d.U.Range.Start.IsFinite && d.U.Range.Start > Number.MinValue ? d.U.Range.Start : 0.0;
+        var v0 = d.V.Range.Start.IsFinite && d.V.Range.Start > Number.MinValue ? d.V.Range.Start : 0.0;
+        return SurfaceWindow(
+            d.U.SearchWindow(u => surface.Eval(g, UvCoordinate(u, v0)), p),
+            d.V.SearchWindow(v => surface.Eval(g, UvCoordinate(u0, v)), p));
+    }
+
+    // The grid sample (i, j) of a surface search, i along u.
+    GridPoint(us: Array<Number>, vs: Array<Number>, k: Integer): UvCoordinate
+        => UvCoordinate(us[k % us.Count], vs[k / us.Count]);
+
+    // True when grid sample k's distance is no larger than any of its four
+    // neighbours'.
+    IsGridMinimum(ds: Array<Number>, columns: Integer, k: Integer): Boolean
+    {
+        var i = k % columns;
+        var j = k / columns;
+        var rows = ds.Count / columns;
+        return (i == 0 ? true : ds[k] <= ds[k - 1]) && (i == columns - 1 ? true : ds[k] <= ds[k + 1])
+            && (j == 0 ? true : ds[k] <= ds[k - columns]) && (j == rows - 1 ? true : ds[k] <= ds[k + columns]);
+    }
+
+    // uv with a coordinate the point does not determine set to the window's
+    // start in that direction: one whose replacement by the start leaves
+    // the point where it is, to rounding (a pole, an apex, an axis).
+    StartWhereFree(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, d: SurfaceDomain): UvCoordinate
+    {
+        var here = surface.Eval(g, uv);
+        var slack = ResolutionAt(here.PositionVector.Length);
+        return UvCoordinate(
+            surface.Eval(g, UvCoordinate(d.U.Range.Start, uv.V)).Distance(here) <= slack ? d.U.Range.Start : uv.U,
+            surface.Eval(g, UvCoordinate(uv.U, d.V.Range.Start)).Distance(here) <= slack ? d.V.Range.Start : uv.V);
+    }
+
+    // uv with each coordinate wrapped into its direction's canonical window
+    // when the direction has a seam.
+    WrapSeams(uv: UvCoordinate, d: SurfaceDomain): UvCoordinate
+        => UvCoordinate(d.U.HasSeam ? d.U.Wrap(uv.U) : uv.U, d.V.HasSeam ? d.V.Wrap(uv.V) : uv.V);
+
+    // Body of layer 1's ProjectBySearch: a global minimizer of |Eval(uv) -
+    // p| over the domain. A grid over each smooth patch (pieces between the
+    // knots in u and v), every grid local minimum polished by damped,
+    // projected Gauss-Newton inside the window (which reaches minima on the
+    // sides and collapsed lines), the best taken with ties to the earlier
+    // grid sample, periodic coordinates wrapped, a coordinate the point does
+    // not determine set to the window's start.
+    ProjectBySearchBody(surface: BrepSurface, g: GeometrySet, p: Point3D): UvCoordinate
+    {
+        var d = surface.Domain(g);
+        var w = surface.SurfaceSearchWindow(g, p);
+        var cutsU = w.U.WindowCuts(surface.Breaks(g, SurfaceParameter.ParameterU, Integer.SearchBreakOrder));
+        var cutsV = w.V.WindowCuts(surface.Breaks(g, SurfaceParameter.ParameterV, Integer.SearchBreakOrder));
+        var us = cutsU.PieceSamples((cutsU.Count - 1).SurfaceSamplesPerPiece);
+        var vs = cutsV.PieceSamples((cutsV.Count - 1).SurfaceSamplesPerPiece);
+        var ds = (us.Count * vs.Count).MapRange(k => surface.Eval(g, GridPoint(us, vs, k)).Distance(p));
+        var radius = Vector2D((w.U.End - w.U.Start) / (cutsU.Count - 1).ToNumber, (w.V.End - w.V.Start) / (cutsV.Count - 1).ToNumber);
+        var candidates = ds.Count.Range.FlatMap(k => ds.IsGridMinimum(us.Count, k)
+            ? [surface.PolishProjection(g, p, GridPoint(us, vs, k), w, radius)]
+            : [UvCoordinate(0.0, 0.0)].Take(0));
+        var best = candidates.Reduce(candidates[0], (b, uv) =>
+            surface.Eval(g, uv).Distance(p) < surface.Eval(g, b).Distance(p) - ResolutionAt(surface.Eval(g, b).PositionVector.Length + p.PositionVector.Length) ? uv : b);
+        return surface.StartWhereFree(g, best, d).WrapSeams(d);
+    }
+
+    // Body of layer 1's ProjectNearBySearch: damped, projected Gauss-Newton
+    // from the seed, inside a window of a quarter period either side of the
+    // seed in a periodic direction and the domain's range in a bounded one,
+    // with no wrapping, so the answer is the copy reached from the seed; a
+    // coordinate the point does not determine keeps the seed's value.
+    ProjectNearBySearchBody(surface: BrepSurface, g: GeometrySet, p: Point3D, seed: UvCoordinate): UvCoordinate
+    {
+        var d = surface.Domain(g);
+        var w = SurfaceWindow(d.U.NearWindow(seed.U), d.V.NearWindow(seed.V));
+        var radius = Vector2D(d.U.NearStep(w.U), d.V.NearStep(w.V));
+        var uv = surface.PolishProjection(g, p, seed, w, radius);
+        var here = surface.Eval(g, uv);
+        var slack = ResolutionAt(here.PositionVector.Length);
+        return UvCoordinate(
+            surface.Eval(g, UvCoordinate(seed.U, uv.V)).Distance(here) <= slack ? seed.U : uv.U,
+            surface.Eval(g, UvCoordinate(uv.U, seed.V)).Distance(here) <= slack ? seed.V : uv.V);
+    }
+
+    // The window of a local search in one direction: a quarter period either
+    // side of the seed's coordinate when the direction has a seam, else the
+    // domain's range (unbounded ends kept).
+    NearWindow(d: CurveDomain, seed: Number): NumberInterval
+        => d.HasSeam
+            ? NumberInterval(seed - 0.25 * d.Periodicity.PeriodOr(0.0), seed + 0.25 * d.Periodicity.PeriodOr(0.0))
+            : d.Range;
+
+    // The largest move per step of a local search: a quarter of a bounded
+    // window, unlimited on an unbounded one.
+    NearStep(d: CurveDomain, w: NumberInterval): Number
+        => (w.End - w.Start).IsFinite && w.End < Number.MaxValue && w.Start > Number.MinValue
+            ? 0.25 * (w.End - w.Start)
+            : Number.MaxValue;
+}

@@ -159,12 +159,15 @@ library BsplineWitnesses
         => GeometrySet([], [BrepCurve2D.BSpline(k.Curve2DFixture)], [Pcurve(SurfaceIndex(0), Curve2DIndex(0))],
             [BrepSurface.BSpline(BSplineSurfaceData.BumpPatch(0.5))], []);
 
-    // The arena holding non-spline curves whose inverse is a search: 0 an
-    // ellipse, 1 a parabola, 2 the cubic fixture trimmed to [0.5, 2.5].
+    // The arena holding curves whose inverse is a search: 0 an ellipse, 1 a
+    // parabola, 2 the cubic fixture, 3 the cubic trimmed to [0.5, 2.5]. The
+    // parabola's focal distance, 0.02, keeps its points within about 2 of
+    // the origin over the runner's parameters (|t| <= 10), where gpu32's
+    // rounding is below the witness length tolerance (track finding).
     SearchCurveSet(_: Integer): GeometrySet
         => GeometrySet(
             [BrepCurve.Ellipse(WorldFrameAt(Point3D(1.0, 0.0, 0.0)), 3.0, 1.0),
-             BrepCurve.Parabola(WorldFrameAt(Point3D(0.0, 1.0, 0.0)), 0.5),
+             BrepCurve.Parabola(WorldFrameAt(Point3D(0.0, 1.0, 0.0)), 0.02),
              BrepCurve.BSpline(0.CurveFixture),
              BrepCurve.Trimmed(CurveIndex(2), NumberInterval(0.5, 2.5), true)],
             [], [], [], []);

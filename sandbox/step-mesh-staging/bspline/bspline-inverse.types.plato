@@ -1,0 +1,22 @@
+//==
+// # Search windows
+//
+// Track F (TKT-327): the record the surface searches of
+// bspline-inverse.library.plato carry their window in.
+//
+// Sections, in order:
+//  - Windows
+
+//==
+// # Windows
+
+// The rectangle of parameters a surface search may visit: an interval per
+// direction, each finite for a global search and possibly unbounded for a
+// local one. Not a SurfaceDomain: it has no periodicity, since a search
+// moves freely inside it and wraps only at the end.
+type SurfaceWindow
+    implements IValue
+{
+    U: NumberInterval;
+    V: NumberInterval;
+}

@@ -111,4 +111,17 @@ library BsplineInverseLaws
         return g.Domain(s).SameParameter(g.Project(s, g.Eval(s, uv)), uv, g.UvToleranceAt(s, uv, Tolerances.Witness_Tolerances))
             && g.Domain(s).SameParameter(g.Project(s, above), UvCoordinate(0.5, 0.5), g.UvToleranceAt(s, UvCoordinate(0.5, 0.5), Tolerances.Witness_Tolerances));
     }
+
+    // A point far below the bump patch, (1/2, 0.55, -10), has a local
+    // minimum of the distance at the middle of each side of the patch, where
+    // z = 1 is lowest; the side v = 1 is the nearest (0.45 away in y, the
+    // others 0.5 and 0.55), so Project answers (1/2, 1), the last of the
+    // four in any row-by-row search order.
+    Law_Bspline_ProjectPicksNearestOfSeveralMinima(_: Integer): Boolean
+    {
+        var g = 0.SurfaceFixtureSet;
+        var s = SurfaceIndex(0);
+        return g.Domain(s).SameParameter(g.Project(s, Point3D(0.5, 0.55, -10.0)), UvCoordinate(0.5, 1.0),
+            g.UvToleranceAt(s, UvCoordinate(0.5, 1.0), Tolerances.Witness_Tolerances));
+    }
 }
