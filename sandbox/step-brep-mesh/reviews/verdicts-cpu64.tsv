@@ -21,7 +21,7 @@ BrepCheckingLaws.Law_FailingReevaluationCheckNamesAVertex	pass
 BrepCheckingLaws.Law_GeometricRequiresWhatStructuralRequires	pass	
 BrepCheckingLaws.Law_GreenDiskAreaWithinArcResidual	pass	
 BrepCheckingLaws.Law_GreenEqualsBoxFaceArea	pass	
-BrepCheckingLaws.Law_GreenEqualsConePatchArea	fail	r = 2, h = 9.04570962257949
+BrepCheckingLaws.Law_GreenEqualsConePatchArea	pass	
 BrepCheckingLaws.Law_GreenEqualsCylinderPatchArea	pass	
 BrepCheckingLaws.Law_GreenEqualsCylinderSectorPatchArea	pass	
 BrepCheckingLaws.Law_GreenEqualsSphereArea	pass	
@@ -240,8 +240,8 @@ BrepWitnessesLaws.Law_CylinderHasStatedCounts	pass
 BrepWitnessesLaws.Law_CylinderValidatesClean	pass	
 BrepWitnessesLaws.Law_FlippedFaceBreaksWinding	pass	
 BrepWitnessesLaws.Law_FlippedFaceFailsExactlyOneLaw	pass	
-BrepWitnessesLaws.Law_PcurveAtCurveSpeedSharesParameter	obligation	host obligation: SharesCurveParameter(BrepModel, BrepEdgeIndex, Integer) (in Law_PcurveAtCurveSpeedSharesParameter)
-BrepWitnessesLaws.Law_PcurveAtDoubleSpeedSharesNoParameter	obligation	host obligation: SharesCurveParameter(BrepModel, BrepEdgeIndex, Integer) (in Law_PcurveAtDoubleSpeedSharesNoParameter)
+BrepWitnessesLaws.Law_PcurveAtCurveSpeedSharesParameter	pass	
+BrepWitnessesLaws.Law_PcurveAtDoubleSpeedSharesNoParameter	pass	
 BrepWitnessesLaws.Law_PolyLoopSheetHasOneBoundaryCycle	pass	
 BrepWitnessesLaws.Law_PolyLoopSheetPassesOpenShellEuler	pass	
 BrepWitnessesLaws.Law_RedundantPoleLoopVertexIsNotIsolated	pass	
@@ -255,7 +255,7 @@ BrepWitnessesLaws.Law_TighterChordalNeverIncreasesSagitta	pass
 BrepWitnessesLaws.Law_UnitBoxIsBoxOfOnes	pass	
 BrepWitnessesLaws.Law_WitnessDivergenceVolumeMatchesFacts	obligation	host obligation: ProjectBySearch(BrepSurface, GeometrySet, Point3D) (in Project < Project < Map < CoedgeUvPath < ShiftedCoedgePath < EdgeLoopPath < GreenPathsOfLoop < GreenPathsOfBound < GreenBoundary < FaceVolumeTerm < Map < ShellVolume < Oracle_DivergenceVolume < Law_WitnessDivergenceVolumeMatchesFacts)
 BrepWitnessesLaws.Law_WitnessEulerIsTwoMinusTwiceGenus	pass	
-BrepWitnessesLaws.Law_WitnessGreenAreaMatchesFacts	fail	k = 4, f = 0
+BrepWitnessesLaws.Law_WitnessGreenAreaMatchesFacts	pass	
 BrepWitnessesLaws.Law_WitnessHasStatedCounts	pass	
 BrepWitnessesLaws.Law_WitnessHasStatedFaceCount	pass	
 BrepWitnessesLaws.Law_WitnessHasStatedShellCount	pass	
@@ -573,7 +573,7 @@ StepToMeshWitnessesLaws.Law_WitnessMeshCrossChecksClean	obligation	host obligati
 StepToMeshWitnessesLaws.Law_WitnessMeshValidatesClean	obligation	host obligation: ExpandedPoles(BrepModel, BrepFaceIndex, Array, FaceMeshingCriteria) (in WithPoleSegments < CompletePeriodicRegion < AddMissingSeamsAndPoles < UnorientedRegionOf < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < WitnessOutcome < WitnessMesh < Law_WitnessMeshValidatesClean)
 StepToMeshWitnessesLaws.Law_WitnessMeshesOk	obligation	host obligation: ExpandedPoles(BrepModel, BrepFaceIndex, Array, FaceMeshingCriteria) (in WithPoleSegments < CompletePeriodicRegion < AddMissingSeamsAndPoles < UnorientedRegionOf < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < WitnessOutcome < Law_WitnessMeshesOk)
 StepToMeshWitnessesLaws.Law_WitnessPowerOfTwoScalingKeepsConnectivity	obligation	host obligation: ExpandedPoles(BrepModel, BrepFaceIndex, Array, FaceMeshingCriteria) (in WithPoleSegments < CompletePeriodicRegion < AddMissingSeamsAndPoles < UnorientedRegionOf < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < Law_PowerOfTwoScalingKeepsConnectivity < Law_WitnessPowerOfTwoScalingKeepsConnectivity)
-StepToMeshWitnessesLaws.Law_WitnessPowerOfTwoScalingScalesPositions	error	k = -7, e = 1, v = -8  time budget exceeded (in LowerBound < NeighbourAt < NeighbourTable < FlipPass < Delaunayed < SplitPass < RefineToSurface < RefinedTriangulation < GridOrTriangles < MeshedOutcome < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < Law_PowerOfTwoScalingScalesPositions < Law_WitnessPowerOfTwoScalingScalesPo...
+StepToMeshWitnessesLaws.Law_WitnessPowerOfTwoScalingScalesPositions	error	k = -7, e = 1, v = -8  time budget exceeded (in OppositeCorner < IsFlippable < FlipPass < Delaunayed < SplitPass < RefineToSurface < RefinedTriangulation < GridOrTriangles < MeshedOutcome < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < Law_PowerOfTwoScalingScalesPositions < Law_WitnessPowerOfTwoScalingScalesPositions)
 StepToMeshWitnessesLaws.Law_WitnessRigidMotionMovesPositions	pass	
 StepToMeshWitnessesLaws.Law_WitnessShellReversalNegatesVolume	obligation	host obligation: ExpandedPoles(BrepModel, BrepFaceIndex, Array, FaceMeshingCriteria) (in WithPoleSegments < CompletePeriodicRegion < AddMissingSeamsAndPoles < UnorientedRegionOf < MeshRegion < MeshFace < FaceOutcome < InitialState < StateAfter < FinalState < RunOutcome < MeshChosenFaces < MeshModel < Law_ShellReversalNegatesVolume < Law_WitnessShellReversalNegatesVolume)
 StepWhereRulesLaws.Law_Practice_Axis2Placement3D_Orthogonal	obligation	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldIsUnset < Law_Practice_Axis2Placement3D_Orthogonal)

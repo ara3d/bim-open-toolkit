@@ -9,13 +9,13 @@ layer 7 turns its laws into checks.
 
 Written 2026-10-17 against VOCABULARY.md revision 2 as types, signatures, laws and contracts, every
 algorithm bodiless with a `// deferred:` note. Implementation chunk A (TKT-314) gave ten of the
-eleven algorithms bodies; `SharesCurveParameter` is still deferred (see "Implementation, chunk A").
+eleven algorithms bodies; the genus track (TKT-328) gave the last, `SharesCurveParameter`.
 
 | File | Holds |
 |---|---|
 | `topology-elements.types.plato` | `EdgeOrientation`, `Coedge`, `BrepVertex`, `BrepEdge`, `BrepLoop`, `FaceBound`, `BrepFace`, `BrepShell`, `BrepBody` |
 | `topology-model.types.plato` | `LengthUnit`, `BrepModel`, `ShellCounts`, `CoedgeSite`, `EdgeEnd` |
-| `topology.library.plato` | library `BrepTopology`: predicates, traversal, sense, edge and pcurve domains, vertex links, counts, connectivity, orientability, coupling measures, size and extent, model transforms; one deferred algorithm (`SharesCurveParameter`; ten given bodies in chunk A); eight declarations marked `belongs-in` layers 0 and 1 |
+| `topology.library.plato` | library `BrepTopology`: predicates, traversal, sense, edge and pcurve domains, vertex links, counts, connectivity, orientability, coupling measures, size and extent, model transforms; eleven given bodies (ten in chunk A, `SharesCurveParameter` by the genus track); eight declarations marked `belongs-in` layers 0 and 1 |
 | `topology.laws.plato` | library `BrepTopologyLaws`: 41 laws |
 | `topology.spec.plato` | invariants of `BrepModel` and `ShellCounts`, 13 function contracts, 4 theorems |
 
@@ -461,8 +461,8 @@ A passing sample set is a lower bound on the worst deviation, never a proof
 
 ## Deferred functions
 
-The algorithm families as the design pass wrote them. Since chunk A only `SharesCurveParameter` is
-still bodiless; the other ten have the bodies described in "Implementation, chunk A".
+The algorithm families as the design pass wrote them. None is still bodiless: ten have the bodies
+described in "Implementation, chunk A", and `SharesCurveParameter` has the one the genus track gave it.
 
 | Function | Algorithm | Measure |
 |---|---|---|

@@ -240,10 +240,15 @@ library BrepOracles
     }
 
     // The signed Green integral of face f's n-chord boundary times
-    // FaceNormalSign, before the closed-surface correction.
+    // FaceNormalSign, before the closed-surface correction; the cone's
+    // potential takes the face's nappe sign (FaceNappeSign).
     RawGreenArea(m: BrepModel, f: BrepFaceIndex, n: Integer): Number
-        => m.GreenBoundary(f, n).Map(seg => m.Geometry.SurfaceAt(m.Faces[f].Surface).AreaSegment(m.Geometry, seg)).SumOf
+    {
+        var surface = m.Geometry.SurfaceAt(m.Faces[f].Surface);
+        var nappe = m.FaceNappeSign(f);
+        return m.GreenBoundary(f, n).Map(seg => surface.AreaSegment(m.Geometry, seg, nappe)).SumOf
             * m.FaceNormalSign(f).ToNumber;
+    }
 
     // The whole area of a closed surface: a sphere's 4 pi R^2, a ring
     // torus's 4 pi^2 R r; NaN for every surface that is not closed in both
@@ -517,8 +522,9 @@ library BrepOracles
     // 5.2). Exact on every segment.
 
     // The integral of P du along the segment for the surface's area
-    // potential; quadrature for the cases with no closed form.
-    AreaSegment(surface: BrepSurface, g: GeometrySet, seg: GreenSegment): Number
+    // potential; quadrature for the cases with no closed form. nappe is the
+    // cone's sign for the whole face (FaceNappeSign), 1 elsewhere.
+    AreaSegment(surface: BrepSurface, g: GeometrySet, seg: GreenSegment, nappe: Number): Number
     {
         var du = seg.To.U - seg.From.U;
         var v0 = seg.From.V;
@@ -529,8 +535,7 @@ library BrepOracles
         {
             Plane(placement) => 0.0 - du * vm;
             Cylinder(placement, radius) => 0.0 - du * radius.Abs * vm;
-            Cone(placement, radius, semiAngle) => 0.0 - du * (radius * vm + semiAngle.Tan * meanSquare * 0.5) / semiAngle.Cos
-                * (radius + vm * semiAngle.Tan).Sign.ToNumber;
+            Cone(placement, radius, semiAngle) => ConeAreaSegment(radius, semiAngle, seg) * nappe;
             Sphere(placement, radius) => 0.0 - du * radius * radius * vm.Sin * Sinc((v1 - v0) * 0.5);
             Torus(placement, major, minor, part) => 0.0 - du * minor.Abs * (major * vm + minor * vm.Sin * Sinc((v1 - v0) * 0.5))
                 * (major + minor * vm.Cos).Sign.ToNumber;
@@ -541,6 +546,64 @@ library BrepOracles
             Offset(basis, distance) => surface.AreaSegmentByQuadrature(g, seg);
         };
     }
+
+    // The sign of the cone's signed radius over face f: -1 when the face lies
+    // on the nappe where rho = R + v tan a is negative, +1 otherwise and on
+    // every surface that is not a cone. Read at the boundary point of f's
+    // Green boundary where |rho| is largest, so a segment on the apex, where
+    // rho is 0, takes its face's nappe. Precondition: m.CanGreen(f).
+    FaceNappeSign(m: BrepModel, f: BrepFaceIndex): Number
+        => m.Geometry.SurfaceAt(m.Faces[f].Surface).IsConeSurface
+            ? m.Geometry.SurfaceAt(m.Faces[f].Surface).NappeSign(m.GreenBoundary(f, Integer.GreenChords))
+            : 1.0;
+
+    // NappeSign for one surface record and the segments of a face's boundary.
+    NappeSign(surface: BrepSurface, segs: Array<GreenSegment>): Number
+        => match (surface)
+        {
+            Plane(placement) => 1.0;
+            Cylinder(placement, radius) => 1.0;
+            Cone(placement, radius, semiAngle) => radius.FarthestSignedRadius(semiAngle, segs) < 0.0 ? -1.0 : 1.0;
+            Sphere(placement, radius) => 1.0;
+            Torus(placement, major, minor, part) => 1.0;
+            Revolution(profile, axis) => 1.0;
+            LinearExtrusion(profile, extrusion) => 1.0;
+            BSpline(data) => 1.0;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => 1.0;
+            Offset(basis, distance) => 1.0;
+        };
+
+    // The signed radius R + v tan a of largest magnitude over the start points
+    // of the segments; 0 when there are none.
+    FarthestSignedRadius(radius: Number, semiAngle: Angle, segs: Array<GreenSegment>): Number
+        => segs.Reduce(0.0, (best, s) =>
+            (radius + s.From.V * semiAngle.Tan).Abs > best.Abs ? radius + s.From.V * semiAngle.Tan : best);
+
+    // The cone's integral of -G(v) du along a straight segment, unsigned by
+    // the nappe: the library's Cone arm of AreaSegment without its sign.
+    ConeAreaSegment(radius: Number, semiAngle: Angle, seg: GreenSegment): Number
+    {
+        var du = seg.To.U - seg.From.U;
+        var vm = (seg.From.V + seg.To.V) * 0.5;
+        var meanSquare = (seg.From.V * seg.From.V + seg.From.V * seg.To.V + seg.To.V * seg.To.V) / 3.0;
+        return 0.0 - du * (radius * vm + semiAngle.Tan * meanSquare * 0.5) / semiAngle.Cos;
+    }
+
+    // Whether a surface record is a cone.
+    IsConeSurface(surface: BrepSurface): Boolean
+        => match (surface)
+        {
+            Plane(placement) => false;
+            Cylinder(placement, radius) => false;
+            Cone(placement, radius, semiAngle) => true;
+            Sphere(placement, radius) => false;
+            Torus(placement, major, minor, part) => false;
+            Revolution(profile, axis) => false;
+            LinearExtrusion(profile, extrusion) => false;
+            BSpline(data) => false;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => false;
+            Offset(basis, distance) => false;
+        };
 
     // A surface of revolution of a line profile in a plane through the axis:
     // h(v) = |V| rho(v), rho the distance of the profile point from the axis,
