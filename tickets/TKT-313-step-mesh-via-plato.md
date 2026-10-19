@@ -5,7 +5,7 @@ status: claimed
 depends_on: [TKT-311, TKT-312]
 owner: session 10b9c9c6
 session: 10b9c9c6-0052-40f3-a1c2-c12f2f8861d7
-fence: [deps/bim-open-data/src/data/Ara3D.Step.Mesher/StepShapeMesher.cs, deps/bim-open-data/src/data/Ara3D.Step.Mesher/Ara3D.Step.Mesher.csproj, deps/bim-open-data/src/data/Ara3D.Step.Mesher/StepMesher.cs, deps/bim-open-data/src/data/Ara3D.Step.Mesher/Plato/**, deps/bim-open-data/tests/data/Ara3D.Step.Mesher.Tests/**, deps.json]
+fence: [deps/bim-open-data/src/data/Ara3D.Step.Mesher/StepShapeMesher.cs, deps/bim-open-data/src/data/Ara3D.Step.Mesher/Ara3D.Step.Mesher.csproj, deps/bim-open-data/src/data/Ara3D.Step.Mesher/StepMesher.cs, deps/bim-open-data/src/data/Ara3D.Step.Mesher/Model/StepModelBuilder.cs, deps/bim-open-data/src/data/Ara3D.Step.Mesher/StepMeshingContract.cs, deps/bim-open-data/src/data/Ara3D.Step.Mesher/Plato/**, deps/bim-open-data/tests/data/Ara3D.Step.Mesher.Tests/**, deps.json]
 workflow: [W3, W4]
 related: [TKT-299, TKT-305]
 confidence: high
