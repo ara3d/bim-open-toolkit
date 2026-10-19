@@ -1,7 +1,7 @@
 # triangulation: constrained Delaunay by the in-circle determinant, refinement by insertion and flips
 
 Tickets: TKT-343 (merged in 7d8dae2d), TKT-351 (the refinement was slower than the code it replaced)
-Status: working (TKT-351)
+Status: ready to merge (TKT-351; the C# timing of criterion 2 waits on the C# track, see Done)
 
 ## TKT-351: where the time goes, and a faster refinement
 
@@ -84,7 +84,25 @@ The sequential surface pass gives a different, smaller mesh than the batched one
   in the surface tests' B-spline projection, `Lift` and layer 7's validation after meshing
   finishes; the run then stopped without a summary during `Law_ModelLaws`, which alone ends in a
   budget error (the bump solid again). The remaining cause is filed as TKT-352.
-- SWEEP_RESULT
+- Full sweep, cpu64, budget 120 s, of a copy of the library at 4f344991 wired by the merge
+  instructions below (RefineToSurface and TriangulateRegion pointed at the staged functions),
+  against `reviews/verdicts-cpu64.tsv` (44 minutes; `verdicts-cpu64-tkt351.tsv` here): 785 laws, 546
+  pass. Changed against the baseline: `Law_RoundLaws`, `Law_StateLaws`,
+  `Law_OnlyFacesOfChangedEdgesAreRemeshed`, `Law_OutcomesAreCurrent` error (budget) to pass;
+  `Law_OutcomeIsOfItsFace`, `Law_PendingRequestIsInSomeOutcome` skipped to pass;
+  `Law_PendingRequestsAreRefinable` error to obligation. One regression,
+  `Law_MinAngleNoWorseThanLibrary` on the cylinder: it compares the merged refinement
+  (`RefinedCdt`) with the library's (`RefinedTriangulation`, the staged one in the wired copy), and
+  on one disc the staged refinement, seeded by the queue flips, gives 30.56 degrees against 31.69
+  (both above 30; on cocircular points the two seeds are different valid triangulations). After
+  the merge both calls are the same function, so the law holds again. The new
+  `Law_Fast_UpdatedNeighboursAreTheTable` errored there through a defect in the law itself (`||`
+  evaluated both sides when the trial was refused); fixed, it passes under cpu64 and gpu32.
+- Under cpu64 the staged refinement's interior minimum on the cylinder side face is 10.5 degrees
+  against the merged one's 27.1 (overall minimum 10.1 against 8.9, better); both fail
+  `RefinedInteriorMeetsMinAngle`. The surface pass now inserts circumcentres without the guard one
+  at a time, and some land where the angle pass's guard cannot repair them; TKT-352's edge requests
+  remove the forced boundary triangles that block the guard.
 
 ### Merge instructions (TKT-351)
 
@@ -123,7 +141,7 @@ The sequential surface pass gives a different, smaller mesh than the batched one
 | Neighbour table kept up to date, sequential surface pass, queue flips | 50 min | 8 probes |
 | Old library baseline (git archive), quality comparison | 15 min | 8 runs |
 | Track F's laws before and after, bump probes | 60 min | 2 law runs (18 and 8 min), 4 probes of 2.5 to 4.5 min |
-| Full sweep of the wired copy | SWEEP_TIME | 1 |
+| Full sweep of the wired copy | 44 min | 1 |
 
 ### Lessons (TKT-351)
 
