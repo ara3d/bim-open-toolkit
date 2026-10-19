@@ -12,8 +12,8 @@ created: 2026-10-18
 
 ## Acceptance criteria
 
-- [ ] README.md's commands, counts, links and demos match the repository on 2026-10-18
-- [ ] The wrong statements the review found in other files are corrected or ticketed
+- [x] README.md's commands, counts, links and demos match the repository on 2026-10-18
+- [x] The wrong statements the review found in other files are corrected or ticketed
 
 The owner's request, 2026-10-18, word for word:
 
