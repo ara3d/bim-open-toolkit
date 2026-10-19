@@ -123,47 +123,35 @@ describe("sample notebooks", () => {
 describe("nrc-eight-questions", () => {
   const notebook = load("nrc-eight-questions");
 
-  // samples/nrc/questions.txt holds the paper's eight questions and a ninth on zones
-  // (e4354db9). The notebook records the eight as asked on 2026-09-27; Q4, Q5, and Q7
-  // (indices 3, 4, 6) were reworded on 2026-10-17 (59d0d231) so each has one unambiguous
-  // answer, and the notebook keeps its recorded run of the old wording.
-  const REWORDED = new Set([3, 4, 6]);
-
-  it("asks the eight questions of samples/nrc/questions.txt as recorded, then one follow-up", () => {
+  it("asks the first eight questions of samples/nrc/questions.txt verbatim, then one follow-up", () => {
+    // The file also holds a ninth question, on zones, which this notebook does not ask.
     const questions = readFileSync(join(ROOT, "samples", "nrc", "questions.txt"), "utf8")
       .split(/\r?\n/)
       .filter((line) => line !== "" && !line.startsWith("#"));
     expect(questions).toHaveLength(9);
     expect(notebook.turns).toHaveLength(9);
-    const asked = notebook.turns.slice(0, 8).map((t) => t.request.text);
-    const unchanged = (texts: string[]) => texts.filter((_, i) => !REWORDED.has(i));
-    expect(unchanged(asked)).toEqual(unchanged(questions.slice(0, 8)));
-    expect(asked.filter((_, i) => REWORDED.has(i))).toEqual([
-      "What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?",
-      "How much operational carbon is in each category?",
-      "What is the embodied carbon of the roof?",
-    ]);
+    expect(notebook.turns.slice(0, 8).map((t) => t.request.text)).toEqual(questions.slice(0, 8));
   });
 
   it("Q1 shows the total operational carbon as a value, 37,196.2 kgCO2e/yr", () => {
     const value = notebook.turns[0].reply.embeds.find((e) => e.kind === "value");
     expect(value?.kind === "value" && value.unit).toBe("kgCO2e/yr");
     const snapshot = snapshotOf(value);
-    expect(value?.kind === "value" && value.column).toBe("Total");
-    expect(snapshot.rows[0][snapshot.columns.findIndex((c) => c.name === "Total")]).toBeCloseTo(37196.2, 1);
+    expect(value?.kind === "value" && value.column).toBe("OperationalCarbon_kgCO2e_per_year");
+    expect(snapshot.rows[0][snapshot.columns.findIndex((c) => c.name === "OperationalCarbon_kgCO2e_per_year")]).toBeCloseTo(37196.2, 1);
   });
 
   it("Q7 finds the roof with no embodied-carbon value", () => {
     const snapshot = snapshotOf(notebook.turns[6].reply.embeds.find((e) => e.kind === "table"));
     expect(snapshot.totalRows).toBe(1);
-    expect(snapshot.rows[0][0]).toBe("0jf0rYHfX3RAB3bSIRjmxl");
+    expect(snapshot.rows[0][snapshot.columns.findIndex((c) => c.name === "GlobalId")]).toBe("0jf0rYHfX3RAB3bSIRjmxl");
   });
 
   it("Q8 carries the embodied carbon A1-A3 of each storey", () => {
     const snapshot = snapshotOf(notebook.turns[7].reply.embeds.find((e) => e.kind === "table"));
     const expected = { "Level 1": 49451.2, "Level 2": 48696.8, "T/FDN": 11761.3, Roof: 5821.0 };
     for (const [storey, embodied] of Object.entries(expected))
-      expect(cell(snapshot, storey, "Embodied")).toBeCloseTo(embodied, 1);
+      expect(cell(snapshot, storey, "EmbodiedCarbon_A1A3_kgCO2e")).toBeCloseTo(embodied, 1);
   });
 
   it("ends with a chart", () => {

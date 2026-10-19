@@ -14,7 +14,7 @@
           "kind": "value",
           "node": "answer",
           "port": "relation",
-          "column": "Total",
+          "column": "OperationalCarbon_kgCO2e_per_year",
           "unit": "kgCO2e/yr",
           "caption": "Total operational carbon"
         },
@@ -34,13 +34,13 @@
       "analysisId": "nrc-q3-top-elements"
     },
     {
-      "request": "What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?",
-      "reply": "That is a type name, not one door: four door instances carry it, at 54.0, 146.1, 117.3, and 61.8 kgCO2e/yr. The table lists all four in STEP id order rather than picking one. The paper's answer, 54.0, is row 1: the door with the lowest STEP id, EntityId 8066 (1hOSvn6df7F8_7GcBWlS8Z). Tell me which door you mean, or ask for the sum.",
+      "request": "What is the operational carbon of the door with GlobalId 1hOSvn6df7F8_7GcBWlS8Z?",
+      "reply": "54.0 kgCO2e/yr. The table has one row, the door M_Single-Flush:0762 x 2032mm:0762 x 2032mm:150173 (EntityId 8066). A GlobalId names one instance, so the answer is that door's own value and not the type's.",
       "analysisId": "nrc-q4-door-instances"
     },
     {
-      "request": "How much operational carbon is in each category?",
-      "reply": "Nine categories. Wall carries the most, 22,854.1 kgCO2e/yr, followed by Floor at 5,593.5; Railing carries the least, 164.8.",
+      "request": "How much operational carbon is stored per IFC class?",
+      "reply": "Fourteen IFC classes, highest first. IFCWALLSTANDARDCASE carries the most, 17,547.4 kgCO2e/yr, then IFCSLAB at 5,816.9 and IFCFURNISHINGELEMENT at 5,766.3; IFCRAILING carries the least, 164.8. The file has no Category property, so the question is answered per IFC class, and the chart draws the 14 totals as bars.",
       "analysisId": "nrc-q5-by-category"
     },
     {
@@ -49,8 +49,8 @@
       "analysisId": "nrc-q6-analysis-run"
     },
     {
-      "request": "What is the embodied carbon of the roof?",
-      "reply": "Not available. The roof, 0jf0rYHfX3RAB3bSIRjmxl (IFCROOF), has no embodied-carbon row in the analytics, so the graph returns it as the element missing a value. That absence is the answer; no value is inferred from its neighbours or its name.",
+      "request": "Which analysed elements carry no embodied-carbon property set?",
+      "reply": "One element: the IfcRoof 0jf0rYHfX3RAB3bSIRjmxl. It has no embodied-carbon row in the analytics (it has two other metric rows), so the graph returns it as a row of its own. That absence is the answer; no value is inferred from its neighbours or its name.",
       "analysisId": "nrc-q7-absence"
     },
     {
@@ -60,7 +60,7 @@
     },
     {
       "request": "Chart embodied and operational carbon per storey.",
-      "reply": "One pair of bars for each of the four storeys, embodied A1-A3 beside operational. The building totals are in the chart title, not a fifth pair of bars: 115,730.3 kgCO2e embodied and 37,196.2 kgCO2e/yr operational. The operational total is turn 1's answer.",
+      "reply": "One pair of bars for each of the four storeys, embodied A1-A3 beside operational. The building totals are not a fifth pair of bars: they are the one row of the second table, 218 elements, 115,730.3 kgCO2e embodied and 37,196.2 kgCO2e/yr operational. The operational total is turn 1's answer.",
       "analysisId": "nrc-storey-carbon-chart"
     }
   ]

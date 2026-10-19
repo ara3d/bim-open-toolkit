@@ -13,17 +13,17 @@
         "text": "Write an IDS that requires every analysed element to have NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year as a number."
       },
       "reply": {
-        "text": "The node catalog has no node that evaluates an IDS file: of 130 node kinds, the Compliance pack only has check.required, check.rule, check.rollup, and check.union, none named check.ids or ids.*. I wrote the specification anyway, as a real IDS 1.0 file, samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids: one specification, IDS-OC, applying to the fourteen IFC classes that carry a row in nrc_analytics_long.csv (IFCWALL, IFCWALLSTANDARDCASE, IFCWINDOW, IFCDOOR, IFCROOF, IFCSLAB, IFCBEAM, IFCCOVERING, IFCRAILING, IFCSTAIR, IFCSTAIRFLIGHT, IFCFOOTING, IFCFURNISHINGELEMENT, IFCMEMBER), requiring NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year as an IFCREAL. I have not run it through the IDS 1.0 XSD or ids-lib, so I can't say yet that it validates against the schema. To check a model, I'll express the same requirement with check.required over the enriched model's own property sets, since no node reads the IDS file itself.",
+        "text": "The node catalog has 127 node kinds. Its Compliance pack has check.required, check.rule, check.rollup, and check.union, and ids.check and ids.specifications read an IDS file. I wrote the specification anyway, as a real IDS 1.0 file, samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids: one specification, IDS-OC, applying to the fourteen IFC classes that carry a row in nrc_analytics_long.csv (IFCWALL, IFCWALLSTANDARDCASE, IFCWINDOW, IFCDOOR, IFCROOF, IFCSLAB, IFCBEAM, IFCCOVERING, IFCRAILING, IFCSTAIR, IFCSTAIRFLIGHT, IFCFOOTING, IFCFURNISHINGELEMENT, IFCMEMBER), requiring NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year as an IFCREAL. I have not run it through the IDS 1.0 XSD or ids-lib, so I can't say yet that it validates against the schema. To check a model here, I express the same requirement with check.required over the enriched model's own property sets, rather than running the file through ids.check.",
         "tools": [
           {
             "name": "getNodeCatalog",
             "ok": true,
-            "summary": "130 node kinds; Compliance pack has check.required, check.rule, check.rollup, check.union; no check.ids or ids.* kind"
+            "summary": "127 node kinds; Compliance pack has check.required, check.rule, check.rollup, check.union; IDS pack has ids.check and ids.specifications"
           },
           {
             "name": "Write",
             "ok": true,
-            "summary": "samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids: 1890 bytes, one specification (IDS-OC)"
+            "summary": "samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids: 1882 bytes, one specification (IDS-OC)"
           }
         ],
         "embeds": [
@@ -33,8 +33,8 @@
             "caption": "nrc-analytics.ids, first draft: operational carbon only",
             "path": "samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids",
             "mediaType": "application/xml",
-            "bytes": 1890,
-            "sha256": "d7a0cc07c79fee0ee8cf4fedbe09dc8ba5804b19305b08217cda9a4a58c37df4",
+            "bytes": 1882,
+            "sha256": "db0c1b4ea1825b019fce402565a1cd62fd2230496950c675dcad9c860d6cc1d1",
             "preview": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ids xmlns=\"http://standards.buildingsmart.org/IDS\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd\">\n\t<info>\n\t\t<title>NRC analytics property sets</title>\n\t\t<description>Every analysed element (the fourteen IFC classes carrying a row in nrc_analytics_long.csv) must carry NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year as a real number. Generated from samples/nrc/nrc-metrics.csv.</description>\n\t\t<author>cdiggins@gmail.com</author>"
           }
         ]
@@ -98,523 +98,73 @@
                   "type": "Number"
                 },
                 {
-                  "name": "verdict",
+                  "name": "Verdict",
                   "type": "Text"
                 },
                 {
-                  "name": "checkId",
+                  "name": "CheckId",
                   "type": "Text"
                 },
                 {
-                  "name": "checkTitle",
+                  "name": "CheckTitle",
                   "type": "Text"
                 },
                 {
-                  "name": "citation",
+                  "name": "Citation",
                   "type": "Text"
                 }
               ],
               "rows": [
-                [
-                  "01KzA4SPn5IOODwLEb5RNY",
-                  "Stair:Residential - 200mm Max Riser 250mm Tread:198878:1",
-                  "IFCMEMBER",
-                  164,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0dxE1Sy6nDqfpDb5vIMN_Z",
-                  "Basic Wall:Interior - Furring (152 mm Stud):194166",
-                  "IFCWALLSTANDARDCASE",
-                  310.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0dxE1Sy6nDqfpDb5vIMNiA",
-                  "Basic Wall:Interior - Furring (152 mm Stud):193247",
-                  "IFCWALLSTANDARDCASE",
-                  295.4,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4ien",
-                  "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:192610",
-                  "IFCFURNISHINGELEMENT",
-                  402,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4j7w",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191401",
-                  "IFCFURNISHINGELEMENT",
-                  366.4,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jDb",
-                  "Basic Wall:Interior - Furring (152 mm Stud):190774",
-                  "IFCWALLSTANDARDCASE",
-                  358.6,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jE6",
-                  "Basic Wall:Interior - Furring (152 mm Stud):190933",
-                  "IFCWALLSTANDARDCASE",
-                  315.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jJA",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192153",
-                  "IFCFURNISHINGELEMENT",
-                  331.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jKO",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192331",
-                  "IFCFURNISHINGELEMENT",
-                  346.4,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jMl",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192508",
-                  "IFCFURNISHINGELEMENT",
-                  377.5,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jOM",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191557",
-                  "IFCFURNISHINGELEMENT",
-                  348.6,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jQJ",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191680",
-                  "IFCFURNISHINGELEMENT",
-                  347.5,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jTB",
-                  "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:191768",
-                  "IFCFURNISHINGELEMENT",
-                  342,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jZ1",
-                  "Basic Wall:Interior - Furring (152 mm Stud):189074",
-                  "IFCWALLSTANDARDCASE",
-                  331.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4j_U",
-                  "Basic Wall:Interior - Furring (152 mm Stud):189901",
-                  "IFCWALLSTANDARDCASE",
-                  372,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jpl",
-                  "Basic Wall:Interior - Partition (92mm Stud):190140",
-                  "IFCWALLSTANDARDCASE",
-                  412,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0jf0rYHfX3RAB3bSIRjmmy",
-                  "Basic Wall:Exterior - Brick on Block:184944",
-                  "IFCWALLSTANDARDCASE",
-                  276.5,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0jf0rYHfX3RAB3bSIRjmoa",
-                  "Basic Wall:Exterior - Brick on Block:185064",
-                  "IFCWALLSTANDARDCASE",
-                  254.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0jf0rYHfX3RAB3bSIRjmpw",
-                  "Basic Wall:Exterior - Brick on Block:185014",
-                  "IFCWALLSTANDARDCASE",
-                  277.6,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0jf0rYHfX3RAB3bSIRjmr1",
-                  "Basic Wall:Exterior - Brick on Block:185101",
-                  "IFCWALLSTANDARDCASE",
-                  410.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0jf0rYHfX3RAB3bSIRjmxl",
-                  "Basic Roof:Live Roof over Wood Joist Flat Roof:184483",
-                  "IFCROOF",
-                  251.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT2B",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186632",
-                  "IFCFOOTING",
-                  277.5,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT2N",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186644",
-                  "IFCFOOTING",
-                  289.7,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT2Z",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186656",
-                  "IFCFOOTING",
-                  301.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT5$",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186620",
-                  "IFCFOOTING",
-                  250.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT5d",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186596",
-                  "IFCFOOTING",
-                  314.2,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT5l",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186604",
-                  "IFCFOOTING",
-                  322,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT5t",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186612",
-                  "IFCFOOTING",
-                  330.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4v_O1",
-                  "Stair:Residential - 200mm Max Riser 250mm Tread:151086",
-                  "IFCSTAIR",
-                  100.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4v_PH",
-                  "Railing:1100mm Guard Rail:151166",
-                  "IFCRAILING",
-                  45.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4v_PL",
-                  "Railing:900mm Handrail Only:151162",
-                  "IFCRAILING",
-                  49.7,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy3G",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157951",
-                  "IFCFURNISHINGELEMENT",
-                  16.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy3H",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157950",
-                  "IFCFURNISHINGELEMENT",
-                  17,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy4F",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157984",
-                  "IFCFURNISHINGELEMENT",
-                  16.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy4m",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157983",
-                  "IFCFURNISHINGELEMENT",
-                  24.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy6k",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158081",
-                  "IFCFURNISHINGELEMENT",
-                  24.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy6l",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158080",
-                  "IFCFURNISHINGELEMENT",
-                  25.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vyMO",
-                  "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159159",
-                  "IFCFURNISHINGELEMENT",
-                  19.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vyOn",
-                  "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159262",
-                  "IFCFURNISHINGELEMENT",
-                  21.6,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy_8",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157607",
-                  "IFCFURNISHINGELEMENT",
-                  14.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vyu$",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157200",
-                  "IFCFURNISHINGELEMENT",
-                  16,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1CZILmCaHETO8tf3SgGEWh",
-                  "Floor:150mm Exterior Slab on Grade:216507",
-                  "IFCSLAB",
-                  325.4,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1CZILmCaHETO8tf3SgGEXu",
-                  "Floor:150mm Exterior Slab on Grade:216552",
-                  "IFCSLAB",
-                  339.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1Eo2$BaHX42AEkDvQQDocD",
-                  "M_Skylight:1180 x 1170mm:1180 x 1170mm:185337",
-                  "IFCWINDOW",
-                  34.5,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1Eo2$BaHX42AEkDvQQDoy2",
-                  "M_Skylight:1180 x 1170mm:1180 x 1170mm:185718",
-                  "IFCWINDOW",
-                  38.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1aj$VJZFn2TxepZUBcKp$i",
-                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720",
-                  "IFCDOOR",
-                  117.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1aj$VJZFn2TxepZUBcKpZw",
-                  "Basic Wall:Interior - Partition (92mm Stud):203998",
-                  "IFCWALLSTANDARDCASE",
-                  332.1,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1aj$VJZFn2TxepZUBcKpac",
-                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034",
-                  "IFCDOOR",
-                  61.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1aj$VJZFn2TxepZUBcKpee",
-                  "Basic Wall:Interior - Partition (92mm Stud):204300",
-                  "IFCWALLSTANDARDCASE",
-                  325.4,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1aj$VJZFn2TxepZUBcKphf",
-                  "Basic Wall:Interior - Partition (92mm Stud):204493",
-                  "IFCWALLSTANDARDCASE",
-                  329.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ]
+                ["01KzA4SPn5IOODwLEb5RNY", "Stair:Residential - 200mm Max Riser 250mm Tread:198878:1", "IFCMEMBER", 164, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0dxE1Sy6nDqfpDb5vIMN_Z", "Basic Wall:Interior - Furring (152 mm Stud):194166", "IFCWALLSTANDARDCASE", 310.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0dxE1Sy6nDqfpDb5vIMNiA", "Basic Wall:Interior - Furring (152 mm Stud):193247", "IFCWALLSTANDARDCASE", 295.4, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4ien", "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:192610", "IFCFURNISHINGELEMENT", 402, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4j7w", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191401", "IFCFURNISHINGELEMENT", 366.4, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jDb", "Basic Wall:Interior - Furring (152 mm Stud):190774", "IFCWALLSTANDARDCASE", 358.6, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jE6", "Basic Wall:Interior - Furring (152 mm Stud):190933", "IFCWALLSTANDARDCASE", 315.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jJA", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192153", "IFCFURNISHINGELEMENT", 331.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jKO", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192331", "IFCFURNISHINGELEMENT", 346.4, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jMl", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192508", "IFCFURNISHINGELEMENT", 377.5, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jOM", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191557", "IFCFURNISHINGELEMENT", 348.6, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jQJ", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191680", "IFCFURNISHINGELEMENT", 347.5, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jTB", "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:191768", "IFCFURNISHINGELEMENT", 342, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jZ1", "Basic Wall:Interior - Furring (152 mm Stud):189074", "IFCWALLSTANDARDCASE", 331.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4j_U", "Basic Wall:Interior - Furring (152 mm Stud):189901", "IFCWALLSTANDARDCASE", 372, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jpl", "Basic Wall:Interior - Partition (92mm Stud):190140", "IFCWALLSTANDARDCASE", 412, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0jf0rYHfX3RAB3bSIRjmmy", "Basic Wall:Exterior - Brick on Block:184944", "IFCWALLSTANDARDCASE", 276.5, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0jf0rYHfX3RAB3bSIRjmoa", "Basic Wall:Exterior - Brick on Block:185064", "IFCWALLSTANDARDCASE", 254.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0jf0rYHfX3RAB3bSIRjmpw", "Basic Wall:Exterior - Brick on Block:185014", "IFCWALLSTANDARDCASE", 277.6, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0jf0rYHfX3RAB3bSIRjmr1", "Basic Wall:Exterior - Brick on Block:185101", "IFCWALLSTANDARDCASE", 410.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0jf0rYHfX3RAB3bSIRjmxl", "Basic Roof:Live Roof over Wood Joist Flat Roof:184483", "IFCROOF", 251.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT2B", "Wall Foundation:Bearing Footing - 900 x 300:186632", "IFCFOOTING", 277.5, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT2N", "Wall Foundation:Bearing Footing - 900 x 300:186644", "IFCFOOTING", 289.7, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT2Z", "Wall Foundation:Bearing Footing - 900 x 300:186656", "IFCFOOTING", 301.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT5$", "Wall Foundation:Bearing Footing - 900 x 300:186620", "IFCFOOTING", 250.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT5d", "Wall Foundation:Bearing Footing - 900 x 300:186596", "IFCFOOTING", 314.2, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT5l", "Wall Foundation:Bearing Footing - 900 x 300:186604", "IFCFOOTING", 322, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT5t", "Wall Foundation:Bearing Footing - 900 x 300:186612", "IFCFOOTING", 330.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4v_O1", "Stair:Residential - 200mm Max Riser 250mm Tread:151086", "IFCSTAIR", 100.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4v_PH", "Railing:1100mm Guard Rail:151166", "IFCRAILING", 45.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4v_PL", "Railing:900mm Handrail Only:151162", "IFCRAILING", 49.7, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy3G", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157951", "IFCFURNISHINGELEMENT", 16.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy3H", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157950", "IFCFURNISHINGELEMENT", 17, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy4F", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157984", "IFCFURNISHINGELEMENT", 16.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy4m", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157983", "IFCFURNISHINGELEMENT", 24.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy6k", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158081", "IFCFURNISHINGELEMENT", 24.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy6l", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158080", "IFCFURNISHINGELEMENT", 25.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vyMO", "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159159", "IFCFURNISHINGELEMENT", 19.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vyOn", "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159262", "IFCFURNISHINGELEMENT", 21.6, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy_8", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157607", "IFCFURNISHINGELEMENT", 14.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vyu$", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157200", "IFCFURNISHINGELEMENT", 16, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1CZILmCaHETO8tf3SgGEWh", "Floor:150mm Exterior Slab on Grade:216507", "IFCSLAB", 325.4, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1CZILmCaHETO8tf3SgGEXu", "Floor:150mm Exterior Slab on Grade:216552", "IFCSLAB", 339.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1Eo2$BaHX42AEkDvQQDocD", "M_Skylight:1180 x 1170mm:1180 x 1170mm:185337", "IFCWINDOW", 34.5, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1Eo2$BaHX42AEkDvQQDoy2", "M_Skylight:1180 x 1170mm:1180 x 1170mm:185718", "IFCWINDOW", 38.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1aj$VJZFn2TxepZUBcKp$i", "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720", "IFCDOOR", 117.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1aj$VJZFn2TxepZUBcKpZw", "Basic Wall:Interior - Partition (92mm Stud):203998", "IFCWALLSTANDARDCASE", 332.1, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1aj$VJZFn2TxepZUBcKpac", "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034", "IFCDOOR", 61.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1aj$VJZFn2TxepZUBcKpee", "Basic Wall:Interior - Partition (92mm Stud):204300", "IFCWALLSTANDARDCASE", 325.4, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1aj$VJZFn2TxepZUBcKphf", "Basic Wall:Interior - Partition (92mm Stud):204493", "IFCWALLSTANDARDCASE", 329.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"]
               ],
               "totalRows": 218,
               "skip": 0
@@ -635,15 +185,15 @@
             "snapshot": {
               "columns": [
                 {
-                  "name": "checkId",
+                  "name": "CheckId",
                   "type": "Text"
                 },
                 {
-                  "name": "checkTitle",
+                  "name": "CheckTitle",
                   "type": "Text"
                 },
                 {
-                  "name": "citation",
+                  "name": "Citation",
                   "type": "Text"
                 },
                 {
@@ -668,16 +218,7 @@
                 }
               ],
               "rows": [
-                [
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1",
-                  218,
-                  0,
-                  0,
-                  0,
-                  "Pass"
-                ]
+                ["IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1", 218, 0, 0, 0, "Pass"]
               ],
               "totalRows": 1,
               "skip": 0
@@ -693,7 +234,7 @@
         "text": "Add a requirement for embodied carbon too."
       },
       "reply": {
-        "text": "Updated the same file with a second specification, IDS-EC, requiring NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e on the same fourteen classes (3,099 bytes now, two specifications). Checking both against duplex-enriched: IDS-OC still 218 Pass, 0 Fail; IDS-EC is 217 Pass, 1 Fail out of 218. The one failure is the roof, \"Basic Roof:Live Roof over Wood Joist Flat Roof:184483\" (GlobalId 0jf0rYHfX3RAB3bSIRjmxl): it has no NRC_EmbodiedCarbon at all, so the column is null for that row and check.required marks it Fail rather than passing or guessing a value.",
+        "text": "Updated the same file with a second specification, IDS-EC, requiring NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e on the same fourteen classes (3,083 bytes now, two specifications). Checking both against duplex-enriched: IDS-OC still 218 Pass, 0 Fail; IDS-EC is 217 Pass, 1 Fail out of 218. The one failure is the roof, \"Basic Roof:Live Roof over Wood Joist Flat Roof:184483\" (GlobalId 0jf0rYHfX3RAB3bSIRjmxl): it has no NRC_EmbodiedCarbon at all, so the column is null for that row and check.required marks it Fail rather than passing or guessing a value.",
         "tools": [
           {
             "name": "getAnalysis",
@@ -708,7 +249,7 @@
           {
             "name": "Read",
             "ok": true,
-            "summary": "samples/notebooks/graphs/s09-ids-check/nrc-analytics.ids: 3099 bytes"
+            "summary": "samples/notebooks/graphs/s09-ids-check/nrc-analytics.ids: 3083 bytes"
           },
           {
             "name": "getResult",
@@ -728,8 +269,8 @@
             "caption": "nrc-analytics.ids, operational and embodied carbon",
             "path": "samples/notebooks/graphs/s09-ids-check/nrc-analytics.ids",
             "mediaType": "application/xml",
-            "bytes": 3099,
-            "sha256": "fd3fc004ad6ba515348e21a907c4ad1e70c6a65e3eff8ecb7c242063f67bb81f",
+            "bytes": 3083,
+            "sha256": "6b608df01c6818807cc57d2b589c66be11f02f0fe9a9ce610feb330070ab7b20",
             "preview": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ids xmlns=\"http://standards.buildingsmart.org/IDS\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd\">\n\t<info>\n\t\t<title>NRC analytics property sets</title>\n\t\t<description>Every analysed element (the fourteen IFC classes carrying a row in nrc_analytics_long.csv) must carry NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year and NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e as real numbers. Generated from samples/nrc/nrc-metrics.csv.</description>\n\t\t<author>cdiggins@gmail.com</author>"
           },
           {
@@ -760,523 +301,73 @@
                   "type": "Number"
                 },
                 {
-                  "name": "verdict",
+                  "name": "Verdict",
                   "type": "Text"
                 },
                 {
-                  "name": "checkId",
+                  "name": "CheckId",
                   "type": "Text"
                 },
                 {
-                  "name": "checkTitle",
+                  "name": "CheckTitle",
                   "type": "Text"
                 },
                 {
-                  "name": "citation",
+                  "name": "Citation",
                   "type": "Text"
                 }
               ],
               "rows": [
-                [
-                  "01KzA4SPn5IOODwLEb5RNY",
-                  "Stair:Residential - 200mm Max Riser 250mm Tread:198878:1",
-                  "IFCMEMBER",
-                  164,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0dxE1Sy6nDqfpDb5vIMN_Z",
-                  "Basic Wall:Interior - Furring (152 mm Stud):194166",
-                  "IFCWALLSTANDARDCASE",
-                  310.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0dxE1Sy6nDqfpDb5vIMNiA",
-                  "Basic Wall:Interior - Furring (152 mm Stud):193247",
-                  "IFCWALLSTANDARDCASE",
-                  295.4,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4ien",
-                  "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:192610",
-                  "IFCFURNISHINGELEMENT",
-                  402,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4j7w",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191401",
-                  "IFCFURNISHINGELEMENT",
-                  366.4,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jDb",
-                  "Basic Wall:Interior - Furring (152 mm Stud):190774",
-                  "IFCWALLSTANDARDCASE",
-                  358.6,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jE6",
-                  "Basic Wall:Interior - Furring (152 mm Stud):190933",
-                  "IFCWALLSTANDARDCASE",
-                  315.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jJA",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192153",
-                  "IFCFURNISHINGELEMENT",
-                  331.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jKO",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192331",
-                  "IFCFURNISHINGELEMENT",
-                  346.4,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jMl",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192508",
-                  "IFCFURNISHINGELEMENT",
-                  377.5,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jOM",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191557",
-                  "IFCFURNISHINGELEMENT",
-                  348.6,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jQJ",
-                  "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191680",
-                  "IFCFURNISHINGELEMENT",
-                  347.5,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jTB",
-                  "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:191768",
-                  "IFCFURNISHINGELEMENT",
-                  342,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jZ1",
-                  "Basic Wall:Interior - Furring (152 mm Stud):189074",
-                  "IFCWALLSTANDARDCASE",
-                  331.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4j_U",
-                  "Basic Wall:Interior - Furring (152 mm Stud):189901",
-                  "IFCWALLSTANDARDCASE",
-                  372,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0iEHWY1$XA8eQeeULq4jpl",
-                  "Basic Wall:Interior - Partition (92mm Stud):190140",
-                  "IFCWALLSTANDARDCASE",
-                  412,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0jf0rYHfX3RAB3bSIRjmmy",
-                  "Basic Wall:Exterior - Brick on Block:184944",
-                  "IFCWALLSTANDARDCASE",
-                  276.5,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0jf0rYHfX3RAB3bSIRjmoa",
-                  "Basic Wall:Exterior - Brick on Block:185064",
-                  "IFCWALLSTANDARDCASE",
-                  254.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0jf0rYHfX3RAB3bSIRjmpw",
-                  "Basic Wall:Exterior - Brick on Block:185014",
-                  "IFCWALLSTANDARDCASE",
-                  277.6,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0jf0rYHfX3RAB3bSIRjmr1",
-                  "Basic Wall:Exterior - Brick on Block:185101",
-                  "IFCWALLSTANDARDCASE",
-                  410.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0jf0rYHfX3RAB3bSIRjmxl",
-                  "Basic Roof:Live Roof over Wood Joist Flat Roof:184483",
-                  "IFCROOF",
-                  251.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT2B",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186632",
-                  "IFCFOOTING",
-                  277.5,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT2N",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186644",
-                  "IFCFOOTING",
-                  289.7,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT2Z",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186656",
-                  "IFCFOOTING",
-                  301.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT5$",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186620",
-                  "IFCFOOTING",
-                  250.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT5d",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186596",
-                  "IFCFOOTING",
-                  314.2,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT5l",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186604",
-                  "IFCFOOTING",
-                  322,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0kF45Qs8L9PAM9kmb1lT5t",
-                  "Wall Foundation:Bearing Footing - 900 x 300:186612",
-                  "IFCFOOTING",
-                  330.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4v_O1",
-                  "Stair:Residential - 200mm Max Riser 250mm Tread:151086",
-                  "IFCSTAIR",
-                  100.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4v_PH",
-                  "Railing:1100mm Guard Rail:151166",
-                  "IFCRAILING",
-                  45.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4v_PL",
-                  "Railing:900mm Handrail Only:151162",
-                  "IFCRAILING",
-                  49.7,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy3G",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157951",
-                  "IFCFURNISHINGELEMENT",
-                  16.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy3H",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157950",
-                  "IFCFURNISHINGELEMENT",
-                  17,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy4F",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157984",
-                  "IFCFURNISHINGELEMENT",
-                  16.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy4m",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157983",
-                  "IFCFURNISHINGELEMENT",
-                  24.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy6k",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158081",
-                  "IFCFURNISHINGELEMENT",
-                  24.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy6l",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158080",
-                  "IFCFURNISHINGELEMENT",
-                  25.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vyMO",
-                  "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159159",
-                  "IFCFURNISHINGELEMENT",
-                  19.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vyOn",
-                  "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159262",
-                  "IFCFURNISHINGELEMENT",
-                  21.6,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vy_8",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157607",
-                  "IFCFURNISHINGELEMENT",
-                  14.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "0wkEuT1wr1kOyafLY4vyu$",
-                  "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157200",
-                  "IFCFURNISHINGELEMENT",
-                  16,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1CZILmCaHETO8tf3SgGEWh",
-                  "Floor:150mm Exterior Slab on Grade:216507",
-                  "IFCSLAB",
-                  325.4,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1CZILmCaHETO8tf3SgGEXu",
-                  "Floor:150mm Exterior Slab on Grade:216552",
-                  "IFCSLAB",
-                  339.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1Eo2$BaHX42AEkDvQQDocD",
-                  "M_Skylight:1180 x 1170mm:1180 x 1170mm:185337",
-                  "IFCWINDOW",
-                  34.5,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1Eo2$BaHX42AEkDvQQDoy2",
-                  "M_Skylight:1180 x 1170mm:1180 x 1170mm:185718",
-                  "IFCWINDOW",
-                  38.9,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1aj$VJZFn2TxepZUBcKp$i",
-                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720",
-                  "IFCDOOR",
-                  117.3,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1aj$VJZFn2TxepZUBcKpZw",
-                  "Basic Wall:Interior - Partition (92mm Stud):203998",
-                  "IFCWALLSTANDARDCASE",
-                  332.1,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1aj$VJZFn2TxepZUBcKpac",
-                  "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034",
-                  "IFCDOOR",
-                  61.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1aj$VJZFn2TxepZUBcKpee",
-                  "Basic Wall:Interior - Partition (92mm Stud):204300",
-                  "IFCWALLSTANDARDCASE",
-                  325.4,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ],
-                [
-                  "1aj$VJZFn2TxepZUBcKphf",
-                  "Basic Wall:Interior - Partition (92mm Stud):204493",
-                  "IFCWALLSTANDARDCASE",
-                  329.8,
-                  "Pass",
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1"
-                ]
+                ["01KzA4SPn5IOODwLEb5RNY", "Stair:Residential - 200mm Max Riser 250mm Tread:198878:1", "IFCMEMBER", 164, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0dxE1Sy6nDqfpDb5vIMN_Z", "Basic Wall:Interior - Furring (152 mm Stud):194166", "IFCWALLSTANDARDCASE", 310.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0dxE1Sy6nDqfpDb5vIMNiA", "Basic Wall:Interior - Furring (152 mm Stud):193247", "IFCWALLSTANDARDCASE", 295.4, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4ien", "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:192610", "IFCFURNISHINGELEMENT", 402, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4j7w", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191401", "IFCFURNISHINGELEMENT", 366.4, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jDb", "Basic Wall:Interior - Furring (152 mm Stud):190774", "IFCWALLSTANDARDCASE", 358.6, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jE6", "Basic Wall:Interior - Furring (152 mm Stud):190933", "IFCWALLSTANDARDCASE", 315.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jJA", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192153", "IFCFURNISHINGELEMENT", 331.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jKO", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192331", "IFCFURNISHINGELEMENT", 346.4, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jMl", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:192508", "IFCFURNISHINGELEMENT", 377.5, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jOM", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191557", "IFCFURNISHINGELEMENT", 348.6, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jQJ", "M_Upper Cabinet-Double Door-Wall:1000 mm:1000 mm:191680", "IFCFURNISHINGELEMENT", 347.5, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jTB", "M_Upper Cabinet-Double Door-Wall:1000mm:1000mm:191768", "IFCFURNISHINGELEMENT", 342, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jZ1", "Basic Wall:Interior - Furring (152 mm Stud):189074", "IFCWALLSTANDARDCASE", 331.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4j_U", "Basic Wall:Interior - Furring (152 mm Stud):189901", "IFCWALLSTANDARDCASE", 372, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0iEHWY1$XA8eQeeULq4jpl", "Basic Wall:Interior - Partition (92mm Stud):190140", "IFCWALLSTANDARDCASE", 412, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0jf0rYHfX3RAB3bSIRjmmy", "Basic Wall:Exterior - Brick on Block:184944", "IFCWALLSTANDARDCASE", 276.5, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0jf0rYHfX3RAB3bSIRjmoa", "Basic Wall:Exterior - Brick on Block:185064", "IFCWALLSTANDARDCASE", 254.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0jf0rYHfX3RAB3bSIRjmpw", "Basic Wall:Exterior - Brick on Block:185014", "IFCWALLSTANDARDCASE", 277.6, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0jf0rYHfX3RAB3bSIRjmr1", "Basic Wall:Exterior - Brick on Block:185101", "IFCWALLSTANDARDCASE", 410.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0jf0rYHfX3RAB3bSIRjmxl", "Basic Roof:Live Roof over Wood Joist Flat Roof:184483", "IFCROOF", 251.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT2B", "Wall Foundation:Bearing Footing - 900 x 300:186632", "IFCFOOTING", 277.5, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT2N", "Wall Foundation:Bearing Footing - 900 x 300:186644", "IFCFOOTING", 289.7, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT2Z", "Wall Foundation:Bearing Footing - 900 x 300:186656", "IFCFOOTING", 301.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT5$", "Wall Foundation:Bearing Footing - 900 x 300:186620", "IFCFOOTING", 250.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT5d", "Wall Foundation:Bearing Footing - 900 x 300:186596", "IFCFOOTING", 314.2, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT5l", "Wall Foundation:Bearing Footing - 900 x 300:186604", "IFCFOOTING", 322, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0kF45Qs8L9PAM9kmb1lT5t", "Wall Foundation:Bearing Footing - 900 x 300:186612", "IFCFOOTING", 330.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4v_O1", "Stair:Residential - 200mm Max Riser 250mm Tread:151086", "IFCSTAIR", 100.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4v_PH", "Railing:1100mm Guard Rail:151166", "IFCRAILING", 45.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4v_PL", "Railing:900mm Handrail Only:151162", "IFCRAILING", 49.7, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy3G", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157951", "IFCFURNISHINGELEMENT", 16.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy3H", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157950", "IFCFURNISHINGELEMENT", 17, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy4F", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157984", "IFCFURNISHINGELEMENT", 16.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy4m", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157983", "IFCFURNISHINGELEMENT", 24.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy6k", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158081", "IFCFURNISHINGELEMENT", 24.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy6l", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:158080", "IFCFURNISHINGELEMENT", 25.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vyMO", "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159159", "IFCFURNISHINGELEMENT", 19.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vyOn", "M_Base Cabinet-Double Door & 2 Drawer:1000mm:1000mm:159262", "IFCFURNISHINGELEMENT", 21.6, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vy_8", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157607", "IFCFURNISHINGELEMENT", 14.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["0wkEuT1wr1kOyafLY4vyu$", "M_Tall Cabinet-Single Door(2):800 mm:800 mm:157200", "IFCFURNISHINGELEMENT", 16, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1CZILmCaHETO8tf3SgGEWh", "Floor:150mm Exterior Slab on Grade:216507", "IFCSLAB", 325.4, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1CZILmCaHETO8tf3SgGEXu", "Floor:150mm Exterior Slab on Grade:216552", "IFCSLAB", 339.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1Eo2$BaHX42AEkDvQQDocD", "M_Skylight:1180 x 1170mm:1180 x 1170mm:185337", "IFCWINDOW", 34.5, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1Eo2$BaHX42AEkDvQQDoy2", "M_Skylight:1180 x 1170mm:1180 x 1170mm:185718", "IFCWINDOW", 38.9, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1aj$VJZFn2TxepZUBcKp$i", "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:203720", "IFCDOOR", 117.3, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1aj$VJZFn2TxepZUBcKpZw", "Basic Wall:Interior - Partition (92mm Stud):203998", "IFCWALLSTANDARDCASE", 332.1, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1aj$VJZFn2TxepZUBcKpac", "M_Single-Flush:0762 x 2032mm:0762 x 2032mm:204034", "IFCDOOR", 61.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1aj$VJZFn2TxepZUBcKpee", "Basic Wall:Interior - Partition (92mm Stud):204300", "IFCWALLSTANDARDCASE", 325.4, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"],
+                ["1aj$VJZFn2TxepZUBcKphf", "Basic Wall:Interior - Partition (92mm Stud):204493", "IFCWALLSTANDARDCASE", 329.8, "Pass", "IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1"]
               ],
               "totalRows": 436,
               "skip": 0
@@ -1297,15 +388,15 @@
             "snapshot": {
               "columns": [
                 {
-                  "name": "checkId",
+                  "name": "CheckId",
                   "type": "Text"
                 },
                 {
-                  "name": "checkTitle",
+                  "name": "CheckTitle",
                   "type": "Text"
                 },
                 {
-                  "name": "citation",
+                  "name": "Citation",
                   "type": "Text"
                 },
                 {
@@ -1330,26 +421,8 @@
                 }
               ],
               "rows": [
-                [
-                  "IDS-OC",
-                  "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element",
-                  "nrc-analytics.ids specification 1",
-                  218,
-                  0,
-                  0,
-                  0,
-                  "Pass"
-                ],
-                [
-                  "IDS-EC",
-                  "NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element",
-                  "nrc-analytics.ids specification 2",
-                  217,
-                  1,
-                  0,
-                  0,
-                  "Fail"
-                ]
+                ["IDS-OC", "NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element", "nrc-analytics.ids specification 1", 218, 0, 0, 0, "Pass"],
+                ["IDS-EC", "NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element", "nrc-analytics.ids specification 2", 217, 1, 0, 0, "Fail"]
               ],
               "totalRows": 2,
               "skip": 0
@@ -1411,7 +484,7 @@
                   "type": "Text"
                 },
                 {
-                  "name": "checkId",
+                  "name": "CheckId",
                   "type": "Text"
                 },
                 {
@@ -1436,42 +509,10 @@
                 }
               ],
               "rows": [
-                [
-                  "duplex-base",
-                  "IDS-EC",
-                  0,
-                  218,
-                  0,
-                  0,
-                  "Fail"
-                ],
-                [
-                  "duplex-enriched",
-                  "IDS-EC",
-                  217,
-                  1,
-                  0,
-                  0,
-                  "Fail"
-                ],
-                [
-                  "duplex-base",
-                  "IDS-OC",
-                  0,
-                  218,
-                  0,
-                  0,
-                  "Fail"
-                ],
-                [
-                  "duplex-enriched",
-                  "IDS-OC",
-                  218,
-                  0,
-                  0,
-                  0,
-                  "Pass"
-                ]
+                ["duplex-base", "IDS-EC", 0, 218, 0, 0, "Fail"],
+                ["duplex-enriched", "IDS-EC", 217, 1, 0, 0, "Fail"],
+                ["duplex-base", "IDS-OC", 0, 218, 0, 0, "Fail"],
+                ["duplex-enriched", "IDS-OC", 218, 0, 0, 0, "Pass"]
               ],
               "totalRows": 4,
               "skip": 0
@@ -1481,12 +522,10 @@
             "kind": "graph",
             "id": "e2",
             "analysisId": "nb-s09-ids-check-base-vs-enriched",
-            "graphHash": "f92fd8ae039167dcde87d6764b76259e124e2ed88208b3f7bdac66865dd81bf7",
-            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 3460,\n      \"y\": 697\n    },\n    \"baseEcAnswer\": {\n      \"x\": 1347,\n      \"y\": 1402\n    },\n    \"baseEcRows\": {\n      \"x\": 389,\n      \"y\": 1402\n    },\n    \"baseEcTable\": {\n      \"x\": 998,\n      \"y\": 1402\n    },\n    \"baseEntities\": {\n      \"x\": 40,\n      \"y\": 1045\n    },\n    \"baseOcAnswer\": {\n      \"x\": 1347,\n      \"y\": 948\n    },\n    \"baseOcRows\": {\n      \"x\": 389,\n      \"y\": 948\n    },\n    \"baseOcTable\": {\n      \"x\": 998,\n      \"y\": 948\n    },\n    \"baseParameters\": {\n      \"x\": 40,\n      \"y\": 1329\n    },\n    \"baseRollup\": {\n      \"x\": 2229,\n      \"y\": 879\n    },\n    \"baseTagged\": {\n      \"x\": 2851,\n      \"y\": 879\n    },\n    \"baseUnion\": {\n      \"x\": 1956,\n      \"y\": 879\n    },\n    \"enrichedEcAnswer\": {\n      \"x\": 1347,\n      \"y\": 494\n    },\n    \"enrichedEcRows\": {\n      \"x\": 389,\n      \"y\": 494\n    },\n    \"enrichedEcTable\": {\n      \"x\": 998,\n      \"y\": 494\n    },\n    \"enrichedEntities\": {\n      \"x\": 40,\n      \"y\": 137\n    },\n    \"enrichedOcAnswer\": {\n      \"x\": 1347,\n      \"y\": 40\n    },\n    \"enrichedOcRows\": {\n      \"x\": 389,\n      \"y\": 40\n    },\n    \"enrichedOcTable\": {\n      \"x\": 998,\n      \"y\": 40\n    },\n    \"enrichedParameters\": {\n      \"x\": 40,\n      \"y\": 421\n    },\n    \"enrichedRollup\": {\n      \"x\": 2229,\n      \"y\": 539\n    },\n    \"enrichedTagged\": {\n      \"x\": 2851,\n      \"y\": 539\n    },\n    \"enrichedUnion\": {\n      \"x\": 1956,\n      \"y\": 539\n    },\n    \"baseRel\": {\n      \"x\": 2502,\n      \"y\": 879\n    },\n    \"enrichedRel\": {\n      \"x\": 2502,\n      \"y\": 539\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"enrichedTagged.relation\",\n        \"to\": \"answer.t1\"\n      },\n      {\n        \"from\": \"baseTagged.relation\",\n        \"to\": \"answer.t2\"\n      },\n      {\n        \"from\": \"baseEcTable.table\",\n        \"to\": \"baseEcAnswer.in\"\n      },\n      {\n        \"from\": \"baseEntities.relation\",\n        \"to\": \"baseEcRows.t1\"\n      },\n      {\n        \"from\": \"baseParameters.relation\",\n        \"to\": \"baseEcRows.t2\"\n      },\n      {\n        \"from\": \"baseEcRows.relation\",\n        \"to\": \"baseEcTable.input\"\n      },\n      {\n        \"from\": \"baseOcTable.table\",\n        \"to\": \"baseOcAnswer.in\"\n      },\n      {\n        \"from\": \"baseEntities.relation\",\n        \"to\": \"baseOcRows.t1\"\n      },\n      {\n        \"from\": \"baseParameters.relation\",\n        \"to\": \"baseOcRows.t2\"\n      },\n      {\n        \"from\": \"baseOcRows.relation\",\n        \"to\": \"baseOcTable.input\"\n      },\n      {\n        \"from\": \"baseRollup.out\",\n        \"to\": \"baseRel.table\"\n      },\n      {\n        \"from\": \"baseUnion.out\",\n        \"to\": \"baseRollup.in\"\n      },\n      {\n        \"from\": \"baseRel.relation\",\n        \"to\": \"baseTagged.t1\"\n      },\n      {\n        \"from\": \"baseOcAnswer.out\",\n        \"to\": \"baseUnion.a\"\n      },\n      {\n        \"from\": \"baseEcAnswer.out\",\n        \"to\": \"baseUnion.b\"\n      },\n      {\n        \"from\": \"enrichedEcTable.table\",\n        \"to\": \"enrichedEcAnswer.in\"\n      },\n      {\n        \"from\": \"enrichedEntities.relation\",\n        \"to\": \"enrichedEcRows.t1\"\n      },\n      {\n        \"from\": \"enrichedParameters.relation\",\n        \"to\": \"enrichedEcRows.t2\"\n      },\n      {\n        \"from\": \"enrichedEcRows.relation\",\n        \"to\": \"enrichedEcTable.input\"\n      },\n      {\n        \"from\": \"enrichedOcTable.table\",\n        \"to\": \"enrichedOcAnswer.in\"\n      },\n      {\n        \"from\": \"enrichedEntities.relation\",\n        \"to\": \"enrichedOcRows.t1\"\n      },\n      {\n        \"from\": \"enrichedParameters.relation\",\n        \"to\": \"enrichedOcRows.t2\"\n      },\n      {\n        \"from\": \"enrichedOcRows.relation\",\n        \"to\": \"enrichedOcTable.input\"\n      },\n      {\n        \"from\": \"enrichedRollup.out\",\n        \"to\": \"enrichedRel.table\"\n      },\n      {\n        \"from\": \"enrichedUnion.out\",\n        \"to\": \"enrichedRollup.in\"\n      },\n      {\n        \"from\": \"enrichedRel.relation\",\n        \"to\": \"enrichedTagged.t1\"\n      },\n      {\n        \"from\": \"enrichedOcAnswer.out\",\n        \"to\": \"enrichedUnion.a\"\n      },\n      {\n        \"from\": \"enrichedEcAnswer.out\",\n        \"to\": \"enrichedUnion.b\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseEcAnswer\",\n        \"kind\": \"check.required\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseEcRows\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseEcTable\",\n        \"kind\": \"rel.materialize\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseEntities\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseOcAnswer\",\n        \"kind\": \"check.required\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseOcRows\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseOcTable\",\n        \"kind\": \"rel.materialize\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseParameters\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseRel\",\n        \"kind\": \"rel.fromTable\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseRollup\",\n        \"kind\": \"check.rollup\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseTagged\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseUnion\",\n        \"kind\": \"check.union\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedEcAnswer\",\n        \"kind\": \"check.required\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedEcRows\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedEcTable\",\n        \"kind\": \"rel.materialize\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedEntities\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedOcAnswer\",\n        \"kind\": \"check.required\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedOcRows\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedOcTable\",\n        \"kind\": \"rel.materialize\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedParameters\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedRel\",\n        \"kind\": \"rel.fromTable\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedRollup\",\n        \"kind\": \"check.rollup\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedTagged\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedUnion\",\n        \"kind\": \"check.union\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"sql\": \"SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY checkId, model\"\n    },\n    \"baseEcAnswer\": {\n      \"checkId\": \"IDS-EC\",\n      \"citation\": \"nrc-analytics.ids specification 2\",\n      \"columns\": \"Value\",\n      \"title\": \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element\"\n    },\n    \"baseEcRows\": {\n      \"sql\": \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_EmbodiedCarbon' AND p.Name = 'EmbodiedCarbon_A1A3_kgCO2e' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\"\n    },\n    \"baseEcTable\": {\n      \"limit\": \"0\"\n    },\n    \"baseEntities\": {\n      \"source\": \"duplex-base\",\n      \"table\": \"EntityText\"\n    },\n    \"baseOcAnswer\": {\n      \"checkId\": \"IDS-OC\",\n      \"citation\": \"nrc-analytics.ids specification 1\",\n      \"columns\": \"Value\",\n      \"title\": \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element\"\n    },\n    \"baseOcRows\": {\n      \"sql\": \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_OperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\"\n    },\n    \"baseOcTable\": {\n      \"limit\": \"0\"\n    },\n    \"baseParameters\": {\n      \"source\": \"duplex-base\",\n      \"table\": \"ParameterText\"\n    },\n    \"baseRel\": {\n      \"name\": \"baseRollupRel\"\n    },\n    \"baseRollup\": {},\n    \"baseTagged\": {\n      \"sql\": \"SELECT 'duplex-base' AS model, checkId, passCount, failCount, needsReviewCount, infoNotAvailableCount, worst FROM t1\"\n    },\n    \"baseUnion\": {},\n    \"enrichedEcAnswer\": {\n      \"checkId\": \"IDS-EC\",\n      \"citation\": \"nrc-analytics.ids specification 2\",\n      \"columns\": \"Value\",\n      \"title\": \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element\"\n    },\n    \"enrichedEcRows\": {\n      \"sql\": \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_EmbodiedCarbon' AND p.Name = 'EmbodiedCarbon_A1A3_kgCO2e' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\"\n    },\n    \"enrichedEcTable\": {\n      \"limit\": \"0\"\n    },\n    \"enrichedEntities\": {\n      \"source\": \"duplex-enriched\",\n      \"table\": \"EntityText\"\n    },\n    \"enrichedOcAnswer\": {\n      \"checkId\": \"IDS-OC\",\n      \"citation\": \"nrc-analytics.ids specification 1\",\n      \"columns\": \"Value\",\n      \"title\": \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element\"\n    },\n    \"enrichedOcRows\": {\n      \"sql\": \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_OperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\"\n    },\n    \"enrichedOcTable\": {\n      \"limit\": \"0\"\n    },\n    \"enrichedParameters\": {\n      \"source\": \"duplex-enriched\",\n      \"table\": \"ParameterText\"\n    },\n    \"enrichedRel\": {\n      \"name\": \"enrichedRollupRel\"\n    },\n    \"enrichedRollup\": {},\n    \"enrichedTagged\": {\n      \"sql\": \"SELECT 'duplex-enriched' AS model, checkId, passCount, failCount, needsReviewCount, infoNotAvailableCount, worst FROM t1\"\n    },\n    \"enrichedUnion\": {}\n  }\n}",
-            "text": "dfg 0.1.0;\n// nb-s09-ids-check-base-vs-enriched   graph f92fd8ae0391\nbaseEntities = rel.table@1(source: \"duplex-base\", table: \"EntityText\");\n  // Ok  relation 4721 rows x 6 cols  sha 320a82558252  plan fbac43cf5e83\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 77, 6413, \"1Jx6Wzbs17ugoFEefHo1BC\", \"4835mm x 2420mm\", \"IFCWINDOWSTYLE\", null\n  //   [1] 78, 6639, \"28VDfyq51BtxN68z6Brpvs\", \"1250mm x 2010mm\", \"IFCDOORSTYLE\", null\n  //   [2] 79, 6908, \"1DUB3WxH5BFQb5h$$S4JfA\", \"750mm x 2200mm\", \"IFCWINDOWSTYLE\", null\nbaseParameters = rel.table@1(source: \"duplex-base\", table: \"ParameterText\");\n  // Ok  relation 15658 rows x 6 cols  plan 0603e8572f95  (over 10000, not hashed)\n  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text\n  //   [0] 115, \"Ifc:ApplicationIdentifier\", \"IFCAPPLICATION\", \"\", \"String\", \"Revit\"\n  //   [1] 120, \"Ifc:ElectricCurrentExponent\", \"IFCDIMENSIONALEXPONENTS\", \"\", \"Number\", \"0.0\"\n  //   [2] 120, \"Ifc:ThermodynamicTemperatureExponent\", \"IFCDIMENSIONALEXPONENTS\", \"\", \"Number\", \"0.0\"\nbaseEcRows = rel.sql@1(t1: baseEntities.relation, t2: baseParameters.relation, sql: \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_EmbodiedCarbon' AND p.Name = 'EmbodiedCarbon_A1A3_kgCO2e' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\");\n  // Ok  relation 218 rows x 4 cols  sha a242a0f524e9  plan 9e3d1d983e37\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", null\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", null\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", null\nbaseEcTable = rel.materialize@1(input: baseEcRows.relation, limit: \"0\");\n  // Ok  table 218 rows x 4 cols  sha a242a0f524e9\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", null\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", null\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", null\nbaseEcAnswer = check.required@1(in: baseEcTable.table, checkId: \"IDS-EC\", title: \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element\", citation: \"nrc-analytics.ids specification 2\", columns: \"Value\");\n  // Ok  table 218 rows x 8 cols  sha 02cd851db10e\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, verdict:Text, checkId:Text, checkTitle:Text, citation:Text\n  //   verdicts \"IDS-EC\": Fail 218\nbaseOcRows = rel.sql@1(t1: baseEntities.relation, t2: baseParameters.relation, sql: \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_OperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\");\n  // Ok  relation 218 rows x 4 cols  sha a242a0f524e9  plan f4fab31fe7f9\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", null\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", null\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", null\nbaseOcTable = rel.materialize@1(input: baseOcRows.relation, limit: \"0\");\n  // Ok  table 218 rows x 4 cols  sha a242a0f524e9\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", null\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", null\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", null\nbaseOcAnswer = check.required@1(in: baseOcTable.table, checkId: \"IDS-OC\", title: \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element\", citation: \"nrc-analytics.ids specification 1\", columns: \"Value\");\n  // Ok  table 218 rows x 8 cols  sha c8cafecc267f\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, verdict:Text, checkId:Text, checkTitle:Text, citation:Text\n  //   verdicts \"IDS-OC\": Fail 218\nbaseUnion = check.union@1(a: baseOcAnswer.out, b: baseEcAnswer.out);\n  // Ok  table 436 rows x 8 cols  sha 8918366ce1cd\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, verdict:Text, checkId:Text, checkTitle:Text, citation:Text\n  //   verdicts \"IDS-EC\": Fail 218\n  //   verdicts \"IDS-OC\": Fail 218\nbaseRollup = check.rollup@1(in: baseUnion.out);\n  // Ok  table 2 rows x 8 cols  sha c07eca809ed5\n  //   columns checkId:Text, checkTitle:Text, citation:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"IDS-OC\", \"NRC_OperationalCarbon.OperationalCarbon_kgCO\"..., \"nrc-analytics.ids specification 1\", 0, 218, 0, 0, \"Fail\"\n  //   [1] \"IDS-EC\", \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2\"..., \"nrc-analytics.ids specification 2\", 0, 218, 0, 0, \"Fail\"\nbaseRel = rel.fromTable@1(table: baseRollup.out, name: \"baseRollupRel\");\n  // Ok  relation 2 rows x 8 cols  sha c07eca809ed5  plan b39c5a0c83e7\n  //   columns checkId:Text, checkTitle:Text, citation:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"IDS-OC\", \"NRC_OperationalCarbon.OperationalCarbon_kgCO\"..., \"nrc-analytics.ids specification 1\", 0, 218, 0, 0, \"Fail\"\n  //   [1] \"IDS-EC\", \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2\"..., \"nrc-analytics.ids specification 2\", 0, 218, 0, 0, \"Fail\"\nbaseTagged = rel.sql@1(t1: baseRel.relation, sql: \"SELECT 'duplex-base' AS model, checkId, passCount, failCount, needsReviewCount, infoNotAvailableCount, worst FROM t1\");\n  // Ok  relation 2 rows x 7 cols  sha 5db6b7fd97de  plan 150ace702651\n  //   columns model:Text, checkId:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"duplex-base\", \"IDS-OC\", 0, 218, 0, 0, \"Fail\"\n  //   [1] \"duplex-base\", \"IDS-EC\", 0, 218, 0, 0, \"Fail\"\nenrichedEntities = rel.table@1(source: \"duplex-enriched\", table: \"EntityText\");\n  // Ok  relation 4721 rows x 6 cols  sha 320a82558252  plan 9a8be9f3b5d5\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 77, 6413, \"1Jx6Wzbs17ugoFEefHo1BC\", \"4835mm x 2420mm\", \"IFCWINDOWSTYLE\", null\n  //   [1] 78, 6639, \"28VDfyq51BtxN68z6Brpvs\", \"1250mm x 2010mm\", \"IFCDOORSTYLE\", null\n  //   [2] 79, 6908, \"1DUB3WxH5BFQb5h$$S4JfA\", \"750mm x 2200mm\", \"IFCWINDOWSTYLE\", null\nenrichedParameters = rel.table@1(source: \"duplex-enriched\", table: \"ParameterText\");\n  // Ok  relation 18099 rows x 6 cols  plan 7b315558b5df  (over 10000, not hashed)\n  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text\n  //   [0] 115, \"Ifc:ApplicationIdentifier\", \"IFCAPPLICATION\", \"\", \"String\", \"Revit\"\n  //   [1] 120, \"Ifc:ElectricCurrentExponent\", \"IFCDIMENSIONALEXPONENTS\", \"\", \"Number\", \"0.0\"\n  //   [2] 120, \"Ifc:ThermodynamicTemperatureExponent\", \"IFCDIMENSIONALEXPONENTS\", \"\", \"Number\", \"0.0\"\nenrichedEcRows = rel.sql@1(t1: enrichedEntities.relation, t2: enrichedParameters.relation, sql: \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_EmbodiedCarbon' AND p.Name = 'EmbodiedCarbon_A1A3_kgCO2e' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\");\n  // Ok  relation 218 rows x 4 cols  sha ca3f318e76a9  plan 8530b6a602a3\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", 128.7\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", 875.1\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", 888.8\nenrichedEcTable = rel.materialize@1(input: enrichedEcRows.relation, limit: \"0\");\n  // Ok  table 218 rows x 4 cols  sha ca3f318e76a9\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", 128.7\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", 875.1\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", 888.8\nenrichedEcAnswer = check.required@1(in: enrichedEcTable.table, checkId: \"IDS-EC\", title: \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element\", citation: \"nrc-analytics.ids specification 2\", columns: \"Value\");\n  // Ok  table 218 rows x 8 cols  sha 89e23d598605\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, verdict:Text, checkId:Text, checkTitle:Text, citation:Text\n  //   verdicts \"IDS-EC\": Fail 1, Pass 217\nenrichedOcRows = rel.sql@1(t1: enrichedEntities.relation, t2: enrichedParameters.relation, sql: \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_OperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\");\n  // Ok  relation 218 rows x 4 cols  sha 69cc58c81ad5  plan 59ddd666c928\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", 164\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", 310.9\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", 295.4\nenrichedOcTable = rel.materialize@1(input: enrichedOcRows.relation, limit: \"0\");\n  // Ok  table 218 rows x 4 cols  sha 69cc58c81ad5\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", 164\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", 310.9\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", 295.4\nenrichedOcAnswer = check.required@1(in: enrichedOcTable.table, checkId: \"IDS-OC\", title: \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element\", citation: \"nrc-analytics.ids specification 1\", columns: \"Value\");\n  // Ok  table 218 rows x 8 cols  sha 5df8e7ba1cba\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, verdict:Text, checkId:Text, checkTitle:Text, citation:Text\n  //   verdicts \"IDS-OC\": Pass 218\nenrichedUnion = check.union@1(a: enrichedOcAnswer.out, b: enrichedEcAnswer.out);\n  // Ok  table 436 rows x 8 cols  sha ac64f529a9cb\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, verdict:Text, checkId:Text, checkTitle:Text, citation:Text\n  //   verdicts \"IDS-EC\": Fail 1, Pass 217\n  //   verdicts \"IDS-OC\": Pass 218\nenrichedRollup = check.rollup@1(in: enrichedUnion.out);\n  // Ok  table 2 rows x 8 cols  sha 2ececa4625b7\n  //   columns checkId:Text, checkTitle:Text, citation:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"IDS-OC\", \"NRC_OperationalCarbon.OperationalCarbon_kgCO\"..., \"nrc-analytics.ids specification 1\", 218, 0, 0, 0, \"Pass\"\n  //   [1] \"IDS-EC\", \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2\"..., \"nrc-analytics.ids specification 2\", 217, 1, 0, 0, \"Fail\"\nenrichedRel = rel.fromTable@1(table: enrichedRollup.out, name: \"enrichedRollupRel\");\n  // Ok  relation 2 rows x 8 cols  sha 2ececa4625b7  plan 1e29f32fffdd\n  //   columns checkId:Text, checkTitle:Text, citation:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"IDS-OC\", \"NRC_OperationalCarbon.OperationalCarbon_kgCO\"..., \"nrc-analytics.ids specification 1\", 218, 0, 0, 0, \"Pass\"\n  //   [1] \"IDS-EC\", \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2\"..., \"nrc-analytics.ids specification 2\", 217, 1, 0, 0, \"Fail\"\nenrichedTagged = rel.sql@1(t1: enrichedRel.relation, sql: \"SELECT 'duplex-enriched' AS model, checkId, passCount, failCount, needsReviewCount, infoNotAvailableCount, worst FROM t1\");\n  // Ok  relation 2 rows x 7 cols  sha 7ca1be9c847e  plan 5529cba4fdda\n  //   columns model:Text, checkId:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"duplex-enriched\", \"IDS-OC\", 218, 0, 0, 0, \"Pass\"\n  //   [1] \"duplex-enriched\", \"IDS-EC\", 217, 1, 0, 0, \"Fail\"\nanswer = rel.sql@1(t1: enrichedTagged.relation, t2: baseTagged.relation, sql: \"SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY checkId, model\");\n  // Ok  relation 4 rows x 7 cols  sha 9eec2a0ac605  plan b003c195d555\n  //   columns model:Text, checkId:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"duplex-base\", \"IDS-EC\", 0, 218, 0, 0, \"Fail\"\n  //   [1] \"duplex-enriched\", \"IDS-EC\", 217, 1, 0, 0, \"Fail\"\n  //   [2] \"duplex-base\", \"IDS-OC\", 0, 218, 0, 0, \"Fail\"\n",
-            "focus": [
-              "answer"
-            ]
+            "graphHash": "f3b4d37bfc75120b712c5df8bfde056b78f58cfba6e7de3f16f45a59f77edde7",
+            "document": "{\n  \"formatVersion\": \"0.1.0\",\n  \"layout\": {\n    \"answer\": {\n      \"x\": 3460,\n      \"y\": 697\n    },\n    \"baseEcAnswer\": {\n      \"x\": 1347,\n      \"y\": 1402\n    },\n    \"baseEcRows\": {\n      \"x\": 389,\n      \"y\": 1402\n    },\n    \"baseEcTable\": {\n      \"x\": 998,\n      \"y\": 1402\n    },\n    \"baseEntities\": {\n      \"x\": 40,\n      \"y\": 1045\n    },\n    \"baseOcAnswer\": {\n      \"x\": 1347,\n      \"y\": 948\n    },\n    \"baseOcRows\": {\n      \"x\": 389,\n      \"y\": 948\n    },\n    \"baseOcTable\": {\n      \"x\": 998,\n      \"y\": 948\n    },\n    \"baseParameters\": {\n      \"x\": 40,\n      \"y\": 1329\n    },\n    \"baseRel\": {\n      \"x\": 2502,\n      \"y\": 879\n    },\n    \"baseRollup\": {\n      \"x\": 2229,\n      \"y\": 879\n    },\n    \"baseTagged\": {\n      \"x\": 2851,\n      \"y\": 879\n    },\n    \"baseUnion\": {\n      \"x\": 1956,\n      \"y\": 879\n    },\n    \"enrichedEcAnswer\": {\n      \"x\": 1347,\n      \"y\": 494\n    },\n    \"enrichedEcRows\": {\n      \"x\": 389,\n      \"y\": 494\n    },\n    \"enrichedEcTable\": {\n      \"x\": 998,\n      \"y\": 494\n    },\n    \"enrichedEntities\": {\n      \"x\": 40,\n      \"y\": 137\n    },\n    \"enrichedOcAnswer\": {\n      \"x\": 1347,\n      \"y\": 40\n    },\n    \"enrichedOcRows\": {\n      \"x\": 389,\n      \"y\": 40\n    },\n    \"enrichedOcTable\": {\n      \"x\": 998,\n      \"y\": 40\n    },\n    \"enrichedParameters\": {\n      \"x\": 40,\n      \"y\": 421\n    },\n    \"enrichedRel\": {\n      \"x\": 2502,\n      \"y\": 539\n    },\n    \"enrichedRollup\": {\n      \"x\": 2229,\n      \"y\": 539\n    },\n    \"enrichedTagged\": {\n      \"x\": 2851,\n      \"y\": 539\n    },\n    \"enrichedUnion\": {\n      \"x\": 1956,\n      \"y\": 539\n    }\n  },\n  \"structure\": {\n    \"edges\": [\n      {\n        \"from\": \"enrichedTagged.relation\",\n        \"to\": \"answer.t1\"\n      },\n      {\n        \"from\": \"baseTagged.relation\",\n        \"to\": \"answer.t2\"\n      },\n      {\n        \"from\": \"baseEcTable.table\",\n        \"to\": \"baseEcAnswer.in\"\n      },\n      {\n        \"from\": \"baseEntities.relation\",\n        \"to\": \"baseEcRows.t1\"\n      },\n      {\n        \"from\": \"baseParameters.relation\",\n        \"to\": \"baseEcRows.t2\"\n      },\n      {\n        \"from\": \"baseEcRows.relation\",\n        \"to\": \"baseEcTable.input\"\n      },\n      {\n        \"from\": \"baseOcTable.table\",\n        \"to\": \"baseOcAnswer.in\"\n      },\n      {\n        \"from\": \"baseEntities.relation\",\n        \"to\": \"baseOcRows.t1\"\n      },\n      {\n        \"from\": \"baseParameters.relation\",\n        \"to\": \"baseOcRows.t2\"\n      },\n      {\n        \"from\": \"baseOcRows.relation\",\n        \"to\": \"baseOcTable.input\"\n      },\n      {\n        \"from\": \"baseRollup.out\",\n        \"to\": \"baseRel.table\"\n      },\n      {\n        \"from\": \"baseUnion.out\",\n        \"to\": \"baseRollup.in\"\n      },\n      {\n        \"from\": \"baseRel.relation\",\n        \"to\": \"baseTagged.t1\"\n      },\n      {\n        \"from\": \"baseOcAnswer.out\",\n        \"to\": \"baseUnion.a\"\n      },\n      {\n        \"from\": \"baseEcAnswer.out\",\n        \"to\": \"baseUnion.b\"\n      },\n      {\n        \"from\": \"enrichedEcTable.table\",\n        \"to\": \"enrichedEcAnswer.in\"\n      },\n      {\n        \"from\": \"enrichedEntities.relation\",\n        \"to\": \"enrichedEcRows.t1\"\n      },\n      {\n        \"from\": \"enrichedParameters.relation\",\n        \"to\": \"enrichedEcRows.t2\"\n      },\n      {\n        \"from\": \"enrichedEcRows.relation\",\n        \"to\": \"enrichedEcTable.input\"\n      },\n      {\n        \"from\": \"enrichedOcTable.table\",\n        \"to\": \"enrichedOcAnswer.in\"\n      },\n      {\n        \"from\": \"enrichedEntities.relation\",\n        \"to\": \"enrichedOcRows.t1\"\n      },\n      {\n        \"from\": \"enrichedParameters.relation\",\n        \"to\": \"enrichedOcRows.t2\"\n      },\n      {\n        \"from\": \"enrichedOcRows.relation\",\n        \"to\": \"enrichedOcTable.input\"\n      },\n      {\n        \"from\": \"enrichedRollup.out\",\n        \"to\": \"enrichedRel.table\"\n      },\n      {\n        \"from\": \"enrichedUnion.out\",\n        \"to\": \"enrichedRollup.in\"\n      },\n      {\n        \"from\": \"enrichedRel.relation\",\n        \"to\": \"enrichedTagged.t1\"\n      },\n      {\n        \"from\": \"enrichedOcAnswer.out\",\n        \"to\": \"enrichedUnion.a\"\n      },\n      {\n        \"from\": \"enrichedEcAnswer.out\",\n        \"to\": \"enrichedUnion.b\"\n      }\n    ],\n    \"nodes\": [\n      {\n        \"id\": \"answer\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseEcAnswer\",\n        \"kind\": \"check.required\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseEcRows\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseEcTable\",\n        \"kind\": \"rel.materialize\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseEntities\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseOcAnswer\",\n        \"kind\": \"check.required\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseOcRows\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseOcTable\",\n        \"kind\": \"rel.materialize\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseParameters\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseRel\",\n        \"kind\": \"rel.fromTable\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseRollup\",\n        \"kind\": \"check.rollup\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseTagged\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"baseUnion\",\n        \"kind\": \"check.union\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedEcAnswer\",\n        \"kind\": \"check.required\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedEcRows\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedEcTable\",\n        \"kind\": \"rel.materialize\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedEntities\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedOcAnswer\",\n        \"kind\": \"check.required\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedOcRows\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedOcTable\",\n        \"kind\": \"rel.materialize\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedParameters\",\n        \"kind\": \"rel.table\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedRel\",\n        \"kind\": \"rel.fromTable\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedRollup\",\n        \"kind\": \"check.rollup\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedTagged\",\n        \"kind\": \"rel.sql\",\n        \"version\": 1\n      },\n      {\n        \"id\": \"enrichedUnion\",\n        \"kind\": \"check.union\",\n        \"version\": 1\n      }\n    ]\n  },\n  \"values\": {\n    \"answer\": {\n      \"sql\": \"SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY checkId, model\"\n    },\n    \"baseEcAnswer\": {\n      \"checkId\": \"IDS-EC\",\n      \"citation\": \"nrc-analytics.ids specification 2\",\n      \"columns\": \"Value\",\n      \"title\": \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element\"\n    },\n    \"baseEcRows\": {\n      \"sql\": \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_EmbodiedCarbon' AND p.Name = 'EmbodiedCarbon_A1A3_kgCO2e' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\"\n    },\n    \"baseEcTable\": {\n      \"limit\": \"0\"\n    },\n    \"baseEntities\": {\n      \"source\": \"duplex-base\",\n      \"table\": \"EntityText\"\n    },\n    \"baseOcAnswer\": {\n      \"checkId\": \"IDS-OC\",\n      \"citation\": \"nrc-analytics.ids specification 1\",\n      \"columns\": \"Value\",\n      \"title\": \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element\"\n    },\n    \"baseOcRows\": {\n      \"sql\": \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_OperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\"\n    },\n    \"baseOcTable\": {\n      \"limit\": \"0\"\n    },\n    \"baseParameters\": {\n      \"source\": \"duplex-base\",\n      \"table\": \"ParameterText\"\n    },\n    \"baseRel\": {\n      \"name\": \"baseRollupRel\"\n    },\n    \"baseRollup\": {},\n    \"baseTagged\": {\n      \"sql\": \"SELECT 'duplex-base' AS model, checkId, passCount, failCount, needsReviewCount, infoNotAvailableCount, worst FROM t1\"\n    },\n    \"baseUnion\": {},\n    \"enrichedEcAnswer\": {\n      \"checkId\": \"IDS-EC\",\n      \"citation\": \"nrc-analytics.ids specification 2\",\n      \"columns\": \"Value\",\n      \"title\": \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element\"\n    },\n    \"enrichedEcRows\": {\n      \"sql\": \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_EmbodiedCarbon' AND p.Name = 'EmbodiedCarbon_A1A3_kgCO2e' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\"\n    },\n    \"enrichedEcTable\": {\n      \"limit\": \"0\"\n    },\n    \"enrichedEntities\": {\n      \"source\": \"duplex-enriched\",\n      \"table\": \"EntityText\"\n    },\n    \"enrichedOcAnswer\": {\n      \"checkId\": \"IDS-OC\",\n      \"citation\": \"nrc-analytics.ids specification 1\",\n      \"columns\": \"Value\",\n      \"title\": \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element\"\n    },\n    \"enrichedOcRows\": {\n      \"sql\": \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_OperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\"\n    },\n    \"enrichedOcTable\": {\n      \"limit\": \"0\"\n    },\n    \"enrichedParameters\": {\n      \"source\": \"duplex-enriched\",\n      \"table\": \"ParameterText\"\n    },\n    \"enrichedRel\": {\n      \"name\": \"enrichedRollupRel\"\n    },\n    \"enrichedRollup\": {},\n    \"enrichedTagged\": {\n      \"sql\": \"SELECT 'duplex-enriched' AS model, checkId, passCount, failCount, needsReviewCount, infoNotAvailableCount, worst FROM t1\"\n    },\n    \"enrichedUnion\": {}\n  }\n}\n",
+            "text": "dfg 0.1.0;\n// nb-s09-ids-check-base-vs-enriched   graph f3b4d37bfc75\nbaseEntities = rel.table@1(source: \"duplex-base\", table: \"EntityText\");\n  // Ok  relation 4721 rows x 6 cols  sha 5fc6c7198857  plan fbac43cf5e83\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 77, 6413, \"1Jx6Wzbs17ugoFEefHo1BC\", \"4835mm x 2420mm\", \"IFCWINDOWSTYLE\", null\n  //   [1] 78, 6639, \"28VDfyq51BtxN68z6Brpvs\", \"1250mm x 2010mm\", \"IFCDOORSTYLE\", null\n  //   [2] 79, 6908, \"1DUB3WxH5BFQb5h$$S4JfA\", \"750mm x 2200mm\", \"IFCWINDOWSTYLE\", null\nbaseParameters = rel.table@1(source: \"duplex-base\", table: \"ParameterText\");\n  // Ok  relation 16112 rows x 6 cols  plan 0603e8572f95  (over 10000, not hashed)\n  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text\n  //   [0] 120, \"Ifc:ElectricCurrentExponent\", \"IFCDIMENSIONALEXPONENTS\", null, \"Number\", \"0.0\"\n  //   [1] 120, \"Ifc:ThermodynamicTemperatureExponent\", \"IFCDIMENSIONALEXPONENTS\", null, \"Number\", \"0.0\"\n  //   [2] 120, \"Ifc:AmountOfSubstanceExponent\", \"IFCDIMENSIONALEXPONENTS\", null, \"Number\", \"0.0\"\nbaseEcRows = rel.sql@1(t1: baseEntities.relation, t2: baseParameters.relation, sql: \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_EmbodiedCarbon' AND p.Name = 'EmbodiedCarbon_A1A3_kgCO2e' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\");\n  // Ok  relation 218 rows x 4 cols  sha a242a0f524e9  plan cf12cd5c5d3c\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", null\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", null\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", null\nbaseEcTable = rel.materialize@1(input: baseEcRows.relation, limit: \"0\");\n  // Ok  table 218 rows x 4 cols  sha a242a0f524e9\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", null\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", null\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", null\nbaseEcAnswer = check.required@1(in: baseEcTable.table, checkId: \"IDS-EC\", title: \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element\", citation: \"nrc-analytics.ids specification 2\", columns: \"Value\");\n  // Ok  table 218 rows x 8 cols  sha 0f3187bcb855\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, Verdict:Text, CheckId:Text, CheckTitle:Text, Citation:Text\n  //   verdicts \"IDS-EC\": Fail 218\nbaseOcRows = rel.sql@1(t1: baseEntities.relation, t2: baseParameters.relation, sql: \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_OperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\");\n  // Ok  relation 218 rows x 4 cols  sha a242a0f524e9  plan 1644a78fc040\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", null\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", null\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", null\nbaseOcTable = rel.materialize@1(input: baseOcRows.relation, limit: \"0\");\n  // Ok  table 218 rows x 4 cols  sha a242a0f524e9\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", null\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", null\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", null\nbaseOcAnswer = check.required@1(in: baseOcTable.table, checkId: \"IDS-OC\", title: \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element\", citation: \"nrc-analytics.ids specification 1\", columns: \"Value\");\n  // Ok  table 218 rows x 8 cols  sha 8939b2b5172f\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, Verdict:Text, CheckId:Text, CheckTitle:Text, Citation:Text\n  //   verdicts \"IDS-OC\": Fail 218\nbaseUnion = check.union@1(a: baseOcAnswer.out, b: baseEcAnswer.out);\n  // Ok  table 436 rows x 8 cols  sha 2a140c0159b7\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, Verdict:Text, CheckId:Text, CheckTitle:Text, Citation:Text\n  //   verdicts \"IDS-EC\": Fail 218\n  //   verdicts \"IDS-OC\": Fail 218\nbaseRollup = check.rollup@1(in: baseUnion.out);\n  // Ok  table 2 rows x 8 cols  sha a58069a9f6fa\n  //   columns CheckId:Text, CheckTitle:Text, Citation:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"IDS-OC\", \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_p\"..., \"nrc-analytics.ids specification 1\", 0, 218, 0, 0, \"Fail\"\n  //   [1] \"IDS-EC\", \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e pr\"..., \"nrc-analytics.ids specification 2\", 0, 218, 0, 0, \"Fail\"\nbaseRel = rel.fromTable@1(table: baseRollup.out, name: \"baseRollupRel\");\n  // Ok  relation 2 rows x 8 cols  sha a58069a9f6fa  plan 753ce4858378\n  //   columns CheckId:Text, CheckTitle:Text, Citation:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"IDS-OC\", \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_p\"..., \"nrc-analytics.ids specification 1\", 0, 218, 0, 0, \"Fail\"\n  //   [1] \"IDS-EC\", \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e pr\"..., \"nrc-analytics.ids specification 2\", 0, 218, 0, 0, \"Fail\"\nbaseTagged = rel.sql@1(t1: baseRel.relation, sql: \"SELECT 'duplex-base' AS model, checkId, passCount, failCount, needsReviewCount, infoNotAvailableCount, worst FROM t1\");\n  // Ok  relation 2 rows x 7 cols  sha 8d94591257f6  plan df9ad11cd069\n  //   columns model:Text, CheckId:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"duplex-base\", \"IDS-OC\", 0, 218, 0, 0, \"Fail\"\n  //   [1] \"duplex-base\", \"IDS-EC\", 0, 218, 0, 0, \"Fail\"\nenrichedEntities = rel.table@1(source: \"duplex-enriched\", table: \"EntityText\");\n  // Ok  relation 4730 rows x 6 cols  sha e4c73a6a8dbe  plan 9a8be9f3b5d5\n  //   columns EntityIndex:Integer, StepId:Integer, GlobalId:Text, Name:Text, Category:Text, Type:Text\n  //   [0] 80, 6413, \"1Jx6Wzbs17ugoFEefHo1BC\", \"4835mm x 2420mm\", \"IFCWINDOWSTYLE\", null\n  //   [1] 81, 6639, \"28VDfyq51BtxN68z6Brpvs\", \"1250mm x 2010mm\", \"IFCDOORSTYLE\", null\n  //   [2] 82, 6908, \"1DUB3WxH5BFQb5h$$S4JfA\", \"750mm x 2200mm\", \"IFCWINDOWSTYLE\", null\nenrichedParameters = rel.table@1(source: \"duplex-enriched\", table: \"ParameterText\");\n  // Ok  relation 18582 rows x 6 cols  plan 7b315558b5df  (over 10000, not hashed)\n  //   columns EntityIndex:Integer, Name:Text, ParameterGroup:Text, Units:Text, ValueType:Text, Value:Text\n  //   [0] 123, \"Ifc:ElectricCurrentExponent\", \"IFCDIMENSIONALEXPONENTS\", null, \"Number\", \"0.0\"\n  //   [1] 123, \"Ifc:ThermodynamicTemperatureExponent\", \"IFCDIMENSIONALEXPONENTS\", null, \"Number\", \"0.0\"\n  //   [2] 123, \"Ifc:AmountOfSubstanceExponent\", \"IFCDIMENSIONALEXPONENTS\", null, \"Number\", \"0.0\"\nenrichedEcRows = rel.sql@1(t1: enrichedEntities.relation, t2: enrichedParameters.relation, sql: \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_EmbodiedCarbon' AND p.Name = 'EmbodiedCarbon_A1A3_kgCO2e' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\");\n  // Ok  relation 218 rows x 4 cols  sha ca3f318e76a9  plan 37d14515b678\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", 128.7\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", 875.1\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", 888.8\nenrichedEcTable = rel.materialize@1(input: enrichedEcRows.relation, limit: \"0\");\n  // Ok  table 218 rows x 4 cols  sha ca3f318e76a9\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", 128.7\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", 875.1\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", 888.8\nenrichedEcAnswer = check.required@1(in: enrichedEcTable.table, checkId: \"IDS-EC\", title: \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e present, on an analysed element\", citation: \"nrc-analytics.ids specification 2\", columns: \"Value\");\n  // Ok  table 218 rows x 8 cols  sha 6348492d8c25\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, Verdict:Text, CheckId:Text, CheckTitle:Text, Citation:Text\n  //   verdicts \"IDS-EC\": Fail 1, Pass 217\nenrichedOcRows = rel.sql@1(t1: enrichedEntities.relation, t2: enrichedParameters.relation, sql: \"SELECT e.GlobalId, e.Name, e.Category, CAST(p.Value AS DOUBLE) AS Value FROM t1 e LEFT JOIN t2 p ON p.EntityIndex = e.EntityIndex AND p.ParameterGroup = 'NRC_OperationalCarbon' AND p.Name = 'OperationalCarbon_kgCO2e_per_year' WHERE e.Category IN ('IFCWALL','IFCWALLSTANDARDCASE','IFCWINDOW','IFCDOOR','IFCROOF','IFCSLAB','IFCBEAM','IFCCOVERING','IFCRAILING','IFCSTAIR','IFCSTAIRFLIGHT','IFCFOOTING','IFCFURNISHINGELEMENT','IFCMEMBER') ORDER BY e.GlobalId\");\n  // Ok  relation 218 rows x 4 cols  sha 69cc58c81ad5  plan 484e469b195f\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", 164\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", 310.9\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", 295.4\nenrichedOcTable = rel.materialize@1(input: enrichedOcRows.relation, limit: \"0\");\n  // Ok  table 218 rows x 4 cols  sha 69cc58c81ad5\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number\n  //   [0] \"01KzA4SPn5IOODwLEb5RNY\", \"Stair:Residential - 200mm Max Riser 250mm Tread:\"..., \"IFCMEMBER\", 164\n  //   [1] \"0dxE1Sy6nDqfpDb5vIMN_Z\", \"Basic Wall:Interior - Furring (152 mm Stud):1941\"..., \"IFCWALLSTANDARDCASE\", 310.9\n  //   [2] \"0dxE1Sy6nDqfpDb5vIMNiA\", \"Basic Wall:Interior - Furring (152 mm Stud):1932\"..., \"IFCWALLSTANDARDCASE\", 295.4\nenrichedOcAnswer = check.required@1(in: enrichedOcTable.table, checkId: \"IDS-OC\", title: \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year present, on an analysed element\", citation: \"nrc-analytics.ids specification 1\", columns: \"Value\");\n  // Ok  table 218 rows x 8 cols  sha 45e6552bc000\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, Verdict:Text, CheckId:Text, CheckTitle:Text, Citation:Text\n  //   verdicts \"IDS-OC\": Pass 218\nenrichedUnion = check.union@1(a: enrichedOcAnswer.out, b: enrichedEcAnswer.out);\n  // Ok  table 436 rows x 8 cols  sha 839ed0d64004\n  //   columns GlobalId:Text, Name:Text, Category:Text, Value:Number, Verdict:Text, CheckId:Text, CheckTitle:Text, Citation:Text\n  //   verdicts \"IDS-EC\": Fail 1, Pass 217\n  //   verdicts \"IDS-OC\": Pass 218\nenrichedRollup = check.rollup@1(in: enrichedUnion.out);\n  // Ok  table 2 rows x 8 cols  sha c11c32b7d331\n  //   columns CheckId:Text, CheckTitle:Text, Citation:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"IDS-OC\", \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_p\"..., \"nrc-analytics.ids specification 1\", 218, 0, 0, 0, \"Pass\"\n  //   [1] \"IDS-EC\", \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e pr\"..., \"nrc-analytics.ids specification 2\", 217, 1, 0, 0, \"Fail\"\nenrichedRel = rel.fromTable@1(table: enrichedRollup.out, name: \"enrichedRollupRel\");\n  // Ok  relation 2 rows x 8 cols  sha c11c32b7d331  plan 266a22d83792\n  //   columns CheckId:Text, CheckTitle:Text, Citation:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"IDS-OC\", \"NRC_OperationalCarbon.OperationalCarbon_kgCO2e_p\"..., \"nrc-analytics.ids specification 1\", 218, 0, 0, 0, \"Pass\"\n  //   [1] \"IDS-EC\", \"NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e pr\"..., \"nrc-analytics.ids specification 2\", 217, 1, 0, 0, \"Fail\"\nenrichedTagged = rel.sql@1(t1: enrichedRel.relation, sql: \"SELECT 'duplex-enriched' AS model, checkId, passCount, failCount, needsReviewCount, infoNotAvailableCount, worst FROM t1\");\n  // Ok  relation 2 rows x 7 cols  sha a2253937c123  plan fabce4cd4044\n  //   columns model:Text, CheckId:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"duplex-enriched\", \"IDS-OC\", 218, 0, 0, 0, \"Pass\"\n  //   [1] \"duplex-enriched\", \"IDS-EC\", 217, 1, 0, 0, \"Fail\"\nanswer = rel.sql@1(t1: enrichedTagged.relation, t2: baseTagged.relation, sql: \"SELECT * FROM t1 UNION ALL SELECT * FROM t2 ORDER BY checkId, model\");\n  // Ok  relation 4 rows x 7 cols  sha a84f17e11a0c  plan 598c525e88ec\n  //   columns model:Text, CheckId:Text, passCount:Integer, failCount:Integer, needsReviewCount:Integer, infoNotAvailableCount:Integer, worst:Text\n  //   [0] \"duplex-base\", \"IDS-EC\", 0, 218, 0, 0, \"Fail\"\n  //   [1] \"duplex-enriched\", \"IDS-EC\", 217, 1, 0, 0, \"Fail\"\n  //   [2] \"duplex-base\", \"IDS-OC\", 0, 218, 0, 0, \"Fail\"\n",
+            "focus": ["answer"]
           }
         ],
         "analysisId": "nb-s09-ids-check-base-vs-enriched"

@@ -1,11 +1,11 @@
 {
   "formatVersion": "0.1.0",
   "layout": {
-    "analytics": { "x": 40, "y": 270 },
-    "analyticsRows": { "x": 389, "y": 270 },
-    "meshes": { "x": 40, "y": 40 },
-    "coloredCarbon": { "x": 807, "y": 40 },
-    "coloredCategory": { "x": 807, "y": 270 }
+    "analytics": { "x": 40, "y": 447 },
+    "analyticsRows": { "x": 489, "y": 447 },
+    "meshes": { "x": 485, "y": 217 },
+    "coloredCarbon": { "x": 838, "y": 40 },
+    "coloredCategory": { "x": 838, "y": 600 }
   },
   "structure": {
     "edges": [

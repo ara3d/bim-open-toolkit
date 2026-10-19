@@ -11,11 +11,11 @@
   "turns": [
     {
       "request": "Put the analytics values into a copy of duplex-base.ifc as property sets.",
-      "reply": "2,441 values on 224 entities, grouped by property set: 872 NRC_OperationalCarbon, 868 NRC_EmbodiedCarbon, 654 NRC_EnergyPerformance, 28 NRC_StoreySummary, 12 NRC_AnalyticsProvenance, 7 NRC_BuildingSummary. The `answer` node (`sink.writePsets`, target `duplex-enriched.ifc`) stays EffectPending: nothing is written until Run.",
+      "reply": "2,469 values on 228 entities. The table below holds 2,441 of them, on 224 entities, grouped by property set: 872 NRC_OperationalCarbon, 868 NRC_EmbodiedCarbon, 654 NRC_EnergyPerformance, 28 NRC_StoreySummary, 12 NRC_AnalyticsProvenance, 7 NRC_BuildingSummary. The other 28 are NRC_ZoneSummary values (7 each) on the four IfcZone groups that the graph's zone nodes feed to the writer. The `answer` node (`sink.writePsets`, target `duplex-enriched.ifc`) stays EffectPending: nothing is written until Run.",
       "analysisId": "nrc-enrich-run",
       "tools": [
-        { "name": "getAnalysis", "ok": true, "summary": "nrc-enrich-run: 15 nodes, 20 edges" },
-        { "name": "evaluate", "ok": true, "summary": "14 of 15 nodes Ok, 1 EffectPending (answer, sink.writePsets)" },
+        { "name": "getAnalysis", "ok": true, "summary": "nrc-enrich-run: 25 nodes, 37 edges" },
+        { "name": "evaluate", "ok": true, "summary": "24 of 25 nodes Ok, 1 EffectPending (answer, sink.writePsets)" },
         { "name": "getResult", "ok": true, "summary": "nrc-enrich-run table.table: 2441 rows x 5 columns" }
       ],
       "embeds": [
@@ -47,11 +47,11 @@
     },
     {
       "request": "Run it.",
-      "reply": "I did not call Run in this session; this notebook must not write files, and the `answer` node still shows EffectPending above. `samples/nrc/duplex-enriched.ifc`, already committed to the repository, is the output of an earlier Run of this same graph (workflow 6's write-back). Here it is beside the base file: duplex-base.ifc is 2,380,763 bytes (sha256 b347a2c8…606ed), duplex-enriched.ifc is 2,707,239 bytes (sha256 f0d2a05a…a7bf08), 326,476 bytes larger.",
+      "reply": "I did not call Run in this session; this notebook must not write files, and the `answer` node still shows EffectPending above. `samples/nrc/duplex-enriched.ifc`, already committed to the repository, is the output of an earlier Run of this same graph (workflow 6's write-back). Here it is beside the base file: duplex-base.ifc is 2,380,763 bytes (sha256 b347a2c8…606ed), duplex-enriched.ifc is 2,709,099 bytes (sha256 c263e08c…8600078), 328,336 bytes larger.",
       "analysisId": "nrc-enrich-run",
       "tools": [
         { "name": "Read", "ok": true, "summary": "samples/nrc/duplex-base.ifc: 2380763 bytes" },
-        { "name": "Read", "ok": true, "summary": "samples/nrc/duplex-enriched.ifc: 2707239 bytes" }
+        { "name": "Read", "ok": true, "summary": "samples/nrc/duplex-enriched.ifc: 2709099 bytes" }
       ],
       "embeds": [
         {
@@ -70,26 +70,26 @@
     },
     {
       "request": "Prove nothing else changed.",
-      "reply": "Not from this session's tools: that needs an entity-level IFC diff, which no graph in this notebook computes. `tests/flow/BimOpenFlow.NrcWorkflows.Tests/RollupGraphTests.cs` runs one: `Enriched_DiffersFromTheBaseOnlyByTheAddedSets` asserts zero deleted and zero changed entities between the two files, and exactly 659 new IFCPROPERTYSET, 659 new IFCRELDEFINESBYPROPERTIES, and 2,441 new IFCPROPERTYSINGLEVALUE entities — the same 2,441 as the rows above. `EnrichRun_WritesTheCommittedFileByteForByte` runs a fresh Run and asserts its output matches the committed file byte for byte. I hashed both files myself instead of repeating that test (previous turn); a plain byte-prefix comparison would not prove it, because the appended entities land before the STEP file's closing lines, not after its last byte.",
+      "reply": "Not from this session's tools: that needs an entity-level IFC diff, which no graph in this notebook computes. `tests/flow/BimOpenFlow.NrcWorkflows.Tests/RollupGraphTests.cs` runs one: `Enriched_DiffersFromTheBaseOnlyByTheAddedSets` asserts zero deleted and zero changed entities between the two files, and exactly 663 new IFCPROPERTYSET, 663 new IFCRELDEFINESBYPROPERTIES, and 2,469 new IFCPROPERTYSINGLEVALUE entities — the 2,441 rows of the first table plus the 28 zone values — along with the four IfcZone groups, their four IfcRelAssignsToGroup, and the long table's document reference. `EnrichRun_WritesTheCommittedFileByteForByte` runs a fresh Run and asserts its output matches the committed file byte for byte. I hashed both files myself instead of repeating that test (previous turn); a plain byte-prefix comparison would not prove it, because the appended entities land before the STEP file's closing lines, not after its last byte.",
       "tools": [
-        { "name": "Read", "ok": true, "summary": "RollupGraphTests.cs: EnrichRun_WritesTheCommittedFileByteForByte and Enriched_DiffersFromTheBaseOnlyByTheAddedSets assert the byte-exact write and the 659/659/2441 added entities" }
+        { "name": "Read", "ok": true, "summary": "RollupGraphTests.cs: EnrichRun_WritesTheCommittedFileByteForByte and Enriched_DiffersFromTheBaseOnlyByTheAddedSets assert the byte-exact write and the 663/663/2469 added entities" }
       ]
     },
     {
       "request": "Read the values back from the new file.",
-      "reply": "2,441 rows, one for each row the table above would write: 2,394 on the 218 elements, 28 on the 4 storeys, 7 on the building, and 12 on the project. Read from duplex-enriched.ifc's parameter table, filtered to the NRC_* groups — this is the paper's Figure 4.",
+      "reply": "2,469 rows, one for each value the graph writes: the 2,441 of the first table plus 28 on the 4 zones. By carrier, 2,394 are on the 218 elements, 28 on the 4 storeys, 28 on the 4 zones, 7 on the building, and 12 on the project. Read from duplex-enriched.ifc's parameter table, filtered to the NRC_* groups — this is the paper's Figure 4.",
       "analysisId": "nrc-property-values",
       "tools": [
-        { "name": "getAnalysis", "ok": true, "summary": "nrc-property-values: 3 nodes, 2 edges" },
-        { "name": "evaluate", "ok": true, "summary": "3 of 3 nodes Ok" },
-        { "name": "getResult", "ok": true, "summary": "nrc-property-values answer.relation: 2441 rows x 5 columns" }
+        { "name": "getAnalysis", "ok": true, "summary": "nrc-property-values: 7 nodes, 5 edges" },
+        { "name": "evaluate", "ok": true, "summary": "7 of 7 nodes Ok" },
+        { "name": "getResult", "ok": true, "summary": "nrc-property-values answer.relation: 2469 rows x 5 columns" }
       ],
       "embeds": [
         {
           "kind": "table",
           "node": "answer",
           "port": "relation",
-          "caption": "2,441 values read back from duplex-enriched.ifc"
+          "caption": "2,469 values read back from duplex-enriched.ifc"
         }
       ]
     }

@@ -10,6 +10,7 @@ of the sessions in `docs/proposals/notebook-sessions.md`:
 | `nrc-test-kit.notebook.json` | S2, the NRC IFC test kit, steps 1 to 5 | bim | join the CSV, colour by operational carbon, colour by category, totals per level, the storey chart, the written values read back |
 | `nrc-door-check.notebook.json` | S4, door compliance | bim | DC-W1 verdicts in a table and in 3D, then `samples/nrc/door_verdicts.csv` as a file |
 | `s14-door-bcf.notebook.json` | BCF round trip on NRC's door-clearance example | bim | DC-W1 verdicts in 3D, the comparison with NRC's ground truth (14 of 14), the 6 failing doors as BCF topics, the BCF written by a Run, a reviewer's comment with a camera, the architect's reply read back and the flagged doors coloured. Graphs in `graphs/s14-door-bcf`, the three BCF files in `samples/nrc/bcf` |
+| `s15-text-annotation.notebook.json` | Text annotation in the 3D view (statement of work 1(a) and 2.2) | bim | each storey's operational carbon total written over its slabs, each door's width and DC-W1 verdict over the door, the ten highest elements labelled with the rest ghosted and what `view3d.label`'s `limit` does. Graphs in `graphs/s15-text-annotation` |
 
 These files are generated; do not edit them by hand. Each is written by
 `bimopenflow/web/packages/nrc-web/scripts/write-sample-notebooks.ts` (which runs
@@ -38,13 +39,27 @@ npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5214 
 
 # s14-door-bcf: its graphs carry {SAMPLES} and {ARTIFACTS}, so the placeholders are passed too
 npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5214 --outline ../../../../samples/notebooks/outlines/s14-door-bcf.outline.json --placeholder SAMPLES=<checkout>/samples/nrc --placeholder ARTIFACTS=<checkout>/artifacts
+
+npx vite-node scripts/write-sample-notebooks.ts -- --host http://127.0.0.1:5214 --outline ../../../../samples/notebooks/outlines/s15-text-annotation.outline.json
 ```
+
+Every other outline is run the same way (`--host` the bim host, `5224` for `nrc-eight-questions`).
+
+A 3D view records its model only when the script finds the `.bos` file beside the graph's model path, and
+it looks for that path relative to the working directory. The graphs name their models from the repository
+root (`samples/nrc/duplex-enriched.ifc`), so from `bimopenflow/web/packages/nrc-web` a notebook gets a 3D view
+with no model unless `samples` there points at the repository's `samples` folder. Before a run, make it a
+directory junction (`mklink /J samples ..\..\..\..\samples` in that folder; Linux: `ln -s ../../../../samples samples`), and
+remove it with `rmdir samples` afterwards, not `rm -r`. A model named by a graph input (`$model`, as in
+`nrc-join-analytics` and `nrc-color-operational-carbon`) is not resolved at all, so a notebook that shows
+such a graph's 3D view uses a copy of the graph with the path written out (`nb-nrc-test-kit-colour`,
+`nb-s06-paper-figures-operational-carbon`).
 
 On a cold start the bim host builds the Duplex DuckDB and BOS files in the
 background (about 30 s each); wait until `GET /api/analyses/nrc-dc-w1-verdicts/state`
 shows every node `Ok`.
 
-The BCF files of `s14-door-bcf` are not regenerated with the notebook: `bcf.write` is an effect, so each is the file a Run of its graph wrote (`POST /api/analyses/{id}/runs`, then a copy from `artifacts/checking` to `samples/nrc/bcf`). The notebook embeds the committed file's size and SHA-256; a new Run gives other bytes, because the writer stamps the topic with the time of the Run.
+The BCF files of `s14-door-bcf` are not regenerated with the notebook: `bcf.write` is an effect, so each is the file a Run of its graph wrote (`POST /api/analyses/{id}/runs`, then a copy from `artifacts/checking` to `samples/nrc/bcf`). The notebook embeds the committed file's size and SHA-256. The three `bcf.write` nodes fix `created` and `guidSeed` and give no `modelDate`, so every Run writes the same bytes; if a Run's bytes differ from the committed file, a graph or the writer changed, so commit the new file and regenerate the notebook. Run the graphs, copy the files, then regenerate the notebook, because the notebook script reads the files as they are when it runs.
 
 A graph change shows up as a diff in the regenerated
 file; reread the snapshots and update the outline's reply texts to match.

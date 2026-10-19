@@ -31,7 +31,7 @@
     },
     {
       "request": "Show me them in the building.",
-      "reply": "The ten highlighted in the 3D view; the model's other 704 instances are ghosted to 15% opacity so the ten stand out.",
+      "reply": "The ten elements, 18 mesh instances in all, are highlighted in the 3D view; the model's other 696 instances are ghosted to 15% opacity so the ten stand out.",
       "analysisId": "nb-s11-editing-history-top-elements",
       "embeds": [
         {
@@ -45,12 +45,12 @@
     {
       "request": "What is the operational carbon of the door named M_Single-Flush:0762 x 2032mm?",
       "reply": "That is a type name, not one door: four door instances carry it, at 54.0, 146.1, 117.3, and 61.8 kgCO2e/yr. The table lists all four in STEP id order rather than picking one.",
-      "analysisId": "nrc-q4-door-instances",
+      "analysisId": "nb-s11-editing-history-door-sum",
       "stale": true,
       "embeds": [
         {
           "kind": "table",
-          "node": "answer",
+          "node": "doors",
           "port": "relation",
           "caption": "Door instances sharing that type name"
         }
@@ -73,16 +73,16 @@
       ]
     },
     {
-      "request": "How much operational carbon is in each category?",
-      "reply": "Nine categories. Wall carries the most, 22,854.1 kgCO2e/yr, followed by Floor at 5,593.5; Railing carries the least, 164.8.",
+      "request": "How much operational carbon is stored per IFC class?",
+      "reply": "Fourteen IFC classes, highest first. IFCWALLSTANDARDCASE carries the most, 17,547.4 kgCO2e/yr, then IFCSLAB at 5,816.9 and IFCFURNISHINGELEMENT at 5,766.3; IFCRAILING carries the least, 164.8.",
       "analysisId": "nrc-q5-by-category",
       "stale": true,
       "embeds": [
         {
           "kind": "chart",
-          "node": "answer",
-          "port": "relation",
-          "caption": "Operational carbon per category"
+          "node": "chart",
+          "port": "table",
+          "caption": "Operational carbon per IFC class"
         }
       ]
     }

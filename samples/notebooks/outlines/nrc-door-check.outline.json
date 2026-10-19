@@ -17,7 +17,19 @@
           "caption": "DC-W1 verdicts"
         },
         {
-          "kind": "auto"
+          "kind": "chart",
+          "node": "chart",
+          "port": "table",
+          "caption": "DC-W1 door width verdicts"
+        },
+        {
+          "kind": "view3d",
+          "node": "coloured",
+          "port": "instances",
+          "caption": "Doors coloured by verdict"
+        },
+        {
+          "kind": "graph"
         }
       ]
     },

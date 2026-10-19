@@ -13,17 +13,17 @@
   "turns": [
     {
       "request": "Write an IDS that requires every analysed element to have NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year as a number.",
-      "reply": "The node catalog has no node that evaluates an IDS file: of 130 node kinds, the Compliance pack only has check.required, check.rule, check.rollup, and check.union, none named check.ids or ids.*. I wrote the specification anyway, as a real IDS 1.0 file, samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids: one specification, IDS-OC, applying to the fourteen IFC classes that carry a row in nrc_analytics_long.csv (IFCWALL, IFCWALLSTANDARDCASE, IFCWINDOW, IFCDOOR, IFCROOF, IFCSLAB, IFCBEAM, IFCCOVERING, IFCRAILING, IFCSTAIR, IFCSTAIRFLIGHT, IFCFOOTING, IFCFURNISHINGELEMENT, IFCMEMBER), requiring NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year as an IFCREAL. I have not run it through the IDS 1.0 XSD or ids-lib, so I can't say yet that it validates against the schema. To check a model, I'll express the same requirement with check.required over the enriched model's own property sets, since no node reads the IDS file itself.",
+      "reply": "The node catalog has 127 node kinds. Its Compliance pack has check.required, check.rule, check.rollup, and check.union, and ids.check and ids.specifications read an IDS file. I wrote the specification anyway, as a real IDS 1.0 file, samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids: one specification, IDS-OC, applying to the fourteen IFC classes that carry a row in nrc_analytics_long.csv (IFCWALL, IFCWALLSTANDARDCASE, IFCWINDOW, IFCDOOR, IFCROOF, IFCSLAB, IFCBEAM, IFCCOVERING, IFCRAILING, IFCSTAIR, IFCSTAIRFLIGHT, IFCFOOTING, IFCFURNISHINGELEMENT, IFCMEMBER), requiring NRC_OperationalCarbon.OperationalCarbon_kgCO2e_per_year as an IFCREAL. I have not run it through the IDS 1.0 XSD or ids-lib, so I can't say yet that it validates against the schema. To check a model here, I express the same requirement with check.required over the enriched model's own property sets, rather than running the file through ids.check.",
       "tools": [
         {
           "name": "getNodeCatalog",
           "ok": true,
-          "summary": "130 node kinds; Compliance pack has check.required, check.rule, check.rollup, check.union; no check.ids or ids.* kind"
+          "summary": "127 node kinds; Compliance pack has check.required, check.rule, check.rollup, check.union; IDS pack has ids.check and ids.specifications"
         },
         {
           "name": "Write",
           "ok": true,
-          "summary": "samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids: 1890 bytes, one specification (IDS-OC)"
+          "summary": "samples/notebooks/graphs/s09-ids-check/nrc-analytics.v1.ids: 1882 bytes, one specification (IDS-OC)"
         }
       ],
       "embeds": [
@@ -56,7 +56,7 @@
     },
     {
       "request": "Add a requirement for embodied carbon too.",
-      "reply": "Updated the same file with a second specification, IDS-EC, requiring NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e on the same fourteen classes (3,099 bytes now, two specifications). Checking both against duplex-enriched: IDS-OC still 218 Pass, 0 Fail; IDS-EC is 217 Pass, 1 Fail out of 218. The one failure is the roof, \"Basic Roof:Live Roof over Wood Joist Flat Roof:184483\" (GlobalId 0jf0rYHfX3RAB3bSIRjmxl): it has no NRC_EmbodiedCarbon at all, so the column is null for that row and check.required marks it Fail rather than passing or guessing a value.",
+      "reply": "Updated the same file with a second specification, IDS-EC, requiring NRC_EmbodiedCarbon.EmbodiedCarbon_A1A3_kgCO2e on the same fourteen classes (3,083 bytes now, two specifications). Checking both against duplex-enriched: IDS-OC still 218 Pass, 0 Fail; IDS-EC is 217 Pass, 1 Fail out of 218. The one failure is the roof, \"Basic Roof:Live Roof over Wood Joist Flat Roof:184483\" (GlobalId 0jf0rYHfX3RAB3bSIRjmxl): it has no NRC_EmbodiedCarbon at all, so the column is null for that row and check.required marks it Fail rather than passing or guessing a value.",
       "analysisId": "nb-s09-ids-check-oc-ec",
       "embeds": [
         {
