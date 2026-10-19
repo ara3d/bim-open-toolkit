@@ -27,7 +27,10 @@
     "@bimopenflow/state": "file:../../deps/bim-open-flow/bimopenflow/web/packages/state",
     "@bimopenflow/viz": "file:../../deps/bim-open-flow/bimopenflow/web/packages/viz",
     "@types/three": "^0.180.0",
-    "playwright-core": "^1.63.0"
+    "playwright-core": "^1.63.0",
+    "vega": "^6.4.0",
+    "vega-embed": "^7.3.0",
+    "vega-lite": "^6.5.0"
   },
   "overrides": {
     "@bimopenflow/api-client": "$@bimopenflow/api-client",
