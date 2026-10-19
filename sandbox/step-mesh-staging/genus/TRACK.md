@@ -1,7 +1,7 @@
 # genus: step G (holes and voids), the cone's Green-area sign, and SharesCurveParameter's body
 
 Ticket: TKT-328 (step G, the cone sign F-55), TKT-314 (SharesCurveParameter, F-52 item 7)
-Status: merged (commit hash in the follow-up note below)
+Status: merged in 848b66d6
 
 Verdicts are from Plato 88aa0277 (the fallback CLI of `docs/plans/step-mesher-v2.md`) with this
 folder as an extra root, `--budget=900`, under `gpu32` (the default) and `cpu64`.

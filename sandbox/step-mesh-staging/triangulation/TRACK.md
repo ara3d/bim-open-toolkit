@@ -1,7 +1,7 @@
 # triangulation: constrained Delaunay by the in-circle determinant, refinement by insertion and flips
 
 Ticket: TKT-343
-Status: merged (commit hash in the note below); criterion 2 met except interior 30 degrees on curved side faces, see Findings
+Status: merged in 7d8dae2d; criterion 2 met except interior 30 degrees on curved side faces, see Findings
 
 ## Files
 
