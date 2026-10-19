@@ -1,14 +1,16 @@
 ---
 id: TKT-347
 title: Plato C# writer drops a library function whose first parameter is List<T> (SplitAt is missing, so Ara3D.StepBrep does not build)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 2b20f2f0
+session: 2b20f2f0-4d99-4684-a062-1b2db12618c7
 fence: [../plato/writers/**, ../plato/src/Plato.Compiler/**, ../plato/tests/**, ../plato/tracker/**]
 workflow: [W3, W4]
 related: [TKT-313, TKT-343, TKT-315, TKT-323]
 confidence: high
 created: 2026-10-19
+claimed: 2026-10-19
 kind: defect
 ---
 
