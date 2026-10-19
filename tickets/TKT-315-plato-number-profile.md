@@ -1,14 +1,16 @@
 ---
 id: TKT-315
 title: A 64-bit Number compilation profile for Plato's C# backend
-status: open
+status: claimed
 depends_on: []
-related: [TKT-299, TKT-323]
-owner:
+owner: session 2b20f2f0
+session: 2b20f2f0-4d99-4684-a062-1b2db12618c7
 fence: [../plato/**]
 workflow: [W3, W4]
+related: [TKT-299, TKT-323]
 confidence: high
 created: 2026-10-17
+claimed: 2026-10-18
 ---
 
 ## Acceptance criteria
