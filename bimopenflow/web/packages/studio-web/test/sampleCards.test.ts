@@ -41,12 +41,16 @@ it("no sample graph has overlapping node cards", () => {
   expect(report).toEqual([]);
 });
 
+// Measuring every card of every sample graph takes about 8 s on an idle machine and over 30 s
+// when other builds share it; vitest's 5 s default made the close gate fail on load alone.
+const MEASURE_TIMEOUT_MS = 120_000;
+
 describe("no text overflows its card", () => {
   it("for every sample graph as shown and at least width", () => {
     expect(sampleOverflows(samples, catalog)).toEqual([]);
-  });
+  }, MEASURE_TIMEOUT_MS);
 
   it("for every catalog kind with default and long values", () => {
     expect([false, true].flatMap((long) => catalogOverflows(catalog, long))).toEqual([]);
-  });
+  }, MEASURE_TIMEOUT_MS);
 });
