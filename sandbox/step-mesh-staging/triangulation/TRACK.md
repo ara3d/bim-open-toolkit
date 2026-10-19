@@ -1,9 +1,141 @@
 # triangulation: constrained Delaunay by the in-circle determinant, refinement by insertion and flips
 
-Ticket: TKT-343
-Status: merged in 7d8dae2d; criterion 2 met except interior 30 degrees on curved side faces, see Findings
+Tickets: TKT-343 (merged in 7d8dae2d), TKT-351 (the refinement was slower than the code it replaced)
+Status: working (TKT-351)
 
-## Files
+## TKT-351: where the time goes, and a faster refinement
+
+### Files
+
+- `triangulation-fast.library.plato`: `RefineToSurfaceFast` (the refinement, one point at a time
+  with local Lawson flips and a neighbour table kept up to date), `SurfacePassLocal`,
+  `AnglePassLocal`, `TryInsertion`, `InsertedLocally`, `FlippedAround`, `UpdatedNeighbours`,
+  `ChangedNear`, `WalkTo`, `DelaunayedQueue` (whole-triangulation flips from a queue, one table),
+  `TriangulateRegionFast`, `InCircleOfFast`, `IsFlippableFast`.
+- `triangulation-fast.laws.plato`: `Law_Fast_*`, layer 5's refinement laws on `RefineToSurfaceFast`
+  and two laws of the new parts.
+
+### Profile
+
+Measured in the interpreter (cpu64, Plato CLI 128cf769), so the numbers are about the algorithm
+and not TKT-350's MapRange defect in generated C#. Tool: a scratch harness (the CLI's `--call` with
+the interpreter's `CallProfile` attached, in the session's scratchpad), self and inclusive time per
+function. The unit cylinder's side face under DefaultMeshingOptions(chordal): 0.01 gives 25
+points per circle edge, 0.003 gives 42, 0.001 gives 72.
+
+| Size | Merged refinement (7d8dae2d) |
+|---|---|
+| 25 points | 20.4 s: `FlipPass` 17.9 s inclusive (388 calls), of it `NeighbourTable` 12.8 s (331 rebuilds, a closure sort each: `SortedIndices` 7.9 s, 4.7 million `LessThan`); the sort of four indices in `InCircleOf` 1.7 s; point location 0.3 s; the surface pass 1.5 s |
+| 42 points | 100 s for 14 rounds; from round 7 on, about 65 triangles under 30 degrees that the guard refuses are retried, four candidates each, every round |
+| 72 points | not done in 1800 s |
+
+Where the time went: flip passes, not point location or re-triangulation. Every trial of an angle
+insertion (159 at 25 points) flipped the whole triangulation with `Delaunayed`, and each pass
+rebuilt the neighbour table with a sort, although an insertion changes only the triangles near its
+point.
+
+The old library (7d8dae2d^, extracted with `git archive`): 25 points 2.7 s (160 points); 72 points
+3.3 s, with 144 points and 142 triangles. At 72 points it added no interior point at all, so its
+3.4 s compiled time is the boundary's triangulation alone, and no refinement that adds points can
+match it. The angle refinement of TKT-343 adds about 1200 points there, by design.
+
+### What each change bought (interpreter, same machine)
+
+| Change | 25 points | 42 points | 72 points |
+|---|---|---|---|
+| Merged | 20.4 s | 100 s | over 1800 s |
+| Local Lawson flips after an angle insertion | 8.5 s | | |
+| Searches stop at the first match | 6.4 s | 36 s | |
+| Refused triangles not retried while unchanged | | 36 s | |
+| Neighbour table kept up to date; surface pass one point at a time | 3.2 s | 8.0 s | 41 s |
+| Seed flips from a queue (`DelaunayedQueue`) | | | 42 s (seed 3.2 s to 0.4 s) |
+
+The 200-point plane face (the unit box, segments of at most 0.02): seed 5.9 s to 2.1 s, refined
+19.6 s to 14.8 s (403 points). The bump solid's top face (track F): 236 s to 144 s, the same mesh
+(1240 points, 2474 triangles) after the walk-based point location and the cavity search; what is
+left there is B-spline projection inside the surface tests (87 s), paid per triangle of a mesh
+that is too large (TKT-352, Findings).
+
+At 72 points what remains is O(n) array work per kept insertion (`Concatenate` of the point
+arrays, the angle pass's index scans): about 1300 insertions over 2600 triangles, costly in the
+interpreter and a few million comparisons compiled. The C# timing (criterion 2) waits on the C#
+track's regeneration with TKT-350 fixed; the bound reached here is 41 s interpreted at 72 points,
+against 3.3 s for the old code, which added no point.
+
+Mesh quality, staged against merged (gpu32, the probe behind TKT-343's table):
+
+| Face | Merged | Staged |
+|---|---|---|
+| Cylinder side | 209 points; interior minimum 25.4 degrees, 4 under 30; overall 10.6 | 177 points; 25.8, 2 under 30; 10.6 |
+| Quarter sector, curved face | 46 points; 13.4, 3 under 30; overall 9.0 | 44 points; 21.6, 1 under 30; 10.6 |
+| Discs, caps, block with a hole | | the same or better |
+
+The sequential surface pass gives a different, smaller mesh than the batched one.
+
+### Done
+
+- `Law_Fast_*`, gpu32, one run (16 s): 6 of 7 pass (`InCircleOfFastIsInCircleOf`,
+  `UpdatedNeighboursAreTheTable`, `RefineMeetsContract`, `RefinedNoFlippableEdge`,
+  `BoxFacesStayTwoTriangles`, `MinAngleBetterOnCylinders`); `RefinedInteriorMeetsMinAngle` fails
+  on the cylinder, as the merged refinement's does. Before: the functions did not exist.
+- Track F's twelve pipeline laws, cpu64, budget 120 s. On the library: 3 pass, 9 budget errors,
+  all in `Delaunayed` under `AnglePass` (18 minutes), as track F reported. On the library wired to
+  the staged functions: the same 3 pass; the three bump-solid criteria laws still exceed 120 s, now
+  in the surface tests' B-spline projection, `Lift` and layer 7's validation after meshing
+  finishes; the run then stopped without a summary during `Law_ModelLaws`, which alone ends in a
+  budget error (the bump solid again). The remaining cause is filed as TKT-352.
+- SWEEP_RESULT
+
+### Merge instructions (TKT-351)
+
+- Move `triangulation-fast.library.plato` and `triangulation-fast.laws.plato` into
+  `05-face-meshing/`; rename `Law_Fast_<What>` to `Law_<What>`, dropping those that duplicate a law
+  of `triangulation.laws.plato` once the wiring below makes the two refinements one.
+- `FaceMeshing.RefineToSurface` => `m.RefineToSurfaceFast(f, r, chart, t, c)`, and
+  `TriangulationLaws.RefinedCdt` likewise; then delete `RefineToSurfaceByInsertion`, `SurfacePass`,
+  `SurfacePlacement`, `TryAngleInsertion`, `AnglePass`, and `LocateNear`, `Locate`,
+  `TriangleWithSide`, `IndexOfTriangle` where no caller is left; rename `RefineToSurfaceFast` to
+  `RefineToSurfaceByInsertion` if the old name is wanted.
+- `UvDelaunay.Delaunayed` takes `DelaunayedQueue`'s body (same parameters); then delete
+  `DelaunayedQueue` and `TriangulateRegionFast` (`TriangulateRegion` stays on `TriangulateRegionCdt`).
+- `TriangulationCdt.InCircleOf` takes `InCircleOfFast`'s body; delete `InCircleOfFast` and
+  `IsFlippableFast`, calling `IsFlippableCdt` where `IsFlippableFast` was.
+- Rerun the sweep against `reviews/verdicts-cpu64.tsv`.
+
+### Findings (TKT-351)
+
+- The old code's 3.4 s at 72 points is not a refinement time: it added no point (142 triangles,
+  smallest angle about 5 degrees). Compare at the same mesh size.
+- TKT-352: a face whose boundary segments are long against its chordal bound (the bump solid's top
+  face, four boundary points) refines into slivers along them, which the angle pass cannot repair:
+  2474 triangles where a few hundred would do. It is the triangulation's input, not its speed; face
+  meshing should ask layer 8 for more segments on those edges.
+- One run of twelve laws stopped after six with no summary line; rerun alone, the seventh ended
+  normally in a budget error. Not reproduced, not explained.
+
+### Durations (TKT-351)
+
+| Step | Wall time | Runs |
+|---|---|---|
+| Reading the ticket, the merge, track F's notes | 10 min | 0 |
+| Profiling harness (scratch, the CLI's call path with `CallProfile`) | 10 min | 2 builds |
+| Profile, local flips, searches, refused memory | 40 min | 9 probes of 20 to 100 s; one 72-point probe stopped at 30 min |
+| Neighbour table kept up to date, sequential surface pass, queue flips | 50 min | 8 probes |
+| Old library baseline (git archive), quality comparison | 15 min | 8 runs |
+| Track F's laws before and after, bump probes | 60 min | 2 law runs (18 and 8 min), 4 probes of 2.5 to 4.5 min |
+| Full sweep of the wired copy | SWEEP_TIME | 1 |
+
+### Lessons (TKT-351)
+
+- One interpreter profile (20 s) showed what TKT-343's design cost: the guard multiplied
+  whole-face flips by every trial. Profile before tuning. The interpreter's `CallProfile` has no
+  CLI flag; a 40-line harness attaches it.
+- A 72-point probe ran 30 minutes with no output because the harness prints only at the end; a
+  per-round history probe found the retried triangles in 100 s.
+
+## TKT-343 (merged)
+
+### Files
 
 - `triangulation-cdt.library.plato`: `InCircle` (the 3 x 3 determinant in Number), `InCircleOf`
   (the same determinant with the four points in index order, sign corrected by the permutation's
@@ -17,7 +149,7 @@ Status: merged in 7d8dae2d; criterion 2 met except interior 30 degrees on curved
   and layer 8's loop calling the new functions, for the staged step A and B laws. Not merged.
 - `triangulation-steps.laws.plato`: staging only. Steps A and B laws on the wired copies.
 
-## Done
+### Done
 
 - Constrained Delaunay group: `Law_Tri_InCircleWitnesses`, `Law_Tri_FlipNeverUndone`,
   `Law_Tri_InCircleOfAgreesWithInCircle`, `Law_Tri_CdtKeepsBoundary`, `Law_Tri_CdtKeepsEverySegment`,
@@ -38,7 +170,7 @@ Status: merged in 7d8dae2d; criterion 2 met except interior 30 degrees on curved
   Intermediate design runs, first refinement: 4 of 7 pass (the sector's caps got worse than the
   library's), fixed by the guard in the angle pass.
 
-## Merge instructions
+### Merge instructions
 
 - Move `triangulation-cdt.library.plato`, `triangulation-refine.library.plato` and
   `triangulation-requests.library.plato` into `05-face-meshing/`, and `triangulation.laws.plato`
@@ -56,7 +188,7 @@ Status: merged in 7d8dae2d; criterion 2 met except interior 30 degrees on curved
 - Update the spec's deferred notes for TriangulateRegion ("exact orientation and in-circle
   predicates") and RefineToSurface: in-circle determinant in Number, off-centres for the angle.
 
-## Contract requests
+### Contract requests
 
 - Additive: an angle bound in `FaceMeshingCriteria` (or `MeshingOptions.QualityAngle`), so
   `RefinementMinAngle` (30 degrees, hard-coded in layer 5) comes from the caller, and a later
@@ -64,7 +196,7 @@ Status: merged in 7d8dae2d; criterion 2 met except interior 30 degrees on curved
 - Not additive, for later: a `RefinementReason.TooCoarseForQuality` case; the staged requests use
   `TooCoarseInParameterSpace` until it exists.
 
-## Requests to other tracks
+### Requests to other tracks
 
 - C (poles): none blocking. Faces with poles were left out of this track's samples
   (`ExpandedPoles` is bodiless here); after C merges, rerun `Law_Tri_*` with the sphere, torus,
@@ -73,7 +205,7 @@ Status: merged in 7d8dae2d; criterion 2 met except interior 30 degrees on curved
   `IsBelowRefinementAngle` on triangles touching a collapsed line.
 - F (B-spline): none blocking; add witness 7 to `TriWitnessIndices` after F merges.
 
-## Findings
+### Findings
 
 - **30 degrees is out of reach with the boundary fixed (the reason criterion 2 was reworded,
   supervisor's option b, 2026-10-18).** TriangulateRegion and RefineToSurface may not add
@@ -115,7 +247,7 @@ Status: merged in 7d8dae2d; criterion 2 met except interior 30 degrees on curved
   than the library (7.5 against 15 degrees); the guard fixed that; circumcentres for the surface
   criteria (Chew, Ruppert) in place of midpoints raised the cylinder side from 8.9 to 10.6.
 
-## Durations
+### Durations
 
 | Step | Wall time | Runs |
 |---|---|---|
@@ -127,7 +259,7 @@ Status: merged in 7d8dae2d; criterion 2 met except interior 30 degrees on curved
 | Final run of every Law_Tri_ law | 3.5 min | 1 |
 | Waiting on the supervisor's answer | 0 (worked on meanwhile) | |
 
-## Lessons
+### Lessons
 
 - The shared plato server runs one request at a time; a layer 8 sweep from another track held my
   type check for 17 minutes. The pinned CLI (`C:/Users/cdigg/.plato-cli/88aa0277`) with the

@@ -1,14 +1,16 @@
 ---
 id: TKT-351
 title: Constrained Delaunay refinement (TKT-343) is much slower than the code it replaced: the unit cylinder's side face takes 5 to 10 s at 25 points per circle (72 points took 3.4 s before)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session ae00416c
+session: ae00416c-c93c-426f-83b6-e7512ad06cfe
 fence: [sandbox/step-mesh-staging/triangulation/**]
 workflow: [W3, W4]
 related: [TKT-343, TKT-327, TKT-349, TKT-335]
 confidence: high
 created: 2026-10-19
+claimed: 2026-10-19
 kind: defect
 ---
 

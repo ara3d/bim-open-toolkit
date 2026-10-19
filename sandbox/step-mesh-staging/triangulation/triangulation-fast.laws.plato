@@ -1,0 +1,91 @@
+//==
+// # Fast refinement: laws (TKT-351, staging)
+//
+// Laws of triangulation-fast.library.plato over the samples of layer 5's triangulation laws
+// (TriSampleModel, EveryTriangulableFace). The refinement laws are layer 5's, applied to
+// RefineToSurfaceFast; two laws check the new parts directly: the in-circle value without the
+// sort, and the neighbour table kept up to date by UpdatedNeighbours. Renamed Law_<What> at merge,
+// where the refinement laws they copy cover RefineToSurfaceByInsertion with the fast body.
+//
+// Sections, in order:
+//  - The in-circle test
+//  - The neighbour table
+//  - Refinement
+
+library TriangulationFastLaws
+{
+    //==
+    // # The in-circle test
+
+    // InCircleOfFast is InCircleOf, bit for bit, for every order of four points.
+    Law_Fast_InCircleOfFastIsInCircleOf(a: Point2D, b: Point2D, c: Point2D, d: Point2D): Boolean
+    {
+        var points = [a, b, c, d];
+        var orders = [[0, 1, 2, 3], [3, 2, 0, 1], [1, 0, 2, 3], [2, 3, 1, 0], [0, 2, 1, 3]];
+        return orders.All(o => InCircleOfFast(points, o[0], o[1], o[2], o[3]) == InCircleOf(points, o[0], o[1], o[2], o[3]));   // exact: same products in the same order
+    }
+
+    //==
+    // # The neighbour table
+
+    // After the off-centre of the first triangle of face f's constrained Delaunay triangulation goes
+    // in (TryInsertion, unguarded), UpdatedNeighbours gives the table NeighbourTable builds from
+    // scratch.
+    UpdatedTableIsTable(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
+    {
+        var t = r.TriangulateRegionCdt(chart);
+        var points = t.Points.Map(x => chart.ChartPoint(x));
+        var nb = NeighbourTable(t.Triangles, t.Points.Count);
+        var uv = chart.OffCentre(points, t.Triangles[0]);
+        var least = TriCriteria(0).Discretization.EffectiveMinLength(m.Tolerances);
+        var after = m.TryInsertion(f, r, chart, t.Points, points, t.Triangles, nb, 0, uv, least, false);
+        return after.Count == t.Triangles.Count
+            || UpdatedNeighbours(t.Triangles, nb, after, t.Points.Count, points.WalkTo(t.Triangles, nb, 0, chart.ChartPoint(uv))) == NeighbourTable(after, t.Points.Count + 1);
+    }
+
+    // UpdatedTableIsTable at every face of sample k.
+    Law_Fast_UpdatedNeighboursAreTheTable(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => m.UpdatedTableIsTable(f, r, chart));
+
+    //==
+    // # Refinement
+
+    // RefineToSurfaceFast on TriangulateRegionCdt for face f.
+    RefinedFast(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): UvTriangulation
+        => m.RefineToSurfaceFast(f, r, chart, r.TriangulateRegionCdt(chart), TriCriteria(0));
+
+    // Layer 5's Law_RefineMeetsContract on RefineToSurfaceFast.
+    Law_Fast_RefineMeetsContract(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => m.MeetsRefineContract(f, r, chart, m.RefinedFast(f, r, chart)));
+
+    // Layer 5's Law_RefinedNoFlippableEdge on RefineToSurfaceFast: local flips leave the
+    // triangulation constrained Delaunay.
+    Law_Fast_RefinedNoFlippableEdge(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => r.FlippableEdgeCount(m.RefinedFast(f, r, chart), chart) == 0);
+
+    // Layer 5's Law_BoxFacesStayTwoTriangles on RefineToSurfaceFast.
+    Law_Fast_BoxFacesStayTwoTriangles(k: Integer): Boolean
+        => EveryTriangulableFace(k % 2 == 0 ? 0 : 5, (m, f, r, chart) =>
+            m.RefinedFast(f, r, chart).Points.Count == 4 && m.RefinedFast(f, r, chart).Triangles.Count == 2);
+
+    // Layer 5's Law_MinAngleBetterOnCylinders on RefineToSurfaceFast: the smallest lifted angle over
+    // the faces of the cylinder (sample 1) and the quarter sector (4) beats what the library gave
+    // before TKT-343, 4.99 and 8.50 degrees.
+    Law_Fast_MinAngleBetterOnCylinders(k: Integer): Boolean
+    {
+        var m = TriSampleModel(k % 2 == 0 ? 1 : 4);
+        var d = m.TriDiscretizations;
+        var c = TriCriteria(0);
+        var faces = m.Faces.Count.Range.FlatMap(i => m.CanTriangulateFace(BrepFaceIndex(i), d, c) ? [BrepFaceIndex(i)] : [BrepFaceIndex(i)].Take(0));
+        var least = faces.Reduce(Number.Pi, (x, f) => x.Min(m.SmallestLiftedAngle(f, m.RefinedFast(f, m.RegionOf(f, d, c), m.ChartOf(f, m.RegionOf(f, d, c))))));
+        return least > (k % 2 == 0 ? 4.99 : 8.50).Degrees.Radians;
+    }
+
+    // Layer 5's Law_RefinedInteriorMeetsMinAngle on RefineToSurfaceFast (it fails on the curved
+    // side faces, as the merged refinement does; TRACK.md, Findings).
+    Law_Fast_RefinedInteriorMeetsMinAngle(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) =>
+            m.RefinedFast(f, r, chart).Triangles.All(x => r.TouchesBoundary(x)
+                ? true
+                : m.LiftedMinAngle(f, m.RefinedFast(f, r, chart), x) >= MeshQualityThresholds.CubitAcceptable.TriangleMinAngle.Radians));
+}
