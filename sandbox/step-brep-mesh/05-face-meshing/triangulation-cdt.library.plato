@@ -62,12 +62,15 @@ library TriangulationCdt
     // InCircle of points a, b, c, d (indices into points), evaluated with the four in increasing
     // index order and multiplied by the sign of the permutation from (a, b, c, d) to that order.
     // In exact arithmetic it equals InCircle in the given order (the determinant alternates); in
-    // Number every ordering of the same four indices gives the same magnitude.
+    // Number every ordering of the same four indices gives the same magnitude. The four indices
+    // are put in order by rank (the number of smaller ones, ties broken by position) and not by a
+    // generic sort, which cost much of a refinement's time (TKT-351).
     InCircleOf(points: Array<Point2D>, a: Integer, b: Integer, c: Integer, d: Integer): Number
     {
         var ids = [a, b, c, d];
+        var ranks = 4.MapRange(i => 4.Range.Reduce(0, (n, j) => (ids[j] < ids[i] || (ids[j] == ids[i] && j < i)) ? n + 1 : n));
+        var s = 4.MapRange(k => ids[4.Range.Reduce(0, (found, i) => ranks[i] == k ? i : found)]);
         var inversions = 4.Range.Reduce(0, (n, i) => 4.Range.Reduce(n, (m, j) => (i < j && ids[i] > ids[j]) ? m + 1 : m));
-        var s = ids.Sort((x, y) => x <= y);
         var det = InCircle(points[s[0]], points[s[1]], points[s[2]], points[s[3]]);
         return inversions % 2 == 0 ? det : 0.0 - det;
     }

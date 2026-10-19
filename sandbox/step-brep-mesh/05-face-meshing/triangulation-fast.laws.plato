@@ -1,0 +1,37 @@
+//==
+// # Fast refinement: laws (TKT-351)
+//
+// Laws of triangulation-fast.library.plato over the samples of layer 5's triangulation laws
+// (TriSampleModel, EveryTriangulableFace): the neighbour table kept up to date by
+// UpdatedNeighbours. The refinement itself is covered by triangulation.laws.plato, which now runs
+// on the incremental body.
+//
+// Sections, in order:
+//  - The neighbour table
+
+library TriangulationFastLaws
+{
+    //==
+    // # The neighbour table
+
+    // After the off-centre of the first triangle of face f's constrained Delaunay triangulation goes
+    // in (TryInsertion, unguarded), UpdatedNeighbours gives the table NeighbourTable builds from
+    // scratch; vacuous when the point is refused (a conditional, since || here evaluated both
+    // sides and passed the refused walk's -1 on).
+    UpdatedTableIsTable(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
+    {
+        var t = r.TriangulateRegionCdt(chart);
+        var points = t.Points.Map(x => chart.ChartPoint(x));
+        var nb = NeighbourTable(t.Triangles, t.Points.Count);
+        var uv = chart.OffCentre(points, t.Triangles[0]);
+        var least = TriCriteria(0).Discretization.EffectiveMinLength(m.Tolerances);
+        var after = m.TryInsertion(f, r, chart, t.Points, points, t.Triangles, nb, 0, uv, least, false);
+        return after.Count == t.Triangles.Count
+            ? true
+            : UpdatedNeighbours(t.Triangles, nb, after, t.Points.Count, points.WalkTo(t.Triangles, nb, 0, chart.ChartPoint(uv))) == NeighbourTable(after, t.Points.Count + 1);
+    }
+
+    // UpdatedTableIsTable at every face of sample k.
+    Law_UpdatedNeighboursAreTheTable(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => m.UpdatedTableIsTable(f, r, chart));
+}

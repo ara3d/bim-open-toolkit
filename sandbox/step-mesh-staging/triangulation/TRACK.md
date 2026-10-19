@@ -1,7 +1,7 @@
 # triangulation: constrained Delaunay by the in-circle determinant, refinement by insertion and flips
 
-Tickets: TKT-343 (merged in 7d8dae2d), TKT-351 (the refinement was slower than the code it replaced)
-Status: ready to merge (TKT-351; the C# timing of criterion 2 waits on the C# track, see Done)
+Tickets: TKT-343 (merged in 7d8dae2d), TKT-351 (the refinement was slower than the code it replaced; merged, see "Merge record (TKT-351)")
+Status: merged (TKT-351; was: ready to merge; the C# timing of criterion 2 waits on the C# track, see Done)
 
 ## TKT-351: where the time goes, and a faster refinement
 
@@ -119,6 +119,28 @@ The sequential surface pass gives a different, smaller mesh than the batched one
 - `TriangulationCdt.InCircleOf` takes `InCircleOfFast`'s body; delete `InCircleOfFast` and
   `IsFlippableFast`, calling `IsFlippableCdt` where `IsFlippableFast` was.
 - Rerun the sweep against `reviews/verdicts-cpu64.tsv`.
+
+### Merge record (TKT-351)
+
+TKT-351 merged in the commit that moved `triangulation-fast.library.plato` and
+`triangulation-fast.laws.plato` into `05-face-meshing` (`git log --grep "Ticket: TKT-351"`).
+
+- Wiring: `RefineToSurfaceFast` was renamed `RefineToSurfaceByInsertion` (the instruction's optional
+  rename), so `FaceMeshing.RefineToSurface` and `TriangulationLaws.RefinedCdt` kept their calls and
+  the old body of that name was deleted. `Delaunayed` and `InCircleOf` took the queue and rank
+  bodies; `PointedBack` moved to `uv-delaunay.library.plato` with `Delaunayed`.
+- Deleted: `SurfacePass`, `SurfacePlacement`, `TryAngleInsertion`, `AnglePass`, `LocateNear`,
+  `Locate`, `TriangleWithSide`, `IndexOfTriangle`, and, with no caller left, `HoldsPoint`,
+  `SurfaceCandidate`, `ChangedAngles`, `FlipPass`, `DelaunayedQueue`, `TriangulateRegionFast`,
+  `InCircleOfFast`, `IsFlippableFast`.
+- Laws: `Law_Fast_*` refinement laws and `Law_Fast_InCircleOfFastIsInCircleOf` were dropped (they
+  duplicate `triangulation.laws.plato`, which now runs on the incremental body, and the in-circle
+  law compared a function with itself); `Law_Fast_UpdatedNeighboursAreTheTable` became
+  `Law_UpdatedNeighboursAreTheTable`.
+- Sweep (cpu64, budget 120 s): 107 min (59 budget errors in the baseline, 50 now). 0 regressions;
+  `PolesLaws.Law_ConeFaceChecksHold` went from a budget error to fail in the sweep, but run alone
+  it ended in a budget error again (120 s in `SurfacePassLocal`), so its first failing case is not
+  known. The cone face is still slow in the surface pass.
 
 ### Findings (TKT-351)
 

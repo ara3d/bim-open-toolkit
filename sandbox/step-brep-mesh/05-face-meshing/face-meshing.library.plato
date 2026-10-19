@@ -190,7 +190,7 @@ library FaceMeshing
     }
 
     // Refinement against the surface and the smallest-angle bound, by insertion
-    // and flips (RefineToSurfaceByInsertion, triangulation-refine.library.plato).
+    // and flips (RefineToSurfaceByInsertion, triangulation-fast.library.plato).
     // Boundary points are never added, moved or removed, and every element stays
     // positive in the chart.
     RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation

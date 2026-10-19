@@ -1,41 +1,23 @@
 //==
-// # Refinement against the surface by insertion and flips (TKT-343)
+// # Candidate points and insertion helpers for refinement (TKT-343)
 //
-// Layer 05-face-meshing. RefineToSurfaceByInsertion, for the contract RefineToSurface, replaces
-// the library's refinement, which skipped planes and split only for surface criteria. Each
-// round has two passes:
-//  - the surface pass: every triangle that exceeds a surface criterion (UvDelaunay's
-//    TriangleNeedsRefinement, not tested on planes) gets its circumcentre (Chew 1989, Ruppert
-//    1995), or when that may not go in, the parameter midpoint of its longest side that is not
-//    a boundary segment, or its parameter centroid when every side is one, as before; the
-//    points go in together, then Delaunayed;
-//  - the angle pass: every triangle whose smallest lifted angle is below RefinementMinAngle, one
-//    at a time, gets the first of these that is kept: its off-centre (Üngör, "Off-centers",
-//    LATIN 2004: on the perpendicular bisector of its shortest side, toward the opposite corner,
-//    at the circumcentre or at the apex of a 45 degree triangle on that side, whichever is
-//    nearer), its circumcentre, the midpoint of its longest side, its centroid; the point is
-//    inserted, Delaunayed flips, and the insertion is kept only
-//    when the smallest lifted angle of the triangles it changed is larger than that of the
-//    triangles it removed. Unchanged triangles keep their angles, so an angle insertion never
-//    lowers a face's smallest angle, and a flat rectangle the fixed boundary keeps below 30
-//    degrees stays two triangles.
-// A point is located by search, then its triangle is split in three, or with the neighbour across
-// the side it lies on in four. Boundary points are never added, moved or removed, and every
-// element stays positive in the chart.
+// Layer 05-face-meshing. The parts of the refinement RefineToSurfaceByInsertion (in
+// triangulation-fast.library.plato, which holds the passes and the loop) that do not depend on the
+// order the points go in: the angle bound, the lifted angle of a triangle, the points an angle
+// insertion tries (Ungor, "Off-centers", LATIN 2004: on the perpendicular bisector of a
+// triangle's shortest side, toward the opposite corner, at the circumcentre or at the apex of a
+// 45 degree triangle on that side, whichever is nearer; then its circumcentre, the midpoint of its
+// longest side, its centroid), and the placing and splitting of a point in a triangle: its triangle
+// is split in three, or with the neighbour across the side it lies on in four. Boundary points are
+// never added, moved or removed, and every element stays positive in the chart.
 //
 // A point is refused when it would come within the effective minimum length of a corner it
-// joins or of a point added in the same surface pass, within the region's tolerance of the
-// boundary, or would leave a non-positive triangle. (A rule keeping angle points 0.9 times the
-// failing triangle's shortest side from its corners was dropped: the guard already forbids an
-// insertion that worsens what it changes, and the rule changed no probed face.)
+// joins, within the region's tolerance of the boundary, or would leave a non-positive triangle.
 //
 // Sections, in order:
 //  - Quality
 //  - Candidate points
 //  - Locating and splitting
-//  - The surface pass
-//  - The angle pass
-//  - Refinement
 
 library TriangulationRefine
 {
@@ -136,40 +118,8 @@ library TriangulationRefine
             UvCoordinate((pts[tri.A].U + pts[tri.B].U + pts[tri.C].U) / 3.0, (pts[tri.A].V + pts[tri.B].V + pts[tri.C].V) / 3.0)];
     }
 
-    // The point a surface criterion asks for in triangle k of t: the parameter midpoint of its
-    // SplitSide, or its parameter centroid when every side is a boundary segment.
-    SurfaceCandidate(r: UvRegion, t: UvTriangulation, points: Array<Point2D>, nb: Array<Integer>, k: Integer): UvCoordinate
-    {
-        var tri = t.Triangles[k];
-        var j = r.SplitSide(points, tri, nb, k);
-        return j < 0 ? t.ElementUvCentroid(ElementIndex(k)) : t.Points[tri.Corner(j)].UvMidpoint(t.Points[tri.Corner(j + 1)]);
-    }
-
     //==
     // # Locating and splitting
-
-    // The first of triangle k and its neighbours (slots 3 k to 3 k + 2 of nb) whose closed
-    // triangle holds chart point p; -1 when none does.
-    LocateNear(points: Array<Point2D>, tris: Array<TriangleFace>, nb: Array<Integer>, k: Integer, p: Point2D): Integer
-        => [k, nb[3 * k], nb[3 * k + 1], nb[3 * k + 2]].Reduce(-1, (found, q) =>
-            found >= 0 ? found : ((q >= 0 ? points.HoldsPoint(tris[q], p) : false) ? q : -1));
-
-    // The first triangle of tris whose closed triangle holds chart point p; -1 when none does.
-    Locate(points: Array<Point2D>, tris: Array<TriangleFace>, p: Point2D): Integer
-        => tris.Count.Range.Reduce(-1, (found, q) => found >= 0 ? found : (points.HoldsPoint(tris[q], p) ? q : -1));
-
-    // Whether the closed triangle tri holds chart point p.
-    HoldsPoint(points: Array<Point2D>, tri: TriangleFace, p: Point2D): Boolean
-        => InClosedTriangle(p, points[tri.Corner(0)], points[tri.Corner(1)], points[tri.Corner(2)]);
-
-    // The triangle of tris with the directed side from a to b; -1 when none has it.
-    TriangleWithSide(tris: Array<TriangleFace>, a: Integer, b: Integer): Integer
-        => tris.Count.Range.Reduce(-1, (found, q) =>
-            found >= 0 ? found : (3.Range.Any(j => tris[q].Corner(j) == a && tris[q].Corner(j + 1) == b) ? q : -1));
-
-    // The position of triangle x in tris; -1 when it is not there.
-    IndexOfTriangle(tris: Array<TriangleFace>, x: TriangleFace): Integer
-        => tris.Count.Range.Reduce(-1, (found, q) => found >= 0 ? found : (tris[q] == x ? q : -1));
 
     // Where chart point p lies in the closed triangle tri: -1 inside, j (0, 1 or 2) on side j
     // (its twice signed area with that side within 1e-4 of the triangle's), 3 near a corner (two
@@ -208,186 +158,5 @@ library TriangulationRefine
         var p = m.Geometry.Eval(s, uv);
         return corners.All(v => m.Geometry.Eval(s, pts[v]).Distance(p) >= least)
             && added.Count.Range.All(i => m.Geometry.Eval(s, added.At(i)).Distance(p) >= least);
-    }
-
-    //==
-    // # The surface pass
-
-    // Where the surface pass would insert the parameter point uv for triangle k of t: the
-    // containing triangle q (triangle k, a neighbour, else any), the place j in it
-    // (PlaceInTriangle), the neighbour u across side j and its opposite corner d (-1 for none),
-    // and 1 when the point may go in: q and u untouched in this pass (used), side j not a
-    // boundary segment, every new triangle positive, strictly inside the region, and at least
-    // `least` from the corners it joins and the points added so far; else 0.
-    SurfacePlacement(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, points: Array<Point2D>, nb: Array<Integer>, used: List<Boolean>, added: List<UvCoordinate>, k: Integer, uv: UvCoordinate, least: Number): Array<Integer>
-    {
-        var p = chart.ChartPoint(uv);
-        var near = LocateNear(points, t.Triangles, nb, k, p);
-        var q = near >= 0 ? near : points.Locate(t.Triangles, p);
-        var tri = t.Triangles[q.Max(0)];
-        var j = q < 0 ? 3 : points.PlaceInTriangle(tri, p);
-        var a = tri.Corner(j.Max(0));
-        var b = tri.Corner(j.Max(0) + 1);
-        var e = tri.Corner(j.Max(0) + 2);
-        var u = (j >= 0 && j < 3) ? nb[3 * q + j] : -1;
-        var d = u < 0 ? -1 : t.Triangles[u].OppositeCorner(a, b);
-        var free = j == 3 ? false
-            : (used.At(q) ? false
-                : (j < 0 ? true : (u >= 0 ? (used.At(u).Not && r.IsConstrained(a, b).Not) : false)));
-        var good = free
-            ? (points.SplitIsPositive(a, b, e, d, p)
-                && r.IsStrictlyInside(uv, m.RegionTolerance(f, chart))
-                && m.IsFarFromPoints(f, t.Points, d < 0 ? [a, b, e] : [a, d, b, e], added, uv, least))
-            : false;
-        return [q, j, u, d, good ? 1 : 0];
-    }
-
-    // Every triangle of t that exceeds a surface criterion (surface[k]) gets its circumcentre
-    // (Chew's and Ruppert's Delaunay refinement: a smaller triangle without a worse angle), or,
-    // when the circumcentre may not go in (SurfacePlacement), its SurfaceCandidate (the old
-    // midpoint or centroid). The new points are Interior and come after every existing point;
-    // quads are kept. Then Delaunayed.
-    SurfacePass(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, surface: Array<Boolean>, c: FaceMeshingCriteria): UvTriangulation
-    {
-        var n0 = t.Triangles.Count;
-        var points = t.Points.Map(uv => chart.ChartPoint(uv));
-        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
-        var nb = NeighbourTable(t.Triangles, t.Points.Count);
-        var tris = t.Triangles.EmptyList.AddRange(t.Triangles);
-        var used = new List<Boolean>().AddRange(n0.MapRange(i => false));
-        var added = new List<UvCoordinate>();
-        var k = 0;
-        while (k < n0)
-        {
-            if (used.At(k) ? false : surface[k])
-            {
-                var centre = chart.Circumcentre(points, t.Triangles[k]);
-                var atCentre = m.SurfacePlacement(f, r, chart, t, points, nb, used, added, k, centre, least);
-                var uv = atCentre[4] == 1 ? centre : r.SurfaceCandidate(t, points, nb, k);
-                var at = atCentre[4] == 1 ? atCentre : m.SurfacePlacement(f, r, chart, t, points, nb, used, added, k, uv, least);
-                if (at[4] == 1)
-                {
-                    var tri = t.Triangles[at[0]];
-                    var j = at[1].Max(0);
-                    tris = tris.SplitAt(at[0], at[2], tri.Corner(j), tri.Corner(j + 1), tri.Corner(j + 2), at[3], t.Points.Count + added.Count);
-                    added = added.Add(uv);
-                    used = at[3] < 0 ? used.Set(at[0], true) : used.Set(at[0], true).Set(at[2], true);
-                }
-            }
-            k = k + 1;
-        }
-        var newPoints = added.Freeze();
-        var allPoints = t.Points.Concatenate(newPoints);
-        return UvTriangulation(
-            allPoints,
-            t.Sources.Concatenate(newPoints.Map(uv => UvPointSource.Interior)),
-            r.Delaunayed(allPoints.Map(uv => chart.ChartPoint(uv)), tris.Freeze()),
-            t.Quads);
-    }
-
-    //==
-    // # The angle pass
-
-    // The smallest lifted angle of the triangles of `after` that differ from `before` at their
-    // index or come after its end (changed), and of the triangles of `before` that differ
-    // (removed); pi for none. Flips and splits rewrite in place or append, so these are exactly
-    // the triangles an insertion made and unmade.
-    ChangedAngles(m: BrepModel, f: BrepFaceIndex, pts: Array<UvCoordinate>, before: Array<TriangleFace>, after: Array<TriangleFace>): Array<Number>
-    {
-        var changed = after.Count.Range.FlatMap(i => (i < before.Count ? after[i] == before[i] : false) ? after.Take(0) : [after[i]]);
-        var removed = before.Count.Range.FlatMap(i => (i < after.Count ? after[i] == before[i] : false) ? before.Take(0) : [before[i]]);
-        return [changed.Reduce(Number.Pi, (x, y) => x.Min(m.LiftedAngleOf(f, pts, y))),
-            removed.Reduce(Number.Pi, (x, y) => x.Min(m.LiftedAngleOf(f, pts, y)))];
-    }
-
-    // The triangles with the parameter point uv inserted for the failing triangle k, flipped by
-    // Delaunayed; tris unchanged when the point is refused (the header's rules) or the
-    // insertion does not raise the smallest angle of what it changes. The point would be
-    // pts.Count.
-    TryAngleInsertion(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, pts: Array<UvCoordinate>, tris: Array<TriangleFace>, k: Integer, uv: UvCoordinate, c: FaceMeshingCriteria): Array<TriangleFace>
-    {
-        var points = pts.Map(x => chart.ChartPoint(x));
-        var p = chart.ChartPoint(uv);
-        var q = points.Locate(tris, p);
-        var tri = tris[q.Max(0)];
-        var j = q < 0 ? 3 : points.PlaceInTriangle(tri, p);
-        var a = tri.Corner(j.Max(0));
-        var b = tri.Corner(j.Max(0) + 1);
-        var e = tri.Corner(j.Max(0) + 2);
-        var u = (j >= 0 && j < 3) ? tris.TriangleWithSide(b, a) : -1;
-        var d = u < 0 ? -1 : tris[u].OppositeCorner(a, b);
-        var ring = d < 0 ? [a, b, e] : [a, d, b, e];
-        var free = j == 3 ? false : (j < 0 ? true : (u >= 0 ? r.IsConstrained(a, b).Not : false));
-        var good = free
-            ? (points.SplitIsPositive(a, b, e, d, p)
-                && r.IsStrictlyInside(uv, m.RegionTolerance(f, chart))
-                && m.IsFarFromPoints(f, pts, ring, new List<UvCoordinate>(), uv, c.Discretization.EffectiveMinLength(m.Tolerances)))
-            : false;
-        var allPts = pts.Concatenate([uv]);
-        var split = good ? tris.EmptyList.AddRange(tris).SplitAt(q, u, a, b, e, d, pts.Count).Freeze() : tris;
-        var flipped = good ? r.Delaunayed(allPts.Map(x => chart.ChartPoint(x)), split) : tris;
-        var angles = good ? m.ChangedAngles(f, allPts, tris, flipped) : [0.0, 0.0];
-        return angles[0] > angles[1] ? flipped : tris;
-    }
-
-    // Every triangle of t whose smallest lifted angle is below RefinementMinAngle, in order and
-    // while it is still a triangle of the current triangulation, gets its off-centre or, failing
-    // that, its circumcentre, through TryAngleInsertion. The new points are Interior and come
-    // after every existing point.
-    AnglePass(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
-    {
-        var bad = t.Triangles.FlatMap(x => m.SmallestCornerAngle(f, t, x) < RefinementMinAngle(0) ? [x] : t.Triangles.Take(0));
-        var pts = t.Points;
-        var tris = t.Triangles;
-        var i = 0;
-        while (i < bad.Count)
-        {
-            var k = tris.IndexOfTriangle(bad[i]);
-            if (k >= 0)
-            {
-                var points = pts.Map(x => chart.ChartPoint(x));
-                var candidates = chart.AngleCandidates(points, pts, tris[k]);
-                var chosen = candidates.Count.Range.Reduce(-1, (found, n) => found >= 0 ? found
-                    : (m.TryAngleInsertion(f, r, chart, pts, tris, k, candidates[n], c).Count > tris.Count ? n : -1));
-                if (chosen >= 0)
-                {
-                    tris = m.TryAngleInsertion(f, r, chart, pts, tris, k, candidates[chosen], c);
-                    pts = pts.Concatenate([candidates[chosen]]);
-                }
-            }
-            i = i + 1;
-        }
-        return UvTriangulation(
-            pts,
-            t.Sources.Concatenate((pts.Count - t.Points.Count).MapRange(j => UvPointSource.Interior)),
-            tris,
-            t.Quads);
-    }
-
-    //==
-    // # Refinement
-
-    // Refinement of triangulation t of region r of face f, for the contract RefineToSurface: up
-    // to forty rounds, each a SurfacePass then an AnglePass, while a round adds a point. The
-    // surface criteria are not tested on a plane (its elements lie on it and its normal is
-    // constant); the angle is tested on every face. A triangle found to meet the surface
-    // criteria is not tested again while it is unchanged (UvDelaunay's KnownGood).
-    RefineToSurfaceByInsertion(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
-    {
-        var planar = m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord;
-        var current = t;
-        var known = t.Triangles.Map(x => false);
-        var pass = 0;
-        var changed = true;
-        while (pass < 40 && changed)
-        {
-            var surface = planar ? current.Triangles.Map(x => false) : m.NeedsRefinement(f, r, current, known, c);
-            var next = m.AnglePass(f, r, chart, m.SurfacePass(f, r, chart, current, surface, c), c);
-            known = KnownGood(current, surface, next);
-            changed = next.Points.Count > current.Points.Count;
-            current = next;
-            pass = pass + 1;
-        }
-        return current;
     }
 }

@@ -1,10 +1,10 @@
 //==
-// # Refinement without whole-triangulation flip passes (TKT-351, staging)
+// # Refinement without whole-triangulation flip passes (TKT-351)
 //
-// Layer 05-face-meshing. The profile of RefineToSurfaceByInsertion (TRACK.md, "Profile") spent 18
+// Layer 05-face-meshing. The profile of the first RefineToSurfaceByInsertion (TKT-343; TRACK.md, "Profile") spent 18
 // of 20 s in Delaunayed: every trial of an angle insertion flipped the whole triangulation, and
 // each FlipPass rebuilt the neighbour table with a sort. An insertion only changes the triangles
-// near the new point, so RefineToSurfaceFast inserts one point at a time and flips locally, as
+// near the new point, so RefineToSurfaceByInsertion inserts one point at a time and flips locally, as
 // Lawson's incremental insertion does (de Berg et al., Computational Geometry, 9.3): after point
 // p splits its triangle, only the sides opposite p are tested, and each flip queues the two new
 // sides opposite p. Every side tested is a side of the triangulation before the insertion, and the
@@ -13,52 +13,20 @@
 // kept insertion, UpdatedNeighbours rewrites the entries of the triangles around p. From a
 // constrained Delaunay triangulation this ends in one (a boundary segment is never flipped). The
 // surface pass becomes sequential too, so no pass flips the whole triangulation. The in-circle
-// test loses its generic sort (InCircleOfFast).
+// test (TriangulationCdt's InCircleOf) and UvDelaunay's Delaunayed take the same cheaper bodies.
 //
 // The rules for a point (strictly inside, at least the minimum length from the corners it joins,
-// every new triangle positive) and the angle pass's guard are TriangulationRefine's.
+// every new triangle positive) are TriangulationRefine's.
 //
 // Sections, in order:
-//  - The in-circle test
 //  - Searches
 //  - Local insertion
-//  - Flipping a whole triangulation
 //  - The surface pass
 //  - The angle pass
 //  - Refinement
 
 library TriangulationFast
 {
-    //==
-    // # The in-circle test
-
-    // InCircleOf without the generic sort: the rank of each of the four indices (the number of
-    // smaller ones, ties broken by position) places it, and the inversions give the sign. The
-    // determinant is the same number InCircleOf computes, so every law of it carries over.
-    InCircleOfFast(points: Array<Point2D>, a: Integer, b: Integer, c: Integer, d: Integer): Number
-    {
-        var ids = [a, b, c, d];
-        var ranks = 4.MapRange(i => 4.Range.Reduce(0, (n, j) => (ids[j] < ids[i] || (ids[j] == ids[i] && j < i)) ? n + 1 : n));
-        var s = 4.MapRange(k => ids[4.Range.Reduce(0, (found, i) => ranks[i] == k ? i : found)]);
-        var inversions = 4.Range.Reduce(0, (n, i) => 4.Range.Reduce(n, (m, j) => (i < j && ids[i] > ids[j]) ? m + 1 : m));
-        var det = InCircle(points[s[0]], points[s[1]], points[s[2]], points[s[3]]);
-        return inversions % 2 == 0 ? det : 0.0 - det;
-    }
-
-    // IsFlippableCdt with InCircleOfFast; deleted at merge, when InCircleOf is the fast one.
-    IsFlippableFast(r: UvRegion, points: Array<Point2D>, t: TriangleFace, j: Integer, u: TriangleFace): Boolean
-    {
-        var a = t.Corner(j);
-        var b = t.Corner(j + 1);
-        var c = t.Corner(j + 2);
-        var d = u.OppositeCorner(a, b);
-        return (d < 0 || r.IsConstrained(a, b))
-            ? false
-            : (TwiceSignedArea(points[a], points[d], points[c]) > 0.0
-                && TwiceSignedArea(points[d], points[b], points[c]) > 0.0
-                && InCircleOfFast(points, a, b, c, d) > 0.0);
-    }
-
     //==
     // # Searches
 
@@ -133,7 +101,7 @@ library TriangulationFast
             var o = queue.At(i + 3);
             var live = o < 0 ? false
                 : (result.At(t).SideSlot(a, b) >= 0 && result.At(o).SideSlot(b, a) >= 0 && result.At(o).HasCorner(p).Not);
-            if (live ? r.IsFlippableFast(points, TriangleOf(a, b, p), 0, result.At(o)) : false)
+            if (live ? r.IsFlippableCdt(points, TriangleOf(a, b, p), 0, result.At(o)) : false)
             {
                 var u = result.At(o);
                 var d = u.OppositeCorner(a, b);
@@ -271,74 +239,6 @@ library TriangulationFast
     }
 
     //==
-    // # Flipping a whole triangulation
-
-    // nb with the entry of triangle o for its side from y to x pointed at triangle at; nb as it is
-    // when o is -1 (a boundary side).
-    PointedBack(nb: List<Integer>, tris: List<TriangleFace>, o: Integer, x: Integer, y: Integer, at: Integer): List<Integer>
-        => o < 0 ? nb : nb.Set(3 * o + tris.At(o).SideSlot(y, x), at);
-
-    // Delaunayed without passes: one neighbour table, then a queue of side slots (3 t + j), every
-    // slot to start with. A slot is tested as its triangle is now; when its side is flippable, t =
-    // (a, b, c) and u = (b, a, d) become (a, d, c) and (d, b, c) in place, the table entries of t,
-    // u and the four triangles around them are rewritten, and the four outer sides are queued. Ends
-    // when the queue is empty (no side is flippable: each flip changes only the sides it queues)
-    // or after 3n^2 flips, a guard against rounding. Delaunayed rebuilt the table with a sort on
-    // every pass: 102 passes for the 200-point plane face (TRACK.md, "Profile").
-    DelaunayedQueue(r: UvRegion, points: Array<Point2D>, tris: Array<TriangleFace>): Array<TriangleFace>
-    {
-        var result = tris.EmptyList.AddRange(tris);
-        var nb = new List<Integer>().AddRange(NeighbourTable(tris, points.Count));
-        var queue = new List<Integer>().AddRange((3 * tris.Count).Range);
-        var i = 0;
-        var flips = 0;
-        while (i < queue.Count && flips < 3 * tris.Count * tris.Count)
-        {
-            var s = queue.At(i);
-            var t = s / 3;
-            var j = s % 3;
-            var u = nb.At(s);
-            if (u >= 0 ? r.IsFlippableFast(points, result.At(t), j, result.At(u)) : false)
-            {
-                var a = result.At(t).Corner(j);
-                var b = result.At(t).Corner(j + 1);
-                var c = result.At(t).Corner(j + 2);
-                var d = result.At(u).OppositeCorner(a, b);
-                var tbc = nb.At(3 * t + (j + 1) % 3);
-                var tca = nb.At(3 * t + (j + 2) % 3);
-                var uad = nb.At(3 * u + result.At(u).SideSlot(a, d));
-                var udb = nb.At(3 * u + result.At(u).SideSlot(d, b));
-                result = result.Set(t, TriangleOf(a, d, c)).Set(u, TriangleOf(d, b, c));
-                nb = nb.Set(3 * t, uad).Set(3 * t + 1, u).Set(3 * t + 2, tca)
-                    .Set(3 * u, udb).Set(3 * u + 1, tbc).Set(3 * u + 2, t);
-                nb = nb.PointedBack(result, uad, a, d, t).PointedBack(result, tca, c, a, t)
-                    .PointedBack(result, udb, d, b, u).PointedBack(result, tbc, b, c, u);
-                queue = queue.Add(3 * t).Add(3 * t + 2).Add(3 * u).Add(3 * u + 1);
-                flips = flips + 1;
-            }
-            i = i + 1;
-        }
-        return result.Freeze();
-    }
-
-    // TriangulateRegionCdt with DelaunayedQueue in place of Delaunayed; deleted at merge, when
-    // Delaunayed takes DelaunayedQueue's body.
-    TriangulateRegionFast(r: UvRegion, chart: FaceChart): UvTriangulation
-    {
-        var points = r.BoundaryPoints.Map(uv => chart.ChartPoint(uv));
-        var outer = r.Outer.Points.Count.Range;
-        var holes = r.Holes.Count.Range.FlatMap(h =>
-            r.Holes[h].Points.Count >= 3 ? [h] : r.Holes.Count.Range.Take(0));
-        var bySide = holes.Sort((a, b) => r.HoleRightmost(points, a) >= r.HoleRightmost(points, b));
-        var ring = bySide.Reduce(outer, (current, h) => current.HoleBridged(r.HoleRing(h), points, r.AllRingSegments(points)));
-        var clipped = ring.EarClipped(points);
-        var pointHoles = r.Holes.Count.Range.FlatMap(h =>
-            r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : r.Holes.Count.Range.Take(0));
-        var triangles = r.DelaunayedQueue(points, pointHoles.Reduce(clipped, (ts, p) => ts.WithPointInserted(p, points)));
-        return UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
-    }
-
-    //==
     // # The surface pass
 
     // The point a surface criterion asks for in triangle k after its circumcentre was refused:
@@ -458,7 +358,7 @@ library TriangulationFast
     // such triangles on the cylinder side face retried, four candidates each, in every one of the
     // last eight rounds. Up to forty rounds while a round adds a point; the surface criteria are
     // not tested on a plane; a triangle known to meet them is not tested again while unchanged.
-    RefineToSurfaceFast(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
+    RefineToSurfaceByInsertion(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
     {
         var planar = m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord;
         var current = t;

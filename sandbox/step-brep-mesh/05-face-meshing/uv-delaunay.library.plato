@@ -9,7 +9,7 @@
 // quadrilateral around it is strictly convex (IsFlippableCdt). From any triangulation that keeps
 // the boundary segments, the flips reach the constrained Delaunay triangulation (Lawson 1977; de
 // Berg et al., Computational Geometry, 9.1 and 9.6), and they change no point. This file keeps
-// the pass and its loop (FlipPass, Delaunayed) and the tests refinement shares: whether a
+// the flip loop (Delaunayed) and the tests refinement shares: whether a
 // triangle needs refinement against the surface, where it may be split, and which triangles
 // are known to be fine. Flips keep every element positive in the chart, because a flip happens
 // only on a strictly convex quadrilateral.
@@ -96,48 +96,54 @@ library UvDelaunay
     //==
     // # Lawson's flips
 
-    // One pass of flips: every flippable edge whose two triangles no earlier flip of the pass
-    // touched is flipped; (a, b, c) and (b, a, d) become (a, d, c) and (d, b, c).
-    FlipPass(r: UvRegion, points: Array<Point2D>, tris: Array<TriangleFace>): Array<TriangleFace>
-    {
-        var nb = NeighbourTable(tris, points.Count);
-        var result = tris.EmptyList.AddRange(tris);
-        var used = new List<Boolean>().AddRange(tris.Count.MapRange(i => false));
-        var s = 0;
-        while (s < 3 * tris.Count)
-        {
-            var t = s / 3;
-            var u = nb[s];
-            var free = u > t ? (used.At(t).Not && used.At(u).Not) : false;
-            if (free ? r.IsFlippableCdt(points, tris[t], s % 3, tris[u]) : false)
-            {
-                var a = tris[t].Corner(s % 3);
-                var b = tris[t].Corner(s % 3 + 1);
-                var c = tris[t].Corner(s % 3 + 2);
-                var d = tris[u].OppositeCorner(a, b);
-                result = result.Set(t, TriangleOf(a, d, c)).Set(u, TriangleOf(d, b, c));
-                used = used.Set(t, true).Set(u, true);
-            }
-            s = s + 1;
-        }
-        return result.Freeze();
-    }
+    // nb with the entry of triangle o for its side from y to x pointed at triangle at; nb as it is
+    // when o is -1 (a boundary side).
+    PointedBack(nb: List<Integer>, tris: List<TriangleFace>, o: Integer, x: Integer, y: Integer, at: Integer): List<Integer>
+        => o < 0 ? nb : nb.Set(3 * o + tris.At(o).SideSlot(y, x), at);
 
-    // The triangles flipped until no edge is flippable (at most 400 passes): the constrained
-    // Delaunay triangulation of their points in the chart, the region's boundary segments kept.
+    // The triangles flipped until no edge is flippable: the constrained Delaunay triangulation of
+    // their points in the chart, the region's boundary segments kept (TKT-351). One neighbour
+    // table, then a queue of side slots (3 t + j), every slot to start with. A slot is tested as
+    // its triangle is now; when its side is flippable, t = (a, b, c) and u = (b, a, d) become
+    // (a, d, c) and (d, b, c) in place, the table entries of t, u and the four triangles around
+    // them are rewritten, and the four outer sides are queued. Ends when the queue is empty (no
+    // side is flippable: each flip changes only the sides it queues) or after 3n^2 flips, a guard
+    // against rounding. Whole passes rebuilt the table with a sort every time: 102 passes for the
+    // 200-point plane face (TRACK.md, "Profile").
     Delaunayed(r: UvRegion, points: Array<Point2D>, tris: Array<TriangleFace>): Array<TriangleFace>
     {
-        var current = tris;
-        var changed = true;
-        var pass = 0;
-        while (changed && pass < 400)
+        var result = tris.EmptyList.AddRange(tris);
+        var nb = new List<Integer>().AddRange(NeighbourTable(tris, points.Count));
+        var queue = new List<Integer>().AddRange((3 * tris.Count).Range);
+        var i = 0;
+        var flips = 0;
+        while (i < queue.Count && flips < 3 * tris.Count * tris.Count)
         {
-            var next = r.FlipPass(points, current);
-            changed = next.Corresponds(current, (x, y) => x == y).Not;
-            current = next;
-            pass = pass + 1;
+            var s = queue.At(i);
+            var t = s / 3;
+            var j = s % 3;
+            var u = nb.At(s);
+            if (u >= 0 ? r.IsFlippableCdt(points, result.At(t), j, result.At(u)) : false)
+            {
+                var a = result.At(t).Corner(j);
+                var b = result.At(t).Corner(j + 1);
+                var c = result.At(t).Corner(j + 2);
+                var d = result.At(u).OppositeCorner(a, b);
+                var tbc = nb.At(3 * t + (j + 1) % 3);
+                var tca = nb.At(3 * t + (j + 2) % 3);
+                var uad = nb.At(3 * u + result.At(u).SideSlot(a, d));
+                var udb = nb.At(3 * u + result.At(u).SideSlot(d, b));
+                result = result.Set(t, TriangleOf(a, d, c)).Set(u, TriangleOf(d, b, c));
+                nb = nb.Set(3 * t, uad).Set(3 * t + 1, u).Set(3 * t + 2, tca)
+                    .Set(3 * u, udb).Set(3 * u + 1, tbc).Set(3 * u + 2, t);
+                nb = nb.PointedBack(result, uad, a, d, t).PointedBack(result, tca, c, a, t)
+                    .PointedBack(result, udb, d, b, u).PointedBack(result, tbc, b, c, u);
+                queue = queue.Add(3 * t).Add(3 * t + 2).Add(3 * u).Add(3 * u + 1);
+                flips = flips + 1;
+            }
+            i = i + 1;
         }
-        return current;
+        return result.Freeze();
     }
 
     //==
