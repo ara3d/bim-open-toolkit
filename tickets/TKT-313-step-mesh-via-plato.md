@@ -57,3 +57,20 @@ Plan: docs/plans/step-reader.md, section 'Pivot: geometry in Plato' (owner decis
     `Law_ReversalNegatesSignedVolume`, `Law_TriangleMeshKeepsArea`, `Law_TriangleMeshKeepsPositions` all hold. Generation:
     Ara3D.StepBrep from library 6aee137d, Plato acbc9b94, cpu64. Tests: `Plato/PlatoStepMesherTests`,
     `Plato/PlatoCubeTests`.
+- 2026-10-19, builder 10b9c9c6, regeneration with layer 08. Status: blocked, nothing committed. Inputs: library at
+  bim-open-toolkit 7efe05e3 (layers 00 to 08 clean; the header named 7d8dae2d, the last commit touching them, no +local),
+  compiler `C:/Users/cdigg/.plato-cli/951a70ab/Plato.CLI.dll`, stdlib and runtime from a clone at Plato 951a70ab (header
+  Plato 78be1798), cpu64, `08-pipeline` added to the script's layers. Generation succeeded (928 generated and 13 runtime
+  files, 328 s). The C# build of Ara3D.StepBrep failed with two kinds of error. (1) Expected:
+  `StepSchemaModel.g.cs(37,160)` and `_Integer.g.cs(125,141)` CS0121, `FlatRecord` now emitted by the writer and also in
+  the hand-written `BodilessStubs.cs`; removing that file clears both. (2) **First blocking error, in layer 05, not 08:**
+  `TriangulationRefine.g.cs(116,49)` and `(205,72)`: CS1501 "No overload for method 'SplitAt' takes 7 arguments". The
+  library function `SplitAt(tris: List<TriangleFace>, q, u, a, b, e, d, pi: Integer): List<TriangleFace>`
+  (`05-face-meshing/triangulation-refine.library.plato` line 198, merged with TKT-343) has no generated method at all:
+  the C# writer emits nothing for a library function whose first parameter is `List<T>`. With `BodilessStubs.cs` removed,
+  these two are the only errors; layer 08 (`StepToMesh.g.cs`, which holds `MeshModel`) compiles. Per the rules,
+  Ara3D.StepBrep, `BodilessStubs.cs` and the script were restored to bim-open-data 3c2315a, and the restated MeshModel
+  lines in `Plato/StepPlatoMesher.cs` stay; steps 3 to 5 (MeshModel call, cube and cylinder numbers, decoder tests) not
+  done. Fix belongs to the Plato writer (emit list-receiver functions, or the library takes `Array<T>` there); then
+  regenerate with the same inputs and delete `BodilessStubs.cs`. Durations: regeneration 330 s, StepBrep builds 15.7 s and
+  11.0 s, restore build 28.0 s, no tests run.
