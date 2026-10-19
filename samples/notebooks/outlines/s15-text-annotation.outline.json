@@ -1,0 +1,59 @@
+{
+  "title": "Text on the model: storey totals, door verdicts, and the ten highest elements",
+  "createdUtc": "2026-10-18T00:00:00Z",
+  "host": {
+    "profile": "bim",
+    "note": "Reconstructed session: the replies were written by an agent playing this session; every embed was computed by the host from the graphs named."
+  },
+  "graphs": [
+    "../graphs/s15-text-annotation/nb-s15-text-annotation-storey-carbon.json",
+    "../graphs/s15-text-annotation/nb-s15-text-annotation-doors.json",
+    "../graphs/s15-text-annotation/nb-s15-text-annotation-top-elements.json"
+  ],
+  "turns": [
+    {
+      "request": "Write each storey's total operational carbon on its floor slabs in the 3D view, and colour the slabs by the same number.",
+      "reply": "Three labels, one per storey that has a slab: Level 1: 17,457.0 kgCO2e/yr, Level 2: 13,970.2 kgCO2e/yr, and Roof: 1,767.3 kgCO2e/yr. The model has 21 slabs, 10 on Level 1, 10 on Level 2 and 1 on the roof. Each label sits at the top centre of the union of its storey's slabs, so there is one label per storey and not one per slab. The slabs are coloured by the same total on the viridis scale from 1,767.3 to 17,457.0, so each storey is one colour. Everything that is not a slab is hidden, not faded. The T/FDN storey has a total of 4,001.7 kgCO2e/yr in nrc_analytics_storeys.csv but no slab of its own (its footings are footings), so it gets no label: the node writes text only where a slab carries the value.",
+      "analysisId": "nb-s15-text-annotation-storey-carbon",
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "nb-s15-text-annotation-storey-carbon: kept the IfcSlab rows of EntityText, put each slab on the one storey the model places it on (smallest Depth) with that storey's operational total from nrc_analytics_storeys.csv, isolated the slab instances, coloured them by the total with view3d.color, and added view3d.label (groupColumn StoreyName, format \"{StoreyName}: {StoreyOperationalCarbon:#,##0.0} kgCO2e/yr\")." },
+        { "name": "evaluate", "ok": true, "summary": "nb-s15-text-annotation-storey-carbon: 11 of 11 nodes Ok." },
+        { "name": "getResult", "ok": true, "summary": "nb-s15-text-annotation-storey-carbon answer.instances: 21 rows x 19 columns, 3 with a label (Level 1, Level 2, Roof)." }
+      ],
+      "embeds": [
+        { "kind": "view3d", "node": "answer", "port": "instances", "caption": "Slabs coloured by their storey's operational carbon, labelled once per storey" },
+        { "kind": "table", "node": "rows", "port": "table", "caption": "Each slab, its storey, and the storey's total" },
+        { "kind": "graph", "focus": ["slabStorey", "coloured", "answer"] }
+      ]
+    },
+    {
+      "request": "Now the doors: write each door's width and whether it passes DC-W1 over the door, coloured pass and fail.",
+      "reply": "14 doors, 14 labels, each as width then verdict: 762 mm Fail on four doors, 813 mm Fail on two, 864 mm Pass on six, and 1250 mm Pass on two. That is 6 Fail and 8 Pass, the same verdicts as nrc-dc-w1-verdicts. The label text comes from the verdict table joined to the instances on GlobalId; the rest of the model is left grey. Fail is blue and Pass is orange.",
+      "analysisId": "nb-s15-text-annotation-doors",
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "nb-s15-text-annotation-doors: the width check of nrc-dc-w1-verdicts (check.rule DC-W1 over each door's Ifc:OverallWidth in millimetres, at least 850), view3d.color by Verdict, and view3d.label (joinColumn GlobalId, format \"{Width_mm:0} mm {Verdict}\")." },
+        { "name": "evaluate", "ok": true, "summary": "nb-s15-text-annotation-doors: 14 of 14 nodes Ok." },
+        { "name": "getResult", "ok": true, "summary": "nb-s15-text-annotation-doors answer.instances: 714 rows x 19 columns, 14 with a label; verdicts.out: 14 rows, 8 Pass and 6 Fail." }
+      ],
+      "embeds": [
+        { "kind": "view3d", "node": "answer", "port": "instances", "caption": "Doors labelled with width and DC-W1 verdict, coloured Pass and Fail" },
+        { "kind": "table", "node": "verdicts", "port": "out", "caption": "DC-W1 verdicts, 14 doors" }
+      ]
+    },
+    {
+      "request": "Label only the ten elements with the highest operational carbon, with their value, and fade everything else.",
+      "reply": "Ten labels, highest first: 412.0, 410.8, 402.0, 399.7, 398.6, 389.7, 388.6, 377.5, and two at 372.0 kgCO2e/yr. All ten are filed under Wall in the analytics, two of them upper cabinets. The other 696 instances are ghosted to 15% opacity; the ten elements have 18 instances between them. The second view is the same label node with limit 5: it draws five labels and the node reports 5 labels dropped past the limit of 5. A limit cuts in the order of the instance table, not by value, so the five it keeps are not the five highest: they read 372.0, 410.8, 372.0, 412.0 and 377.5. The limit caps how much text is on screen; picking the top ten is the job of the ranking and rel.limit upstream.",
+      "analysisId": "nb-s15-text-annotation-top-elements",
+      "tools": [
+        { "name": "editGraph", "ok": true, "summary": "nb-s15-text-annotation-top-elements: ranked nrc_analytics_elements.csv by OperationalCarbon_kgCO2e_per_year, kept the top 10, ghosted the other instances with view3d.opacity (alpha 0.15), and added two view3d.label nodes over the same values: answer (default limit 200) and capped (limit 5)." },
+        { "name": "evaluate", "ok": true, "summary": "nb-s15-text-annotation-top-elements: 11 of 11 nodes Ok; capped warns that 5 labels were dropped past the limit of 5." },
+        { "name": "getResult", "ok": true, "summary": "nb-s15-text-annotation-top-elements answer.instances: 714 rows x 16 columns, 10 with a label; capped.instances: 714 rows, 5 with a label." }
+      ],
+      "embeds": [
+        { "kind": "view3d", "node": "answer", "port": "instances", "caption": "The ten highest, labelled, the rest ghosted" },
+        { "kind": "view3d", "node": "capped", "port": "instances", "caption": "The same with limit 5: five labels drawn, five dropped" },
+        { "kind": "table", "node": "materialized", "port": "table", "caption": "The ten elements" }
+      ]
+    }
+  ]
+}
