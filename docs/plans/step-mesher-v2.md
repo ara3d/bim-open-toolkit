@@ -52,14 +52,14 @@ After each merge the supervisor adds one row per track to the ledger and reviews
 
 ### Ledger
 
-| Wave | Track | Claim to ready | Law runs | Builds | Regressions at merge | Cross-track requests | Lesson |
-|---|---|---|---|---|---|---|---|
-| 1 | G (TKT-328) | about 3 h with the layer 07/08 work | not recorded | none | 0 (sweep: 4 laws to pass) | 3 (2 witnesses for B, cone sign) | Torus witnesses run past 900 s per law; a 120 s budget keeps sweeps bounded |
-| 1 | T (TKT-343) | about 2 h | not recorded | none | 0 (sweep: 15 new laws pass, 1 open) | 0 | A criterion can be unreachable by construction; the track proved it and asked before relaxing |
-| 1 | D2 (TKT-315) | about 2 h | not recorded | private builds | none, merged alone | 0 | Clean-export builds collide on two projects named Ara3D.Utils unless sequential |
-| 1 | Term (TKT-346) | about 1.5 h | 7 laws staged | none | 0 (sweep: 9 new laws pass) | 0 | A merge into code changed by earlier merges went through: wiring by definition, not by call site |
-| 1 | F (TKT-327) | about 10 h, with an 8 h stall on finished probes | not recorded | none | 0 strict; 1 pass to budget error and 2 pass to skipped, all from the slow refinement (TKT-351) | 1 (refinement speed, to T) | A session waiting on background probes can stall for hours; the supervisor checks commit times, not session status |
-| 1 | P (TKT-344) | about 45 min | not recorded | private builds only | 0 | 0 | One warm program per folder set: a one-body edit answers in 4.0 to 4.6 s while another track's program stays warm |
+| Wave | Track | Claim to ready | Law runs | Builds | Regressions at merge | Cross-track requests | Types added | Lesson |
+|---|---|---|---|---|---|---|---|---|
+| 1 | G (TKT-328) | about 3 h with the layer 07/08 work | not recorded | none | 0 (sweep: 4 laws to pass) | 3 (2 witnesses for B, cone sign) | 0 | Torus witnesses run past 900 s per law; a 120 s budget keeps sweeps bounded |
+| 1 | T (TKT-343) | about 2 h | not recorded | none | 0 (sweep: 15 new laws pass, 1 open) | 0 | 0 | A criterion can be unreachable by construction; the track proved it and asked before relaxing |
+| 1 | D2 (TKT-315) | about 2 h | not recorded | private builds | none, merged alone | 0 | 0 | Clean-export builds collide on two projects named Ara3D.Utils unless sequential |
+| 1 | Term (TKT-346) | about 1.5 h | 7 laws staged | none | 0 (sweep: 9 new laws pass) | 0 | 0 | A merge into code changed by earlier merges went through: wiring by definition, not by call site |
+| 1 | F (TKT-327) | about 10 h, with an 8 h stall on finished probes | not recorded | none | 0 strict; 1 pass to budget error and 2 pass to skipped, all from the slow refinement (TKT-351) | 1 (refinement speed, to T) | 0 | A session waiting on background probes can stall for hours; the supervisor checks commit times, not session status |
+| 1 | P (TKT-344) | about 45 min | not recorded | private builds only | 0 | 0 | 0 | One warm program per folder set: a one-body edit answers in 4.0 to 4.6 s while another track's program stays warm |
 
 ### Rule changes
 
