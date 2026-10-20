@@ -35,16 +35,75 @@ Evidence from 2026-10-18, wave 1 of version 1:
 | G: holes, voids, cone area sign | TKT-328 | `genus` | the topology session | First commits its verified layer 07 and 08 work directly, the last direct edit |
 | E: C# mesher calls Plato | TKT-313 | `deps/bim-open-data` | the STEP parsing session | Cube first; regenerates only from merged states |
 
-Later waves: the 88-file corpus (inside TKT-313), the library hot spots (TKT-335), glTF dumps and instancing (TKT-316), and any track a merge's findings create.
+Wave 1 closed on 2026-10-19 with every track above merged (C in f489e0f0, the TKT-351 refinement fix in a4c64137). Its rows are in the ledger.
+
+## Wave 2: chunks, not tracks
+
+Written 2026-10-19 after the owner asked for significantly finer work. Wave 1's unit of work was the ticket: seven rows, no chunks under them, tracks of 2 hours to 2 days that each merged once, and every merge paid a 57 to 120 minute sweep. From here on (platonic `CHUNKING.md`, `PLANNING.md` step 7, `TESTING.md`, and the parallel-wave skill carry the same rules, written from this wave's evidence):
+
+- **The chunk is the unit of work and of merge.** Every row below is one commit, with its own fence, test, and an expected duration of at most two hours. A builder marks a chunk ready the moment it is green, commits it, and takes its next chunk from the table. Green work held for a bigger merge is a defect.
+- **One chunk per brief.** A session that owns a staging folder is told its first chunk and the rule "then take the next chunk with your owner name, in table order". The supervisor compares each session's last commit time with the chunk's expected duration; past it with no commit is a stall to check.
+- **Additions never wait.** A new type, function, law or witness goes in a new file in the staging folder at once (design item 3). Only a change to an existing type or signature is a contract request, and such a chunk is merged alone by the supervisor.
+- **Merge check under ten minutes.** Until the compiled runner (TKT-354) and the affected-law filter (chunk I6) exist, a chunk merge runs only the laws its row names plus the laws of its layer's files, with `plato_laws.py` on the warm server; the full sweep against `verdicts-cpu64.tsv` runs once a day, or after every fifth merge, whichever comes first, and any verdict that changed is traced to the chunk that changed it.
+- **The ledger counts chunks.** New columns: chunks merged, mean chunk wall time, and types added. A chunk that adds no type says in its `TRACK.md` entry what values it passes around and why none deserved one.
+
+### Chunk table
+
+Owners are the sessions named in the wave 1 table, or `new`. Fence: `S/<folder>` is `sandbox/step-mesh-staging/<folder>`, `L/<layer>` is `sandbox/step-brep-mesh/<layer>`. Test: the laws run at merge, under `cpu64`. Expected: builder hours to green. A chunk with no dependency can start now. The table is the plan; a builder that finds a chunk larger than two hours splits it here before building, in its own commit, and says so.
+
+| Id | Chunk (one commit) | Ticket | Owner | Fence | Test | Expected | Depends |
+|---|---|---|---|---|---|---|---|
+| I1 | `plato run --laws --backend=csharp`: emit with the C# writer, compile in process, run every law | TKT-354 | plato-csharp-laws | Plato repository | the runner's own tests; 10 mesher laws agree with the interpreter | 2 h | |
+| I2 | A 2 s per-law budget on both backends; elapsed milliseconds per law in the report | TKT-354 | plato-csharp-laws | Plato | a law over budget is reported as error with its time | 1 h | I1 |
+| I3 | Laws run one per task on all cores; the CLI prints wall time, summed law time and the 15 slowest | TKT-354 | plato-csharp-laws | Plato | sweep wall time under summed time divided by cores times two | 1.5 h | I2 |
+| I4 | The warm server's `plato_laws` takes `backend=csharp` and keeps the compiled assembly warm per folder set | TKT-354 | plato-csharp-laws | studio `labs/PlatoNavigationMcp` | a one-body edit answers in under 10 s | 2 h | I1 |
+| I5 | Full compiled sweep of the library at the current head, law by law against `verdicts-cpu64.tsv`; each difference explained or ticketed | TKT-354 | plato-csharp-laws | `reviews/verdicts-cpu64-csharp.tsv` | the sweep completes; differences listed | 1 h | I3 |
+| I6 | `tools/affected_laws.py`: from `git diff --name-only`, the functions defined in changed files, then every law that reaches them through `plato_references`, printed as a `plato_laws.py` filter | TKT-323 | new | `sandbox/step-brep-mesh/tools/` | on the a4c64137 to f489e0f0 diff it lists the laws whose verdicts changed, and no more than a third of the library | 2 h | |
+| I7 | A per-request time budget and a request queue on the warm server, so one slow whole-model law cannot block every track (ticket to file in the Plato repository first) | new | plato-law-runs | studio `labs/PlatoNavigationMcp` | a 120 s law under a 30 s request budget returns an error at 30 s while a second request answers | 2 h | |
+| Y1 | Semantic types in a new file: `UvPoint`, `ChartPoint` and `ModelPoint` over the existing vectors, `Sign` for orientation decisions, and a `Decided` result (value or reason) in place of sentinel numbers, with conversion functions and laws that the conversions round-trip | TKT-323 | step-t-triangulation | `S/types/` | round-trip laws pass; the library compiles unchanged | 1.5 h | |
+| Y2 | Layer 05 face meshing takes and returns `UvPoint` where it took a vector (a contract change: merged alone) | TKT-323 | step-t-triangulation | `L/05-face-meshing` | every layer 05 law keeps its verdict | 2 h | Y1 |
+| Y3 | The 12 sign decisions of layer 05 (`TwiceSignedArea`, `IsEar`, `SegmentsIntersect`, `LoopContains`, `IsLeftOfStep`, loop orientation, `IsFlippable`) return `Sign`, not a number (merged alone) | TKT-323 | step-t-triangulation | `L/05-face-meshing` | every layer 05 law keeps its verdict | 2 h | Y1 |
+| Y4 | A `CheckedMesh` type carries the closed-and-oriented proof once; layer 08 laws that re-check take it | TKT-335 | step-topology | `S/types/`, then `L/08-pipeline` | the hollow-box laws keep their verdicts and run in half the time | 2 h | Y1 |
+| D1 | Closure of a clamped B-spline is decided from its end points and knots, never by evaluating it; a law states that `Reduced` and every closure decision return for every `BrepCurve` kind | TKT-348 | step-d-prepare | `S/prepare/` | the new law passes; `Law_CurveClosureDecidedByEnds` keeps its verdict | 1.5 h | |
+| D2 | Corpus rerun: no file whose cause is `PrepareModel`; CEL/LARA, LENA-R8 and LEXI pass preparation | TKT-348 | E (STEP parsing session) | `docs/plans/step-mesher-corpus-*.md` | the report shows 0 PrepareModel failures | 1 h | D1, E1 |
+| H1 | `RoundingUnit` and `SmallestNormal` are profile constants, not loops | TKT-335 | step-d-prepare | `S/prepare/` or `L/00-numbers` | every law of layers 00 to 02 keeps its verdict | 1 h | |
+| H2 | `CheckGrid` runs once per arena: callers take an already-checked `GeometrySet` | TKT-335 | step-topology | `S/genus/` | the sampled-grid laws keep their verdicts; one timed law halves | 1.5 h | Y4 |
+| H3 | The `Law_HollowBox*` and planted-face laws bind the mesh once per case | TKT-335 | step-topology | `L/08-pipeline/pipeline-witnesses.laws.plato` | unchanged verdicts, time per law in the commit | 1 h | |
+| H4 | One hollow-box case timed with the interpreter's call cache off, before and after H1 to H3 | TKT-335 | step-topology | ticket log | times in the ticket | 0.5 h | H1, H2, H3 |
+| P1 | Probe: one plane face with 80 to 212 boundary edges (SHO/ODIN-W160 face #1536) timed in the compiled library; the cost named as per-boundary or per-model, with one timing | TKT-349 | E | ticket log | the cost is named with a number | 1 h | E1 |
+| P2 | Fix for the cost P1 names, as a new body in staging, under 2 s per face | TKT-349 | new | `S/planes/` | the face meshes in under 2 s; layer 05 laws keep their verdicts | 2 h | P1 |
+| P3 | The five SHO files finish `StepMesher.Mesh` within 120 s in the corpus run | TKT-349 | E | corpus report | the five rows show a time | 0.5 h | P2, E3 |
+| S1 | A law naming each edge whose boundary segment no interior point can meet the chordal bound beside, and a staged edge request with a new reason for them | TKT-352 | step-f-bspline | `S/bspline/` | the law passes on the bump solid's top face | 1.5 h | |
+| S2 | The bump solid's top face meshes in at most two rounds with fewer than 600 triangles | TKT-352 | step-f-bspline | `S/bspline/` | the count law passes; steps A to C laws keep their verdicts | 1.5 h | S1 |
+| S3 | `Law_SagittaIsAttained`: the law's reference bound is corrected or the body is | TKT-327 | step-f-bspline | `S/bspline/` | the law passes | 1 h | |
+| C1 | Probe: why `Law_ConeFaceChecksHold` spends 120 s in `SurfacePassLocal`; the cost named | TKT-351 | step-t-triangulation | ticket log | a number and a function name | 1 h | |
+| C2 | Fix for C1's cost as a new body in staging | TKT-351 | step-t-triangulation | `S/triangulation/` | the cone law passes within budget | 1.5 h | C1 |
+| T1 | Witness generators for every layer 7 witness family: ranges, seeds, deterministic | TKT-316 | new | `L/09-tooling/` | one law per family samples ten witnesses that pass the family's laws | 2 h | |
+| T2 | Perturbation generators: rigid motion, power-of-two scale, vertex jitter within tolerance | TKT-316 | new | `L/09-tooling/` | the invariance laws pass on the cube and cylinder | 1.5 h | T1 |
+| T3 | `MeshDiff` and `ModelDiff` name the first difference (table, index, field, both values, tolerance) | TKT-316 | new | `L/09-tooling/` | a law on two meshes differing in one vertex names it | 1.5 h | |
+| T4 | `DiscretizationDiff` and `ReportDiff` the same way | TKT-316 | new | `L/09-tooling/` | as T3 | 1 h | T3 |
+| T5 | A mesh writes glTF or OBJ with per-face colour and provenance, for the toolkit's 3D pane | TKT-316 | E | `deps/bim-open-data` tooling | the unit cube's file opens in the pane | 2 h | E1 |
+| T6 | `09-tooling/README.md`; no lower layer references the folder | TKT-316 | new | `L/09-tooling/README.md` | a grep | 0.5 h | T1, T3 |
+| E1 | Regenerate the C# library at the current head with CLI bac65e1c under cpu64; one `MeshModel` call per model; cube, cylinder and sphere tests pass | TKT-313 | E | `deps/bim-open-data` | the three tests | 1 h | I1 (owner: the C# side is rebuilt once, with the compiled runner) |
+| E2 | Decoder tests pass on the regenerated library | TKT-313 | E | `deps/bim-open-data` | the decoder test project | 0.5 h | E1 |
+| E3 | Corpus rerun with the report in `docs/plans/step-mesher-corpus-<date>.md`, same columns as the 2026-10-19 report | TKT-313 | E | `docs/plans/` | the report | 1.5 h | E1 |
+| E4 | The regeneration is one documented script invocation from a committed library state, with the CLI commit recorded in the output | TKT-313 | E | `tools/regen-step-brep.ps1`, README | a fresh clone reproduces the generated files byte for byte | 1 h | E1 |
+| E5 | A public AP242 or AP214 sample meshes closed with bounds matching its units (needs the owner's approval to download the STEP Tools samples) | TKT-313 | E | `deps/bim-open-data` tests | the sample's test | 1 h | E1, owner |
+| L1 to L5 | One chunk per ticket TKT-314, 324, 326, 327, 328: run its named laws over the C# backend, record agreement with the interpreter, tick the box, close the ticket | each | the ticket's session | the ticket file | the ticket closes with its gate output | 0.5 h each | I1, E1 |
+| Q1 | Owner decision: waive TKT-343's unreachable angle criterion on the cylinder and sector, or keep the law open | TKT-343 | owner | ticket | | | |
+| Q2 | Owner decision: approve downloading the curated test files (STEP Tools, OpenCascade, NIST) listed in `03-step/README.md` | TKT-313 | owner | `data/` | | | |
+
+Not in the table, on purpose: TKT-337 waits on TKT-345 (Plato parse errors name a line, a Plato chunk of about 1.5 hours for the plato-law-runs session when it is free); TKT-300 (typed STEP entities) is a question, not planned work.
 
 ## Merge procedure (supervisor)
 
-1. A track marks `Status: ready to merge` in its `TRACK.md` and commits it.
+1. A chunk's owner marks it `ready: <id>` in its `TRACK.md` and commits it.
 2. The supervisor moves its files into the right layer folders, renames `Law_<Track>_` laws, makes its wiring edits, and type-checks the whole library.
-3. Full sweep under the current profile with `--report` and `--baseline` against the last committed verdict file (`sandbox/step-brep-mesh/reviews/verdicts-<profile>.tsv`). A law that passed and no longer passes stops the merge; the track gets it back with the evidence.
-4. Commit the merge, the new verdict file, and the track's findings in `reviews/FINDINGS.md`.
-5. Record the track's row in the ledger below.
-6. When a merge changes generated C# behaviour, announce it to track E, which regenerates once.
+3. Merge check, under ten minutes: the laws the chunk's row names plus the laws of the files it touched, with `plato_laws.py`; once chunk I6 lands, the affected-law filter instead. A law that passed and no longer passes stops the merge; the chunk goes back with the evidence.
+4. Commit the merge and the chunk's findings in `reviews/FINDINGS.md`.
+5. Record the chunk in the ledger: id, claim-to-ready time against expected, types added.
+6. Full sweep with `--report` and `--baseline` against `sandbox/step-brep-mesh/reviews/verdicts-cpu64.tsv` once a day or after every fifth merge; commit the new verdict file; trace each changed verdict to its chunk.
+7. When a merge changes generated C# behaviour, announce it to the E owner, which regenerates once (chunk E1 and its successors).
 
 ## Learning loop
 
@@ -60,6 +119,13 @@ After each merge the supervisor adds one row per track to the ledger and reviews
 | 1 | Term (TKT-346) | about 1.5 h | 7 laws staged | none | 0 (sweep: 9 new laws pass) | 0 | 0 | A merge into code changed by earlier merges went through: wiring by definition, not by call site |
 | 1 | F (TKT-327) | about 10 h, with an 8 h stall on finished probes | not recorded | none | 0 strict; 1 pass to budget error and 2 pass to skipped, all from the slow refinement (TKT-351) | 1 (refinement speed, to T) | 0 | A session waiting on background probes can stall for hours; the supervisor checks commit times, not session status |
 | 1 | P (TKT-344) | about 45 min | not recorded | private builds only | 0 | 0 | 0 | One warm program per folder set: a one-body edit answers in 4.0 to 4.6 s while another track's program stays warm |
+| 1 | C (TKT-325) | about 2 days, with an 8 h stall | not recorded | none | 0 (f489e0f0; sweep 120 min) | 2 | 0 | A `--call` probe ignored `--budget` and hung 8 h; the sweep's length came from laws at budget, not from the merge |
+| 1 | TKT-351 (refinement speed) | about 6 h | not recorded | none | 0 (a4c64137; sweep 107 min) | 0 | 0 | Incremental refinement cut 72 points from 1800 s to 41 s and the sweep by only 13 min: 50 laws at the 120 s budget are 100 of its minutes |
+
+Wave 1 in total: 8 merges, 0 types added, 402 to 556 passing laws, one sweep of 12 to 120 minutes per merge. From wave 2 the ledger has one row per chunk: chunk id, expected and actual hours, laws run at merge, regressions, types added, lesson.
+
+| Chunk | Expected | Actual | Laws run at merge | Regressions | Types added | Lesson |
+|---|---|---|---|---|---|---|
 
 ### Rule changes
 
@@ -77,6 +143,8 @@ After each merge the supervisor adds one row per track to the ledger and reviews
 | 2026-10-19 | Expensive values are computed once per run and shared: a witness that holds a finished mesh, built once, replaces fifty laws that each re-mesh the same torus, cone or B-spline face | The 50 slow laws recompute the same three meshes; the verdict file records no time per law, so nobody saw it until the owner asked |
 | 2026-10-18 | Whole-model laws over the torus need `--budget` above 900 s, or wait for step C | The topology track's request ran past the script's 1800 s timeout on the torus witness |
 | 2026-10-19 | Additions are never frozen: a track adds types and functions in new files at will; only changes to existing contracts wait for the wave | Seven merges (G, T, D2, Term, F, C, TKT-351) added no type; builders routed every new type through a contract request and used a Number or Vector3 instead |
+| 2026-10-19 | The chunk is the unit of work and of merge: every planned row is one commit of at most two hours, marked ready when green; a brief holds one chunk and names the next | Wave 1's rows were tickets; tracks ran 2 h to 2 days before their first merge, and the owner asked for significantly finer work (now platonic `CHUNKING.md`, `PLANNING.md` step 7, parallel-wave skill) |
+| 2026-10-19 | A merge check answers in under ten minutes (named laws, then the affected-law filter I6, then the compiled runner); the full sweep runs daily or after every fifth merge | Eight merges each paid a 12 to 120 minute sweep, which made batching merges rational (now platonic `TESTING.md`) |
 
 ## Log
 
@@ -88,3 +156,4 @@ After each merge the supervisor adds one row per track to the ledger and reviews
 - 2026-10-19: Plato CLI 128cf769 pinned at `C:/Users/cdigg/.plato-cli/128cf769/Plato.CLI.dll` (clean export, 0 build errors, 19 MB). It carries the TKT-347 writer fix (C# methods for functions whose first parameter is List<T>). Smoke test under cpu64: Law_UnitsFactorsAgree and Law_RawUnitCubePreparesToUnitBox both pass. The Parakeet export needed `Ara3D.Logging` rewritten to an absolute path as well as `Ara3D.Utils`.
 - 2026-10-19: track F (TKT-327) merged in 09b8650f: 778 laws, 536 pass, 24 fail, 26 error, 103 obligation, 89 skipped. 14 laws moved from obligation to a budget error because they now reach B-spline meshing in the slow refinement (TKT-351); Law_SagittaIsAttained fails on a law reference that underestimates. Regeneration with layer 08 landed (bim-open-data 374f2b4, CLI 128cf769, TKT-347 closed); C# found TKT-350 (generated MapRange recomputes) and TKT-351 (refinement slower than the old code). Corpus run: docs/plans/step-mesher-corpus-2026-10-19.md (2 of 88 files fully meshed on the pre-merge library; TKT-348, TKT-349).
 - 2026-10-19: step C (TKT-325) merged in f489e0f0 (sphere, torus and cone arms wired; no regressions) and the triangulation speed fix (TKT-351) in a4c64137: 802 laws, 556 pass, 25 fail, 50 error, 87 skipped, 84 obligation; 0 regressions, 8 error to pass, 2 skipped to pass, Law_ConeFaceChecksHold error to fail (the cone surface pass alone exceeds 120 s); sweep 107 min. The sweep did not speed up because 50 laws still burn the whole 120 s budget. Owner decisions the same evening: 2 s law budget, laws on compiled C# (TKT-354, session plato-csharp-laws), redundant long computations found and shared. Track E's regeneration with CLI bac65e1c waits for the compiled runner so the C# side is rebuilt once.
+- 2026-10-19: wave 2 planned as chunks, not tracks (owner's request for significantly finer work): 45 chunks of at most two hours in the chunk table, one per commit, with fence, test, expected duration, dependencies and owner; the merge procedure merges chunks with a check under ten minutes and runs the full sweep daily or after every fifth merge; the ledger gains a per-chunk form. The same rules went into platonic-coder (CHUNKING.md expected duration and the chunk as the unit of merge; PLANNING.md step 7 parallel tables are chunk tables; TESTING.md merge checks under ten minutes; parallel-wave skill one chunk per brief) so later coordinators start from them.

@@ -32,6 +32,12 @@ only its own runs, not every other track's.
    message only when blocked.
 6. **Commits by path**, only the track's own folder and ticket, with the `Ticket:` and `Agent:`
    trailers, pushed after each commit.
+7. **One chunk at a time, merged as soon as it is green.** The plan's chunk table
+   (`docs/plans/step-mesher-v2.md`, "Wave 2") gives every piece of work an id, a fence, a test and an
+   expected duration of at most two hours. A session works on one chunk, commits it, writes
+   `ready: <id>` in `TRACK.md`, and takes the next chunk with its owner name, in table order. Green
+   work kept back for a larger merge is a defect. A chunk that turns out larger than two hours is
+   split in the table, in its own commit, before building goes on.
 
 ## TRACK.md template
 
@@ -39,10 +45,10 @@ only its own runs, not every other track's.
 # <track>: <one-line goal>
 
 Ticket: TKT-n
-Status: working | ready to merge | blocked: <on what>
+Status: working: <chunk id> | ready: <chunk ids, comma separated> | blocked: <chunk id, on what>
 
 ## Done
-- <commit>: <laws that now pass, verdicts before and after>
+- <chunk id>, <commit>, <actual hours against expected>: <laws that now pass, verdicts before and after; types added, or why none>
 
 ## Merge instructions
 - <library function> => <staging function>   (one line per wiring edit the supervisor makes)
