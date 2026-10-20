@@ -1,0 +1,120 @@
+//==
+// # Catalog meshing: discretization types (TYPE-CATALOG.md section 7)
+//
+// Sections, in order:
+//  - Chords and arcs
+//  - Criteria
+//  - Seeds
+//  - Density
+//  - Requests and deltas
+
+//==
+// # Chords and arcs
+
+// One segment of an edge polyline, from sample From to sample To (To = From + 1 in a canonical
+// discretization). Removes: a segment named by two loose Integers that can be swapped.
+type Chord
+    implements IValue
+{
+    From: EdgeSampleIndex;
+    To: EdgeSampleIndex;
+}
+
+// The piece of curve a chord replaces, in the edge curve's parameter. Removes: a chord's arc
+// recomputed from parameters looked up twice.
+type Arc
+    implements IValue
+{
+    Range: ParameterRange;
+}
+
+// The four criteria measured once per chord: the sagitta (largest distance from chord to arc),
+// the chord length, the turn to the next chord, and the largest angle between the chord and a
+// tangent of its arc. Removes: four passes over the polyline, each re-evaluating the curve.
+type ChordMeasures
+    implements IValue
+{
+    Sagitta: ModelLength;
+    Length: ModelLength;
+    Turn: Angle;
+    TangentDeviation: Angle;
+}
+
+//==
+// # Criteria
+
+// Which discretization criterion a verdict is about. Removes: "does not meet criteria" with no
+// name.
+type CriterionName
+    = ChordalCriterion
+    | AngularCriterion
+    | MaxLengthCriterion
+    | MinSegmentsCriterion
+    | ParameterSpaceCriterion;
+
+// One criterion's verdict on a segment: the worst measured value, the bound, and whether the
+// worst is within the bound. VerdictOf is the constructor that keeps Holds consistent.
+// Removes: a failed criterion reported without its numbers.
+type CriterionVerdict
+    implements IValue
+{
+    Criterion: CriterionName;
+    Worst: Measure;
+    Bound: Measure;
+    Holds: Boolean;
+}
+
+//==
+// # Seeds
+
+// Why a parameter must appear in a discretization. Removes: a knot span boundary skipped
+// because the sampler did not know it was one.
+type SeedReason
+    = Breakpoint
+    | KnotSpanEnd
+    | PoleCrossing
+    | VertexEnd;
+
+// A parameter a discretization must contain, with its reason.
+type Seed
+    implements IValue
+{
+    At: EdgeParameter;
+    Why: SeedReason;
+}
+
+//==
+// # Density
+
+// A per-edge target density, segments per model unit of length. Named SegmentDensity, not the
+// catalog's Density: the stdlib declares the type Density (mass per volume). Removes: the global
+// density increase that regressed every file.
+type SegmentDensity
+    implements IValue
+{
+    SegmentsPerUnitLength: Number;
+}
+
+// A density per edge, indexed by BrepEdgeIndex; an index past the end means no target.
+type DensityField
+{
+    ByEdge: Array<SegmentDensity>;
+}
+
+//==
+// # Requests and deltas
+
+// At most one refinement request per edge, sorted by edge, each the strongest of the requests
+// merged into it (smallest Chordal, largest Segments). Built only by MergeRequests. Removes: two
+// faces' requests on one edge applied in sequence, the second undoing the first.
+type RequestSet
+{
+    ByEdge: Array<EdgeRefinementRequest>;
+}
+
+// The edges a refinement changed, sorted, without repeats: face meshing re-runs only faces
+// touching them. Removes: every face re-meshed after one edge was refined.
+type DiscretizationDelta
+{
+    Changed: Array<BrepEdgeIndex>;
+}

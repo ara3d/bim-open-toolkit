@@ -1,0 +1,225 @@
+//==
+// # Catalog meshing: face meshing constructors and predicates (TYPE-CATALOG.md section 8)
+//
+// Sections, in order:
+//  - Constraints
+//  - Neighbours and certificates
+//  - Orientation in the chart
+//  - Deviations
+//  - Seams, poles, and lifting
+//  - Four-sided regions
+
+library CatalogMeshingFaceMeshing
+{
+    //==
+    // # Constraints
+
+    // Whether triangle t has a side joining a and b, in either direction.
+    HasSide(t: TriangleFace, a: Integer, b: Integer): Boolean
+        => 3.Range.Any(s => (t.At(s).Value == a && t.At((s + 1) % 3).Value == b)
+            || (t.At(s).Value == b && t.At((s + 1) % 3).Value == a));
+
+    // Whether constraint c is a side of some triangle of t.
+    IsElementSide(t: ConstrainedTriangulation, c: Constraint): Boolean
+        => t.Triangles.Any(x => HasSide(x, c.From.Value, c.To.Value));
+
+    // Whether every constraint of t is a side of one of its triangles.
+    ConstraintsAreSides(t: ConstrainedTriangulation): Boolean
+        => t.Constraints.All(c => IsElementSide(t, c));
+
+    //==
+    // # Neighbours and certificates
+
+    // The none side: no element, side 0.
+    NoSide(_: ElementSide): ElementSide
+        => ElementSide(ElementIndex(-1), 0);
+
+    // The flat slot 3e + s of side s of triangle e.
+    SideSlot(s: ElementSide): Integer
+        => 3 * s.Element.Value + s.Side;
+
+    // The side at flat slot k.
+    SideAtSlot(k: Integer): ElementSide
+        => ElementSide(ElementIndex(k / 3), k % 3);
+
+    // The first vertex of the side at flat slot k of tris, in winding order.
+    SideStart(tris: Array<TriangleFace>, k: Integer): Integer
+        => tris[k / 3].At(k % 3).Value;
+
+    // The last vertex of the side at flat slot k of tris, in winding order.
+    SideEnd(tris: Array<TriangleFace>, k: Integer): Integer
+        => tris[k / 3].At((k % 3 + 1) % 3).Value;
+
+    // Whether flat slots i and j of tris join the same two vertices, in either direction.
+    SameUndirectedSide(tris: Array<TriangleFace>, i: Integer, j: Integer): Boolean
+        => (SideStart(tris, i) == SideStart(tris, j) && SideEnd(tris, i) == SideEnd(tris, j))
+            || (SideStart(tris, i) == SideEnd(tris, j) && SideEnd(tris, i) == SideStart(tris, j));
+
+    // The slots of other triangles of tris holding the same undirected side as slot i.
+    MatesOf(tris: Array<TriangleFace>, i: Integer): Array<Integer>
+        => (3 * tris.Count).Range.FlatMap(j => (j / 3 != i / 3 && SameUndirectedSide(tris, i, j)) ? [j] : 0.Range);
+
+    // The neighbour table of tris, by search: each side's across is the first other triangle's
+    // side with the same two vertices, or the none side. Quadratic: the specification of the
+    // incremental table, not its algorithm.
+    NeighbourTableOf(tris: Array<TriangleFace>): NeighbourTable
+        => NeighbourTable((3 * tris.Count).Range.Map(i => MatesOf(tris, i).IsEmpty
+            ? ElementSide.NoSide
+            : SideAtSlot(MatesOf(tris, i)[0])));
+
+    // Whether s names a side within table t.
+    IsSideOf(t: NeighbourTable, s: ElementSide): Boolean
+        => s.Side >= 0 && s.Side < 3 && SideSlot(s) >= 0 && SideSlot(s) < t.Across.Count;
+
+    // The side across s, or the none side when s is out of the table or on the boundary.
+    AcrossOf(t: NeighbourTable, s: ElementSide): ElementSide
+        => IsSideOf(t, s) ? t.Across[SideSlot(s)] : ElementSide.NoSide;
+
+    // Whether cavity c removes element e.
+    Removes(c: Cavity, e: ElementIndex): Boolean
+        => c.Removed.Any(x => x == e);
+
+    // Whether certificate c counts are consistent: 0 <= Violations <= Checked.
+    IsConsistent(c: DelaunayCertificate): Boolean
+        => c.Violations >= 0 && c.Violations <= c.Checked;
+
+    // Whether c certifies a Delaunay triangulation: consistent, with no violation.
+    IsDelaunay(c: DelaunayCertificate): Boolean
+        => c.IsConsistent && c.Violations == 0;
+
+    //==
+    // # Orientation in the chart
+
+    // A chart point as the stdlib point the layer 5 primitives take.
+    ToPoint2D(p: ChartPoint): Point2D
+        => Point2D(p.X, p.Y);
+
+    // The orientation of (a, b, c) within tol: the library's TwiceSignedArea through SignWithin.
+    OrientationWithin(a: ChartPoint, b: ChartPoint, c: ChartPoint, tol: Resolution): Sign
+        => SignWithin(TwiceSignedArea(a.ToPoint2D, b.ToPoint2D, c.ToPoint2D), tol);
+
+    // The rounding resolution of TwiceSignedArea on (a, b, c): the resolution at the product of
+    // the largest coordinate differences of b and of c from a.
+    OrientationResolution(a: ChartPoint, b: ChartPoint, c: ChartPoint): Resolution
+        => ResolutionFor((b.X - a.X).Abs.Max((b.Y - a.Y).Abs) * (c.X - a.X).Abs.Max((c.Y - a.Y).Abs));
+
+    // The orientation of (a, b, c) in the chart: Positive counter-clockwise, Zero when the area is
+    // rounding noise.
+    OrientationOf(a: ChartPoint, b: ChartPoint, c: ChartPoint): Sign
+        => OrientationWithin(a, b, c, OrientationResolution(a, b, c));
+
+    // The triangle (a, b, c) as the orientation decisions see it.
+    ElementInChartOf(a: ChartPoint, b: ChartPoint, c: ChartPoint): ElementInChart
+        => ElementInChart(a, b, c, OrientationOf(a, b, c), 0.5 * TwiceSignedArea(a.ToPoint2D, b.ToPoint2D, c.ToPoint2D));
+
+    //==
+    // # Deviations
+
+    // The worse of two deviations, field by field; the sample point of the larger chordal (a's
+    // on a tie).
+    Worse(a: ElementDeviation, b: ElementDeviation): ElementDeviation
+        => ElementDeviation(
+            ModelLength(a.Chordal.Value.Max(b.Chordal.Value)),
+            Angle(a.NormalTurn.Radians.Max(b.NormalTurn.Radians)),
+            Angle(a.NormalMismatch.Radians.Max(b.NormalMismatch.Radians)),
+            b.Chordal.Value > a.Chordal.Value ? b.SamplePoint : a.SamplePoint);
+
+    // Whether refinement target t changes element e of a triangulation whose side across each
+    // side is given by n: a side split changes both elements on the side, a centroid split its
+    // element; an insertion is located later, so it names none here.
+    Changes(t: RefinementTarget, n: NeighbourTable, e: ElementIndex): Boolean
+        => match (t) {
+            SplitSide(s) => s.Element == e || AcrossOf(n, s).Element == e;
+            InsertAt(p) => false;
+            SplitAtCentroid(x) => x == e;
+        };
+
+    //==
+    // # Seams, poles, and lifting
+
+    // The other copy.
+    OtherCopy(c: SeamCopy): SeamCopy
+        => match (c) {
+            NearMin => SeamCopy.NearMax;
+            NearMax => SeamCopy.NearMin;
+        };
+
+    // The point of pair p that is copy c.
+    CopyOf(p: SeamPair, c: SeamCopy): UvPointIndex
+        => match (c) {
+            NearMin => p.Min;
+            NearMax => p.Max;
+        };
+
+    // The first point of run r repeated once per point: the left sides of the run's joins.
+    RunFirsts(r: PoleRun): Array<Integer>
+        => r.Points.IsEmpty ? 0.Range : r.Points.Map(p => r.Points[0].Value);
+
+    // The lift table of pointCount parameter points: the copies of each seam pair and the points
+    // of each pole run are one local vertex; every other point is its own. Local vertices are
+    // numbered in order of their smallest parameter point. Indices out of range are ignored.
+    LiftTableOf(pointCount: Integer, pairs: Array<SeamPair>, runs: Array<PoleRun>): LiftTable
+    {
+        var roots = ClassRoots(
+            pointCount.Max(0),
+            pairs.Map(p => p.Min.Value).Concatenate(runs.FlatMap(r => RunFirsts(r))),
+            pairs.Map(p => p.Max.Value).Concatenate(runs.FlatMap(r => r.Points.Map(p => p.Value))));
+        var number = new Buffer<Integer>(roots.Count);
+        var next = 0;
+        var i = 0;
+        while (i < roots.Count)
+        {
+            if (roots[i] == i)
+            {
+                number = number.Set(i, next);
+                next = next + 1;
+            }
+            else
+            {
+                number = number.Set(i, number.At(roots[i]));
+            }
+            i = i + 1;
+        }
+        return LiftTable(number.Freeze().Map(n => LocalVertexIndex(n)));
+    }
+
+    // The local vertex of parameter point p, or none when p is out of the table.
+    LocalVertexAt(t: LiftTable, p: UvPointIndex): LocalVertexIndex
+        => t.LocalVertexOf.IsValidIndex(p) ? t.LocalVertexOf[p] : LocalVertexIndex(-1);
+
+    // The number of local vertices of t.
+    LocalVertexCount(t: LiftTable): Integer
+        => t.LocalVertexOf.Reduce(0, (n, v) => n.Max(v.Value + 1));
+
+    //==
+    // # Four-sided regions
+
+    // The counts of a grid's sides: across from Bottom, along from Right.
+    GridCountsOf(s: QuadGridSides): GridCounts
+        => GridCounts(SegmentCountOf(s.Bottom.Count - 1), SegmentCountOf(s.Right.Count - 1));
+
+    // Whether side x ends where side y starts; false when either is empty.
+    MeetsAt(x: Array<UvPointIndex>, y: Array<UvPointIndex>): Boolean
+        => (x.IsEmpty || y.IsEmpty) ? false : x.Last == y.First;
+
+    // Whether s is a structured grid boundary: every side has two points or more, opposite sides
+    // have equal counts, and the sides meet corner to corner in cyclic order.
+    IsStructured(s: QuadGridSides): Boolean
+        => s.Bottom.Count >= 2 && s.Right.Count >= 2
+            && s.Bottom.Count == s.Top.Count && s.Right.Count == s.Left.Count
+            && MeetsAt(s.Bottom, s.Right) && MeetsAt(s.Right, s.Top)
+            && MeetsAt(s.Top, s.Left) && MeetsAt(s.Left, s.Bottom);
+
+    // The boundary of a grid of Across by Along cells whose points are numbered row by row,
+    // Across + 1 to a row, Bottom first.
+    QuadGridSidesOf(counts: GridCounts): QuadGridSides
+    {
+        var w = counts.Across.Value + 1;
+        var h = counts.Along.Value + 1;
+        return QuadGridSides(
+            w.Range.Map(c => UvPointIndex(c)),
+            h.Range.Map(r => UvPointIndex(r * w + w - 1)),
+            w.Range.Map(c => UvPointIndex((h - 1) * w + w - 1 - c)),
+            h.Range.Map(r => UvPointIndex((h - 1 - r) * w)));
+    }
+}

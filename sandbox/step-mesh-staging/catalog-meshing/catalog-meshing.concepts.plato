@@ -1,0 +1,17 @@
+//==
+// # Catalog meshing: concepts
+//
+// TYPE-CATALOG.md section 15's IBudgeted.
+//
+// Sections, in order:
+//  - Budgets
+
+//==
+// # Budgets
+
+// A refinement result that reports the work it took, so the termination laws are one law over
+// every implementer. Removes: a refinement loop whose cost nobody can state.
+interface IBudgeted
+{
+    Work(x: Self): WorkBudget;
+}

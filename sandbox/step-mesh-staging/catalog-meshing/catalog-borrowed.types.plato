@@ -1,0 +1,23 @@
+//==
+// # Catalog meshing: types borrowed from another track
+//
+// TYPE-CATALOG.md section 10 owns WorkBudget; it is declared here with the catalog's shape so
+// IBudgeted compiles. The supervisor deletes this file at merge when section 10's track lands.
+//
+// Sections, in order:
+//  - Work
+
+//==
+// # Work
+
+// Counted work: curve and surface evaluations, point insertions, side flips, and point
+// projections. The measure the termination laws decrease. Removes: "slower than the old code"
+// with no number.
+type WorkBudget
+    implements IValue
+{
+    Evaluations: Integer;
+    Insertions: Integer;
+    Flips: Integer;
+    Projections: Integer;
+}
