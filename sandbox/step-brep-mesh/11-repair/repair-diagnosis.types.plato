@@ -1,10 +1,10 @@
 //==
-// # Catalog repair: repair actions, fixability, cost
+// # Repair diagnosis: repair actions, fixability, cost
 //
 // TYPE-CATALOG.md section 13. A repair action is data, one case per defect
 // family, so the decoder's three ad hoc repairs (layer 3's StepRepair) do not
-// grow into thirty with no common shape: StepRepair becomes the projection
-// ToStepRepair.
+// grow into thirty with no common shape: StepRepair is the projection
+// ToStepRepair, lossless both ways.
 //
 // Sections, in order:
 //  - Actions
@@ -27,8 +27,8 @@
 // SplitSeamEdge: split a seam whose uses run one way into two edges.
 // InsertSeam: cut a closed face along Direction. InsertPoleLoop: add the
 // vertex loop of a pole at Side. DeclareOpen: clear a shell's closed flag.
-// SkipInstance: leave a STEP instance undecoded (layer 3's Skipped; added
-// beside the catalog's list so StepRepair projects from every case).
+// SkipInstance: leave a STEP instance undecoded (layer 3's Skipped), so
+// every StepRepair case has an action.
 // Removes: thirty ad hoc repairs with no common shape.
 type RepairAction
     = MergeVertices(Keep: BrepVertexIndex, Drop: BrepVertexIndex)
@@ -59,7 +59,7 @@ type RepairAction
 // What a repair costs: how many faces it touches, how much it grows the
 // length tolerance (1 when it does not), and how far it reaches. Built only
 // by CostOf, so a Local repair touches at most two faces
-// (Law_Catalog_LocalRepairTouchesAtMostTwoFaces). Removes: a tolerance
+// (Law_LocalRepairTouchesAtMostTwoFaces). Removes: a tolerance
 // raised tenfold by a repair reported as small.
 type RepairCost
 {

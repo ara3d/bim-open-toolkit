@@ -1,0 +1,93 @@
+//==
+// # Repair: invariants and constructors
+//
+// SPEC-DSL.md section 3. Not compiled. Each invariant cites the law that
+// tests it where one exists. GapClosure and SeamRepair are plain data.
+//
+// Sections, in order:
+//  - Diagnosis and cost
+//  - Plans and ledgers
+
+//==
+// # Diagnosis and cost
+
+spec Fixability
+{
+    invariant self is FixableWithChoice ? self.Options.Count > 0 : true;   // Law_DiagnoseNeverOffersAnEmptyChoice
+    constructor Diagnose;
+    constructor DiagnoseSeam;
+    constructor FixedBy;
+}
+
+spec Diagnose(m: BrepModel, d: Defect): Fixability
+{
+    ensures result.IsUnfixable == m.IsNamedUnfixable(d);   // Law_DiagnoseUnfixableOnlyForNamedCases
+}
+
+spec RepairCost
+{
+    invariant self.TouchedFaces.Value >= 0;
+    invariant self.ToleranceGrowth.Value > 0.0;
+    invariant IsLocal(self.Locality) ? self.TouchedFaces.Value <= 2 : true;   // Law_LocalRepairTouchesAtMostTwoFaces
+    constructor CostOf;
+}
+
+spec RepairAction
+{
+    // Exactly MergeVertices, DropEdge and SkipInstance project onto a StepRepair.
+    invariant IsProjected(ToStepRepair(self)) == (self is MergeVertices || self is DropEdge || self is SkipInstance);
+}
+
+spec ToStepRepair(action: RepairAction): StepRepairProjection
+{
+    ensures forall (r: RepairRecord):
+        ToStepRepair(ToRepairAction(r)).ProjectsTo(r.Repair);   // Law_StepRepairRoundTrips
+}
+
+//==
+// # Plans and ledgers
+
+spec RepairPlan
+{
+    invariant forall (i: Integer) in self.Steps.Count.Range: forall (j: Integer) in self.Steps.Count.Range:
+        j > i ? !(self.StepIsOfClass(i, DefectClass.Geometric) && self.StepIsOfClass(j, DefectClass.Structural)) : true;
+                                                           // Law_PlanFixesStructureBeforeGeometry
+    invariant self.Steps.All(s => s.Expect == ExpectedLawOf(s.Defect));
+    constructor PlanOf;
+}
+
+spec PlanOf(m: BrepModel, defects: Array<Defect>): RepairPlan
+{
+    ensures result.Steps.Count == defects.Reduce(0, (n, d) => m.Diagnose(d).IsUnfixable ? n : n + 1);   // Law_PlanHasAStepPerFixableDefect
+}
+
+spec RepairPolicy
+{
+    invariant self.MaxToleranceGrowth.Value >= 1.0;
+    constructor StrictPolicy;                              // Law_StrictPolicyRefusesTopologyChange
+}
+
+spec RepairOutcome
+{
+    invariant self is Repaired ? self.Before.Law == self.After.Law : true;
+    invariant self is Worsened ? self.Before.Law == self.After.Law : true;
+    constructor Repair;
+}
+
+spec Repair(h: HealedModel, plan: RepairPlan, policy: RepairPolicy): RepairOutcome
+{
+    requires plan.Steps.All(s => Permits(policy, s.Action, h.Model.Model.CostOf(s.Action)));
+    ensures result is Repaired ? result.After.Holds : true;   // Law_RepairMakesExpectedLawHold (catalog)
+    deferred "apply each permitted step, check its expected law before and after, revert what worsens";
+}
+
+spec RepairLedger
+{
+    constructor EmptyLedger;
+    constructor Recorded;
+}
+
+spec HealedModel
+{
+    invariant Defects(self).Defects.Count == self.Remaining.Count;
+}

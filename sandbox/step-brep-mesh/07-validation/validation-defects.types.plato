@@ -1,9 +1,10 @@
 //==
-// # Catalog repair: defects as data
+// # Validation defects: the defects a report names, as data
 //
-// TYPE-CATALOG.md section 13 (a new layer 11-repair). A defect is a value
-// with its address and its measure, derived from a failed Check, so a repair
-// planner matches on cases instead of on diagnostic code strings.
+// TYPE-CATALOG.md section 13. A defect is a value with its address and its
+// measure, derived from a failed Check, so a repair planner (layer 11)
+// matches on cases instead of on diagnostic code strings. Layer 9's CorpusRow
+// lists them.
 //
 // Sections, in order:
 //  - Defects
@@ -93,8 +94,7 @@ type Locality
 // # Decided defects
 
 // What one check says about defects: the defect it found, or why it found
-// none (a check that holds is NotApplicable). Section 5's pattern, declared
-// here for the decided track. Removes: a passing check read as a defect.
+// none (a check that holds is NotApplicable). Section 5's pattern. Removes: a passing check read as a defect.
 type DecidedDefect
     = Defect(Value: Defect)
     | Undecided(Reason: UndecidedReason);

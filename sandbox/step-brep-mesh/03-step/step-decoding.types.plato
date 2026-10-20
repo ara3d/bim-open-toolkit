@@ -1,7 +1,7 @@
 //==
-// # Catalog: STEP names, units, placements, references, decode steps
+// # STEP decoding: names, units, placements, references, decode steps
 //
-// TYPE-CATALOG.md section 14 (layer 3). Names typed so that a decoder arm
+// TYPE-CATALOG.md section 14. Names typed so that a decoder arm
 // cannot misspell an entity, unit factors with their recognition recorded,
 // the assembly path of a placement, the result of following one reference,
 // and where decoding was when it issued a diagnostic. TypedInstance (one case

@@ -509,12 +509,16 @@ open by never baking read-only into a type". These types are the door.
   and `Locality = Local | NeedsNeighbours(Faces) | WholeShell | WholeModel`: how far a repair
   reaches.
 - `RepairAction`, one case per defect family:
-  `MergeVertices(Keep, Drop) | SnapVertexToCurve(Vertex, Edge) | ExtendEdgeToVertex(Edge, End) | AddPcurveByProjection(Edge, Face) | ReplacePcurve(Pcurve, With: BrepCurve2D) | CloseLoopByBridge(Face, Bound, Gap) | ReverseFace(Face) | ReverseLoop(Loop) | FlipShell(Shell) | DropEdge(Edge) | DropBound(Face, Bound) | PromoteToOuter(Face, Bound) | ClampTrim(Surface) | CutKnotMultiplicity(Curve, At) | SortKnots(Curve) | RaiseTolerance(To: Tolerances) | SplitSeamEdge(Face, Edge) | InsertSeam(Face, Direction) | InsertPoleLoop(Face, Side) | DeclareOpen(Shell)`.
+  `MergeVertices(Keep, Drop) | SnapVertexToCurve(Vertex, Edge) | ExtendEdgeToVertex(Edge, End) | AddPcurveByProjection(Edge, Face) | ReplacePcurve(Pcurve, With: BrepCurve2D) | CloseLoopByBridge(Face, Bound, Gap) | ReverseFace(Face) | ReverseLoop(Loop) | FlipShell(Shell) | DropEdge(Edge) | DropBound(Face, Bound) | PromoteToOuter(Face, Bound) | ClampTrim(Surface) | CutKnotMultiplicity(Curve, At) | SortKnots(Curve) | RaiseTolerance(To: Tolerances) | SplitSeamEdge(Face, Edge) | InsertSeam(Face, Direction) | InsertPoleLoop(Face, Side) | DeclareOpen(Shell) | SkipInstance(Instance)`
+  (`SkipInstance` is the action of `StepRepair.Skipped`).
   **Removes:** the decoder's three ad hoc repairs (`StepRepair` **exists**: `MergedInto`,
   `DroppedZeroLengthEdge`, `Skipped`) growing into thirty with no common shape. `StepRepair`
-  becomes a projection of `RepairAction`.
+  becomes a projection of `RepairAction` (`ToStepRepair`; `MergedInto` and `DroppedZeroLengthEdge`
+  carry the removed element's raw index, so it is lossless).
 - `Fixability = Fixable(Action: RepairAction, Cost: RepairCost) | FixableWithChoice(Options: Array<RepairAction>) | Unfixable(Why: String)`:
-  what `Diagnose(defect)` returns. `RepairCost { TouchedFaces: Count; ToleranceGrowth: Ratio; Locality }`.
+  what `Diagnose(model, defect)` returns: whether a seam's face is in a closed shell, which bounds
+  a face can promote, and the tolerances a `RaiseTolerance` replaces come from the model, so
+  `PlanOf(model, defects)` takes it too. `RepairCost { TouchedFaces: Count; ToleranceGrowth: Ratio; Locality }`.
 - `RepairStep { Defect; Action; Expect: LawName }` and `RepairPlan { Steps: Array<RepairStep> }`:
   ordered, with a dependency rule (`Law_PlanFixesStructureBeforeGeometry`). `RepairPolicy { MaxToleranceGrowth: Ratio; AllowTopologyChange: Boolean; AllowShellFlip: Boolean; Budget: WorkBudget }`:
   what a repair may do, like OpenCascade's healing flags but typed.

@@ -1,0 +1,57 @@
+//==
+// # STEP decoding: invariants and constructors
+//
+// SPEC-DSL.md section 3. Not compiled. Each invariant cites the law that
+// tests it where one exists. DecodeStep is plain data.
+//
+// Sections, in order:
+//  - STEP names and units
+
+//==
+// # STEP names and units
+
+spec EntityName
+{
+    invariant Part21File.SupportedSchema.Any(d => d.Name == self.Value);   // Law_LookupEntityFindsEveryLongName
+    constructor EntityNamesOf;
+    constructor LookupEntity;
+}
+
+spec AttributeName
+{
+    invariant Part21File.SupportedSchema.Any(d => d.Explicit.Any(a => a.Name == self.Value));
+    constructor AttributeNamesOf;
+    constructor LookupAttribute;
+    constructor LookupOwnAttribute;
+}
+
+spec UnitFactor
+{
+    invariant self.MetresPerUnit == self.Named.ScaleToMetres;   // Law_UnitFactorIsScaleToMetres
+    invariant self.Snapped == IsNamedUnit(self.Named);          // Law_ScaledUnitIsNotSnapped
+    constructor UnitFactorOf;
+}
+
+spec AngleFactor
+{
+    invariant self.Snapped == (self.RadiansPerUnit == Number.Pi / 180.0);   // Law_DegreeFactorIsSnapped
+    constructor AngleFactorOf;
+}
+
+spec PlacementChain
+{
+    invariant self.Handedness != Sign.Zero;
+    constructor PlacementChainOf;
+}
+
+spec PlacementStepsOf(occurrences: Array<StepOccurrence>, o: StepOccurrenceIndex): Array<StepInstanceId>
+{
+    ensures result.Count <= occurrences.Count;   // Law_PlacementStepsStopOnACycle
+    measure occurrences.Count;
+}
+
+spec ResolveReference(f: Part21File, id: StepInstanceId, expected: EntityName): ReferenceResolution
+{
+    ensures result is Dangling == (f.InstancePosition(id) < 0);
+    ensures result is Resolved ? f.IsA(id, expected.Value) : true;
+}

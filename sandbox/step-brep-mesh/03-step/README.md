@@ -42,6 +42,7 @@ P41, P42, P43 are ISO 10303-21, -41, -42, -43; AIM is the AP242 integrated schem
 | `step-raw-witnesses.laws.plato` | laws | `StepRawWitnessesLaws` | `Law_RawUnitCubePreparesToUnitBox`, `Law_RawTwoCubesPreparesToTwoBodies`: TKT-312's acceptance |
 | `step.spec.plato` | spec | | type invariants, a contract for each of the 21 functions that were deferred (19 still are) and for `DecodeBrep`, `DecodeBrepWith`, `PrepareModel`, `PrepareModelWith`, 3 theorems |
 | `step-decided.{types,library,laws,spec}.plato` | types, library, laws | `StepDecided`, `StepDecidedLaws` | section 5: `DecodeResult = Decoded \| NoShape \| Unreadable`, `ToDecodeResult`, `DecodeBrepResult(file)` (the decode as a sum, beside `DecodeBrep`), 1 law (catalog merge, 2026-10-20) |
+| `step-decoding.{types,library,laws,spec}.plato` | types, library, laws | `StepDecoding`, `StepDecodingLaws` | section 14: `EntityName`, `AttributeName`, `EntityLookup`, `AttributeLookup`, `UnitFactor`, `AngleFactor`, `PlacementChain`, `ReferenceResolution`, `DecodeStep`, `DecodeTrace`; `LookupEntity`, `LookupAttribute`, `UnitFactorOf`, `AngleFactorOf`, `PlacementStepsOf`, `ResolveReference`, `PlacementChainOf` deferred; 12 laws, none for `ResolveReference` and `LookupAttribute`, which call the deferred `InstancePosition` and `FlatRecord` (catalog merge, repair, 2026-10-20) |
 | `step-proofs.{types,library,spec}.plato` | types, library | `StepReadingProofs` | section 4: `PreparedModel` (`IToleranced`) and `DecidedPreparedModel`, built only by `CheckPreparedModel(raw)`; its 2 laws are in `07-validation/validation-proofs-kernel.laws.plato` (catalog merge, proofs, 2026-10-20) |
 
 Counts: 32 types; 236 library functions, 217 with bodies and 19 deferred (chunk D, TKT-326, gave
@@ -367,7 +368,10 @@ the two senses composed, with a Warning.
 - **Local repairs only**, each recorded in `ProvenanceMap.Repairs` and diagnosed: two
   `vertex_point`s within the length tolerance at one loop joint or on one edge are merged
   (`Law_MergedVerticesCoincide`); a zero-length edge on an open curve is dropped from its loops;
-  an instance that cannot be decoded is skipped with its dependants. No merge across solids,
+  an instance that cannot be decoded is skipped with its dependants. Each `StepRepair` keeps the
+  raw index of the vertex or edge it removed (`MergedInto(Vertex, RawVertex)`,
+  `DroppedZeroLengthEdge(RawEdge)`), so layer 11's `RepairAction` projects onto it both ways
+  (catalog merge, repair, 2026-10-20). No merge across solids,
   no healing: that is OpenCascade's shape healer, and here it is layer 7's report.
 - **Bounds keep their file order.** A SET's order is not data (research 2.2), but keeping it lets
   the laws pair a kernel bound with the file bound it came from.

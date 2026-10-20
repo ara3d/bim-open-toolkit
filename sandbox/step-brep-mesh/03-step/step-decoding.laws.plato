@@ -1,17 +1,17 @@
 //==
-// # Catalog: STEP names, units, placements (laws)
+// # STEP decoding: laws
 //
 // The schema laws quantify over the whole supported table
 // (Part21File.SupportedSchema). ResolveReference has no law here: it reads
 // layer 3's deferred InstancePosition, so it cannot run until that has a
-// body (TRACK.md, open problems).
+// body (03-step README, obligations).
 //
 // Sections, in order:
 //  - Names
 //  - Units
 //  - Placements
 
-library CatalogRepairStepDecodingLaws
+library StepDecodingLaws
 {
     //==
     // # Names
@@ -24,26 +24,26 @@ library CatalogRepairStepDecodingLaws
         };
 
     // Every long name of the table looks up to itself.
-    Law_Catalog_LookupEntityFindsEveryLongName(_: EntityName): Boolean
+    Law_LookupEntityFindsEveryLongName(_: EntityName): Boolean
         => Part21File.SupportedSchema.All(d =>
             LookupEntity(Part21File.SupportedSchema, d.Name).IsKnownAs(d.Name));
 
     // Every short name of the table looks up to its entity's long name.
-    Law_Catalog_LookupEntityFindsEveryShortName(_: EntityName): Boolean
+    Law_LookupEntityFindsEveryShortName(_: EntityName): Boolean
         => Part21File.SupportedSchema.All(d =>
             d.ShortName == "" ? true : LookupEntity(Part21File.SupportedSchema, d.ShortName).IsKnownAs(d.Name));
 
     // A misspelled entity is unknown.
-    Law_Catalog_MisspelledEntityIsUnknown(_: EntityName): Boolean
+    Law_MisspelledEntityIsUnknown(_: EntityName): Boolean
         => LookupEntity(Part21File.SupportedSchema, "ADVANCEDFACE").IsUnknownEntity;
 
     // EntityNamesOf lists the table's long names in table order.
-    Law_Catalog_EntityNamesAreTheTablesNames(_: EntityName): Boolean
+    Law_EntityNamesAreTheTablesNames(_: EntityName): Boolean
         => Part21File.SupportedSchema.Count.Range.All(k =>
             EntityNamesOf(Part21File.SupportedSchema)[k].Value == Part21File.SupportedSchema[k].Name);
 
     // Every attribute an entity declares looks up on that entity.
-    Law_Catalog_LookupOwnAttributeFindsEveryDeclaredName(_: AttributeName): Boolean
+    Law_LookupOwnAttributeFindsEveryDeclaredName(_: AttributeName): Boolean
         => Part21File.SupportedSchema.All(d =>
             AttributeNamesOf(d).All(a => LookupOwnAttribute(d, a.Value).IsKnownAttributeAs(a.Value)));
 
@@ -63,25 +63,25 @@ library CatalogRepairStepDecodingLaws
     }
 
     // A unit's conversion gives the unit back.
-    Law_Catalog_UnitFactorRoundTrips(k: Integer, x: Number): Boolean
+    Law_UnitFactorRoundTrips(k: Integer, x: Number): Boolean
         => ToLengthUnit(UnitFactorOf(SampleLengthUnit(k, x))) == SampleLengthUnit(k, x);
 
     // A unit's conversion factor is layer 2's ScaleToMetres, copied.
-    Law_Catalog_UnitFactorIsScaleToMetres(k: Integer, x: Number): Boolean
+    Law_UnitFactorIsScaleToMetres(k: Integer, x: Number): Boolean
         => x.IsFinite
             ? UnitFactorOf(SampleLengthUnit(k, x)).MetresPerUnit == SampleLengthUnit(k, x).ScaleToMetres   // exact by construction
             : true;
 
     // A Scaled unit is not recorded as recognized.
-    Law_Catalog_ScaledUnitIsNotSnapped(x: Number): Boolean
+    Law_ScaledUnitIsNotSnapped(x: Number): Boolean
         => !UnitFactorOf(LengthUnit.Scaled(x)).Snapped;
 
     // The degree factor DecodePolicy snaps to is recorded as snapped.
-    Law_Catalog_DegreeFactorIsSnapped(_: AngleFactor): Boolean
+    Law_DegreeFactorIsSnapped(_: AngleFactor): Boolean
         => AngleFactorOf(Number.Pi / 180.0).Snapped;
 
     // The radian factor is not a snapped degree.
-    Law_Catalog_RadianFactorIsNotSnapped(_: AngleFactor): Boolean
+    Law_RadianFactorIsNotSnapped(_: AngleFactor): Boolean
         => !AngleFactorOf(1.0).Snapped;
 
     //==
@@ -99,7 +99,7 @@ library CatalogRepairStepDecodingLaws
 
     // The chain from the last of n occurrences has one step per occurrence
     // and starts with the last occurrence's placing instance.
-    Law_Catalog_PlacementStepsReachTheRoot(n: Integer): Boolean
+    Law_PlacementStepsReachTheRoot(n: Integer): Boolean
         => (n >= 1 ? n <= 8 : false)
             ? (PlacementStepsOf(SampleOccurrences(n, false), StepOccurrenceIndex(n - 1)).Count == n
                 ? PlacementStepsOf(SampleOccurrences(n, false), StepOccurrenceIndex(n - 1))[0].Value == (n > 1 ? 100 + n - 1 : -1)
@@ -107,7 +107,7 @@ library CatalogRepairStepDecodingLaws
             : true;
 
     // A cycle of parents stops after as many steps as there are occurrences.
-    Law_Catalog_PlacementStepsStopOnACycle(n: Integer): Boolean
+    Law_PlacementStepsStopOnACycle(n: Integer): Boolean
         => (n >= 1 ? n <= 8 : false)
             ? PlacementStepsOf(SampleOccurrences(n, true), StepOccurrenceIndex(0)).Count <= n
             : true;

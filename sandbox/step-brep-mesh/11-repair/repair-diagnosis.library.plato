@@ -1,5 +1,5 @@
 //==
-// # CatalogRepairDiagnosis
+// # BrepRepairDiagnosis
 //
 // TYPE-CATALOG.md section 13: the obvious action for each defect (Diagnose),
 // what an action costs (CostOf), what a policy permits, and the projection of
@@ -15,10 +15,12 @@
 //  - Policies
 //  - Projection onto StepRepair
 
-library CatalogRepairDiagnosis
+library BrepRepairDiagnosis
 {
     //==
     // # Faces an action touches
+    //
+    // FacesOnSurface and FacesOfLoop are layer 10's (editing-closure).
 
     // The faces of m whose index satisfies keep, in face order.
     FacesWhere(m: BrepModel, keep: Function1<BrepFaceIndex, Boolean>): Array<BrepFaceIndex>
@@ -29,18 +31,10 @@ library CatalogRepairDiagnosis
         => m.FacesWhere(f => m.Edges.Count.Range.Any(e =>
             m.Edges[e].Start == v || m.Edges[e].End == v ? m.FaceUsesEdge(f, BrepEdgeIndex(e)) : false));
 
-    // The faces on surface s.
-    FacesOnSurface(m: BrepModel, s: SurfaceIndex): Array<BrepFaceIndex>
-        => m.FacesWhere(f => m.Faces[f].Surface == s);
-
     // The faces that use an edge on curve c.
     FacesOnCurve(m: BrepModel, c: CurveIndex): Array<BrepFaceIndex>
         => m.FacesWhere(f => m.Edges.Count.Range.Any(e =>
             m.Edges[e].Curve == c ? m.FaceUsesEdge(f, BrepEdgeIndex(e)) : false));
-
-    // The faces with a bound on loop l.
-    FacesOfLoop(m: BrepModel, l: BrepLoopIndex): Array<BrepFaceIndex>
-        => m.FacesWhere(f => m.Faces[f].Bounds.Any(b => b.Loop == l));
 
     // The faces whose surface carries pcurve p; none when p is out of range.
     FacesOfPcurve(m: BrepModel, p: PcurveIndex): Array<BrepFaceIndex>
@@ -343,14 +337,14 @@ library CatalogRepairDiagnosis
     // # Projection onto StepRepair
 
     // The layer 3 StepRepair an action is, when it is one the decoder makes:
-    // MergeVertices is MergedInto its kept vertex, DropEdge is
-    // DroppedZeroLengthEdge, SkipInstance is Skipped. Any other action is
+    // MergeVertices is MergedInto its kept and dropped vertices, DropEdge is
+    // DroppedZeroLengthEdge of its edge, SkipInstance is Skipped. Any other action is
     // NotProjected with an Info diagnostic. Only the decoder's own entries are
     // meant to be projected: a DropEdge of an edge of positive extent also
     // projects to DroppedZeroLengthEdge.
     ToStepRepair(action: RepairAction): StepRepairProjection
         => match (action) {
-            MergeVertices(keep, drop) => StepRepairProjection.Projected(StepRepair.MergedInto(keep));
+            MergeVertices(keep, drop) => StepRepairProjection.Projected(StepRepair.MergedInto(keep, drop));
             SnapVertexToCurve(v, e) => NotADecodeRepair(action);
             ExtendEdgeToVertex(e, end) => NotADecodeRepair(action);
             AddPcurveByProjection(e, f) => NotADecodeRepair(action);
@@ -359,7 +353,7 @@ library CatalogRepairDiagnosis
             ReverseFace(f) => NotADecodeRepair(action);
             ReverseLoop(l) => NotADecodeRepair(action);
             FlipShell(s) => NotADecodeRepair(action);
-            DropEdge(e) => StepRepairProjection.Projected(StepRepair.DroppedZeroLengthEdge);
+            DropEdge(e) => StepRepairProjection.Projected(StepRepair.DroppedZeroLengthEdge(e));
             DropBound(f, b) => NotADecodeRepair(action);
             PromoteToOuter(f, b) => NotADecodeRepair(action);
             ClampTrim(s) => NotADecodeRepair(action);
@@ -382,15 +376,14 @@ library CatalogRepairDiagnosis
             Provenance.Nowhere,
             Number.Unmeasured));
 
-    // The action a decoder repair record stands for. The record does not
-    // hold what was removed, so the caller passes the raw model's index of
-    // the dropped vertex (read for MergedInto) and of the dropped edge (read
-    // for DroppedZeroLengthEdge); Skipped is SkipInstance of the record's
-    // instance.
-    ToRepairAction(r: RepairRecord, droppedVertex: BrepVertexIndex, droppedEdge: BrepEdgeIndex): RepairAction
+    // The action a decoder repair record stands for: MergedInto is
+    // MergeVertices of the kept and the dropped vertex, DroppedZeroLengthEdge
+    // is DropEdge of the dropped edge, Skipped is SkipInstance of the
+    // record's instance.
+    ToRepairAction(r: RepairRecord): RepairAction
         => match (r.Repair) {
-            MergedInto(v) => RepairAction.MergeVertices(v, droppedVertex);
-            DroppedZeroLengthEdge => RepairAction.DropEdge(droppedEdge);
+            MergedInto(v, raw) => RepairAction.MergeVertices(v, raw);
+            DroppedZeroLengthEdge(e) => RepairAction.DropEdge(e);
             Skipped => RepairAction.SkipInstance(r.Source.Instance);
         };
 

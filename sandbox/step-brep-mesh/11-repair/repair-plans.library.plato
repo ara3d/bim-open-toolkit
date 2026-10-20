@@ -1,15 +1,15 @@
 //==
-// # CatalogRepairPlans
+// # BrepRepairPlans
 //
 // TYPE-CATALOG.md section 13: policies, ledgers, and healed models. The
-// repair itself is deferred: it is the algorithm of the new layer 11.
+// repair itself is deferred: it is this layer's algorithm, still to write.
 //
 // Sections, in order:
 //  - Policies
 //  - Ledgers
 //  - Healed models
 
-library CatalogRepairPlans
+library BrepRepairPlans
 {
     //==
     // # Policies

@@ -113,13 +113,17 @@ type FoldRecord
 // A local repair the decoder made in place of a kernel element.
 // MergedInto: a vertex_point within the length tolerance of another vertex of
 // the same edge or of the same loop's head-to-tail joint, merged into that
-// one (research/STEP-BREP-MODEL.md 6.6). DroppedZeroLengthEdge: an edge_curve
-// whose vertices coincide on an open curve, removed from its loops.
+// one (research/STEP-BREP-MODEL.md 6.6); Vertex is the kept vertex in the
+// reduced model, RawVertex the merged one's index in the raw model.
+// DroppedZeroLengthEdge: an edge_curve whose vertices coincide on an open
+// curve, removed from its loops; RawEdge is its index in the raw model.
 // Skipped: an instance that could not be decoded (wrong arity or kinds, a
 // dangling reference, a direction of zero length); a diagnostic names it.
+// Layer 11's RepairAction projects onto it losslessly (ToStepRepair,
+// ToRepairAction).
 type StepRepair
-    = MergedInto(Vertex: BrepVertexIndex)
-    | DroppedZeroLengthEdge
+    = MergedInto(Vertex: BrepVertexIndex, RawVertex: BrepVertexIndex)
+    | DroppedZeroLengthEdge(RawEdge: BrepEdgeIndex)
     | Skipped;
 
 // One repair: the source that has no kernel element of its own, and why.

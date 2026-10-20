@@ -1,5 +1,5 @@
 //==
-// # Catalog repair: plans, policies, outcomes, ledgers
+// # Repair plans: plans, policies, outcomes, ledgers
 //
 // TYPE-CATALOG.md section 13. A repair plan is an ordered list of steps
 // (structure before geometry), a policy says what a repair may do, and every
@@ -24,7 +24,7 @@ type RepairStep
 }
 
 // Repairs in the order they run. Built by PlanOf, so every Structural step
-// precedes every Geometric one (Law_Catalog_PlanFixesStructureBeforeGeometry).
+// precedes every Geometric one (Law_PlanFixesStructureBeforeGeometry).
 // Removes: a snap planned before the loop it snaps in was chained.
 type RepairPlan
 {

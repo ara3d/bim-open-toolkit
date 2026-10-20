@@ -43,6 +43,7 @@ higher layer's function lives in that higher layer: the laws that mesh layer 7's
 | 8 | `08-pipeline` | `StepToMesh` |
 | 9 | `09-tooling` | `ToolingDiffs`, `ToolingDumps`, `ToolingGenerators`, `ToolingLawRunner`, `ToolingReports` (one block per file) |
 | 10 | `10-editing` | `BrepEditing` |
+| 11 | `11-repair` | `BrepRepairPlans` |
 
 Laws live in `<stem>.laws.plato` in a block named `<LibraryBlock>Laws`.
 
@@ -364,7 +365,8 @@ layer's own and may change inside the layer.
 - `ProvenanceMap { Occurrences; Sources: KernelSources; ByInstance; Folds: Array<FoldRecord>; Repairs: Array<RepairRecord> }`,
   keyed by `StepSource { Occurrence: StepOccurrenceIndex; Instance: StepInstanceId }`, with
   `StepOccurrence`, `KernelElement`, `FoldCause = OrientedFace | OrientedShell | MirroredPlacement`,
-  `StepRepair`, and `KernelOf(map, source)`.
+  `StepRepair = MergedInto(Vertex, RawVertex) | DroppedZeroLengthEdge(RawEdge) | Skipped`, and
+  `KernelOf(map, source)`.
 - `DecodePolicy` (with `StandardPolicy`), `ContextUnits`, `ContextUncertainty`, `ResolveContexts`;
   `ModelLengthTolerance(used, unit, modelSize, extent, policy)`,
   `ModelTolerances(used, unit, modelSize, extent, policy)`.
@@ -385,6 +387,14 @@ layer's own and may change inside the layer.
   still returns the record (FINDINGS F-58).
 - Proofs (`StepReadingProofs`, TYPE-CATALOG.md section 4): `PreparedModel { Model; Decoded }`
   (`IToleranced`), `DecidedPreparedModel`, built only by `CheckPreparedModel(raw)`.
+- Decoding names and units (`StepDecoding`, TYPE-CATALOG.md section 14): `EntityName`, `AttributeName`,
+  `EntityLookup = KnownEntity | UnknownEntity`, `AttributeLookup = KnownAttribute | UnknownAttribute`,
+  `UnitFactor { MetresPerUnit; Named; Snapped }`, `AngleFactor { RadiansPerUnit; Snapped }`,
+  `PlacementChain { Steps; Composed; Handedness }`, `ReferenceResolution = Resolved | Dangling |
+  WrongKind`, `DecodeStep` (ten cases), `DecodeTrace { Step; Source; Finding }`; `EntityNamesOf`,
+  `LookupEntity`, `AttributeNamesOf`, `LookupAttribute`, `LookupOwnAttribute`, `UnitFactorOf`,
+  `AngleFactorOf`, `PlacementStepsOf`, `PlacementChainOf` (deferred), `ResolveReference`, `TraceOf`.
+  Laws `StepDecodingLaws`.
 
 ### 4. `04-discretization`
 
@@ -556,6 +566,12 @@ layer's own and may change inside the layer.
   `PairBudget` (`PairBudgetOf`, `ScopeAllows`); `SampleGrid` (`SampleGridOf`); `Expectation =
   ShouldPass | ShouldFail(Law) | ShouldWarn(Code)`; `LevelProof` (`LevelProofOf`, `Proves`);
   `Check(m: BrepModel, level): Report`. Laws `BrepCheckingClaimsLaws`.
+- Defects (`BrepCheckingDefects`, TYPE-CATALOG.md section 13): `Defect` (26 cases and
+  `Unclassified(Law, Where)`), `DefectClass = Structural | Geometric | Tolerance | Quality`, `Locality =
+  Local | NeedsNeighbours(Faces) | WholeShell | WholeModel`, `DecidedDefect = Defect | Undecided`,
+  `DefectReport { Defects; ByClass; ByFace }`; `DefectOf(check)`, `FailedDefectOf`, `DefectsOf(report)`,
+  `DefectReportOf`, `ExpectedLawOf(defect): LawName`, `ClassOf`, `ClassRank`, `FacesOf`. Laws
+  `BrepCheckingDefectsLaws`, with the sample defects (`SampleDefect`) layer 11 reuses.
 - Concept (`validation.concepts.plato`): `ICheckable { Check(x, level): Report }`; no type declares it
   (FINDINGS F-58).
 
@@ -606,7 +622,7 @@ Layer 9's names are its own (its README lists them) except these, which other tr
   OverBudget(Elapsed)`, with `IsDefectVerdict`, `VerdictName`, `VerdictReason`.
 - Reports (`ToolingReports`, sections 10, 11, 16): `StageOutcome<T> { Stage: RunStage; Value; Report;
   Elapsed }`, `RowDump`, `DiffSummary` (`DiffSummaryOf`), `Benchmark` (`MeetsBenchmark`), `CorpusRow`
-  (`tooling-corpus-rows.types.plato`, names the staged repair track's `DefectReport`), `WitnessSpec`,
+  (`tooling-corpus-rows.types.plato`, names layer 7's `DefectReport`), `WitnessSpec`,
   `VerdictDelta` (`VerdictDeltaOf`, `IsChange`, `VerdictOrdinal`), `IsMet(Expectation, LawVerdict)`,
   `InvarianceOf(Perturbation): LawName`, `Diff(a, b, tol): ModelDiff`, `Witnesses(BrepModel)`.
   Laws `ToolingReportsLaws`.
@@ -637,6 +653,24 @@ TYPE-CATALOG.md sections 12 and 15; the README lists the helpers.
   `DirtyAfter(Transaction)`, `CountDelta(op): ShellCountsDelta`, `HoleDelta(op): Integer`. Laws
   `BrepEditingLaws` (17).
 
+### 11. `11-repair`
+
+TYPE-CATALOG.md sections 13 and 15; the README lists the helpers. Blocks `BrepRepairDiagnosis`,
+`BrepRepairPlans`.
+
+- Actions and diagnosis: `RepairAction` (the catalog's 20 cases and `SkipInstance(Instance)`),
+  `RepairCost { TouchedFaces; ToleranceGrowth; Locality }`, `Fixability = Fixable(Action, Cost) |
+  FixableWithChoice(Options) | Unfixable(Why)`, `GapClosure`, `SeamRepair`, `StepRepairProjection =
+  Projected(Repair) | NotProjected(Finding)`; `Diagnose(m, defect)`, `CostOf(m, action)`,
+  `Permits(policy, action, cost)`, `ToStepRepair(action)`, `ToRepairAction(record)`,
+  `ToRepairAction(seamRepair, edge)`.
+- Plans: `RepairStep { Defect; Action; Expect: LawName }`, `RepairPlan { Steps }` (`PlanOf(m, defects)`),
+  `RepairPolicy` (`StrictPolicy`), `RepairOutcome = Repaired | Worsened | NotApplied`, `RepairEntry {
+  Source; Action; Outcome }`, `RepairLedger { Records }`, `HealedModel { Model; Ledger; Remaining }`
+  (`ToPreparedModel`, `Defects`, `Repair` deferred).
+- Concept (`repair.concepts.plato`): `IRepairable { Defects(x); Repair(x, plan, policy) }`, declared by
+  `HealedModel`. Laws `BrepRepairLaws` (12).
+
 ## Naming rules
 
 - Kernel topology types carry the `Brep` prefix (`BrepFace`), their indices `Brep<Thing>Index`,
@@ -663,6 +697,18 @@ Format: date, layer, old name, new name, reason.
 - 2026-10-20, 2, (new) `Reversed(loop: BrepLoop)`, moved from layer 10 beside `Reversed(face)`
   (catalog merge, editing).
 - 2026-10-20, 10, (new layer) `10-editing`, block `BrepEditing` (catalog merge, editing).
+- 2026-10-20, 3, `StepRepair = MergedInto(Vertex) | DroppedZeroLengthEdge | Skipped`,
+  `MergedInto(Vertex, RawVertex) | DroppedZeroLengthEdge(RawEdge) | Skipped`: the record keeps the
+  raw index of what it removed, so layer 11's `ToRepairAction(record)` needs no extra arguments and
+  `ToStepRepair` round-trips. Two constructor sites in `ReduceRaw` and the match in `MergedVertexOf`
+  changed (catalog merge, repair).
+- 2026-10-20, 3, `ProvenanceMap.Repairs: Array<RepairRecord>` kept: the request to hold layer 11's
+  `RepairEntry` is not applied, because `RepairEntry.Outcome` is a `RepairOutcome`, whose `Repaired`
+  case carries layer 10's `ModelEdit`; a layer 3 type cannot name it (catalog merge, repair).
+- 2026-10-20, 7, (new) `Defect`, `DefectClass`, `Locality`, `DecidedDefect`, `DefectReport` and
+  their constructors, from catalog-repair, so layer 9's `CorpusRow` resolves without staging; 3,
+  (new) section 14's `StepDecoding`; 11, (new layer) `11-repair`, blocks `BrepRepairDiagnosis`,
+  `BrepRepairPlans` (catalog merge, repair).
 
 - 2026-10-20, 4, `RefinementReason` with three cases, and `NoInteriorPointMeetsChordal(Segment:
   Chord)`, `PoleAdjacency`, `NeighbourDensity` added; every match (layer 5's `IsBlocking` and

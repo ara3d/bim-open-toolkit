@@ -1,5 +1,5 @@
 //==
-// # CatalogRepairStepDecoding
+// # StepDecoding
 //
 // TYPE-CATALOG.md section 14: the constructors of the typed STEP names, the
 // unit factors, placement chains, and reference resolution.
@@ -10,7 +10,7 @@
 //  - Placements
 //  - References
 
-library CatalogRepairStepDecoding
+library StepDecoding
 {
     //==
     // # Names from the schema table

@@ -1,5 +1,5 @@
 //==
-// # CatalogRepairDefects
+// # BrepCheckingDefects
 //
 // TYPE-CATALOG.md section 13: classifying defects, the law each one breaks,
 // and the map from a failed Check to a Defect. A Check holds one Provenance,
@@ -15,7 +15,7 @@
 //  - From checks to defects
 //  - Defect reports
 
-library CatalogRepairDefects
+library BrepCheckingDefects
 {
     //==
     // # Classes

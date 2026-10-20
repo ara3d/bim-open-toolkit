@@ -1,0 +1,39 @@
+//==
+// # Validation defects: invariants and constructors
+//
+// SPEC-DSL.md section 3. Not compiled. Each invariant cites the law that
+// tests it where one exists. DefectClass and Locality are plain data.
+//
+// Sections, in order:
+//  - Defects
+
+//==
+// # Defects
+
+spec DecidedDefect
+{
+    invariant self is Undecided ? self.Reason == UndecidedReason.NotApplicable("The check holds.") : true;
+    constructor DefectOf;                                  // Law_HeldCheckHasNoDefect
+}
+
+spec DefectOf(c: Check): DecidedDefect
+{
+    ensures c.Holds ? DefectsIn(result).Count == 0 : DefectsIn(result).Count == 1;
+    ensures c.Holds ? true : ExpectedLawOf(DefectsIn(result)[0]) == c.Law;   // Law_DefectOfInvertsExpectedLaw
+}
+
+spec DefectReport
+{
+    invariant self.ByClass.Count == 4;
+    invariant self.ByClass.Reduce(0, (n, c) => n + c.Value) == self.Defects.Count;   // Law_ByClassCountsEveryDefect
+    invariant forall (f: Integer) in self.ByFace.RowCount.Range:
+        self.ByFace.Row(f).All(i => FacesOf(self.Defects[i]).Any(x => x.Value == f));   // Law_ByFaceRowsNameTheirFace
+    constructor DefectReportOf;
+    constructor DefectsOf;
+}
+
+spec DefectsOf(r: Report): DefectReport
+{
+    ensures result.Defects.Count == r.Checks.Reduce(0, (n, c) => c.Holds ? n : n + 1);   // Law_EveryFailedCheckIsADefect
+    ensures r.Checks.All(c => c.Holds) ? result.Defects.Count == 0 : true;              // Law_DefectsOfCleanReportIsEmpty
+}
