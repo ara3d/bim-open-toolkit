@@ -1,0 +1,162 @@
+//==
+// # Catalog decided results: specification
+//
+// Invariants and constructors of TYPE-CATALOG.md section 5 (SPEC-DSL.md
+// section 3). Not compiled. Each invariant is a Law_Catalog_ in
+// catalog-decided-values.laws.plato or catalog-decided-results.laws.plato.
+// A sum's cases are its constructors; a closed sum has no invariant beyond
+// its payloads', so most entries state the predicates' meaning.
+//
+// Sections, in order:
+//  - Decided values
+//  - Geometric results
+//  - Refinement steps
+//  - Termination
+//  - Outcomes
+
+//==
+// # Decided values
+
+spec UndecidedReason
+{
+    invariant match (self) { NoConvergence(n) => n >= 0; ToleranceExceeded(by) => by.Value > 0.0; _ => true; };
+    ensures self.CaseNumber >= 0 && self.CaseNumber < 7;   // Law_Catalog_UndecidedReasonRoundTrips
+}
+
+// One entry stands for all twelve: DecidedNumber, DecidedAngle,
+// DecidedLength, DecidedParameter, DecidedSign, DecidedUv, DecidedPoint,
+// DecidedDirection, DecidedFaceIndex, DecidedEdgeIndex, DecidedRange,
+// DecidedRound, each with payload T.
+spec DecidedNumber
+{
+    constructor Decided;
+    constructor Undecided;
+    ensures forall (fallback: Number) : self.IsDecided ? true : self.ValueOr(fallback) == fallback;   // Law_Catalog_DecidedNumberRoundTrips
+    ensures forall (v: Number, fallback: Number) : DecidedNumber.Decided(v).ValueOr(fallback) == v;
+}
+
+spec DecidedFaceIndex
+{
+    invariant match (self) { Decided(f) => !f.IsNone; Undecided(r) => true; };   // a decided index is never the none index
+}
+
+spec DecidedEdgeIndex
+{
+    invariant match (self) { Decided(e) => !e.IsNone; Undecided(r) => true; };
+}
+
+spec DecidedRange
+{
+    invariant match (self) { Decided(r) => r.Start <= r.End; Undecided(reason) => true; };   // RangeOf's invariant
+}
+
+spec DecidedRound
+{
+    invariant match (self) { Decided(r) => r.Value >= 0; Undecided(reason) => true; };
+}
+
+//==
+// # Geometric results
+
+spec SurfaceNormal
+{
+    constructor Regular; constructor Limit; constructor Apex; constructor NoNormal;
+    ensures self.IsDecided == (self.CaseNumber < 3);   // Law_Catalog_SurfaceNormalRoundTrips
+}
+
+spec Projection
+{
+    invariant match (self) { OnSurface(uv, d) => d.Value >= 0.0; OffDomain(uv, d) => d.Value >= 0.0; Failed(r) => true; };
+    ensures self.IsOnSurface == (self.CaseNumber == 0);   // Law_Catalog_ProjectionRoundTrips
+}
+
+spec ClosestParameterResult
+{
+    invariant match (self) { Found(t, d) => d.Value >= 0.0; Ambiguous(ts) => ts.Count >= 2; Failed(r) => true; };
+    ensures self.IsFound == (self.CaseNumber == 0);   // Law_Catalog_ClosestParameterResultRoundTrips
+}
+
+spec ClosureDecision
+{
+    invariant match (self) { ClosedByEnds(g) => g.Value >= 0.0; OpenByEnds(g) => g.Value > 0.0; _ => true; };
+    ensures self.IsDecided == (self.CaseNumber != 3);   // Law_Catalog_ClosureDecisionRoundTrips
+    ensures self.ClosesCurve == (self.CaseNumber == 0 || self.CaseNumber == 2);
+}
+
+//==
+// # Refinement steps
+
+spec SplitDecision { ensures self.IsSplit == (self.CaseNumber == 0); }   // Law_Catalog_SplitDecisionRoundTrips
+spec KeepReason { ensures self.CaseNumber >= 0 && self.CaseNumber < 4; }   // Law_Catalog_KeepReasonRoundTrips
+
+spec InsertionAttempt
+{
+    invariant match (self) { Inserted(p, flips) => !p.IsNone && flips >= 0; Rejected(r) => true; };
+}
+
+spec InsertionRejection
+{
+    invariant match (self) { TooCloseTo(p, d) => d.Kind == MeasureKind.ParameterKind && d.Value >= 0.0; _ => true; };
+}
+
+spec FlipAttempt
+{
+    invariant match (self) { Flipped(before, after) => before != after; NotFlippable(r) => true; };   // Law_Catalog_FlipAttemptRoundTrips
+}
+
+//==
+// # Termination
+
+spec WorkBudget { invariant self.WorkTotal >= 0; }
+
+spec TerminationCertificate
+{
+    constructor CertifyRound;
+    invariant self.Decreased ? true : self.IsTerminal;   // Law_Catalog_WorkStrictlyDecreasesOrTerminal
+}
+
+spec CertifyRound(before: WorkBudget, after: WorkBudget): TerminationCertificate
+{
+    ensures result.Work == after;
+    ensures result.Decreased == (after.WorkTotal < before.WorkTotal);
+    // A loop that stops at the first terminal certificate runs at most
+    // before.WorkTotal + 1 rounds: each non-terminal round lowers a
+    // non-negative Integer.
+}
+
+//==
+// # Outcomes
+
+spec FaceMeshResult
+{
+    constructor ToFaceMeshResult;
+    invariant match (self) { Meshed(m, advisory) => advisory.All(q => !q.Reason.IsBlocking); Blocked(qs, ds) => qs.Any(q => q.Reason.IsBlocking); };
+}
+
+spec ToFaceMeshResult(x: FaceMeshOutcome): FaceMeshResult
+{
+    ensures result.IsBlocked == x.HasBlockingRequest;   // Law_Catalog_FaceMeshOutcomeBlockedMapsToBlocked
+}
+
+spec MeshResult
+{
+    constructor ToMeshResult;
+    invariant match (self) { Succeeded(m, r, n) => r.IsClean; Incomplete(m, pending, r) => pending.Count > 0; Failed(r) => true; };
+}
+
+spec ToMeshResult(x: MeshOutcome): MeshResult
+{
+    ensures result.IsSucceeded == x.Ok;   // Law_Catalog_MeshOutcomeCleanMapsToSucceeded
+    ensures result.CaseNumber != 1;       // Incomplete needs pending requests the record does not hold
+}
+
+spec DecodeResult
+{
+    constructor ToDecodeResult;
+    invariant match (self) { Decoded(d) => d.Model.Faces.Count > 0; NoShape(r) => true; Unreadable(ds) => ds.Any(d => d.Severity.IsError); };
+}
+
+spec ToDecodeResult(x: DecodedModel): DecodeResult
+{
+    ensures result.CaseNumber == (x.Model.Faces.Count > 0 ? 0 : (x.Diagnostics.Any(d => d.Severity.IsError) ? 2 : 1));   // Law_Catalog_DecodedModelMapsByFacesAndErrors
+}

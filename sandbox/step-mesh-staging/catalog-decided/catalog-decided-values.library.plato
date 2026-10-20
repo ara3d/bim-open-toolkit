@@ -1,0 +1,191 @@
+//==
+// # Catalog: decided values (functions)
+//
+// IsDecided and ValueOr for every Decided* of catalog-decided-values.types.plato.
+// Each sum is its own monomorphic type, so each has its own pair; a caller
+// that needs the reason matches.
+//
+// Sections, in order:
+//  - Scalars and quantities
+//  - Points and directions
+//  - Indices, ranges, and rounds
+
+library CatalogDecidedValues
+{
+    //==
+    // # Scalars and quantities
+
+    // True when d holds a Number.
+    IsDecided(d: DecidedNumber): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The Number d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedNumber, fallback: Number): Number
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    // True when d holds a Angle.
+    IsDecided(d: DecidedAngle): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The Angle d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedAngle, fallback: Angle): Angle
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    // True when d holds a ModelLength.
+    IsDecided(d: DecidedLength): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The ModelLength d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedLength, fallback: ModelLength): ModelLength
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    // True when d holds a CurveParameter.
+    IsDecided(d: DecidedParameter): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The CurveParameter d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedParameter, fallback: CurveParameter): CurveParameter
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    // True when d holds a Sign.
+    IsDecided(d: DecidedSign): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The Sign d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedSign, fallback: Sign): Sign
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    //==
+    // # Points and directions
+
+    // True when d holds a UvPoint.
+    IsDecided(d: DecidedUv): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The UvPoint d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedUv, fallback: UvPoint): UvPoint
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    // True when d holds a ModelPoint.
+    IsDecided(d: DecidedPoint): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The ModelPoint d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedPoint, fallback: ModelPoint): ModelPoint
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    // True when d holds a Direction3D.
+    IsDecided(d: DecidedDirection): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The Direction3D d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedDirection, fallback: Direction3D): Direction3D
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    //==
+    // # Indices, ranges, and rounds
+
+    // True when d holds a BrepFaceIndex.
+    IsDecided(d: DecidedFaceIndex): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The BrepFaceIndex d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedFaceIndex, fallback: BrepFaceIndex): BrepFaceIndex
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    // True when d holds a BrepEdgeIndex.
+    IsDecided(d: DecidedEdgeIndex): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The BrepEdgeIndex d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedEdgeIndex, fallback: BrepEdgeIndex): BrepEdgeIndex
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    // True when d holds a ParameterRange.
+    IsDecided(d: DecidedRange): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The ParameterRange d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedRange, fallback: ParameterRange): ParameterRange
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    // True when d holds a Round.
+    IsDecided(d: DecidedRound): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The Round d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedRound, fallback: Round): Round
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+}

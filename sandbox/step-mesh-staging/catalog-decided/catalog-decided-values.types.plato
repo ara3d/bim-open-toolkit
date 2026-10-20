@@ -1,0 +1,113 @@
+//==
+// # Catalog: decided values and the reasons a value is undecided
+//
+// TYPE-CATALOG.md section 5 (layers 0 to 8). Plato has no Option<T>, so each
+// payload type has its own monomorphic sum: Decided holding the value, and
+// Undecided with a reason. The value case is Decided in every sum, not named
+// after its payload (the catalog's Number(Value)): a case Point(ModelPoint)
+// joins ModelPoint's field accessor Point's overload group (CHK203). No -1, NaN, or empty array means
+// "could not"; match forces every caller to handle the reason.
+//
+// Sections, in order:
+//  - Reasons
+//  - Scalars and quantities
+//  - Points and directions
+//  - Indices, ranges, and rounds
+
+//==
+// # Reasons
+
+// Why a computation gave no value: the vocabulary every Decided* shares.
+//   OutOfDomain: the input lies outside the function's domain.
+//   DegenerateAt: the surface or curve degenerates on that side of its domain.
+//   NoConvergence: an iteration stopped after Iterations steps unconverged.
+//   Unbounded: the answer is infinite (a line's length, a plane's area).
+//   NotApplicable: the question does not apply to this Kind of entity.
+//   BelowResolution: the quantity is smaller than the model can resolve.
+//   ToleranceExceeded: a candidate exists but misses its bound By this much.
+// Removes: seven different sentinel conventions.
+type UndecidedReason
+    = OutOfDomain
+    | DegenerateAt(Side: DomainSide)
+    | NoConvergence(Iterations: Integer)
+    | Unbounded
+    | NotApplicable(Kind: String)
+    | BelowResolution
+    | ToleranceExceeded(By: Measure);
+
+//==
+// # Scalars and quantities
+
+// A Number, or why there is none. Removes: NaN as "could not".
+type DecidedNumber
+    = Decided(Value: Number)
+    | Undecided(Reason: UndecidedReason);
+
+// An angle, or why there is none. Removes: an angle of 0 returned for a
+// degenerate corner.
+type DecidedAngle
+    = Decided(Value: Angle)
+    | Undecided(Reason: UndecidedReason);
+
+// A length in model units, or why there is none. Removes: -1 as "no length".
+type DecidedLength
+    = Decided(Value: ModelLength)
+    | Undecided(Reason: UndecidedReason);
+
+// A curve parameter, or why there is none. Removes: the curve's start
+// returned when the closest parameter was not found.
+type DecidedParameter
+    = Decided(Value: CurveParameter)
+    | Undecided(Reason: UndecidedReason);
+
+// A sign, or why it could not be decided. Removes: Zero standing for both
+// "on the line" and "could not tell".
+type DecidedSign
+    = Decided(Value: Sign)
+    | Undecided(Reason: UndecidedReason);
+
+//==
+// # Points and directions
+
+// A point in a surface's natural parameters, or why there is none. Removes:
+// (0, 0) returned by a failed inversion.
+type DecidedUv
+    = Decided(Value: UvPoint)
+    | Undecided(Reason: UndecidedReason);
+
+// A point in the model, or why there is none. Removes: the origin returned by
+// a failed evaluation.
+type DecidedPoint
+    = Decided(Value: ModelPoint)
+    | Undecided(Reason: UndecidedReason);
+
+// A unit direction, or why there is none. Removes: the +z fallback of
+// NormalOr at a degenerate point.
+type DecidedDirection
+    = Decided(Value: Direction3D)
+    | Undecided(Reason: UndecidedReason);
+
+//==
+// # Indices, ranges, and rounds
+
+// A face index, or why there is none. Removes: face -1 as "no face".
+type DecidedFaceIndex
+    = Decided(Value: BrepFaceIndex)
+    | Undecided(Reason: UndecidedReason);
+
+// An edge index, or why there is none. Removes: edge -1 as "no edge".
+type DecidedEdgeIndex
+    = Decided(Value: BrepEdgeIndex)
+    | Undecided(Reason: UndecidedReason);
+
+// A parameter range, or why there is none. Removes: an empty [0, 0] range
+// standing for "no overlap".
+type DecidedRange
+    = Decided(Value: ParameterRange)
+    | Undecided(Reason: UndecidedReason);
+
+// A refinement round, or why there is none. Removes: MaxRefinementRounds
+// returned as "never converged".
+type DecidedRound
+    = Decided(Value: Round)
+    | Undecided(Reason: UndecidedReason);

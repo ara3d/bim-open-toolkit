@@ -1,0 +1,234 @@
+//==
+// # Catalog: decided results (laws)
+//
+// Each sum is reached through an Integer selector (Catalog<Sum>At), since the
+// runner cannot build a sum: every case round-trips through CaseNumber and
+// its predicates. The conversions from the existing outcome records are
+// checked on literal witnesses chosen by the selector: blocked maps to
+// Blocked, clean to the success case.
+//
+// Sections, in order:
+//  - Normals
+//  - Projections and closest points
+//  - Closure
+//  - Splits, insertions, and flips
+//  - Termination
+//  - Outcomes
+
+library CatalogDecidedResultsLaws
+{
+    //==
+    // # Normals
+
+    // The SurfaceNormal whose CaseNumber is CatalogCaseOf(k, 4), holding n.
+    CatalogSurfaceNormalAt(k: Integer, n: Direction3D): SurfaceNormal
+    {
+        var c = CatalogCaseOf(k, 4);
+        return c == 0 ? SurfaceNormal.Regular(n)
+            : (c == 1 ? SurfaceNormal.Limit(n)
+            : (c == 2 ? SurfaceNormal.Apex(n)
+            : SurfaceNormal.NoNormal(CatalogReasonAt(k / 4))));
+    }
+
+    // Every case round-trips; the three normal cases are decided and give back
+    // their direction, NoNormal gives the fallback.
+    Law_Catalog_SurfaceNormalRoundTrips(k: Integer, n: Direction3D, fallback: Direction3D): Boolean
+    {
+        var s = CatalogSurfaceNormalAt(k, n);
+        var c = CatalogCaseOf(k, 4);
+        var expected = c < 3 ? n : fallback;
+        return s.CaseNumber == c && s.IsDecided == (c < 3) && s.ValueOr(fallback) == expected;
+    }
+
+    //==
+    // # Projections and closest points
+
+    // The Projection whose CaseNumber is CatalogCaseOf(k, 3).
+    CatalogProjectionAt(k: Integer, uv: UvPoint, d: ModelLength): Projection
+    {
+        var c = CatalogCaseOf(k, 3);
+        return c == 0 ? Projection.OnSurface(uv, d)
+            : (c == 1 ? Projection.OffDomain(uv, d)
+            : Projection.Failed(CatalogReasonAt(k / 3)));
+    }
+
+    // Every case round-trips; only OnSurface is on the surface.
+    Law_Catalog_ProjectionRoundTrips(k: Integer, uv: UvPoint, d: ModelLength): Boolean
+    {
+        var p = CatalogProjectionAt(k, uv, d);
+        return p.CaseNumber == CatalogCaseOf(k, 3) && p.IsOnSurface == (CatalogCaseOf(k, 3) == 0);
+    }
+
+    // The ClosestParameterResult whose CaseNumber is CatalogCaseOf(k, 3).
+    CatalogClosestParameterAt(k: Integer, t: CurveParameter, d: ModelLength): ClosestParameterResult
+    {
+        var c = CatalogCaseOf(k, 3);
+        return c == 0 ? ClosestParameterResult.Found(t, d)
+            : (c == 1 ? ClosestParameterResult.Ambiguous([t, t])
+            : ClosestParameterResult.Failed(CatalogReasonAt(k / 3)));
+    }
+
+    // Every case round-trips; only Found is found.
+    Law_Catalog_ClosestParameterResultRoundTrips(k: Integer, t: CurveParameter, d: ModelLength): Boolean
+    {
+        var r = CatalogClosestParameterAt(k, t, d);
+        return r.CaseNumber == CatalogCaseOf(k, 3) && r.IsFound == (CatalogCaseOf(k, 3) == 0);
+    }
+
+    //==
+    // # Closure
+
+    // The ClosureDecision whose CaseNumber is CatalogCaseOf(k, 4).
+    CatalogClosureAt(k: Integer, gap: ModelLength): ClosureDecision
+    {
+        var c = CatalogCaseOf(k, 4);
+        return c == 0 ? ClosureDecision.ClosedByEnds(gap)
+            : (c == 1 ? ClosureDecision.OpenByEnds(gap)
+            : (c == 2 ? ClosureDecision.ClosedByPeriod
+            : ClosureDecision.UndecidableWithoutEvaluation));
+    }
+
+    // Every case round-trips; all but UndecidableWithoutEvaluation are
+    // decided, and ClosedByEnds and ClosedByPeriod close the curve.
+    Law_Catalog_ClosureDecisionRoundTrips(k: Integer, gap: ModelLength): Boolean
+    {
+        var d = CatalogClosureAt(k, gap);
+        var c = CatalogCaseOf(k, 4);
+        return d.CaseNumber == c && d.IsDecided == (c != 3) && d.ClosesCurve == (c == 0 || c == 2);
+    }
+
+    //==
+    // # Splits, insertions, and flips
+
+    // The KeepReason whose CaseNumber is CatalogCaseOf(k, 4).
+    CatalogKeepReasonAt(k: Integer): KeepReason
+    {
+        var c = CatalogCaseOf(k, 4);
+        return c == 0 ? KeepReason.MeetsCriteria
+            : (c == 1 ? KeepReason.BelowMinLength
+            : (c == 2 ? KeepReason.AtMinSegments
+            : KeepReason.AtRoundLimit));
+    }
+
+    // Every KeepReason case round-trips.
+    Law_Catalog_KeepReasonRoundTrips(k: Integer): Boolean
+        => CatalogKeepReasonAt(k).CaseNumber == CatalogCaseOf(k, 4);
+
+    // Split for an even k, KeepBecause with every reason otherwise.
+    CatalogSplitDecisionAt(k: Integer, at: EdgeParameter): SplitDecision
+        => CatalogPicksDecided(k) ? SplitDecision.Split(at) : SplitDecision.KeepBecause(CatalogKeepReasonAt(k / 2));
+
+    // IsSplit holds exactly for Split.
+    Law_Catalog_SplitDecisionRoundTrips(k: Integer, at: EdgeParameter): Boolean
+        => CatalogSplitDecisionAt(k, at).IsSplit == CatalogPicksDecided(k);
+
+    // The InsertionRejection whose CaseNumber is CatalogCaseOf(k, 4).
+    CatalogInsertionRejectionAt(k: Integer): InsertionRejection
+    {
+        var c = CatalogCaseOf(k, 4);
+        return c == 0 ? InsertionRejection.TooCloseTo(UvPointIndex(k), Measure(0.5, MeasureKind.ParameterKind))
+            : (c == 1 ? InsertionRejection.OnConstraint(ElementSide(ElementIndex(k), 0))
+            : (c == 2 ? InsertionRejection.OutsideRegion
+            : InsertionRejection.WouldCollapse(ElementIndex(k))));
+    }
+
+    // Every InsertionRejection case round-trips.
+    Law_Catalog_InsertionRejectionRoundTrips(k: Integer): Boolean
+        => CatalogInsertionRejectionAt(k).CaseNumber == CatalogCaseOf(k, 4);
+
+    // Inserted for an even k, Rejected with every reason otherwise.
+    CatalogInsertionAttemptAt(k: Integer): InsertionAttempt
+        => CatalogPicksDecided(k) ? InsertionAttempt.Inserted(UvPointIndex(k), 0) : InsertionAttempt.Rejected(CatalogInsertionRejectionAt(k / 2));
+
+    // IsInserted holds exactly for Inserted.
+    Law_Catalog_InsertionAttemptRoundTrips(k: Integer): Boolean
+        => CatalogInsertionAttemptAt(k).IsInserted == CatalogPicksDecided(k);
+
+    // The FlipRejection whose CaseNumber is CatalogCaseOf(k, 4).
+    CatalogFlipRejectionAt(k: Integer): FlipRejection
+    {
+        var c = CatalogCaseOf(k, 4);
+        return c == 0 ? FlipRejection.Constrained
+            : (c == 1 ? FlipRejection.NotConvex
+            : (c == 2 ? FlipRejection.AlreadyDelaunay
+            : FlipRejection.Boundary));
+    }
+
+    // Every FlipRejection case round-trips.
+    Law_Catalog_FlipRejectionRoundTrips(k: Integer): Boolean
+        => CatalogFlipRejectionAt(k).CaseNumber == CatalogCaseOf(k, 4);
+
+    // Flipped for an even k, NotFlippable with every reason otherwise.
+    CatalogFlipAttemptAt(k: Integer): FlipAttempt
+    {
+        var a = ElementSidePair(ElementSide(ElementIndex(0), 0), ElementSide(ElementIndex(1), 2));
+        var b = ElementSidePair(ElementSide(ElementIndex(0), 1), ElementSide(ElementIndex(1), 0));
+        return CatalogPicksDecided(k) ? FlipAttempt.Flipped(a, b) : FlipAttempt.NotFlippable(CatalogFlipRejectionAt(k / 2));
+    }
+
+    // IsFlipped holds exactly for Flipped.
+    Law_Catalog_FlipAttemptRoundTrips(k: Integer): Boolean
+        => CatalogFlipAttemptAt(k).IsFlipped == CatalogPicksDecided(k);
+
+    //==
+    // # Termination
+
+    // A round's certificate either shows the work fell strictly, or is
+    // terminal: no refinement loop runs on without spending its budget.
+    Law_Catalog_WorkStrictlyDecreasesOrTerminal(before: WorkBudget, after: WorkBudget): Boolean
+    {
+        var c = CertifyRound(before, after);
+        return c.Decreased ? c.Work.WorkTotal < before.WorkTotal : c.IsTerminal;
+    }
+
+    //==
+    // # Outcomes
+
+    // A face outcome with no mesh points and, for CatalogCaseOf(k, 4) < 3, one
+    // request with the reason of that case; with none for case 3.
+    CatalogFaceMeshOutcomeAt(k: Integer): FaceMeshOutcome
+    {
+        var c = CatalogCaseOf(k, 4);
+        var reason = c == 0 ? RefinementReason.LoopSelfIntersects
+            : (c == 1 ? RefinementReason.TooCoarseInParameterSpace : RefinementReason.QuadCountMismatch);
+        var request = EdgeRefinementRequest(BrepEdgeIndex(0), reason, 1.0, 0);
+        var requests = c < 3 ? [request] : EdgeRefinementRequest.NoRequests;
+        return FaceMeshOutcome(EmptyFaceMesh(BrepFaceIndex(0)), requests, []);
+    }
+
+    // A blocking request maps to Blocked; an advisory one, or none, to Meshed.
+    Law_Catalog_FaceMeshOutcomeBlockedMapsToBlocked(k: Integer): Boolean
+        => CatalogFaceMeshOutcomeAt(k).ToFaceMeshResult.IsBlocked == (CatalogCaseOf(k, 4) == 0);
+
+    // A clean report for an even k, one error otherwise.
+    CatalogReportAt(k: Integer): Report
+        => CatalogPicksDecided(k)
+            ? Report.Empty
+            : Report([], [Diagnostic(Severity.Error, "CATALOG-WITNESS", "A witness error.", Provenance.WholeInput, 0.0)]);
+
+    // A clean outcome maps to Succeeded, any other to Failed.
+    Law_Catalog_MeshOutcomeCleanMapsToSucceeded(k: Integer, rounds: Integer): Boolean
+    {
+        var o = MeshOutcomeOf(ModelMesh.MeshWitnessAt(k / 2), CatalogReportAt(k), rounds);
+        var r = o.ToMeshResult;
+        return r.IsSucceeded == CatalogPicksDecided(k) && r.CaseNumber == (CatalogPicksDecided(k) ? 0 : 2);
+    }
+
+    // The unit cube decoded (case 0), the same with no face and no error
+    // (case 1), and with no face and an error (case 2).
+    CatalogDecodedModelAt(k: Integer): DecodedModel
+    {
+        var c = CatalogCaseOf(k, 3);
+        var cube = DecodedModel.ExpectedUnitCube;
+        var m = cube.Model;
+        var empty = BrepModel(m.Geometry, m.Vertices, m.Edges, m.Loops, [], m.Shells, m.Bodies, m.Tolerances, m.Unit);
+        var error = Diagnostic(Severity.Error, "CATALOG-WITNESS", "A witness error.", Provenance.WholeInput, 0.0);
+        return c == 0 ? cube
+            : DecodedModel(empty, cube.Map, c == 1 ? cube.Diagnostics : [error], cube.ModelSize, cube.CoordinateExtent);
+    }
+
+    // A model with a face maps to Decoded; with none, an error maps to
+    // Unreadable and no error to NoShape.
+    Law_Catalog_DecodedModelMapsByFacesAndErrors(k: Integer): Boolean
+        => CatalogDecodedModelAt(k).ToDecodeResult.CaseNumber == CatalogCaseOf(k, 3);
+}

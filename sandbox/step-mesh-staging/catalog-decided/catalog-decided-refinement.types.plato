@@ -1,0 +1,87 @@
+//==
+// # Catalog: decided refinement steps
+//
+// TYPE-CATALOG.md section 5: what one discretization or triangulation step
+// decided, with the reason when it did nothing, and the certificate each
+// refinement round returns.
+//
+// Sections, in order:
+//  - Splits
+//  - Insertions
+//  - Flips
+//  - Termination
+
+//==
+// # Splits
+
+// Why a segment was kept unsplit.
+//   MeetsCriteria: it already meets every criterion.
+//   BelowMinLength: its midpoint would make a piece shorter than the minimum.
+//   AtMinSegments: splitting is not needed and the minimum count is met.
+//   AtRoundLimit: the round limit stopped refinement.
+type KeepReason
+    = MeetsCriteria
+    | BelowMinLength
+    | AtMinSegments
+    | AtRoundLimit;
+
+// What one discretization or refinement step decided for one segment.
+// Removes: the refinement that "tried nothing else" when the midpoint was too
+// close (F-57 item 2): the caller matches BelowMinLength and chooses another
+// site.
+type SplitDecision
+    = Split(At: EdgeParameter)
+    | KeepBecause(Reason: KeepReason);
+
+//==
+// # Insertions
+
+// Why a point was not inserted into a triangulation.
+//   TooCloseTo: an existing point lies within Distance (a parameter-space
+//     Measure: UV has no length type of its own).
+//   OnConstraint: the point lies on a constrained side.
+//   OutsideRegion: the point lies outside the region.
+//   WouldCollapse: inserting would collapse that element.
+type InsertionRejection
+    = TooCloseTo(Point: UvPointIndex, Distance: Measure)
+    | OnConstraint(Side: ElementSide)
+    | OutsideRegion
+    | WouldCollapse(Element: ElementIndex);
+
+// The result of one insertion: the new point and the flips that restored the
+// Delaunay property, or why there was none. Removes: a silent skip inside
+// SplitPass.
+type InsertionAttempt
+    = Inserted(Point: UvPointIndex, Flips: Integer)
+    | Rejected(Reason: InsertionRejection);
+
+//==
+// # Flips
+
+// Why a side was not flipped.
+type FlipRejection
+    = Constrained
+    | NotConvex
+    | AlreadyDelaunay
+    | Boundary;
+
+// The result of one edge flip: the side pair before and after, or why not.
+// Removes: a flip skipped with no record of why.
+type FlipAttempt
+    = Flipped(Before: ElementSidePair, After: ElementSidePair)
+    | NotFlippable(Reason: FlipRejection);
+
+//==
+// # Termination
+
+// What each refinement round returns: the work left after the round, and
+// whether it fell strictly below the work before (CertifyRound). A round that
+// did not decrease the work is terminal (Law_Catalog_WorkStrictlyDecreasesOrTerminal).
+// Removes: a refinement loop whose termination is a MaxRefinementRounds guard
+// and nothing else.
+type TerminationCertificate
+    implements IValue
+{
+    Work: WorkBudget;
+    Decreased: Boolean;
+}

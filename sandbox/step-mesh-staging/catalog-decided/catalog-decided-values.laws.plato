@@ -1,0 +1,227 @@
+//==
+// # Catalog: decided values (laws)
+//
+// The runner cannot build a sum, so each law takes an Integer selector: an
+// even k gives the Decided case, an odd k the Undecided case with the reason
+// CatalogReasonAt(k / 2), so the runner's k in [-8, 8] reaches every reason.
+// Each law states that IsDecided holds exactly for the Decided case and that
+// ValueOr gives back the stored value or the fallback. The value is stored
+// and returned, never computed, so exact == is the right comparison.
+//
+// Sections, in order:
+//  - Selectors
+//  - Reasons
+//  - Scalars and quantities
+//  - Points and directions
+//  - Indices, ranges, and rounds
+
+library CatalogDecidedValuesLaws
+{
+    //==
+    // # Selectors
+
+    // k reduced into [0, n), for negative k too. Precondition: n > 0.
+    CatalogCaseOf(k: Integer, n: Integer): Integer
+        => ((k % n) + n) % n;
+
+    // The UndecidedReason whose CaseNumber is CatalogCaseOf(k, 7).
+    CatalogReasonAt(k: Integer): UndecidedReason
+    {
+        var c = CatalogCaseOf(k, 7);
+        return c == 0 ? UndecidedReason.OutOfDomain
+            : (c == 1 ? UndecidedReason.DegenerateAt(DomainSide.VMin)
+            : (c == 2 ? UndecidedReason.NoConvergence(k)
+            : (c == 3 ? UndecidedReason.Unbounded
+            : (c == 4 ? UndecidedReason.NotApplicable("catalog witness")
+            : (c == 5 ? UndecidedReason.BelowResolution
+            : UndecidedReason.ToleranceExceeded(Measure(1.0, MeasureKind.LengthKind)))))));
+    }
+
+    // True for the selectors that pick the Decided case.
+    CatalogPicksDecided(k: Integer): Boolean
+        => CatalogCaseOf(k, 2) == 0;
+
+    //==
+    // # Reasons
+
+    // Every UndecidedReason case round-trips through CaseNumber.
+    Law_Catalog_UndecidedReasonRoundTrips(k: Integer): Boolean
+        => CatalogReasonAt(k).CaseNumber == CatalogCaseOf(k, 7);
+
+    //==
+    // # Scalars and quantities
+
+    // DecidedNumber.Decided for an even k, Undecided otherwise.
+    CatalogDecidedNumberAt(k: Integer, v: Number): DecidedNumber
+        => CatalogPicksDecided(k) ? DecidedNumber.Decided(v) : DecidedNumber.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back a Number
+    // stored, or the fallback.
+    Law_Catalog_DecidedNumberRoundTrips(k: Integer, v: Number, fallback: Number): Boolean
+    {
+        var d = CatalogDecidedNumberAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x == expected;
+    }
+
+    // DecidedAngle.Decided for an even k, Undecided otherwise.
+    CatalogDecidedAngleAt(k: Integer, v: Angle): DecidedAngle
+        => CatalogPicksDecided(k) ? DecidedAngle.Decided(v) : DecidedAngle.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back an angle
+    // stored, or the fallback.
+    Law_Catalog_DecidedAngleRoundTrips(k: Integer, v: Angle, fallback: Angle): Boolean
+    {
+        var d = CatalogDecidedAngleAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x.Radians == expected.Radians;
+    }
+
+    // DecidedLength.Decided for an even k, Undecided otherwise.
+    CatalogDecidedLengthAt(k: Integer, v: ModelLength): DecidedLength
+        => CatalogPicksDecided(k) ? DecidedLength.Decided(v) : DecidedLength.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back a length
+    // stored, or the fallback.
+    Law_Catalog_DecidedLengthRoundTrips(k: Integer, v: ModelLength, fallback: ModelLength): Boolean
+    {
+        var d = CatalogDecidedLengthAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x == expected;
+    }
+
+    // DecidedParameter.Decided for an even k, Undecided otherwise.
+    CatalogDecidedParameterAt(k: Integer, v: CurveParameter): DecidedParameter
+        => CatalogPicksDecided(k) ? DecidedParameter.Decided(v) : DecidedParameter.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back a curve parameter
+    // stored, or the fallback.
+    Law_Catalog_DecidedParameterRoundTrips(k: Integer, v: CurveParameter, fallback: CurveParameter): Boolean
+    {
+        var d = CatalogDecidedParameterAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x == expected;
+    }
+
+    // DecidedSign.Decided for an even k, Undecided otherwise.
+    CatalogDecidedSignAt(k: Integer, v: Sign): DecidedSign
+        => CatalogPicksDecided(k) ? DecidedSign.Decided(v) : DecidedSign.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back a sign
+    // stored, or the fallback.
+    Law_Catalog_DecidedSignRoundTrips(k: Integer, v: Sign, fallback: Sign): Boolean
+    {
+        var d = CatalogDecidedSignAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x == expected;
+    }
+
+    //==
+    // # Points and directions
+
+    // DecidedUv.Decided for an even k, Undecided otherwise.
+    CatalogDecidedUvAt(k: Integer, v: UvPoint): DecidedUv
+        => CatalogPicksDecided(k) ? DecidedUv.Decided(v) : DecidedUv.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back a parameter-space point
+    // stored, or the fallback.
+    Law_Catalog_DecidedUvRoundTrips(k: Integer, v: UvPoint, fallback: UvPoint): Boolean
+    {
+        var d = CatalogDecidedUvAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x == expected;
+    }
+
+    // DecidedPoint.Decided for an even k, Undecided otherwise.
+    CatalogDecidedPointAt(k: Integer, v: ModelPoint): DecidedPoint
+        => CatalogPicksDecided(k) ? DecidedPoint.Decided(v) : DecidedPoint.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back a model point
+    // stored, or the fallback.
+    Law_Catalog_DecidedPointRoundTrips(k: Integer, v: ModelPoint, fallback: ModelPoint): Boolean
+    {
+        var d = CatalogDecidedPointAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x == expected;
+    }
+
+    // DecidedDirection.Decided for an even k, Undecided otherwise.
+    CatalogDecidedDirectionAt(k: Integer, v: Direction3D): DecidedDirection
+        => CatalogPicksDecided(k) ? DecidedDirection.Decided(v) : DecidedDirection.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back a direction
+    // stored, or the fallback.
+    Law_Catalog_DecidedDirectionRoundTrips(k: Integer, v: Direction3D, fallback: Direction3D): Boolean
+    {
+        var d = CatalogDecidedDirectionAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x == expected;
+    }
+
+    //==
+    // # Indices, ranges, and rounds
+
+    // DecidedFaceIndex.Decided for an even k, Undecided otherwise.
+    CatalogDecidedFaceIndexAt(k: Integer, v: BrepFaceIndex): DecidedFaceIndex
+        => CatalogPicksDecided(k) ? DecidedFaceIndex.Decided(v) : DecidedFaceIndex.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back a face index
+    // stored, or the fallback.
+    Law_Catalog_DecidedFaceIndexRoundTrips(k: Integer, v: BrepFaceIndex, fallback: BrepFaceIndex): Boolean
+    {
+        var d = CatalogDecidedFaceIndexAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x == expected;
+    }
+
+    // DecidedEdgeIndex.Decided for an even k, Undecided otherwise.
+    CatalogDecidedEdgeIndexAt(k: Integer, v: BrepEdgeIndex): DecidedEdgeIndex
+        => CatalogPicksDecided(k) ? DecidedEdgeIndex.Decided(v) : DecidedEdgeIndex.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back an edge index
+    // stored, or the fallback.
+    Law_Catalog_DecidedEdgeIndexRoundTrips(k: Integer, v: BrepEdgeIndex, fallback: BrepEdgeIndex): Boolean
+    {
+        var d = CatalogDecidedEdgeIndexAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x == expected;
+    }
+
+    // DecidedRange.Decided for an even k, Undecided otherwise.
+    CatalogDecidedRangeAt(k: Integer, v: ParameterRange): DecidedRange
+        => CatalogPicksDecided(k) ? DecidedRange.Decided(v) : DecidedRange.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back a parameter range
+    // stored, or the fallback.
+    Law_Catalog_DecidedRangeRoundTrips(k: Integer, v: ParameterRange, fallback: ParameterRange): Boolean
+    {
+        var d = CatalogDecidedRangeAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x == expected;
+    }
+
+    // DecidedRound.Decided for an even k, Undecided otherwise.
+    CatalogDecidedRoundAt(k: Integer, v: Round): DecidedRound
+        => CatalogPicksDecided(k) ? DecidedRound.Decided(v) : DecidedRound.Undecided(CatalogReasonAt(k / 2));
+
+    // IsDecided holds exactly for the Decided case; ValueOr gives back a round
+    // stored, or the fallback.
+    Law_Catalog_DecidedRoundRoundTrips(k: Integer, v: Round, fallback: Round): Boolean
+    {
+        var d = CatalogDecidedRoundAt(k, v);
+        var x = d.ValueOr(fallback);
+        var expected = CatalogPicksDecided(k) ? v : fallback;
+        return d.IsDecided == CatalogPicksDecided(k) && x == expected;
+    }
+}

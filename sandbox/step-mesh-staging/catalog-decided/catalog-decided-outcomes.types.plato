@@ -1,0 +1,51 @@
+//==
+// # Catalog: outcomes as sums
+//
+// TYPE-CATALOG.md section 5's three extend entries. FaceMeshOutcome,
+// MeshOutcome and DecodedModel stay as they are (a contract change); these
+// are their sum forms under new names, with conversions from the records in
+// catalog-decided-results.library.plato.
+//
+// Sections, in order:
+//  - Face meshing
+//  - Meshing a model
+//  - Decoding
+
+//==
+// # Face meshing
+
+// The sum form of FaceMeshOutcome.
+//   Meshed: a valid mesh, with the advisory requests (too coarse in parameter
+//     space, a quad count mismatch) for the next round.
+//   Blocked: no mesh; the requests include a blocking one (a loop that is not
+//     simple in parameter space), each with its diagnostic.
+// Removes: the empty-mesh sentinel IsBlocking reads today.
+type FaceMeshResult
+    = Meshed(Mesh: FaceMesh, Advisory: Array<EdgeRefinementRequest>)
+    | Blocked(Requests: Array<EdgeRefinementRequest>, Diagnostics: Array<Diagnostic>);
+
+//==
+// # Meshing a model
+
+// The sum form of MeshOutcome.
+//   Succeeded: a checked mesh, a clean report, and the rounds taken.
+//   Incomplete: a mesh with requests still pending when the loop stopped.
+//   Failed: the report says why there is no usable mesh.
+// Removes: an Ok flag beside a mesh read whatever the flag says.
+type MeshResult
+    = Succeeded(Mesh: CheckedMesh, Report: Report, Rounds: Count)
+    | Incomplete(Mesh: ModelMesh, Pending: Array<EdgeRefinementRequest>, Report: Report)
+    | Failed(Report: Report);
+
+//==
+// # Decoding
+
+// The sum form of a decode's result.
+//   Decoded: a model with at least one face.
+//   NoShape: the file was read but holds no face, with the reason.
+//   Unreadable: nothing decoded, and the error diagnostics say why.
+// Removes: an empty model passed on as if it were a shape.
+type DecodeResult
+    = Decoded(Model: DecodedModel)
+    | NoShape(Reason: UndecidedReason)
+    | Unreadable(Diagnostics: Array<Diagnostic>);
