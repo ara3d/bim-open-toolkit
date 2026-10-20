@@ -17,9 +17,12 @@ only its own runs, not every other track's.
    - A replacement for a function that already has a body gets a new name, for example
      `TriangulateRegionCdt`. At merge the supervisor points the old function at it.
    - New laws are named `Law_<Track>_<What>` until merge, so two tracks never declare the same law.
-3. **Contracts are frozen during a wave.** The types and signatures in the library do not change
-   while tracks run. A track that needs a new type, field or signature writes it under
-   "Contract requests" in its `TRACK.md`; additive ones may be applied by the supervisor at once.
+3. **Additions never wait; changes wait for the wave.** A track that needs a new type or function
+   adds it in a new file in its own folder, at once and without asking: an addition breaks no
+   other track, and a value with a meaning of its own (a UV point, an angle, a checked mesh)
+   deserves a type, not a Number. Only a change to a type or signature the library already has
+   waits: write it under "Contract requests" in `TRACK.md` for the supervisor to apply between
+   waves.
 4. **Checks.** `python -I sandbox/step-brep-mesh/tools/plato_laws.py "<laws>" --staging
    sandbox/step-mesh-staging/<track>`: the library plus this folder, under the `cpu64` profile
    (64-bit Number, since TKT-315 merged on 2026-10-19; `--profile gpu32` still runs 32-bit floats). Fallback: the pinned CLI in the plan with the staging

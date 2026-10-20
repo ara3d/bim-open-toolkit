@@ -18,7 +18,7 @@ Evidence from 2026-10-18, wave 1 of version 1:
 
 1. **A staging folder per track.** Each track works only in `sandbox/step-mesh-staging/<track>/`, outside the library tree, adding new files. Its checks compile the library plus its own folder, so a broken track breaks only itself. Rules and naming: `sandbox/step-mesh-staging/README.md`.
 2. **Merge by wiring, not by splicing.** A body for a declared function is staged as `<Name>Body`; a replacement gets a new name. At merge the supervisor moves the files into the layer they belong to and makes the one-line wiring edits each track lists under "Merge instructions" in its `TRACK.md`. No merge splices lines inside a function two tracks both wrote.
-3. **Contracts frozen per wave.** Types and signatures in the library change only between waves. Additive contract requests (a new field, a new function signature) may be applied at once, because they cannot break another track.
+3. **Additions never wait; changes wait for the wave.** A track adds a type or a function in a new file in its staging folder whenever its code needs one, without a request: an addition breaks no other track. Only changing or removing a type or signature the library already has waits for the wave boundary, through a contract request. (Until 2026-10-19 this rule froze additions too; seven tracks merged under it and none added a type. Now in platonic `CHUNKING.md`.)
 4. **Status in files, not messages.** Each track keeps `TRACK.md` (status, merge instructions, contract and cross-track requests, findings, durations, lessons). Requests to another track are written there; the supervisor collects them at merge. Messages are only for being blocked.
 5. **Floats now, doubles later.** Every check ran under `gpu32` until TKT-315 merged on 2026-10-19; since then the default is `cpu64`. When TKT-315 lands, the supervisor merges it alone, switches the default profile to `cpu64`, and reruns the full sweep; any law whose verdict changes is a finding.
 6. **Checks stay warm per track.** `tools/plato_laws.py --staging <folder>` runs on the warm server; TKT-344 makes the server keep one compiled program per folder set, so tracks stop evicting each other.
@@ -73,6 +73,7 @@ After each merge the supervisor adds one row per track to the ledger and reviews
 | 2026-10-19 | The supervisor checks each working track's last commit time; a track with no commit for 2 hours is checked for a stalled probe | Steps C and F sat 8 hours: C on a hung `--call` probe that ignored `--budget`, F on probes that had already finished |
 | 2026-10-19 | Until TKT-351 lands, merge sweeps take about an hour (20 laws reach the 120 s budget in the refinement); merge tracks in batches, not one sweep per track | The F merge's sweep took 57 min |
 | 2026-10-18 | Whole-model laws over the torus need `--budget` above 900 s, or wait for step C | The topology track's request ran past the script's 1800 s timeout on the torus witness |
+| 2026-10-19 | Additions are never frozen: a track adds types and functions in new files at will; only changes to existing contracts wait for the wave | Seven merges (G, T, D2, Term, F, C, TKT-351) added no type; builders routed every new type through a contract request and used a Number or Vector3 instead |
 
 ## Log
 
