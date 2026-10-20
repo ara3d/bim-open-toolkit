@@ -1,7 +1,7 @@
 //==
-// # Catalog: laws of kinds, degeneracies, seams, and poles
+// # Laws of kinds, degeneracies, seams, and poles
 //
-// Run on the witness arena (catalog-geometry-arena.library.plato). KindOf is
+// Run on the witness arena (geometry-arena.library.plato). KindOf is
 // total by the sum checker (an exhaustive match); the laws below show every
 // kind inhabited and the derived values agreeing with layer 1's own
 // predicates.
@@ -13,54 +13,54 @@
 //  - Poles
 //==
 
-library CatalogGeometryKindsLaws
+library BrepGeometryKindsLaws
 {
     //==
     // # Kinds
 
     // A line is LineKind.
-    Law_Catalog_LineKindIsInhabited(k: Integer): Boolean
+    Law_LineKindIsInhabited(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.Curves[0].KindOf == CurveKind.LineKind;
 
     // Each of the four conics is ConicKind (k chooses among curves 1 to 4).
-    Law_Catalog_ConicKindIsInhabited(k: Integer): Boolean
+    Law_ConicKindIsInhabited(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.Curves[1 + k.FixtureIndex(4)].KindOf == CurveKind.ConicKind;
 
     // A polyline is PolylineKind.
-    Law_Catalog_PolylineKindIsInhabited(k: Integer): Boolean
+    Law_PolylineKindIsInhabited(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.Curves[5].KindOf == CurveKind.PolylineKind;
 
     // A B-spline curve is SplineKind.
-    Law_Catalog_SplineCurveKindIsInhabited(k: Integer): Boolean
+    Law_SplineCurveKindIsInhabited(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.Curves[6].KindOf == CurveKind.SplineKind;
 
     // Trimmed, composite, offset and surface curves are DerivedKind (k
     // chooses among curves 7 to 10).
-    Law_Catalog_DerivedCurveKindIsInhabited(k: Integer): Boolean
+    Law_DerivedCurveKindIsInhabited(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.Curves[7 + k.FixtureIndex(4)].KindOf == CurveKind.DerivedKind;
 
     // A plane is PlaneKind.
-    Law_Catalog_PlaneKindIsInhabited(k: Integer): Boolean
+    Law_PlaneKindIsInhabited(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.Surfaces[0].KindOf == SurfaceKind.PlaneKind;
 
     // Cylinder, cone and sphere are QuadricKind.
-    Law_Catalog_QuadricKindIsInhabited(k: Integer): Boolean
+    Law_QuadricKindIsInhabited(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.Surfaces[1 + k.FixtureIndex(3)].KindOf == SurfaceKind.QuadricKind;
 
     // A torus is ToroidalKind.
-    Law_Catalog_ToroidalKindIsInhabited(k: Integer): Boolean
+    Law_ToroidalKindIsInhabited(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.Surfaces[4].KindOf == SurfaceKind.ToroidalKind;
 
     // Revolution and extrusion are SweptKind.
-    Law_Catalog_SweptKindIsInhabited(k: Integer): Boolean
+    Law_SweptKindIsInhabited(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.Surfaces[5 + k.FixtureIndex(2)].KindOf == SurfaceKind.SweptKind;
 
     // A B-spline surface is SplineKind.
-    Law_Catalog_SplineSurfaceKindIsInhabited(k: Integer): Boolean
+    Law_SplineSurfaceKindIsInhabited(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.Surfaces[7].KindOf == SurfaceKind.SplineKind;
 
     // Trimmed and offset surfaces are DerivedKind.
-    Law_Catalog_DerivedSurfaceKindIsInhabited(k: Integer): Boolean
+    Law_DerivedSurfaceKindIsInhabited(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.Surfaces[8 + k.FixtureIndex(2)].KindOf == SurfaceKind.DerivedKind;
 
     //==
@@ -68,7 +68,7 @@ library CatalogGeometryKindsLaws
 
     // The sides a surface's Degeneracy names are its DegenerateSides, in
     // order, for every surface of the arena.
-    Law_Catalog_DegeneracyAgreesWithDegenerateSides(k: Integer): Boolean
+    Law_DegeneracyAgreesWithDegenerateSides(k: Integer): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = k.CatalogSurfaceOf(g.Surfaces.Count);
@@ -81,15 +81,15 @@ library CatalogGeometryKindsLaws
     }
 
     // A sphere's degeneracy is its two poles.
-    Law_Catalog_SphereHasTwoCollapsedSides(k: Integer): Boolean
+    Law_SphereHasTwoCollapsedSides(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.DegeneracyOf(SurfaceIndex(3), Tolerances.Witness_Tolerances).IsTwoSides;
 
-    // A cone's degeneracy is its apex, at the collapsed v = -R / tan a.
-    Law_Catalog_ConeHasApex(k: Integer): Boolean
+    // A cone's degeneracy is its apex, the iso-line v = -R / tan a.
+    Law_ConeHasApex(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.DegeneracyOf(SurfaceIndex(2), Tolerances.Witness_Tolerances).IsApexAtV(-1.0 / Angle(0.5).Tan);
 
     // A cylinder has no degeneracy.
-    Law_Catalog_CylinderHasNoDegeneracy(k: Integer): Boolean
+    Law_CylinderHasNoDegeneracy(k: Integer): Boolean
         => GeometrySet.Witness_CatalogArena.DegeneracyOf(SurfaceIndex(1), Tolerances.Witness_Tolerances).IsNoDegeneracy;
 
     // True for CollapsedTwoSides.
@@ -114,7 +114,8 @@ library CatalogGeometryKindsLaws
             Apex(at) => false;
         };
 
-    // True for an Apex whose v agrees with v0 to rounding.
+    // True for an Apex on an iso-line of constant v whose value agrees with v0
+    // to rounding.
     IsApexAtV(d: Degeneracy, v0: Number): Boolean
         => match (d)
         {
@@ -122,7 +123,7 @@ library CatalogGeometryKindsLaws
             CollapsedSide(side) => false;
             CollapsedTwoSides(a, b) => false;
             CollapsedSides(sides) => false;
-            Apex(at) => CatalogAgreesToRounding(at.V, v0);
+            Apex(at) => at.Constant == SurfaceParameter.ParameterV && CatalogAgreesToRounding(at.At, v0);
         };
 
     //==
@@ -130,7 +131,7 @@ library CatalogGeometryKindsLaws
 
     // A direction has a Seam exactly when its domain HasSeam, for every
     // surface of the arena and both directions (j chooses).
-    Law_Catalog_SeamsAgreeWithHasSeam(k: Integer, j: Integer): Boolean
+    Law_SeamsAgreeWithHasSeam(k: Integer, j: Integer): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = k.CatalogSurfaceOf(g.Surfaces.Count);
@@ -139,7 +140,7 @@ library CatalogGeometryKindsLaws
     }
 
     // A seam names its own direction and lies at its range's start.
-    Law_Catalog_SeamIsAtRangeStart(k: Integer, j: Integer): Boolean
+    Law_SeamIsAtRangeStart(k: Integer, j: Integer): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = k.CatalogSurfaceOf(g.Surfaces.Count);
@@ -161,7 +162,7 @@ library CatalogGeometryKindsLaws
     // The pole of a collapsed side is the side's image: every point of the
     // side evaluates to the pole's point within the length tolerance (the
     // sphere's two sides).
-    Law_Catalog_PolePointIsSideImage(f: Number): Boolean
+    Law_PolePointIsSideImage(f: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var tol = Tolerances.Witness_Tolerances;
@@ -171,7 +172,7 @@ library CatalogGeometryKindsLaws
     }
 
     // Every point of a pole segment lies on the pole's side.
-    Law_Catalog_PoleSegmentLiesOnSide(n: Integer): Boolean
+    Law_PoleSegmentLiesOnSide(n: Integer): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = SurfaceIndex(3);
@@ -181,7 +182,7 @@ library CatalogGeometryKindsLaws
     }
 
     // A pole segment has the requested number of points.
-    Law_Catalog_PoleSegmentHasCount(n: Integer): Boolean
+    Law_PoleSegmentHasCount(n: Integer): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = SurfaceIndex(3);

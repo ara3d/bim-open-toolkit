@@ -1,7 +1,7 @@
 //==
-// # Catalog: kinds, degeneracies, seams, and poles
+// # Kinds, degeneracies, seams, and poles
 //
-// Constructors for catalog-geometry-kinds.types.plato, built on layer 1's
+// Constructors for geometry-kinds.types.plato, built on layer 1's
 // DegenerateSides, CollapsedAt, Domain and LimitNormal, and layer 0's
 // HasSeam.
 //
@@ -12,7 +12,7 @@
 //  - Poles
 //==
 
-library CatalogGeometryKinds
+library BrepGeometryKinds
 {
     //==
     // # Kinds
@@ -71,7 +71,7 @@ library CatalogGeometryKinds
 
     // Surface s's degeneracy: its DegenerateSides as one value, or, with no
     // degenerate side, the first collapsed line inside the domain (V first)
-    // as an Apex at the start of the other parameter's range.
+    // as an Apex on that iso-line.
     DegeneracyOf(g: GeometrySet, s: SurfaceIndex, tol: Tolerances): Degeneracy
     {
         var sides = g.DegenerateSides(s, tol);
@@ -86,15 +86,16 @@ library CatalogGeometryKinds
     DegeneracyOf(x: ArenaSurface, tol: Tolerances): Degeneracy
         => x.Geometry.DegeneracyOf(x.Surface, tol);
 
-    // The apex of a surface with no degenerate side, or NoDegeneracy.
+    // The apex of a surface with no degenerate side: the iso-line v = v0 of
+    // its first collapsed V value, else u = u0 of its first collapsed U value;
+    // or NoDegeneracy.
     InteriorDegeneracy(g: GeometrySet, s: SurfaceIndex, tol: Tolerances): Degeneracy
     {
-        var d = g.Domain(s);
         var vs = g.CollapsedAt(s, SurfaceParameter.ParameterV, tol);
         var us = g.CollapsedAt(s, SurfaceParameter.ParameterU, tol);
         return vs.Count > 0
-            ? Degeneracy.Apex(UvPoint(d.U.Range.Start, vs[0]))
-            : (us.Count > 0 ? Degeneracy.Apex(UvPoint(us[0], d.V.Range.Start)) : Degeneracy.NoDegeneracy);
+            ? Degeneracy.Apex(IsoLine(SurfaceParameter.ParameterV, vs[0]))
+            : (us.Count > 0 ? Degeneracy.Apex(IsoLine(SurfaceParameter.ParameterU, us[0])) : Degeneracy.NoDegeneracy);
     }
 
     // The collapsed sides a degeneracy names, in DegenerateSides's order; none

@@ -1,5 +1,5 @@
 //==
-// # Catalog: laws of spline spans, hulls, and placements
+// # Laws of spline spans, hulls, and placements
 //
 // SpansOf on every basis of layer 8's B-spline fixtures (CatalogBasisAt),
 // the hull bound on the curve fixtures, and ToPlacement on every sign.
@@ -10,22 +10,22 @@
 //  - Placements
 //==
 
-library CatalogGeometrySplinesLaws
+library BrepGeometrySpansLaws
 {
     //==
     // # Spans
 
     // Every span is non-empty: Start < End.
-    Law_Catalog_SpansAreNonEmpty(k: Integer): Boolean
+    Law_SpansAreNonEmpty(k: Integer): Boolean
         => k.CatalogBasisAt.SpansOf.All(sp => sp.Range.Start < sp.Range.End);
 
     // A basis with a non-empty domain has at least one span.
-    Law_Catalog_SpansExist(k: Integer): Boolean
+    Law_SpansExist(k: Integer): Boolean
         => k.CatalogBasisAt.SpansOf.Count >= 1;
 
     // Spans follow one another: each ends where the next starts, and their
     // knot indices strictly increase.
-    Law_Catalog_SpansAreContiguous(k: Integer): Boolean
+    Law_SpansAreContiguous(k: Integer): Boolean
     {
         var spans = k.CatalogBasisAt.SpansOf;
         return (spans.Count - 1).Max(0).Range.All(i =>
@@ -34,7 +34,7 @@ library CatalogGeometrySplinesLaws
 
     // The spans cover the basis's domain: the first starts at its start and
     // the last ends at its end.
-    Law_Catalog_SpansCoverDomain(k: Integer): Boolean
+    Law_SpansCoverDomain(k: Integer): Boolean
     {
         var b = k.CatalogBasisAt;
         var spans = b.SpansOf;
@@ -48,7 +48,7 @@ library CatalogGeometrySplinesLaws
 
     // Every point of a curve fixture's span lies within its control
     // polygon's hull bound of the line through the polygon's ends.
-    Law_Catalog_SpanLiesWithinHullBound(k: Integer, j: Integer, f: Number): Boolean
+    Law_SpanLiesWithinHullBound(k: Integer, j: Integer, f: Number): Boolean
     {
         var d = k.CurveFixture;
         var spans = d.Basis.SpansOf;
@@ -60,7 +60,7 @@ library CatalogGeometrySplinesLaws
     }
 
     // A control polygon has Degree + 1 points.
-    Law_Catalog_ControlPolygonHasDegreePlusOnePoints(k: Integer, j: Integer): Boolean
+    Law_ControlPolygonHasDegreePlusOnePoints(k: Integer, j: Integer): Boolean
     {
         var d = k.CurveFixture;
         var spans = d.Basis.SpansOf;
@@ -68,7 +68,7 @@ library CatalogGeometrySplinesLaws
     }
 
     // A hull bound read as a sagitta is not attained.
-    Law_Catalog_HullSagittaIsBound(k: Integer, j: Integer): Boolean
+    Law_HullSagittaIsBound(k: Integer, j: Integer): Boolean
     {
         var d = k.CurveFixture;
         var spans = d.Basis.SpansOf;
@@ -78,8 +78,8 @@ library CatalogGeometrySplinesLaws
     //==
     // # Placements
 
-    // A placement's handedness is its frame's.
-    Law_Catalog_PlacementCopiesHandedness(k: Integer): Boolean
-        => OrthonormalFrame(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), k.CatalogGeometrySignAt).ToPlacement.Handedness
+    // A placement's handedness is its frame's, for every sign.
+    Law_PlacementHandednessIsFrames(k: Integer): Boolean
+        => OrthonormalFrame(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), k.CatalogGeometrySignAt).ToPlacement.Frame.Handedness
             == k.CatalogGeometrySignAt;
 }

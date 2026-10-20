@@ -1,5 +1,5 @@
 //==
-// # Catalog: spline spans, hulls, and placements
+// # Spline spans, hulls, and placements
 //
 // TYPE-CATALOG.md section 6 (layer 1). The non-empty knot span as the unit of
 // B-spline work, the control polygon over it, and the hull bound a sagitta
@@ -47,13 +47,11 @@ type ConvexHullBound
 //==
 // # Placements
 
-// The placement of a placement-based surface: a checked frame and its
-// handedness. Handedness repeats Frame.Handedness (TRACK.md, findings);
-// ToPlacement copies it. Removes: a bare Frame3D whose determinant sign was
-// never read.
+// The placement of a placement-based surface: a checked frame, whose
+// handedness is read through it (Frame.Handedness). Removes: a bare Frame3D whose
+// determinant sign was never read.
 type Placement
     implements IValue
 {
     Frame: OrthonormalFrame;
-    Handedness: Sign;
 }

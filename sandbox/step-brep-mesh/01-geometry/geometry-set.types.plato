@@ -48,11 +48,12 @@ type ClosureMark
 // cannot implement an interface whose receiver is the curve (PLATO-PRIMER.md
 // A.3). A view pairs the arena with one index; it implements the concept by
 // delegating to the arena functions, and a non-STEP geometry can implement the
-// same concept directly.
+// same concept directly. The finer concepts (geometry.concepts.plato, from
+// "Domains") have their obligations in geometry-views.library.plato.
 
 // Curve c of the arena g, as a value.
 type ArenaCurve
-    implements INaturalCurve3D
+    implements INaturalCurve3D, IHasCurveDomain, IEvaluableCurve3D, IDifferentiable1, IDifferentiable2
 {
     Geometry: GeometrySet;
     Curve: CurveIndex;
@@ -60,7 +61,7 @@ type ArenaCurve
 
 // Parameter-plane curve c of the arena g, as a value.
 type ArenaCurve2D
-    implements INaturalCurve2D
+    implements INaturalCurve2D, IHasCurveDomain, IEvaluableCurve2D
 {
     Geometry: GeometrySet;
     Curve: Curve2DIndex;
@@ -68,7 +69,7 @@ type ArenaCurve2D
 
 // Surface s of the arena g, as a value.
 type ArenaSurface
-    implements INaturalSurface
+    implements INaturalSurface, IHasSurfaceDomain, IEvaluableSurface, IHasSeams, IHasPoles, IProjectable3D
 {
     Geometry: GeometrySet;
     Surface: SurfaceIndex;

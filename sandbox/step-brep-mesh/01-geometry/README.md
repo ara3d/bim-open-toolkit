@@ -16,7 +16,7 @@ files present that day.
 | `geometry-splines.types.plato` | `SplineBasis`, `BSplineCurveData`, `BSplineCurve2DData`, `BSplineSurfaceData` | |
 | `geometry-parameters.library.plato` | library `BrepGeometryParameters`: `IsBreakKnot(KnotParameter, SplineBasis, order)` over layer 0's `KnotParameter` (catalog merge, 2026-10-20) | |
 | `geometry-set.types.plato` | `GeometrySet` and the views `ArenaCurve`, `ArenaCurve2D`, `ArenaSurface` | |
-| `geometry.concepts.plato` | `INaturalCurve3D`, `INaturalCurve2D`, `INaturalSurface` | |
+| `geometry.concepts.plato` | `INaturalCurve3D`, `INaturalCurve2D`, `INaturalSurface`; the finer section 6 concepts `IHasCurveDomain`, `IHasSurfaceDomain`, `IEvaluableCurve3D`, `IEvaluableCurve2D`, `IEvaluableSurface`, `IDifferentiable1`, `IDifferentiable2`, `IProjectable3D`, `IHasClosedFormArea`, `IHasSeams`, `IHasPoles` | |
 | `geometry.library.plato` | the arena: index ranges, accessors, reference graph, well-formedness, placements, piece arithmetic, views, defining points | `BrepGeometry` |
 | `geometry-curves.library.plato` | space curves, parameter-plane curves, pcurves | `BrepGeometryCurves` |
 | `geometry-surfaces.library.plato` | surfaces | `BrepGeometrySurfaces` |
@@ -26,6 +26,11 @@ files present that day.
 | `limit-normal.library.plato` | `LimitNormal`: the surface normal, and its limit on a sphere's pole or a cone's apex (step C, TKT-325) | `PolesLimitNormal` |
 | `geometry-decided.{types,library,laws,spec}.plato` | section 5: `SurfaceNormal`, `Projection`, `ClosestParameterResult`, `ClosureDecision`, their predicates and case numbers; 4 laws (catalog merge, 2026-10-20). `NormalOr` and `LimitNormal` still return a `Direction3D` | `BrepGeometryDecided`, `BrepGeometryDecidedLaws` |
 | `geometry-proofs.{types,library,laws,spec}.plato` | section 4: `WellFormedBSpline`, `ClampedBSpline`, `OrthonormalFrame` and their `Decided*` sums, built only by `CheckWellFormedBSpline`, `CheckClampedBSpline` (over `HasClampedEnds`, in `geometry-splines.library.plato`), `CheckOrthonormalFrame` (over `IsOrthonormalEitherHandWithin`, in `geometry.library.plato`); 3 frame laws. The B-spline proofs' 4 laws use layer 8's fixtures and are in `08-pipeline/pipeline-proofs-bsplines.laws.plato` (catalog merge, proofs, 2026-10-20) | `BrepGeometryProofs`, `BrepGeometryProofsLaws` |
+| `geometry-kinds.{types,library,laws,spec}.plato` | section 6: `CurveKind`, `SurfaceKind` (`KindOf`), `Degeneracy` (`DegeneracyOf`, an `Apex` names its `IsoLine`), `Seam`, `Seams` (`SeamsOf`), `Pole` (`PoleAt`), `PoleSegment` (`PoleSegmentOf`); 20 laws (catalog merge, 2026-10-20) | `BrepGeometryKinds`, `BrepGeometryKindsLaws` |
+| `geometry-jets.{types,library,laws,spec}.plato` | section 6: `BrepCurveJet` and the stdlib's `SurfaceJet3D` (`JetAt`; `JetWith` holds the surface second partials per case, `OffsetJet` deferred), `CurvatureAt` (`CurvatureAlong`), `CurvatureBound`, `ParameterSpeed`, `Sagitta`; 20 laws | `BrepGeometryJets`, `BrepGeometryJetsLaws` |
+| `geometry-spans.{types,library,laws,spec}.plato` | section 6: `BSplineSpan` (`SpansOf`), `ControlPolygon`, `ConvexHullBound` (`HullBoundOf`), `Placement { Frame: OrthonormalFrame }` (`ToPlacement`); 8 laws | `BrepGeometrySpans`, `BrepGeometrySpansLaws` |
+| `geometry-arena.library.plato` | `Witness_CatalogArena`, one record of every curve and surface case, and the `Catalog*` selectors the laws above use | `BrepGeometryArena` |
+| `geometry-views.{library,laws}.plato` | the finer concepts' obligations for the arena views at typed parameters, and `ProjectDecided(ArenaSurface, p): Projection` beside `Project` (`IProjectable3D`); 3 laws | `BrepGeometryViews`, `BrepGeometryViewsLaws` |
 | `geometry.laws.plato` | 95 laws, 3 oracles, their helpers and measures | `BrepGeometryLaws` |
 | `geometry.spec.plato` | invariants, contracts, theorems (SPEC-DSL.md section 3 only) | |
 

@@ -1,7 +1,7 @@
 //==
-// # Catalog: laws of jets, curvature, speed, and sagitta
+// # Laws of jets, curvature, speed, and sagitta
 //
-// Run on the witness arena (catalog-geometry-arena.library.plato). The jet
+// Run on the witness arena (geometry-arena.library.plato). The jet
 // agrees with layer 1's separate evaluations; its second partials agree with
 // central differences of layer 1's first partials within Richardson's
 // estimate (layer 1's WithinRichardson); curvature agrees with the closed
@@ -16,7 +16,7 @@
 //  - Speed and sagitta
 //==
 
-library CatalogGeometryJetsLaws
+library BrepGeometryJetsLaws
 {
     //==
     // # Surface jets
@@ -26,7 +26,7 @@ library CatalogGeometryJetsLaws
         => 9;
 
     // The jet's point is Eval's, to rounding at the evaluation's magnitude.
-    Law_Catalog_JetPointIsEval(k: Integer, u: Number, v: Number): Boolean
+    Law_JetPointIsEval(k: Integer, u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
@@ -35,7 +35,7 @@ library CatalogGeometryJetsLaws
     }
 
     // The jet's u partial is PartialU's.
-    Law_Catalog_JetPartialUIsPartialU(k: Integer, u: Number, v: Number): Boolean
+    Law_JetPartialUIsPartialU(k: Integer, u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
@@ -45,7 +45,7 @@ library CatalogGeometryJetsLaws
     }
 
     // The jet's v partial is PartialV's.
-    Law_Catalog_JetPartialVIsPartialV(k: Integer, u: Number, v: Number): Boolean
+    Law_JetPartialVIsPartialV(k: Integer, u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
@@ -72,7 +72,7 @@ library CatalogGeometryJetsLaws
         => ResolutionAt(64.0 * g.EvaluationMagnitude(s, uv.ToUvCoordinate)).Value / h;
 
     // S_uu agrees with the u-difference of S_u.
-    Law_Catalog_JetSecondPartialUUMatchesDifference(k: Integer, u: Number, v: Number): Boolean
+    Law_JetSecondPartialUUMatchesDifference(k: Integer, u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
@@ -85,7 +85,7 @@ library CatalogGeometryJetsLaws
     }
 
     // S_uv agrees with the u-difference of S_v.
-    Law_Catalog_JetSecondPartialUVMatchesDifference(k: Integer, u: Number, v: Number): Boolean
+    Law_JetSecondPartialUVMatchesDifference(k: Integer, u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
@@ -98,7 +98,7 @@ library CatalogGeometryJetsLaws
     }
 
     // S_vv agrees with the v-difference of S_v.
-    Law_Catalog_JetSecondPartialVVMatchesDifference(k: Integer, u: Number, v: Number): Boolean
+    Law_JetSecondPartialVVMatchesDifference(k: Integer, u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
@@ -118,7 +118,7 @@ library CatalogGeometryJetsLaws
         => 9;
 
     // The curve jet's point is Eval's.
-    Law_Catalog_CurveJetPointIsEval(k: Integer, x: Number): Boolean
+    Law_CurveJetPointIsEval(k: Integer, x: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var c = k.CatalogCurveOf(Integer.CatalogJetCurveCount);
@@ -127,7 +127,7 @@ library CatalogGeometryJetsLaws
     }
 
     // The curve jet's first derivative is Derivative's.
-    Law_Catalog_CurveJetD1IsDerivative(k: Integer, x: Number): Boolean
+    Law_CurveJetD1IsDerivative(k: Integer, x: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var c = k.CatalogCurveOf(Integer.CatalogJetCurveCount);
@@ -137,7 +137,7 @@ library CatalogGeometryJetsLaws
     }
 
     // The curve jet's second derivative is SecondDerivative's.
-    Law_Catalog_CurveJetD2IsSecondDerivative(k: Integer, x: Number): Boolean
+    Law_CurveJetD2IsSecondDerivative(k: Integer, x: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var c = k.CatalogCurveOf(Integer.CatalogJetCurveCount);
@@ -154,21 +154,21 @@ library CatalogGeometryJetsLaws
         => g.JetAt(s, g.CatalogMiddleUv(s, u, v)).CurvatureAlong(UvDelta(a, b));
 
     // The sphere of radius 3 has Gaussian curvature 1/9 everywhere.
-    Law_Catalog_SphereGaussianIsInverseSquareRadius(u: Number, v: Number): Boolean
+    Law_SphereGaussianIsInverseSquareRadius(u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         return (g.CatalogCurvature(SurfaceIndex(3), u, v, 1.0, 0.0).Gaussian - 1.0 / 9.0).Abs <= ResolutionAt(64.0 / 9.0).Value;
     }
 
     // The sphere of radius 3 has mean curvature of magnitude 1/3.
-    Law_Catalog_SphereMeanIsInverseRadius(u: Number, v: Number): Boolean
+    Law_SphereMeanIsInverseRadius(u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         return (g.CatalogCurvature(SurfaceIndex(3), u, v, 1.0, 0.0).Mean.Abs - 1.0 / 3.0).Abs <= ResolutionAt(64.0 / 3.0).Value;
     }
 
     // The cylinder has zero Gaussian curvature.
-    Law_Catalog_CylinderGaussianIsZero(u: Number, v: Number): Boolean
+    Law_CylinderGaussianIsZero(u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         return g.CatalogCurvature(SurfaceIndex(1), u, v, 1.0, 0.0).Gaussian.Abs <= ResolutionAt(64.0 / 4.0).Value;
@@ -176,7 +176,7 @@ library CatalogGeometryJetsLaws
 
     // The Gaussian curvature is the product of the principal curvatures, on
     // the analytic surfaces (0 to 4) and the swept and spline ones (5 to 7).
-    Law_Catalog_GaussianIsProductOfPrincipal(k: Integer, u: Number, v: Number): Boolean
+    Law_GaussianIsProductOfPrincipal(k: Integer, u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var c = g.CatalogCurvature(k.CatalogSurfaceOf(8), u, v, 1.0, 0.0);
@@ -186,7 +186,7 @@ library CatalogGeometryJetsLaws
 
     // The normal curvature along any direction lies between the principal
     // curvatures (Euler's theorem).
-    Law_Catalog_NormalCurvatureWithinPrincipal(k: Integer, u: Number, v: Number, a: Number, b: Number): Boolean
+    Law_NormalCurvatureWithinPrincipal(k: Integer, u: Number, v: Number, a: Number, b: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var c = g.CatalogCurvature(k.CatalogSurfaceOf(8), u, v, a, b);
@@ -198,7 +198,7 @@ library CatalogGeometryJetsLaws
 
     // The closed-form bound holds at every middle point of the analytic
     // surfaces 0 to 4.
-    Law_Catalog_CurvatureWithinBound(k: Integer, u: Number, v: Number): Boolean
+    Law_CurvatureWithinBound(k: Integer, u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var s = k.CatalogSurfaceOf(5);
@@ -207,7 +207,7 @@ library CatalogGeometryJetsLaws
     }
 
     // The principal directions are orthogonal.
-    Law_Catalog_PrincipalDirectionsAreOrthogonal(k: Integer, u: Number, v: Number): Boolean
+    Law_PrincipalDirectionsAreOrthogonal(k: Integer, u: Number, v: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var c = g.CatalogCurvature(k.CatalogSurfaceOf(8), u, v, 1.0, 0.0);
@@ -218,14 +218,14 @@ library CatalogGeometryJetsLaws
     // # Speed and sagitta
 
     // The circle of radius 2 has speed 2.
-    Law_Catalog_CircleSpeedIsRadius(x: Number): Boolean
+    Law_CircleSpeedIsRadius(x: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         return CatalogAgreesToRounding(g.JetAt(CurveIndex(1), CurveParameter(x)).SpeedOf.Value, 2.0);
     }
 
     // A speed is never negative.
-    Law_Catalog_SpeedIsNonNegative(k: Integer, x: Number): Boolean
+    Law_SpeedIsNonNegative(k: Integer, x: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var c = k.CatalogCurveOf(Integer.CatalogJetCurveCount);
@@ -234,7 +234,7 @@ library CatalogGeometryJetsLaws
 
     // An arc's sagitta is attained: the distance from the chord's midpoint
     // to the arc's middle point on the circle of radius 2.
-    Law_Catalog_ArcSagittaIsAttained(t0: Number, a: Number): Boolean
+    Law_ArcSagittaIsAttained(t0: Number, a: Number): Boolean
     {
         var g = GeometrySet.Witness_CatalogArena;
         var angle = 2.0 * Number.Pi * a.UnitFraction;
@@ -247,6 +247,6 @@ library CatalogGeometryJetsLaws
     }
 
     // A sagitta is never negative.
-    Law_Catalog_ArcSagittaIsNonNegative(r: Number, a: Number): Boolean
+    Law_ArcSagittaIsNonNegative(r: Number, a: Number): Boolean
         => ArcSagitta(ModelLength(r), Angle(a)).Value.Value >= 0.0;
 }

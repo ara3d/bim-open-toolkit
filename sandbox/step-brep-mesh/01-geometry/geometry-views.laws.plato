@@ -1,0 +1,68 @@
+//==
+// # Laws of the decided projection
+//
+// ProjectDecided on the five closed-form surfaces of the witness arena
+// (geometry-arena.library.plato), held in an arena of their own because the
+// whole witness arena is not IsWellFormed and ProjectDecided asks
+// CanEvaluate: a surface point is OnSurface at distance zero, an index
+// outside the arena is Failed, and HoldsBack fires only beyond a bounded end. An OffDomain witness needs a bounded surface whose Project is
+// a search, which is deferred, so HoldsBack is checked on bare domains.
+//
+// Sections, in order:
+//  - Decided projection
+//==
+
+library BrepGeometryViewsLaws
+{
+    //==
+    // # Decided projection
+
+    // The witness arena's plane, cylinder, cone, sphere and ring torus, alone.
+    CatalogClosedFormArena(_: GeometrySet): GeometrySet
+        => GeometrySet([], [], [], GeometrySet.Witness_CatalogArena.Surfaces.Take(5), []);
+
+    // A point of a closed-form arena surface (plane, cylinder, cone, sphere,
+    // ring torus; k chooses) at the middle of its domain projects OnSurface,
+    // within rounding of the point.
+    Law_ProjectDecidedOfSurfacePointIsOnSurface(k: Integer, u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.CatalogClosedFormArena;
+        var s = k.CatalogSurfaceOf(5);
+        var p = g.Eval(s, g.CatalogMiddleUv(s, u, v).ToUvCoordinate);
+        var r = ArenaSurface(g, s).ProjectDecided(p);
+        return r.IsOnSurface ? r.CatalogProjectionDistance <= 64.0 * ResolutionAt(p.PositionVector.Length + 8.0).Value : false;
+    }
+
+    // A surface index outside the arena projects to Failed.
+    Law_ProjectDecidedOutsideArenaFails(k: Integer): Boolean
+    {
+        var g = GeometrySet.CatalogClosedFormArena;
+        return ArenaSurface(g, SurfaceIndex(g.Surfaces.Count + k.FixtureIndex(4))).ProjectDecided(Point3D(0.0, 0.0, 0.0)).CaseNumber == 2;
+    }
+
+    // On the bounded aperiodic domain [0, 1], HoldsBack is true at an end
+    // only when the descent points out of it, never inside the range, and
+    // never on a periodic domain (x chooses the slope's size).
+    Law_HoldsBackOnlyBeyondABoundedEnd(x: Number): Boolean
+    {
+        var d = CurveDomain(NumberInterval(0.0, 1.0), Periodicity.Aperiodic);
+        var w = CurveDomain(NumberInterval(0.0, 1.0), Periodicity.Periodic(1.0));
+        var m = 1.0 + x.UnitFraction;
+        return d.HoldsBack(1.0, m, 0.5)
+            && d.HoldsBack(0.0, -m, 0.5)
+            && !d.HoldsBack(1.0, -m, 0.5)
+            && !d.HoldsBack(0.0, m, 0.5)
+            && !d.HoldsBack(0.5, m, 0.5)
+            && !d.HoldsBack(1.0, 0.25, 0.5)
+            && !w.HoldsBack(1.0, m, 0.5);
+    }
+
+    // The distance a projection reports; zero for Failed.
+    CatalogProjectionDistance(p: Projection): Number
+        => match (p)
+        {
+            OnSurface(uv, distance) => distance.Value;
+            OffDomain(nearest, distance) => distance.Value;
+            Failed(reason) => 0.0;
+        };
+}

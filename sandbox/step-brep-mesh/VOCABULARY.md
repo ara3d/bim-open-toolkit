@@ -248,6 +248,34 @@ layer's own and may change inside the layer.
   sum, built only by `CheckWellFormedBSpline(d)`, `CheckClampedBSpline(w: WellFormedBSpline)`,
   `CheckOrthonormalFrame(f, tol)`; `IsDecided`. `HasClampedEnds(SplineBasis)` in
   `BrepGeometrySplines`.
+- Kinds (`BrepGeometryKinds`, TYPE-CATALOG.md section 6): `CurveKind = LineKind | ConicKind |
+  PolylineKind | SplineKind | DerivedKind`, `SurfaceKind = PlaneKind | QuadricKind | ToroidalKind |
+  SweptKind | SplineKind | DerivedKind` (`KindOf` on `BrepCurve`, `BrepCurve2D`, `BrepSurface`);
+  `Degeneracy = NoDegeneracy | CollapsedSide(Side) | CollapsedTwoSides(A, B) | CollapsedSides(Sides) |
+  Apex(At: IsoLine)` (`DegeneracyOf(g, s, tol)`, `SidesOf`); `Seam = NoSeam | SeamAt(Direction, At)`,
+  `Seams { U; V: Seam }` (`SeamsOf`, `SeamIn`, `IsSeam`); `Pole { Side; Point; Normal: SurfaceNormal }`
+  (`PoleAt(g, s, side)`), `PoleSegment { Pole; Points: Array<UvPoint> }` (`PoleSegmentOf`).
+- Jets (`BrepGeometryJets`): `BrepCurveJet { Parameter; Point; D1; D2 }` and the stdlib's
+  `SurfaceJet3D` (`JetAt` on a curve or a surface; `JetWith` writes the surface second partials per
+  case, `OffsetJet` deferred), `CurvatureAt { Normal; Gaussian; Mean; Principal: PrincipalCurvatures }`
+  (`CurvatureAlong(jet, along: UvDelta)`), `CurvatureBound { Max }` (`CurvatureBoundOf`,
+  `CurvatureBoundBySubdivision` deferred), `ParameterSpeed { Value }` (`SpeedOf`, `SpeedAlong`; the
+  stdlib's `Speed` is metres per second), `Sagitta { Value: ModelLength; Attained }` (`ArcSagitta`,
+  `ToSagitta`).
+- Spans (`BrepGeometrySpans`): `BSplineSpan { Index; Range }` (`SpansOf(SplineBasis)`),
+  `ControlPolygon { Points }` (`ControlPolygonOf`), `ConvexHullBound { Bound: ModelLength }`
+  (`HullBoundOf`), `Placement { Frame: OrthonormalFrame }` (`ToPlacement`; handedness read as
+  `Frame.Handedness`).
+- Finer concepts (`geometry.concepts.plato`): `IHasCurveDomain`, `IHasSurfaceDomain`,
+  `IEvaluableCurve3D`, `IEvaluableCurve2D`, `IEvaluableSurface` (at the typed `CurveParameter`,
+  `Curve2DParameter`, `UvPoint`), `IDifferentiable1`, `IDifferentiable2`, `IProjectable3D`
+  (`ProjectDecided`), `IHasClosedFormArea` (no implementer yet), `IHasSeams`, `IHasPoles`.
+  `ArenaCurve` implements `IHasCurveDomain`, `IEvaluableCurve3D`, `IDifferentiable1` and
+  `IDifferentiable2`, `ArenaCurve2D` `IHasCurveDomain` and
+  `IEvaluableCurve2D`, `ArenaSurface` `IHasSurfaceDomain`, `IEvaluableSurface`, `IHasSeams`,
+  `IHasPoles`, `IProjectable3D`, through `BrepGeometryViews` (`ProjectDecided(ArenaSurface, p):
+  Projection` beside `Project`).
+- Witnesses (`BrepGeometryArena`): `Witness_CatalogArena`, one record of every curve and surface case.
 
 ### 2. `02-topology`
 
@@ -534,6 +562,16 @@ layer's own and may change inside the layer.
 
 Format: date, layer, old name, new name, reason.
 
+- 2026-10-20, 1, (none), `ProjectDecided(ArenaSurface, Point3D): Projection` beside `Project`, which
+  keeps returning a `UvCoordinate`; `IProjectable3D`'s obligation is `ProjectDecided`. The catalog
+  asked for `Project` itself to return `Projection`; its 25 call sites in layers 1 to 7 include face
+  meshing's per-sample loops and layer 7's oracles, and `INaturalSurface` holds the same name with
+  the same parameters (catalog merge, geometry; FINDINGS F-58).
+- 2026-10-20, 1, `Degeneracy.Apex(At: UvPoint)`, `Apex(At: IsoLine)`: an apex is the whole
+  collapsed line v = v0 (or u = u0), not one point on it (catalog merge, geometry).
+- 2026-10-20, 1, `Placement { Frame: OrthonormalFrame; Handedness: Sign }`, `Placement { Frame:
+  OrthonormalFrame }`: the handedness was held twice; `Law_PlacementCopiesHandedness` became
+  `Law_PlacementHandednessIsFrames` (catalog merge, geometry).
 - 2026-10-20, 2 to 7, `UndecidedReason.NotApplicable(Kind)` for a section 4 check that found its
   property false, `UndecidedReason.Fails(Property)` naming the predicate: `NotApplicable` reads as
   "the question does not apply". `OutOfDomain`, `BelowResolution` and `ToleranceExceeded` keep

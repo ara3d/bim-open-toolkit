@@ -1,7 +1,7 @@
 //==
-// # Catalog: spline spans, hulls, and placements
+// # Spline spans, hulls, and placements
 //
-// Constructors for catalog-geometry-splines.types.plato.
+// Constructors for geometry-spans.types.plato.
 //
 // Sections, in order:
 //  - Spans
@@ -9,7 +9,7 @@
 //  - Placements
 //==
 
-library CatalogGeometrySplines
+library BrepGeometrySpans
 {
     //==
     // # Spans
@@ -53,7 +53,8 @@ library CatalogGeometrySplines
     //==
     // # Placements
 
-    // The placement of a checked frame, its handedness copied.
+    // The placement of a checked frame; its handedness is read as
+    // Frame.Handedness, held once.
     ToPlacement(f: OrthonormalFrame): Placement
-        => Placement(f, f.Handedness);
+        => Placement(f);
 }

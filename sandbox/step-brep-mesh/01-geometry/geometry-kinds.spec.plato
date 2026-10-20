@@ -1,0 +1,62 @@
+//==
+// # Specs: kinds, degeneracies, seams, and poles
+//
+// Invariants and constructors of the types in geometry-kinds.types.plato
+// (SPEC-DSL.md section 3). Each invariant names the law that checks it. Not
+// compiled.
+//==
+
+spec CurveKind
+{
+    constructor KindOf;   // total: an exhaustive match on BrepCurve and BrepCurve2D
+    invariant Law_ConicKindIsInhabited(0);   // and one law per kind
+}
+
+spec SurfaceKind
+{
+    constructor KindOf;   // total: an exhaustive match on BrepSurface
+    invariant Law_QuadricKindIsInhabited(0);   // and one law per kind
+}
+
+spec Degeneracy
+{
+    invariant self.SidesOf.Count <= 4;
+    constructor DegeneracyOf;   // an Apex names the whole collapsed iso-line: Law_ConeHasApex
+}
+
+spec DegeneracyOf(g: GeometrySet, s: SurfaceIndex, tol: Tolerances): Degeneracy
+{
+    requires g.CanEvaluate(s);
+    ensures result.SidesOf.Count == g.DegenerateSides(s, tol).Count;
+    ensures forall (i: Integer) in result.SidesOf.Count.Range : result.SidesOf[i] == g.DegenerateSides(s, tol)[i];   // Law_DegeneracyAgreesWithDegenerateSides
+}
+
+spec Seams
+{
+    invariant Law_SeamIsAtRangeStart;   // U names ParameterU, V ParameterV, each at its range's start
+    constructor SeamsOf;
+}
+
+spec SeamsOf(d: SurfaceDomain): Seams
+{
+    ensures result.U.IsSeam == d.U.HasSeam;   // Law_SeamsAgreeWithHasSeam
+    ensures result.V.IsSeam == d.V.HasSeam;
+}
+
+spec Pole
+{
+    invariant Law_PolePointIsSideImage;   // every point of the side evaluates to Point
+    constructor PoleAt;
+}
+
+spec PoleAt(g: GeometrySet, s: SurfaceIndex, side: DomainSide): Pole
+{
+    requires g.IsSideCollapsed(s, side, g.Tolerances);
+    ensures result.Side == side;
+}
+
+spec PoleSegment
+{
+    invariant Law_PoleSegmentLiesOnSide;   // every point's coordinate across the side is the side's value
+    constructor PoleSegmentOf;
+}

@@ -1,7 +1,7 @@
 //==
-// # Catalog: jets, curvature, speed, and sagitta
+// # Jets, curvature, speed, and sagitta
 //
-// Constructors for catalog-geometry-jets.types.plato. A surface jet's point
+// Constructors for geometry-jets.types.plato. A surface jet's point
 // and first partials are layer 1's Eval, PartialU and PartialV; its second
 // partials are written here in closed form for every case but Offset, whose
 // normal derivatives are deferred.
@@ -16,7 +16,7 @@
 //  - Sagitta
 //==
 
-library CatalogGeometryJets
+library BrepGeometryJets
 {
     //==
     // # Curve jets

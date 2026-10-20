@@ -1,5 +1,5 @@
 //==
-// # Catalog: kinds, degeneracies, seams, and poles
+// # Kinds, degeneracies, seams, and poles
 //
 // TYPE-CATALOG.md section 6 (layer 1). The coarse class a match on the full
 // curve or surface sum collapses to, and the domain's collapsed sides and
@@ -41,7 +41,7 @@ type SurfaceKind
 // # Degeneracies
 
 // What DegenerateSides returns, as one value per surface, plus a collapsed
-// line inside the domain (a cone's apex, at the start of U along that line).
+// line inside the domain (a cone's apex: the whole iso-line v = v0 it names).
 // CollapsedSides holds three or four sides, which only a fully collapsed
 // spline reaches; the catalog's three cases could not say it. Removes: a
 // sphere's two poles handled by two separate code paths with two bugs.
@@ -50,7 +50,7 @@ type Degeneracy
     | CollapsedSide(Side: DomainSide)
     | CollapsedTwoSides(A: DomainSide, B: DomainSide)
     | CollapsedSides(Sides: Array<DomainSide>)
-    | Apex(At: UvPoint);
+    | Apex(At: IsoLine);
 
 //==
 // # Seams

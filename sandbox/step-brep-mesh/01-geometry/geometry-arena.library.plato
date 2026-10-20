@@ -1,5 +1,5 @@
 //==
-// # Catalog: the witness arena of catalog-geometry's laws
+// # The witness arena of the kinds, jets and spans laws
 //
 // One GeometrySet holding a record of every BrepCurve and BrepSurface case,
 // so a law over an Integer selector reaches every case. Built from literal
@@ -11,7 +11,7 @@
 //  - Selectors
 //==
 
-library CatalogGeometryArena
+library BrepGeometryArena
 {
     //==
     // # The arena

@@ -1,5 +1,5 @@
 //==
-// # Catalog: jets, curvature, speed, and sagitta
+// # Jets, curvature, speed, and sagitta
 //
 // TYPE-CATALOG.md section 6 (layer 1). One evaluation that returns everything
 // a step needs, and the differential quantities read from it. The surface jet

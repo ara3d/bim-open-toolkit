@@ -1,0 +1,58 @@
+//==
+// # Specs: jets, curvature, speed, and sagitta
+//
+// Invariants and constructors of the types in geometry-jets.types.plato
+// (SPEC-DSL.md section 3). Each invariant names the law that checks it. Not
+// compiled.
+//==
+
+spec BrepCurveJet
+{
+    constructor JetAt;
+}
+
+spec JetAt(g: GeometrySet, c: CurveIndex, t: CurveParameter): BrepCurveJet
+{
+    requires g.CanEvaluate(c);
+    ensures result.Point == g.Eval(c, t.Value);                 // Law_CurveJetPointIsEval
+    ensures result.D1 == g.Derivative(c, t.Value);              // Law_CurveJetD1IsDerivative
+    ensures result.D2 == g.SecondDerivative(c, t.Value);        // Law_CurveJetD2IsSecondDerivative
+}
+
+spec JetAt(g: GeometrySet, s: SurfaceIndex, uv: UvPoint): SurfaceJet3D
+{
+    requires g.CanEvaluate(s);
+    ensures result.Position == g.Eval(s, uv.ToUvCoordinate);     // Law_JetPointIsEval
+    ensures result.DerivativeU == g.PartialU(s, uv.ToUvCoordinate);   // Law_JetPartialUIsPartialU
+    ensures result.DerivativeV == g.PartialV(s, uv.ToUvCoordinate);   // Law_JetPartialVIsPartialV
+    ensures Law_JetSecondPartialUUMatchesDifference;      // and UV, VV
+}
+
+spec CurvatureAt
+{
+    invariant self.Principal.Minimum <= self.Principal.Maximum;
+    invariant self.Gaussian == self.Principal.Minimum * self.Principal.Maximum;   // to rounding: Law_GaussianIsProductOfPrincipal
+    invariant self.Principal.Minimum <= self.Normal && self.Normal <= self.Principal.Maximum;   // Law_NormalCurvatureWithinPrincipal
+    constructor CurvatureAlong;
+}
+
+spec CurvatureBound
+{
+    invariant self.Max >= 0.0;
+    invariant Law_CurvatureWithinBound;
+    constructor CurvatureBoundOf;
+}
+
+spec ParameterSpeed
+{
+    invariant self.Value >= 0.0;   // Law_SpeedIsNonNegative
+    constructor SpeedOf;
+    constructor SpeedAlong;
+}
+
+spec Sagitta
+{
+    invariant self.Value.Value >= 0.0;   // Law_ArcSagittaIsNonNegative
+    constructor ArcSagitta;   // Attained: Law_ArcSagittaIsAttained
+    constructor ToSagitta;    // not attained: Law_HullSagittaIsBound
+}
