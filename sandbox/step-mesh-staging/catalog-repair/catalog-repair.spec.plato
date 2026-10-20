@@ -1,0 +1,177 @@
+//==
+// # Catalog repair: invariants and constructors
+//
+// SPEC-DSL.md section 3. Not compiled. Each invariant cites the
+// Law_Catalog_ that tests it where one exists. A type with no spec block is
+// plain data with no invariant beyond its field types (GapClosure,
+// SeamRepair, DefectClass, Locality, DecodeStep, the borrowed types).
+//
+// Sections, in order:
+//  - Defects
+//  - Diagnosis and cost
+//  - Plans and ledgers
+//  - STEP names and units
+
+//==
+// # Defects
+
+spec DecidedDefect
+{
+    invariant self is Undecided ? self.Reason == UndecidedReason.NotApplicable("The check holds.") : true;
+    constructor DefectOf;                                  // Law_Catalog_HeldCheckHasNoDefect
+}
+
+spec DefectOf(c: Check): DecidedDefect
+{
+    ensures c.Holds ? DefectsIn(result).Count == 0 : DefectsIn(result).Count == 1;
+    ensures c.Holds ? true : ExpectedLawOf(DefectsIn(result)[0]).Value == c.Law;   // Law_Catalog_DefectOfInvertsExpectedLaw
+}
+
+spec DefectReport
+{
+    invariant self.ByClass.Count == 4;
+    invariant self.ByClass.Reduce(0, (n, c) => n + c.Value) == self.Defects.Count;   // Law_Catalog_ByClassCountsEveryDefect
+    invariant forall (f: Integer) in self.ByFace.RowCount.Range:
+        self.ByFace.Row(f).All(i => FacesOf(self.Defects[i]).Any(x => x.Value == f));   // Law_Catalog_ByFaceRowsNameTheirFace
+    constructor DefectReportOf;
+    constructor DefectsOf;
+}
+
+spec DefectsOf(r: Report): DefectReport
+{
+    ensures result.Defects.Count == r.Checks.Reduce(0, (n, c) => c.Holds ? n : n + 1);   // Law_Catalog_EveryFailedCheckIsADefect
+    ensures r.Checks.All(c => c.Holds) ? result.Defects.Count == 0 : true;              // Law_Catalog_DefectsOfCleanReportIsEmpty
+}
+
+//==
+// # Diagnosis and cost
+
+spec Fixability
+{
+    invariant self is FixableWithChoice ? self.Options.Count > 0 : true;   // Law_Catalog_DiagnoseNeverOffersAnEmptyChoice
+    constructor Diagnose;
+    constructor DiagnoseSeam;
+    constructor FixedBy;
+}
+
+spec Diagnose(m: BrepModel, d: Defect): Fixability
+{
+    ensures result.IsUnfixable == m.IsNamedUnfixable(d);   // Law_Catalog_DiagnoseUnfixableOnlyForNamedCases
+}
+
+spec RepairCost
+{
+    invariant self.TouchedFaces.Value >= 0;
+    invariant self.ToleranceGrowth.Value > 0.0;
+    invariant IsLocal(self.Locality) ? self.TouchedFaces.Value <= 2 : true;   // Law_Catalog_LocalRepairTouchesAtMostTwoFaces
+    constructor CostOf;
+}
+
+spec RepairAction
+{
+    // Exactly MergeVertices, DropEdge and SkipInstance project onto a StepRepair.
+    invariant IsProjected(ToStepRepair(self)) == (self is MergeVertices || self is DropEdge || self is SkipInstance);
+}
+
+spec ToStepRepair(action: RepairAction): StepRepairProjection
+{
+    ensures forall (r: RepairRecord):
+        ToStepRepair(ToRepairAction(r, v, e)).ProjectsTo(r.Repair);   // Law_Catalog_StepRepairRoundTrips
+}
+
+//==
+// # Plans and ledgers
+
+spec RepairPlan
+{
+    invariant forall (i: Integer) in self.Steps.Count.Range: forall (j: Integer) in self.Steps.Count.Range:
+        j > i ? !(self.StepIsOfClass(i, DefectClass.Geometric) && self.StepIsOfClass(j, DefectClass.Structural)) : true;
+                                                           // Law_Catalog_PlanFixesStructureBeforeGeometry
+    invariant self.Steps.All(s => s.Expect == ExpectedLawOf(s.Defect));
+    constructor PlanOf;
+}
+
+spec PlanOf(m: BrepModel, defects: Array<Defect>): RepairPlan
+{
+    ensures result.Steps.Count == defects.Reduce(0, (n, d) => m.Diagnose(d).IsUnfixable ? n : n + 1);   // Law_Catalog_PlanHasAStepPerFixableDefect
+}
+
+spec RepairPolicy
+{
+    invariant self.MaxToleranceGrowth.Value >= 1.0;
+    constructor StrictPolicy;                              // Law_Catalog_StrictPolicyRefusesTopologyChange
+}
+
+spec RepairOutcome
+{
+    invariant self is Repaired ? self.Before.Law == self.After.Law : true;
+    invariant self is Worsened ? self.Before.Law == self.After.Law : true;
+    constructor Repair;
+}
+
+spec Repair(h: HealedModel, plan: RepairPlan, policy: RepairPolicy): RepairOutcome
+{
+    requires plan.Steps.All(s => Permits(policy, s.Action, h.Model.Model.CostOf(s.Action)));
+    ensures result is Repaired ? result.After.Holds : true;   // Law_RepairMakesExpectedLawHold (catalog)
+    deferred "apply each permitted step, check its expected law before and after, revert what worsens";
+}
+
+spec RepairLedger
+{
+    constructor EmptyLedger;
+    constructor Recorded;
+}
+
+spec HealedModel
+{
+    invariant Defects(self).Defects.Count == self.Remaining.Count;
+}
+
+//==
+// # STEP names and units
+
+spec EntityName
+{
+    invariant Part21File.SupportedSchema.Any(d => d.Name == self.Value);   // Law_Catalog_LookupEntityFindsEveryLongName
+    constructor EntityNamesOf;
+    constructor LookupEntity;
+}
+
+spec AttributeName
+{
+    invariant Part21File.SupportedSchema.Any(d => d.Explicit.Any(a => a.Name == self.Value));
+    constructor AttributeNamesOf;
+    constructor LookupAttribute;
+    constructor LookupOwnAttribute;
+}
+
+spec UnitFactor
+{
+    invariant self.MetresPerUnit == self.Named.ScaleToMetres;   // Law_Catalog_UnitFactorIsScaleToMetres
+    invariant self.Snapped == IsNamedUnit(self.Named);          // Law_Catalog_ScaledUnitIsNotSnapped
+    constructor UnitFactorOf;
+}
+
+spec AngleFactor
+{
+    invariant self.Snapped == (self.RadiansPerUnit == Number.Pi / 180.0);   // Law_Catalog_DegreeFactorIsSnapped
+    constructor AngleFactorOf;
+}
+
+spec PlacementChain
+{
+    invariant self.Handedness != Sign.Zero;
+    constructor PlacementChainOf;
+}
+
+spec PlacementStepsOf(occurrences: Array<StepOccurrence>, o: StepOccurrenceIndex): Array<StepInstanceId>
+{
+    ensures result.Count <= occurrences.Count;   // Law_Catalog_PlacementStepsStopOnACycle
+    measure occurrences.Count;
+}
+
+spec ResolveReference(f: Part21File, id: StepInstanceId, expected: EntityName): ReferenceResolution
+{
+    ensures result is Dangling == (f.InstancePosition(id) < 0);
+    ensures result is Resolved ? f.IsA(id, expected.Value) : true;
+}
