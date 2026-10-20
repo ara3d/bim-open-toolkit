@@ -1,0 +1,84 @@
+//==
+// # Catalog: signs, senses, parities, and windings (laws)
+//
+// The runner cannot build a sum, so laws over Sense take Integer selectors
+// and reach every case (two cases per selector, eight combinations for
+// three).
+//
+// Sections, in order:
+//  - Helpers
+//  - Signs
+//  - Senses
+//  - Parities
+//  - Windings
+
+library CatalogFoundationSignsLaws
+{
+    //==
+    // # Helpers
+
+    // Same for an even k, Opposite for an odd one.
+    CatalogSenseAt(k: Integer): Sense
+        => k % 2 == 0 ? Sense.Same : Sense.Opposite;
+
+    //==
+    // # Signs
+
+    // Negating x negates its sign.
+    Law_Catalog_SignIsAntisymmetric(x: Number, tol: Resolution): Boolean
+        => tol.Value >= 0.0 ? SignWithin(0.0 - x, tol) == SignWithin(x, tol).Negative : true;
+
+    // The exact sign of a product is the product of the exact signs.
+    Law_Catalog_SignOfProductIsProduct(x: Number, y: Number): Boolean
+        => SignWithin(x * y, Resolution.Exact) == SignWithin(x, Resolution.Exact) * SignWithin(y, Resolution.Exact);
+
+    // A number no larger than the tolerance in magnitude has sign Zero.
+    Law_Catalog_SignWithinToleranceIsZero(x: Number, tol: Resolution): Boolean
+        => x.Abs <= tol.Value ? SignWithin(x, tol) == Sign.Zero : true;
+
+    //==
+    // # Senses
+
+    // Compose is associative.
+    Law_Catalog_ComposeIsAssociative(i: Integer, j: Integer, k: Integer): Boolean
+        => Compose(Compose(CatalogSenseAt(i), CatalogSenseAt(j)), CatalogSenseAt(k))
+            == Compose(CatalogSenseAt(i), Compose(CatalogSenseAt(j), CatalogSenseAt(k)));
+
+    // Same is a left identity of Compose.
+    Law_Catalog_SameIsLeftIdentity(k: Integer): Boolean
+        => Compose(Sense.Same, CatalogSenseAt(k)) == CatalogSenseAt(k);
+
+    // Same is a right identity of Compose.
+    Law_Catalog_SameIsRightIdentity(k: Integer): Boolean
+        => Compose(CatalogSenseAt(k), Sense.Same) == CatalogSenseAt(k);
+
+    // Reversing a sense twice gives it back.
+    Law_Catalog_SenseReversedTwiceIsIdentity(k: Integer): Boolean
+        => CatalogSenseAt(k).Reversed.Reversed == CatalogSenseAt(k);
+
+    // The sign of composed senses is the product of their signs.
+    Law_Catalog_ToSignOfComposeIsProduct(i: Integer, j: Integer): Boolean
+        => Compose(CatalogSenseAt(i), CatalogSenseAt(j)).ToSign == CatalogSenseAt(i).ToSign * CatalogSenseAt(j).ToSign;
+
+    // ToSense maps Forward to Same and Reversed to Opposite.
+    Law_Catalog_ToSenseOfEdgeOrientation(_: Integer): Boolean
+        => ToSense(EdgeOrientation.Forward) == Sense.Same && ToSense(EdgeOrientation.Reversed) == Sense.Opposite;
+
+    //==
+    // # Parities
+
+    // The parity of a sum is the composition of the parities.
+    Law_Catalog_ParityOfSumIsComposed(a: Integer, b: Integer): Boolean
+        => ParityOf(a + b) == Compose(ParityOf(a), ParityOf(b));
+
+    // a + b flips, taken together, change the sense as a flips then b flips.
+    Law_Catalog_ParitySenseComposes(a: Integer, b: Integer): Boolean
+        => ParityOf(a + b).ToSense == Compose(ParityOf(a).ToSense, ParityOf(b).ToSense);
+
+    //==
+    // # Windings
+
+    // Reversing a winding twice gives it back.
+    Law_Catalog_WindingReversedTwiceIsIdentity(w: Winding): Boolean
+        => w.Reversed.Reversed == w;
+}

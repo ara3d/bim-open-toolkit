@@ -1,0 +1,97 @@
+//==
+// # Catalog: points and boxes, one type per space
+//
+// TYPE-CATALOG.md section 2 (layers 0, 1 and 5). A point in the model, in a
+// surface's natural parameters, and in the oriented chart are three types, so
+// a triangulation cannot be handed the wrong one.
+//
+// Sections, in order:
+//  - Parameter-space points
+//  - Chart points
+//  - Model points
+//  - Boxes and corners
+
+//==
+// # Parameter-space points
+
+// A point in a surface's natural parameters: what UvLoop, UvRegion,
+// UvTriangulation, FaceMesh.UvPoints and ModelMesh.CornerUvs are to hold.
+// UvCoordinate stays the stdlib's unit-square type; ToUnitSquare converts.
+// Removes: a unit-square point fed to Eval on a cylinder.
+type UvPoint
+    implements IValue
+{
+    U: Number;
+    V: Number;
+}
+
+// A difference of two UvPoints. Removes: a difference added where a point
+// belongs, or two points added.
+type UvDelta
+    implements IValue
+{
+    U: Number;
+    V: Number;
+}
+
+//==
+// # Chart points
+
+// A point after a FaceChart (mirror and scales) is applied: the space in
+// which triangle orientation is decided. ToChart and FromChart convert.
+// Removes: an orientation sign computed before the mirror and used after it.
+type ChartPoint
+    implements IValue
+{
+    X: Number;
+    Y: Number;
+}
+
+//==
+// # Model points
+
+// A position in model coordinates and units, after placement. Removes: a
+// vertex compared with a surface evaluated in another occurrence's frame.
+type ModelPoint
+    implements IValue, IMoved
+{
+    Point: Point3D;
+}
+
+// A position in an occurrence's own context, before placement; Placed makes
+// it a ModelPoint. Removes: an unplaced point compared with a placed one.
+type LocalPoint
+    implements IValue
+{
+    Point: Point3D;
+}
+
+//==
+// # Boxes and corners
+
+// An axis-aligned box in natural parameters. Removes: a chart box
+// intersected with a uv box. Invariant: Min.U <= Max.U and Min.V <= Max.V.
+type UvBox
+    implements IValue
+{
+    Min: UvPoint;
+    Max: UvPoint;
+}
+
+// An axis-aligned box in chart coordinates. Removes: a uv box intersected
+// with a chart box. Invariant: Min.X <= Max.X and Min.Y <= Max.Y.
+type ChartBox
+    implements IValue
+{
+    Min: ChartPoint;
+    Max: ChartPoint;
+}
+
+// A corner of a rectangular parameter domain, named by the ends of U then V:
+// MinMax is (U.Start, V.End). Removes: a quad grid built from sides in the
+// wrong cyclic order.
+type DomainCorner
+    = MinMin
+    | MinMax
+    | MaxMin
+    | MaxMax;

@@ -1,0 +1,159 @@
+//==
+// # Catalog: parameters, angles, and parameter ranges (functions)
+//
+// Orders, conversions and constructors for catalog-parameters.types.plato.
+//
+// Sections, in order:
+//  - Orders
+//  - Edge and knot parameters
+//  - Positions along a range
+//  - Angles
+//  - Ranges
+//  - Periodic ranges
+//  - Iso-lines
+
+library CatalogFoundationParameters
+{
+    //==
+    // # Orders
+
+    // The order of curve parameters.
+    LessThanOrEquals(a: CurveParameter, b: CurveParameter): Boolean
+        => a.Value <= b.Value;
+
+    // The order of parameter-plane curve parameters.
+    LessThanOrEquals(a: Curve2DParameter, b: Curve2DParameter): Boolean
+        => a.Value <= b.Value;
+
+    // The order of edge parameters.
+    LessThanOrEquals(a: EdgeParameter, b: EdgeParameter): Boolean
+        => a.Value <= b.Value;
+
+    // The order of knot parameters.
+    LessThanOrEquals(a: KnotParameter, b: KnotParameter): Boolean
+        => a.Value <= b.Value;
+
+    // The order of positions by length.
+    LessThanOrEquals(a: ArcLength, b: ArcLength): Boolean
+        => a.Value <= b.Value;
+
+    // The order of positions by fraction.
+    LessThanOrEquals(a: NormalizedParameter, b: NormalizedParameter): Boolean
+        => a.Value <= b.Value;
+
+    //==
+    // # Edge and knot parameters
+
+    // The parameter of edge e's curve at edge parameter t. Layer 2's
+    // EdgeDomain already runs in increasing curve parameter whatever the
+    // edge's SameSense, so the conversion only wraps t into the curve's
+    // domain, as EdgeCurvePoint does. Precondition: m.IsEdgeInRange(e).
+    ToCurveParameter(m: BrepModel, e: BrepEdgeIndex, t: EdgeParameter): CurveParameter
+        => CurveParameter(m.Geometry.Domain(m.Edges[e].Curve).Wrap(t.Value));
+
+    // True when t is a knot of b at which a derivative of order at most
+    // `order` may jump (layer 1's SplineBreaks). Exact by construction: the
+    // breaks are copied knots.
+    IsBreakKnot(t: KnotParameter, b: SplineBasis, order: Integer): Boolean
+        => b.SplineBreaks(order).Any(k => k == t.Value);
+
+    //==
+    // # Positions along a range
+
+    // The fraction of range r at which t lies, clamped into [0, 1]; 0 for a
+    // range of zero length.
+    NormalizedIn(r: ParameterRange, t: Number): NormalizedParameter
+        => NormalizedParameter(r.RangeLength > 0.0 ? FractionOf((t - r.Start) / r.RangeLength) : FractionOf(0.0));
+
+    // The parameter of range r at fraction n.
+    ParameterAt(r: ParameterRange, n: NormalizedParameter): Number
+        => r.Start + n.Value.Value * r.RangeLength;
+
+    //==
+    // # Angles
+
+    // a wrapped into [0, 2 pi). Precondition: CanWrap(a.Value.Radians, 2 pi).
+    Wrap(a: UnwrappedAngle): WrappedAngle
+        => WrappedAngle(Angle(a.Value.Radians.Wrap(Number.Tau)));
+
+    // The lift of a nearest to reference: a plus a whole number of turns,
+    // within half a turn of reference. Precondition:
+    // CanWrap(a.Value.Radians - reference.Value.Radians, 2 pi).
+    NearestUnwrapped(a: WrappedAngle, reference: UnwrappedAngle): UnwrappedAngle
+        => UnwrappedAngle(Angle(a.Value.Radians.NearestUnwrapped(reference.Value.Radians, Number.Tau)));
+
+    //==
+    // # Ranges
+
+    // The range from the smaller of a and b to the larger: the only
+    // constructor of a ParameterRange.
+    RangeOf(a: Number, b: Number): ParameterRange
+        => ParameterRange(a.Min(b), a.Max(b));
+
+    // End minus Start, never negative.
+    RangeLength(r: ParameterRange): Number
+        => r.End - r.Start;
+
+    // The range as the stdlib interval.
+    ToNumberInterval(r: ParameterRange): NumberInterval
+        => NumberInterval(r.Start, r.End);
+
+    // A curve domain's range as a ParameterRange. CurveDomain's invariant
+    // gives Start <= End; RangeOf keeps the promise when it is broken.
+    ToParameterRange(d: CurveDomain): ParameterRange
+        => RangeOf(d.Range.Start, d.Range.End);
+
+    // The traversal in the other direction.
+    Reversed(r: DirectedRange): DirectedRange
+        => DirectedRange(r.End, r.Start);
+
+    // True when the traversal runs with increasing parameter, or stays put.
+    IsIncreasing(r: DirectedRange): Boolean
+        => r.Start <= r.End;
+
+    // The parameters a traversal covers, its direction dropped.
+    ToParameterRange(r: DirectedRange): ParameterRange
+        => RangeOf(r.Start, r.End);
+
+    //==
+    // # Periodic ranges
+
+    // The range on the circle of circumference period that runs forward from
+    // start to end. Precondition: CanWrap(end - start, period).
+    PeriodicRangeOf(start: Number, end: Number, period: Number): PeriodicRange
+        => PeriodicRange(start, (end - start).Wrap(period), period);
+
+    // The whole period starting at start: the range of a closed edge.
+    FullPeriod(start: Number, period: Number): PeriodicRange
+        => PeriodicRange(start, period, period);
+
+    // The unwrapped end of the range: Start plus Length.
+    UnwrappedEnd(r: PeriodicRange): Number
+        => r.Start + r.Length;
+
+    // True when t lies on the range modulo the period. Precondition:
+    // CanWrap(t - r.Start, r.Period).
+    ContainsParameter(r: PeriodicRange, t: Number): Boolean
+        => (t - r.Start).Wrap(r.Period) <= r.Length;
+
+    //==
+    // # Iso-lines
+
+    // The point of the iso-line at value s of the parameter that runs along it.
+    PointAt(l: IsoLine, s: Number): UvPoint
+        => match (l.Constant) {
+            ParameterU => UvPoint(l.At, s);
+            ParameterV => UvPoint(s, l.At);
+        };
+
+    // The value of the fixed parameter at p.
+    FixedValueAt(l: IsoLine, p: UvPoint): Number
+        => match (l.Constant) {
+            ParameterU => p.U;
+            ParameterV => p.V;
+        };
+
+    // True when p lies on the iso-line within t.
+    IsOn(l: IsoLine, p: UvPoint, t: ParameterTolerance): Boolean
+        => (l.FixedValueAt(p) - l.At).Abs <= t.Value;
+}

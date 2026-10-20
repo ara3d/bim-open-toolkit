@@ -1,0 +1,61 @@
+//==
+// # Catalog: counts (laws)
+//
+// Sections, in order:
+//  - Floors
+//  - Segments and samples
+//  - Rounds, depths and hashes
+
+library CatalogFoundationCountsLaws
+{
+    //==
+    // # Floors
+
+    // CountOf never gives a negative count.
+    Law_Catalog_CountOfIsNonNegative(n: Integer): Boolean
+        => CountOf(n).Value >= 0;
+
+    // NonZeroCountOf gives at least one.
+    Law_Catalog_NonZeroCountOfIsPositive(n: Integer): Boolean
+        => NonZeroCountOf(n).Value >= 1;
+
+    // SegmentCountOf gives at least one segment.
+    Law_Catalog_SegmentCountIsAtLeastOne(n: Integer): Boolean
+        => SegmentCountOf(n).Value >= 1;
+
+    // A closed edge needs at least three segments.
+    Law_Catalog_ClosedEdgeMinimumIsThree(_: Integer): Boolean
+        => SegmentCount.ClosedEdgeMinimum.Value == 3;
+
+    //==
+    // # Segments and samples
+
+    // A polyline has at least two points.
+    Law_Catalog_SampleCountIsAtLeastTwo(n: Integer): Boolean
+        => SamplesOf(SegmentCountOf(n)).Value >= 2;
+
+    // Counting the points of s segments, then the segments of those points,
+    // gives s.
+    Law_Catalog_SegmentsOfSamplesOfIsIdentity(n: Integer): Boolean
+        => SegmentsOf(SamplesOf(SegmentCountOf(n))) == SegmentCountOf(n);
+
+    // Counting the segments of c points, then the points of those segments,
+    // gives c.
+    Law_Catalog_SamplesOfSegmentsOfIsIdentity(n: Integer): Boolean
+        => n >= 2 ? SamplesOf(SegmentsOf(SampleCount(n))) == SampleCount(n) : true;
+
+    //==
+    // # Rounds, depths and hashes
+
+    // The next round comes strictly after this one.
+    Law_Catalog_NextRoundIsLater(r: Round): Boolean
+        => r.LessThanOrEquals(r.NextRound) && !r.NextRound.LessThanOrEquals(r);
+
+    // A deeper level is strictly deeper.
+    Law_Catalog_DeeperIsDeeper(d: Depth): Boolean
+        => d.LessThanOrEquals(d.Deeper) && !d.Deeper.LessThanOrEquals(d);
+
+    // Equal counts hash alike.
+    Law_Catalog_CountHashAgreesWithEquality(a: Count, b: Count): Boolean
+        => a == b ? a.Hash == b.Hash : true;
+}

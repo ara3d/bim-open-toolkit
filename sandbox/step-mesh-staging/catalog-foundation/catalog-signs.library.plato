@@ -1,0 +1,119 @@
+//==
+// # Catalog: signs, senses, parities, and windings (functions)
+//
+// The algebra of catalog-signs.types.plato: Sign multiplies, Sense and
+// Parity compose, and a winding reverses.
+//
+// Sections, in order:
+//  - Signs
+//  - Senses
+//  - Parities
+//  - Windings
+
+library CatalogFoundationSigns
+{
+    //==
+    // # Signs
+
+    // The sign of x, Zero when |x| <= tol: the only constructor of a Sign from
+    // a Number. Precondition: tol.Value >= 0.
+    SignWithin(x: Number, tol: Resolution): Sign
+        => x > tol.Value
+            ? Sign.Positive
+            : (x < 0.0 - tol.Value ? Sign.Negative : Sign.Zero);
+
+    // The resolution that makes SignWithin the exact sign.
+    Exact(_: Resolution): Resolution
+        => Resolution(0.0);
+
+    // The opposite sign; Zero stays Zero.
+    Negative(s: Sign): Sign
+        => match (s) {
+            Positive => Sign.Negative;
+            Zero => Sign.Zero;
+            Negative => Sign.Positive;
+        };
+
+    // The sign of a product of numbers with signs a and b.
+    Multiply(a: Sign, b: Sign): Sign
+        => match (a) {
+            Positive => b;
+            Zero => Sign.Zero;
+            Negative => b.Negative;
+        };
+
+    //==
+    // # Senses
+
+    // The sense of two agreements in a row: Same when they agree, Opposite
+    // otherwise. Associative, with Same the identity.
+    Compose(a: Sense, b: Sense): Sense
+        => match (a) {
+            Same => b;
+            Opposite => b.Reversed;
+        };
+
+    // The other sense.
+    Reversed(s: Sense): Sense
+        => match (s) {
+            Same => Sense.Opposite;
+            Opposite => Sense.Same;
+        };
+
+    // A STEP orientation as a sense: Forward is Same.
+    ToSense(o: EdgeOrientation): Sense
+        => match (o) {
+            Forward => Sense.Same;
+            Reversed => Sense.Opposite;
+        };
+
+    // A STEP Boolean orientation flag (SameSense, Orientation) as a sense.
+    ToSense(sameSense: Boolean): Sense
+        => sameSense ? Sense.Same : Sense.Opposite;
+
+    // The sign a sense gives a quantity measured along it.
+    ToSign(s: Sense): Sign
+        => match (s) {
+            Same => Sign.Positive;
+            Opposite => Sign.Negative;
+        };
+
+    //==
+    // # Parities
+
+    // The parity of n; negative n are allowed.
+    ParityOf(n: Integer): Parity
+        => n % 2 == 0 ? Parity.Even : Parity.Odd;
+
+    // The parity of a sum of counts with parities a and b.
+    Compose(a: Parity, b: Parity): Parity
+        => match (a) {
+            Even => b;
+            Odd => b.Flipped;
+        };
+
+    // The other parity: one more flip.
+    Flipped(p: Parity): Parity
+        => match (p) {
+            Even => Parity.Odd;
+            Odd => Parity.Even;
+        };
+
+    // The net sense of a parity's worth of flips: Even flips leave the sense.
+    ToSense(p: Parity): Sense
+        => match (p) {
+            Even => Sense.Same;
+            Odd => Sense.Opposite;
+        };
+
+    //==
+    // # Windings
+
+    // The winding of the loop traversed backwards.
+    Reversed(w: Winding): Winding
+        => Winding(0 - w.Turns);
+
+    // True when the loop does not wind around the periodic direction.
+    IsUnwound(w: Winding): Boolean
+        => w.Turns == 0;
+}
