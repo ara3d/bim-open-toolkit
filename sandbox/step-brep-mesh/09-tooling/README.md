@@ -113,7 +113,7 @@ All conversions are pure and total; they work on a broken mesh, which is when th
   writer that does not exist; if one appears, `RegionToSvg` can target it.
 - **Tables.** `ResultTable` (title, column names, rows of `CellValue`) is written as CSV, which
   the toolkit's CSV source reads, so the notebook shows it: `ReportToTable`, `StateTable`,
-  `LawReportTable`, `LawSummaryTable`, `DifferencesTable`.
+  `LawReportTable`, `LawSummaryTable`, `ModelDifferencesRows`, `MeshDifferencesRows` (concrete since 2026-10-20, FINDINGS F-58).
 
 ## Generators
 
