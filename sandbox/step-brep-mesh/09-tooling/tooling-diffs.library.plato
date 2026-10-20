@@ -254,7 +254,7 @@ library ToolingDiffs
     // The fields of two checks, as layer 0's Identical compares them.
     CheckDifferences(x: Check, y: Check): Array<Difference>
         => Flattened([
-            CompareText("Law", x.Law, y.Law),
+            CompareText("Law", x.Law.Value, y.Law.Value),
             CompareFlag("Holds", x.Holds, y.Holds),
             CompareIdentical("Worst", x.Worst, y.Worst),
             CompareIdentical("Bound", x.Bound, y.Bound),

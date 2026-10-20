@@ -77,10 +77,10 @@ library ToolingLawRunner
     // kept.
     RunOfCheck(c: Check, witness: String, stage: RunStage, expected: Array<String>): LawRun
         => LawRun(c.Law, witness, stage,
-            expected.Any(x => x == c.Law)
+            expected.Any(x => LawName(x) == c.Law)
                 ? (c.Holds ? LawVerdict.HeldUnexpectedly : LawVerdict.FailedAsExpected)
                 : (c.Holds ? LawVerdict.Held : LawVerdict.Failed),
-            c.Worst, c.Where);
+            c.Worst, c.Where, LawRun.Untimed);
 
     // The model's own laws (layers 0, 1, 2 and the model oracles of layer 7)
     // through ValidateBrep at the Oracle level.
@@ -115,24 +115,29 @@ library ToolingLawRunner
     NoMeasure(_: LawRun): Number
         => 0.0 / 0.0;
 
+    // The elapsed time of a run this runner made: zero, because the runner
+    // does not time a run (the host's sweep times each law and reports it).
+    Untimed(_: LawRun): Elapsed
+        => Elapsed(0);
+
     // Law over i in [0, count), one run for witness.
     OverRange(law: String, witness: String, count: Integer, holds: Function1<Integer, Boolean>): LawRun
     {
         var failing = count.Max(0).Range.FlatMap(i => holds(i) ? 0.MapRange(j => j) : [i]);
-        return LawRun(law, witness, RunStage.SelectorStage,
+        return LawRun(LawName(law), witness, RunStage.SelectorStage,
             failing.Count == 0 ? LawVerdict.Held : LawVerdict.Failed,
             failing.Count == 0 ? LawRun.NoMeasure : failing[0].ToNumber,
-            Provenance.Nowhere);
+            Provenance.Nowhere, LawRun.Untimed);
     }
 
     // Law evaluated once on a named witness.
     Once(law: String, witness: String, holds: Boolean): LawRun
-        => LawRun(law, witness, RunStage.SelectorStage,
-            holds ? LawVerdict.Held : LawVerdict.Failed, LawRun.NoMeasure, Provenance.Nowhere);
+        => LawRun(LawName(law), witness, RunStage.SelectorStage,
+            holds ? LawVerdict.Held : LawVerdict.Failed, LawRun.NoMeasure, Provenance.Nowhere, LawRun.Untimed);
 
     // A law the runner does not evaluate, with the reason.
     NotRun(law: String, reason: String): LawRun
-        => LawRun(law, "", RunStage.SelectorStage, LawVerdict.Skipped(reason), LawRun.NoMeasure, Provenance.Nowhere);
+        => LawRun(LawName(law), "", RunStage.SelectorStage, LawVerdict.Skipped(reason), LawRun.NoMeasure, Provenance.Nowhere, LawRun.Untimed);
 
     // Law(k) for every positive witness k, one run each.
     OverWitnesses(law: String, holds: Function1<Integer, Boolean>): Array<LawRun>
@@ -316,7 +321,8 @@ library ToolingLawRunner
     IsDefect(r: LawRun): Boolean
         => r.Verdict.IsDefectVerdict;
 
-    // True for Failed and HeldUnexpectedly.
+    // True for Failed, HeldUnexpectedly and Error. OverBudget is not a defect
+    // of the law: its result is unknown, as for Skipped.
     IsDefectVerdict(v: LawVerdict): Boolean
         => match (v) {
             Held => false;
@@ -324,6 +330,9 @@ library ToolingLawRunner
             FailedAsExpected => false;
             HeldUnexpectedly => true;
             Skipped(reason) => false;
+            Error(message) => true;
+            Obligation => false;
+            OverBudget(elapsed) => false;
         };
 
     // True when no run is a defect: the runner's exit status.
@@ -341,16 +350,23 @@ library ToolingLawRunner
             FailedAsExpected => "FailedAsExpected";
             HeldUnexpectedly => "HeldUnexpectedly";
             Skipped(reason) => "Skipped";
+            Error(message) => "Error";
+            Obligation => "Obligation";
+            OverBudget(elapsed) => "OverBudget";
         };
 
-    // The reason a run was skipped; "" for a run that was evaluated.
-    SkipReason(v: LawVerdict): String
+    // Why a run has no result: the reason it was skipped or the error's
+    // message; "" for any other verdict.
+    VerdictReason(v: LawVerdict): String
         => match (v) {
             Held => "";
             Failed => "";
             FailedAsExpected => "";
             HeldUnexpectedly => "";
             Skipped(reason) => reason;
+            Error(message) => message;
+            Obligation => "";
+            OverBudget(elapsed) => "";
         };
 
     // The name of a stage.
@@ -368,11 +384,11 @@ library ToolingLawRunner
         => ResultTable("Law runs",
             ["Law", "Witness", "Stage", "Verdict", "Reason", "Measure", "Where", "Backend"],
             r.Runs.DefectsFirst.Map(x => [
-                    CellValue.Text(x.Law),
+                    CellValue.Text(x.Law.Value),
                     CellValue.Text(x.Witness),
                     CellValue.Text(x.Stage.StageName),
                     CellValue.Text(x.Verdict.VerdictName),
-                    CellValue.Text(x.Verdict.SkipReason),
+                    CellValue.Text(x.Verdict.VerdictReason),
                     CellValue.Real(x.Measure),
                     CellValue.Place(x.Where),
                     CellValue.Text(r.Backend)]));
@@ -385,12 +401,15 @@ library ToolingLawRunner
     // How many runs have each verdict, as a one-row table.
     LawSummaryTable(r: LawReport): ResultTable
         => ResultTable("Law run summary",
-            ["Held", "Failed", "FailedAsExpected", "HeldUnexpectedly", "Skipped", "Backend"],
+            ["Held", "Failed", "FailedAsExpected", "HeldUnexpectedly", "Skipped", "Error", "Obligation", "OverBudget", "Backend"],
             [[
                 CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "Held" ? 1 : 0).IntegerTotal),
                 CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "Failed" ? 1 : 0).IntegerTotal),
                 CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "FailedAsExpected" ? 1 : 0).IntegerTotal),
                 CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "HeldUnexpectedly" ? 1 : 0).IntegerTotal),
                 CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "Skipped" ? 1 : 0).IntegerTotal),
+                CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "Error" ? 1 : 0).IntegerTotal),
+                CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "Obligation" ? 1 : 0).IntegerTotal),
+                CellValue.Whole(r.Runs.Map(x => x.Verdict.VerdictName == "OverBudget" ? 1 : 0).IntegerTotal),
                 CellValue.Text(r.Backend)]]);
 }

@@ -256,14 +256,14 @@ library CatalogRepairDefects
     // resolution). Every other law, and a mapped law reported at another kind
     // of provenance, is Unclassified. The check is not read for Holds.
     FailedDefectOf(c: Check): Defect
-        => c.Law == "Law_LoopWindingMatchesSameSense" ? FaceDefectAt(c.Law, c.Where, f => Defect.MisorientedFace(f))
-            : c.Law == "Law_ShellIsOrientable" ? ShellDefectAt(c.Law, c.Where, s => Defect.NotOrientable(s))
-            : c.Law == "Law_AtMostOneOuterBound" ? FaceDefectAt(c.Law, c.Where, f => Defect.TwoOuterBounds(f))
-            : c.Law == "Law_EdgeHasPositiveExtent" ? EdgeDefectAt(c.Law, c.Where, e => Defect.DegenerateEdge(e))
-            : c.Law == "Law_SurfacePlacementOrthonormal" ? SurfaceDefectAt(c.Law, c.Where, s => Defect.NonOrthonormalPlacement(s, Angle(c.Worst)))
-            : c.Law == "Law_Where_Direction_WR1" ? InstanceDefectAt(c.Law, c.Where, i => Defect.ZeroLengthDirection(i))
-            : c.Law == "Law_LengthToleranceResolvable" ? Defect.ToleranceBelowResolution(LengthTolerance(c.Bound), Resolution(c.Worst))
-            : Defect.Unclassified(c.Law, c.Where);
+        => c.Law == LawName("Law_LoopWindingMatchesSameSense") ? FaceDefectAt(c.Law.Value, c.Where, f => Defect.MisorientedFace(f))
+            : c.Law == LawName("Law_ShellIsOrientable") ? ShellDefectAt(c.Law.Value, c.Where, s => Defect.NotOrientable(s))
+            : c.Law == LawName("Law_AtMostOneOuterBound") ? FaceDefectAt(c.Law.Value, c.Where, f => Defect.TwoOuterBounds(f))
+            : c.Law == LawName("Law_EdgeHasPositiveExtent") ? EdgeDefectAt(c.Law.Value, c.Where, e => Defect.DegenerateEdge(e))
+            : c.Law == LawName("Law_SurfacePlacementOrthonormal") ? SurfaceDefectAt(c.Law.Value, c.Where, s => Defect.NonOrthonormalPlacement(s, Angle(c.Worst)))
+            : c.Law == LawName("Law_Where_Direction_WR1") ? InstanceDefectAt(c.Law.Value, c.Where, i => Defect.ZeroLengthDirection(i))
+            : c.Law == LawName("Law_LengthToleranceResolvable") ? Defect.ToleranceBelowResolution(LengthTolerance(c.Bound), Resolution(c.Worst))
+            : Defect.Unclassified(c.Law.Value, c.Where);
 
     // The defect one check found, or NotApplicable when the check holds.
     DefectOf(c: Check): DecidedDefect

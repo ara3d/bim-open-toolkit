@@ -1,0 +1,20 @@
+//==
+// # Tooling: corpus rows
+//
+// TYPE-CATALOG.md section 16, layer 9 (moved from catalog-validation at the
+// catalog merge, validation, 2026-10-20). In a file of its own because
+// DefectReport is declared by the repair track, still staged in
+// sandbox/step-mesh-staging/catalog-repair: until that track merges, this
+// file compiles only with that folder passed as --staging.
+
+// One row of the corpus report with its failing law typed. Removes: the
+// "cause" column as free text.
+type CorpusRow
+{
+    File: String;
+    Key: RunKey;
+    Outcome: MeshOutcome;
+    Defects: DefectReport;
+    Elapsed: Elapsed;
+    Cause: LawName;
+}

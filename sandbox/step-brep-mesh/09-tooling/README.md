@@ -14,6 +14,7 @@ Four tools, in the order a developer reaches for them:
 | Diffs | `tooling-diffs.*`, `tooling-diff-helpers.library.plato` | Where exactly two values differ, instead of "not equal" |
 | Dumps | `tooling-dumps.*` | What a mesh, a parameter-plane region, a report, or every stage of a run looks like |
 | Generators | `tooling-generators.*` | Many valid models from each witness family, perturbed with a known effect, and corpus files |
+| Reports | `tooling-reports.{types,library,laws,spec}.plato`, `tooling-witness-specs.types.plato`, `tooling-corpus-rows.types.plato`, `tooling.concepts.plato` | TYPE-CATALOG.md sections 10, 11, 16 (catalog merge, validation, 2026-10-20): `StageOutcome<T>`, `RowDump`, `DiffSummary`, `Benchmark`, `WitnessSpec`, `VerdictDelta`, `CorpusRow` (in its own file: it names the staged repair track's `DefectReport`, so it compiles only with `catalog-repair` passed as `--staging` until that track merges); `IsMet`, `InvarianceOf(Perturbation)`, `Diff`, `Witnesses`; blocks `ToolingReports`, `ToolingReportsLaws` (5 laws); concepts `IDiffable`, `IWitnessed`, which no type declares (FINDINGS F-58) |
 
 Contracts of the host shims are in `tooling.spec.plato`, which the gate does not read.
 
@@ -50,6 +51,10 @@ and calls them (TKT-311). `LawReportOf(backend)` does, in Plato:
   `LawRun`. These laws are therefore listed once, by layer 7, and never here.
 - A negative witness's expected failures come from layer 7's table: failing one gives
   `FailedAsExpected`, holding one gives `HeldUnexpectedly`, a defect.
+- A `LawRun` names its law as a `LawName` and carries an `Elapsed`, zero (`LawRun.Untimed`): the
+  runner does not time a run. `LawVerdict` also has `Error(Message)`, `Obligation` and
+  `OverBudget(Elapsed)`, the host sweep's verdicts; the runner produces none of them, and only
+  `Error` is a defect (catalog merge, validation, 2026-10-20).
 - The witness laws written over Integer selectors (layers 3, 7, 8 and this layer) are listed by
   hand, one line each, through quantifiers that sweep every positive witness and every shell,
   face, edge or vertex of it.

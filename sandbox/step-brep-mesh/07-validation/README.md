@@ -31,6 +31,9 @@ mathematics, on hand-written witnesses, and on public files.
 | `validation-witnesses.laws.plato` | `BrepWitnessesLaws` | witness and negative-witness laws; the laws that mesh a witness are layer 8's `pipeline-witnesses.laws.plato` |
 | `validation-proofs.{types,library,laws,spec}.plato` | `BrepCheckingProofs`, `BrepCheckingProofsLaws` | section 4: `ValidatedReport` and `CheckValidatedReport` (over `ValidateBrep`), and layer 6's `CheckCheckedMesh` (over `RestrictedToShell`), with `IsClosedWhereShellIs`, `PassesMeshChecks`; 2 laws (catalog merge, proofs, 2026-10-20) |
 | `validation-proofs-kernel.laws.plato`, `validation-proofs-regions.laws.plato` | `BrepCheckingProofsKernelLaws`, `BrepCheckingProofsRegionsLaws` | the 15 laws of the layer 2 and 3 proofs and the 7 of the layer 5 proofs, over the witnesses (`CatalogProofModelAt`) (catalog merge, proofs, 2026-10-20) |
+| `validation-claims.{types,library,laws,spec}.plato` | `BrepCheckingClaims`, `BrepCheckingClaimsLaws` | section 10: `Claim`, `Evidence`, `CheckRecord` (`ToCheckRecord`), `AllowanceSource`, `Allowance`, `CompensatedSum` (Kahan, beside layer 6's Neumaier sum), `OracleAgreement`, `CheckScope`, `PairBudget`; the functions of the next file's types; `Check(m, level)`, BrepModel's `ICheckable`; 15 laws (catalog merge, validation, 2026-10-20) |
+| `validation-witness-specs.types.plato` | (types) | section 10: `SampleGrid`, `Expectation`, `LevelProof`; `WitnessSpec` and `VerdictDelta` name layer 9's types and are there |
+| `validation.concepts.plato` | (concept) | `ICheckable`; no type declares it, since `BrepModel` is layer 2's (FINDINGS F-58) |
 | `validation.spec.plato` | (spec) | invariants, entry-point and oracle contracts, the three deferred functions, every witness, theorems, conjectures |
 
 ## Three independent sources of truth

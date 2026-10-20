@@ -1,0 +1,13 @@
+//==
+// # Pipeline: concepts
+//
+// TYPE-CATALOG.md section 15: a concept states a law once over every type
+// that implements it. In layer 8 because its obligation names layer 8's
+// Trace (catalog merge, validation, 2026-10-20).
+
+// A value that carries the run that made it: every stage outcome, once
+// PipelineState holds a Trace (FINDINGS F-58). No type implements it yet.
+interface ITraced
+{
+    Trace(x: Self): Trace;
+}

@@ -724,14 +724,16 @@ library BrepFoundation
     // one bound: it holds exactly when worst <= bound, and it keeps the bound.
     // worst is the largest measure seen, larger meaning worse, or
     // Number.Unmeasured, which fails. Precondition: bound is a finite
-    // non-negative Number.
+    // non-negative Number. law is the Law_ function's name as written at the
+    // Check_ function (about 450 call sites pass a literal); the Check holds
+    // it as a LawName.
     CheckWithin(law: String, worst: Number, bound: Number, where: Provenance): Check
-        => Check(law, worst <= bound, worst, bound, where);
+        => Check(LawName(law), worst <= bound, worst, bound, where);
 
     // The check of an exact law: Worst is 0 when it holds and 1 when it
     // fails, against the bound 0.
     CheckExact(law: String, holds: Boolean, where: Provenance): Check
-        => Check(law, holds, holds ? 0.0 : 1.0, 0.0, where);
+        => Check(LawName(law), holds, holds ? 0.0 : 1.0, 0.0, where);
 
     // How far the check's Worst is past its own Bound, as a multiple of the
     // bound: Worst / Bound for a positive bound; for the bound 0 of an exact
@@ -765,7 +767,7 @@ library BrepFoundation
     // check's provenance, its Worst as the measure. Precondition: the check
     // failed.
     DiagnosticOf(c: Check, g: ConstraintGroup, message: String): Diagnostic
-        => Diagnostic(g.SeverityOf(c.Worst, c.Bound), c.Law, message, c.Where, c.Worst);
+        => Diagnostic(g.SeverityOf(c.Worst, c.Bound), c.Law.Value, message, c.Where, c.Worst);
 
     // The report with no checks and no diagnostics: Merge's identity.
     Empty(_: Report): Report

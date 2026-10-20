@@ -206,7 +206,7 @@ library ToolingDumps
         => ResultTable("Report",
             ["Kind", "Name", "Holds", "Severity", "Measure", "Bound", "Where", "Message"],
             r.Checks.Map(c => [
-                CellValue.Text("Check"), CellValue.Text(c.Law), CellValue.Flag(c.Holds), CellValue.Text(""),
+                CellValue.Text("Check"), CellValue.Text(c.Law.Value), CellValue.Flag(c.Holds), CellValue.Text(""),
                 CellValue.Real(c.Worst), CellValue.Real(c.Bound), CellValue.Place(c.Where), CellValue.Text("")])
             .Concatenate(r.Diagnostics.Map(d => [
                 CellValue.Text("Diagnostic"), CellValue.Text(d.Code), CellValue.Text(""), CellValue.Text(d.Severity.SeverityName),

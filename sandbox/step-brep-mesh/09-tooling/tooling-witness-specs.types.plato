@@ -1,0 +1,38 @@
+//==
+// # Tooling: witness specs and verdict deltas
+//
+// TYPE-CATALOG.md section 10, in layer 9 because each names a layer 9 type
+// (WitnessFamily, LawVerdict); moved from catalog-validation at the catalog
+// merge, validation, 2026-10-20. The rest of section 10 is in
+// 07-validation/validation-claims.types.plato and
+// validation-witness-specs.types.plato.
+//
+// Sections, in order:
+//  - Witnesses
+//  - Verdicts
+
+//==
+// # Witnesses
+
+// What a generated witness is rebuilt from: its family, the seed, and the
+// drawn parameters (chunk T1). Removes: a failing generated witness nobody
+// can rebuild.
+type WitnessSpec
+{
+    Family: WitnessFamily;
+    Seed: Integer;
+    Parameters: Array<Number>;
+}
+
+//==
+// # Verdicts
+
+// One law's verdict in two sweeps, what the merge procedure traces to a
+// chunk. Built only by VerdictDeltaOf. Removes: a regression found by
+// reading two reports side by side.
+type VerdictDelta
+{
+    Law: LawName;
+    Before: LawVerdict;
+    After: LawVerdict;
+}

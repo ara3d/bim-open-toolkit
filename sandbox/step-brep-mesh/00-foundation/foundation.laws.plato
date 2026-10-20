@@ -331,7 +331,7 @@ library BrepFoundationLaws
     // Convention law over reports built by Empty, Merge, ReportOf, and Located.
     Law_FailedCheckHasDiagnostic(r: Report, k: Integer): Boolean
         => r.Checks.IsValidIndex(k)
-            ? (r.Checks[k].Holds ? true : r.Diagnostics.Any(d => d.Code == r.Checks[k].Law))
+            ? (r.Checks[k].Holds ? true : r.Diagnostics.Any(d => d.Code == r.Checks[k].Law.Value))
             : true;
 
     // Locating a report keeps its verdict. Library law, exact.

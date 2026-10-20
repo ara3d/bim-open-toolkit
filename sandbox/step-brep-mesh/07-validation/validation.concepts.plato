@@ -1,0 +1,14 @@
+//==
+// # Validation: concepts
+//
+// TYPE-CATALOG.md section 15: a concept states a law once over every type
+// that implements it. In layer 7 because its obligation names only layer 7's
+// ConformanceLevel and layer 0's Report (catalog merge, validation,
+// 2026-10-20). BrepModel's function exists (validation-claims.library.plato);
+// BrepModel, in layer 2, cannot declare the implements line (FINDINGS F-58).
+
+// A value with a validation at a conformance level.
+interface ICheckable
+{
+    Check(x: Self, level: ConformanceLevel): Report;
+}

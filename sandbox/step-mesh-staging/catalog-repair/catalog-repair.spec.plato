@@ -24,7 +24,7 @@ spec DecidedDefect
 spec DefectOf(c: Check): DecidedDefect
 {
     ensures c.Holds ? DefectsIn(result).Count == 0 : DefectsIn(result).Count == 1;
-    ensures c.Holds ? true : ExpectedLawOf(DefectsIn(result)[0]).Value == c.Law;   // Law_Catalog_DefectOfInvertsExpectedLaw
+    ensures c.Holds ? true : ExpectedLawOf(DefectsIn(result)[0]) == c.Law;   // Law_Catalog_DefectOfInvertsExpectedLaw
 }
 
 spec DefectReport

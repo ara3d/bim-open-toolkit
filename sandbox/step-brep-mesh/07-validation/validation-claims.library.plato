@@ -1,0 +1,138 @@
+//==
+// # Validation: claims, evidence, allowances, and levels (functions)
+//
+// The constructors and predicates of validation-claims.types.plato and
+// validation-witness-specs.types.plato, and BrepModel's ICheckable function
+// (moved from catalog-validation at the catalog merge, validation,
+// 2026-10-20).
+//
+// Sections, in order:
+//  - Check records
+//  - Allowances
+//  - Compensated sums
+//  - Oracle agreement and scope
+//  - Sample grids
+//  - Levels
+//  - Checking a model
+
+library BrepCheckingClaims
+{
+    //==
+    // # Check records
+
+    // A library Check as a claim, its evidence, and whether it held. Check's
+    // numbers carry no kind and no sample count (FINDINGS F-58), so the
+    // caller, the Check_ function that knows both, supplies them. A check
+    // with Bound 0 is exact by layer 0's convention (CheckExact); any other
+    // is sampled, its worst measure at Where.
+    ToCheckRecord(c: Check, kind: MeasureKind, samples: SampleCount): CheckRecord
+        => CheckRecord(
+            Claim(c.Law, c.Where, Measure(c.Bound, kind)),
+            c.Bound == 0.0   // exact by construction: CheckExact copies 0.0
+                ? Evidence.ExactEvidence(c.Holds)
+                : Evidence.SampledEvidence(Measure(c.Worst, kind), c.Where, samples),
+            c.Holds);
+
+    //==
+    // # Allowances
+
+    // The allowance for operations roundings of size resolution: their
+    // product, with the derivation recorded (F-57 item 1's fix as data).
+    AllowanceFromRounding(operations: Count, resolution: Resolution, kind: MeasureKind): Allowance
+        => Allowance(
+            Measure(operations.Value.ToNumber * resolution.Value, kind),
+            AllowanceSource.FromRounding(operations.Value, resolution));
+
+    // The model's length tolerance as an allowance.
+    AllowanceFromModelTolerance(t: Tolerances): Allowance
+        => Allowance(Measure(t.Length.Value, MeasureKind.LengthKind), AllowanceSource.FromModelTolerance);
+
+    // A meshing criterion's bound as an allowance.
+    AllowanceFromCriteria(bound: Measure, criterion: CriterionName): Allowance
+        => Allowance(bound, AllowanceSource.FromCriteria(criterion));
+
+    // An oracle law's own bound as an allowance.
+    AllowanceFromOracleBound(bound: Measure, law: LawName): Allowance
+        => Allowance(bound, AllowanceSource.FromOracleBound(law));
+
+    // A number given with a reason.
+    AllowanceStated(value: Measure, why: String): Allowance
+        => Allowance(value, AllowanceSource.Stated(why));
+
+    //==
+    // # Compensated sums
+
+    // Kahan's compensated sum of values with its error bound, written beside
+    // layer 6's CompensatedSum (Neumaier) as an independent route, so a law
+    // can compare the two. The bound is Higham's (4.3) for Kahan summation,
+    // (2u + 4 n u^2) times the sum of |x|, u the unit roundoff: the O(n u^2)
+    // term written with constant 4.
+    CompensatedSumOf(values: Array<Number>): CompensatedSum
+    {
+        var acc = values.Reduce(Vector2D(0.0, 0.0), (a, x) => a.KahanStep(x));
+        var u = Number.RoundingUnit;
+        var n = values.Count.ToNumber;
+        var magnitude = values.Map(x => x.Abs).SumOf;
+        return CompensatedSum(acc.X, values.Count, (2.0 * u + 4.0 * n * u * u) * magnitude);
+    }
+
+    // One step of Kahan's summation: X is the running sum, Y the running
+    // compensation, the low part lost by the last addition.
+    KahanStep(acc: Vector2D, x: Number): Vector2D
+    {
+        var y = x - acc.Y;
+        var t = acc.X + y;
+        return Vector2D(t, (t - acc.X) - y);
+    }
+
+    //==
+    // # Oracle agreement and scope
+
+    // One oracle comparison: the values agree when both have the allowance's
+    // kind and differ by no more than it.
+    OracleAgreementOf(oracle: LawName, meshValue: Measure, oracleValue: Measure, allowance: Allowance): OracleAgreement
+        => OracleAgreement(oracle, meshValue, oracleValue, allowance,
+            meshValue.Kind == oracleValue.Kind
+                ? IsWithin(Measure((meshValue.Value - oracleValue.Value).Abs, meshValue.Kind), allowance.Value)
+                : false);
+
+    // A pair budget of n elements, at least zero.
+    PairBudgetOf(n: Integer): PairBudget
+        => PairBudget(n.Max(0));
+
+    // True when a check of this scope may run over elements under budget:
+    // only an all-pairs check is limited.
+    ScopeAllows(scope: CheckScope, elements: Count, budget: PairBudget): Boolean
+        => match (scope) {
+            PerElement => true;
+            PerPair => elements.Value <= budget.MaxElements;
+            WholeModel => true;
+        };
+
+    //==
+    // # Sample grids
+
+    // A sample grid over a domain; Checked records that the plan is well
+    // formed (at least two samples per direction).
+    SampleGridOf(plan: SamplePlan, domain: SurfaceDomain): SampleGrid
+        => SampleGrid(plan, domain, plan.IsWellFormed);
+
+    //==
+    // # Levels
+
+    // The proof that a validation at level ran: the families level requires,
+    // in CheckFamily order.
+    LevelProofOf(level: ConformanceLevel): LevelProof
+        => LevelProof(level, CheckFamily.AllFamilies.FlatMap(f => level.Requires(f) ? [f] : CheckFamily.AllFamilies.Take(0)));
+
+    // True when the proof's families cover every family level requires.
+    Proves(p: LevelProof, level: ConformanceLevel): Boolean
+        => CheckFamily.AllFamilies.All(f => level.Requires(f) ? p.Ran.Any(r => r == f) : true);
+
+    //==
+    // # Checking a model
+
+    // A model's validation at a level: BrepModel's ICheckable function.
+    Check(m: BrepModel, level: ConformanceLevel): Report
+        => m.ValidateBrep(level);
+}

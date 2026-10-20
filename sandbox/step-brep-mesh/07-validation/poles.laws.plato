@@ -130,7 +130,7 @@ library PolesLaws
         var o = PolesOptionsAt(chordal, quads);
         var d = m.DiscretizeAll(o.Face.Discretization, SegmentFloors.NoFloors);
         var fm = m.MeshFace(BrepFaceIndex(f), d, o.Face).Mesh;
-        return m.ValidateFaceMesh(d, fm, o.Face, ConformanceLevel.Geometric).Checks.FlatMap(c => c.Holds ? [c.Law].Take(0) : [c.Law]);
+        return m.ValidateFaceMesh(d, fm, o.Face, ConformanceLevel.Geometric).Checks.FlatMap(c => c.Holds ? [c.Law.Value].Take(0) : [c.Law.Value]);
     }
 
     // Every face of model m meshed once (no refinement round) under options o, with the

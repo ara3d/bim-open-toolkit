@@ -10,10 +10,10 @@ body, because every body here is its own specification; nothing is deferred.
 | File | Holds |
 |---|---|
 | `foundation-tolerances.types.plato` | `LengthTolerance`, `AngleTolerance`, `ParameterTolerance`, `UvTolerance`, `Tolerances` |
-| `foundation-budgets.types.plato` | `TimeBudget`, `Elapsed`, `WorkBudget` (section 10; moved from catalog-validation at the catalog merge, meshing, 2026-10-20, because `TerminationCertificate` and `IBudgeted` name `WorkBudget`; their functions and laws are still staged there) |
+| `foundation-budgets.{types,library,laws,spec}.plato` | `TimeBudget`, `Elapsed`, `WorkBudget` (section 10; types moved from catalog-validation at the catalog merge, meshing, because `TerminationCertificate` and `IBudgeted` name `WorkBudget`), their constructors, orders, `Add` and `IsWithin`; blocks `BrepFoundationBudgets`, `BrepFoundationBudgetsLaws` (6 laws) (catalog merge, validation, 2026-10-20) |
 | `foundation-domains.types.plato` | `Periodicity`, `CurveDomain`, `SurfaceDomain`, `DomainSide`, `SamplePlan` |
 | `foundation-indices.types.plato` | the 14 typed indices |
-| `foundation-diagnostics.types.plato` | `MeshVertexProvenance`, `Provenance`, `Severity`, `ConstraintGroup`, `Check`, `Diagnostic`, `Report` |
+| `foundation-diagnostics.types.plato` | `MeshVertexProvenance`, `Provenance`, `Severity`, `ConstraintGroup`, `LawName` (the type of `Check.Law`, catalog merge, validation), `Check`, `Diagnostic`, `Report` |
 | `foundation.library.plato` | `library BrepFoundation`: 90 functions, all with bodies |
 | `foundation.laws.plato` | `library BrepFoundationLaws`: 46 laws, 5 witnesses, 1 helper |
 | `foundation.spec.plato` | 11 type invariant blocks, 31 function contracts, 8 theorems |

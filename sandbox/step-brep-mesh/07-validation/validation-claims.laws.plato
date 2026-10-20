@@ -1,0 +1,132 @@
+//==
+// # Validation: claim, allowance, scope and level laws
+//
+// The laws of validation-claims.library.plato (moved from catalog-validation
+// at the catalog merge, validation, 2026-10-20). One statement per law; a
+// leading `? :` guard makes a law vacuously true where its precondition
+// fails. Laws over sums take Integer selectors and build the value inside.
+// Computed Numbers are compared within a recorded error bound or exactly
+// where the value is copied, never within a literal epsilon.
+//
+// Sections, in order:
+//  - Helpers
+//  - Law names and check records
+//  - Allowances and oracle agreement
+//  - Compensated sums
+//  - Scope
+//  - Levels
+
+library BrepCheckingClaimsLaws
+{
+    //==
+    // # Helpers
+
+    // One of the three conformance levels, chosen by k.
+    CatalogLevelAt(k: Integer): ConformanceLevel
+    {
+        var i = (k % 3 + 3) % 3;
+        return i == 0 ? ConformanceLevel.Structural
+            : (i == 1 ? ConformanceLevel.Geometric : ConformanceLevel.Oracle);
+    }
+
+    // One of the seven measure kinds, chosen by k.
+    CatalogKindAt(k: Integer): MeasureKind
+    {
+        var i = (k % 7 + 7) % 7;
+        return i == 0 ? MeasureKind.LengthKind
+            : (i == 1 ? MeasureKind.AngleKind
+            : (i == 2 ? MeasureKind.ParameterKind
+            : (i == 3 ? MeasureKind.AreaKind
+            : (i == 4 ? MeasureKind.VolumeKind
+            : (i == 5 ? MeasureKind.CountKind : MeasureKind.RatioKind)))));
+    }
+
+    //==
+    // # Law names and check records
+
+    // A check keeps the law name it was built with.
+    Law_CheckKeepsLawName(s: String): Boolean
+        => CheckExact(s, true, Provenance.Nowhere).Law == LawName(s);
+
+    // A check record holds exactly when the check held, for a sampled check.
+    Law_ToCheckRecordPreservesHolds(worst: Number, bound: Number, k: Integer): Boolean
+        => CheckWithin("Law_Any", worst, bound, Provenance.Nowhere)
+                .ToCheckRecord(CatalogKindAt(k), SampleCount(2)).Holds
+            == CheckWithin("Law_Any", worst, bound, Provenance.Nowhere).Holds;
+
+    // A check record holds exactly when the check held, for an exact check.
+    Law_ToCheckRecordPreservesExactHolds(holds: Boolean, k: Integer): Boolean
+        => CheckExact("Law_Any", holds, Provenance.Nowhere)
+                .ToCheckRecord(CatalogKindAt(k), SampleCount(2)).Holds == holds;
+
+    // A check record names the check's law.
+    Law_ToCheckRecordKeepsLaw(worst: Number, bound: Number): Boolean
+        => CheckWithin("Law_Any", worst, bound, Provenance.Nowhere)
+                .ToCheckRecord(MeasureKind.LengthKind, SampleCount(2)).Claim.Law == LawName("Law_Any");
+
+    //==
+    // # Allowances and oracle agreement
+
+    // A rounding allowance is the count of operations times the resolution.
+    Law_RoundingAllowanceIsCountTimesResolution(n: Integer, r: Number, k: Integer): Boolean
+        => AllowanceFromRounding(CountOf(n), Resolution(r), CatalogKindAt(k)).Value.Value
+            == CountOf(n).Value.ToNumber * r;   // exact by construction: the same product
+
+    // A rounding allowance keeps the kind it was made for.
+    Law_RoundingAllowanceKeepsKind(n: Integer, r: Number, k: Integer): Boolean
+        => AllowanceFromRounding(CountOf(n), Resolution(r), CatalogKindAt(k)).Value.Kind == CatalogKindAt(k);
+
+    // Agreement is exactly |mesh - oracle| within the allowance, for one kind.
+    Law_OracleAgreesIffWithinAllowance(a: Number, b: Number, bound: Number, k: Integer): Boolean
+        => OracleAgreementOf(LawName("Law_Any"), Measure(a, CatalogKindAt(k)), Measure(b, CatalogKindAt(k)),
+                AllowanceStated(Measure(bound, CatalogKindAt(k)), "law")).Agree
+            == ((a - b).Abs <= bound);
+
+    // Values of two kinds never agree.
+    Law_OracleOfOtherKindNeverAgrees(a: Number, b: Number, bound: Number, k: Integer): Boolean
+        => !OracleAgreementOf(LawName("Law_Any"), Measure(a, CatalogKindAt(k)), Measure(b, CatalogKindAt(k + 1)),
+                AllowanceStated(Measure(bound, CatalogKindAt(k)), "law")).Agree;
+
+    //==
+    // # Compensated sums
+
+    // Kahan's sum agrees with layer 6's Neumaier sum within twice the recorded
+    // bound: each is within the bound of the exact sum (Neumaier's own bound,
+    // 2u |sum| + 2n u^2 (sum of |x|), is no larger).
+    Law_CompensatedSumAgreesWithLibrary(a: Number, b: Number, c: Number, d: Number): Boolean
+    {
+        var xs = [a * 1024.0, b, -a * 1024.0, c, d * 0.001, -b];
+        var s = CompensatedSumOf(xs);
+        return (s.Value - xs.CompensatedSum).Abs <= 2.0 * s.Error;
+    }
+
+    // The recorded error bound is never negative.
+    Law_CompensatedSumErrorIsNonNegative(a: Number, b: Number, c: Number, d: Number): Boolean
+        => CompensatedSumOf([a, b, c, d]).Error >= 0.0;
+
+    // The sum records how many terms it added.
+    Law_CompensatedSumCountsTerms(a: Number, b: Number, c: Number): Boolean
+        => CompensatedSumOf([a, b, c]).Terms == 3;
+
+    //==
+    // # Scope
+
+    // An all-pairs check runs exactly when the elements fit the budget.
+    Law_PairScopeRespectsBudget(n: Integer, max: Integer): Boolean
+        => ScopeAllows(CheckScope.PerPair, CountOf(n), PairBudgetOf(max)) == (CountOf(n).Value <= PairBudgetOf(max).MaxElements);
+
+    // A per-element check is never limited by the pair budget.
+    Law_PerElementScopeIsUnlimited(n: Integer, max: Integer): Boolean
+        => ScopeAllows(CheckScope.PerElement, CountOf(n), PairBudgetOf(max));
+
+    //==
+    // # Levels
+
+    // A level's proof proves that level.
+    Law_LevelProofProvesItsLevel(k: Integer): Boolean
+        => LevelProofOf(CatalogLevelAt(k)).Proves(CatalogLevelAt(k));
+
+    // A structural proof does not prove the oracle level.
+    Law_StructuralProofIsNotOracle(k: Integer): Boolean
+        => !LevelProofOf(ConformanceLevel.Structural).Proves(ConformanceLevel.Oracle);
+}

@@ -165,7 +165,7 @@ library CatalogRepairLaws
     MappedSampleCheck(k: Integer, holds: Boolean): Check
     {
         var i = CatalogWrap(k, Defect.MappedSampleCount);
-        var law = ExpectedLawOf(MappedSampleDefect(k)).Value;
+        var law = ExpectedLawOf(MappedSampleDefect(k));
         var m = Defect.RepairSampleModel;
         var worst = holds ? 0.0 : 1.0;
         return i == 0 ? Check(law, holds, worst, 0.0, Provenance.KernelFace(BrepFaceIndex(0)))

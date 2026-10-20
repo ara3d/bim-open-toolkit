@@ -1,0 +1,34 @@
+//==
+// # Tooling: concepts
+//
+// TYPE-CATALOG.md section 15: a concept states a law once over every type
+// that implements it. In layer 9 because each obligation names a layer 9
+// type (ModelDiff, WitnessSpec); catalog merge, validation, 2026-10-20.
+// BrepModel's functions exist (tooling-reports.library.plato), but BrepModel,
+// in layer 2, cannot declare an implements line naming a layer 9 concept
+// (FINDINGS F-58).
+//
+// Sections, in order:
+//  - Comparing
+//  - Witnesses
+
+//==
+// # Comparing
+
+// A value two of which can be compared table by table. Law: a value has no
+// difference from itself (Law_SameModelHasNoDifference, over BrepModel).
+interface IDiffable
+{
+    Diff(a: Self, b: Self, tol: Tolerances): ModelDiff;
+}
+
+//==
+// # Witnesses
+
+// A type that names its own witness families, so the runner draws
+// constrained values from witnesses (F-54's rejected Invariant_ form, done as
+// a concept).
+interface IWitnessed
+{
+    Witnesses(_: Self): Array<WitnessSpec>;
+}

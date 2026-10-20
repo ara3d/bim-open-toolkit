@@ -74,6 +74,17 @@ type ConstraintGroup
 //==
 // # Checks, diagnostics, reports
 
+// The name of a law: the Law_ function's name, as a Check, a law run, a claim
+// and a defect record it (TYPE-CATALOG.md section 10; the catalog's LawId and
+// LawName were one thing under two names, merged here at the catalog merge,
+// validation, 2026-10-20). Removes: a law identity passed as a bare String
+// beside other Strings (a witness name, a code).
+type LawName
+    implements IValue
+{
+    Value: String;
+}
+
 // One law evaluated over one value, sampled where the law is pointwise. Law is
 // the Law_ function's name; Worst is the worst measure seen, in the law's own
 // unit and oriented so that larger is worse; Bound is the bound that sample
@@ -85,7 +96,7 @@ type ConstraintGroup
 // (Law_UnmeasuredCheckFails).
 type Check
 {
-    Law: String;
+    Law: LawName;
     Holds: Boolean;
     Worst: Number;
     Bound: Number;

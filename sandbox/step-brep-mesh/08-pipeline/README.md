@@ -19,6 +19,8 @@ and `CrossCheck(mesh, level, criteria)`, all at the options' `ConformanceLevel` 
 | `pipeline-witnesses.laws.plato` | library `StepToMeshWitnessesLaws`: the laws that mesh layer 7's witnesses (moved from layer 7 in the name review), 3 helpers and 16 laws |
 | `pipeline.spec.plato` | invariants of the 4 types, 9 function contracts, 5 theorems |
 | `pipeline-decided.{types,library,laws,spec}.plato` | section 5: `MeshResult = Succeeded \| Incomplete \| Failed`, `ToMeshResult(m, outcome)` through layer 7's `CheckCheckedMesh`, `IsSucceeded`; blocks `StepToMeshDecided`, `StepToMeshDecidedLaws` (1 law) (catalog merge, 2026-10-20). `MeshModel` still returns `MeshOutcome` |
+| `pipeline-trace.{types,library,laws,spec}.plato` | section 11: `MeshingEvent`, `Trace` (`RoundsOf`, `RoundsAreMonotone`, `Recorded`), `RunKey`, `Pending` (`PendingOf`), `Incremental` (`IncrementalOf`); blocks `StepToMeshTrace`, `StepToMeshTraceLaws` (4 laws) (catalog merge, validation, 2026-10-20). Section 11's `StageOutcome<T>` names layer 9's `RunStage` and is in `09-tooling` |
+| `pipeline.concepts.plato` | `ITraced`, no implementer until `PipelineState` holds a `Trace` (FINDINGS F-58) |
 | `pipeline-proofs-{discretization,mesh,bsplines}.laws.plato` | libraries `StepToMeshProofsDiscretizationLaws`, `StepToMeshProofsMeshLaws`, `StepToMeshProofsBSplinesLaws`: the 10, 16 and 4 laws of the section 4 proofs of layers 4, 6 and 1 that use this layer's witnesses or fixtures (catalog merge, proofs, 2026-10-20) |
 
 Counts after the fix wave: 4 types; 48 library functions, every one with a body; 34 laws; 16

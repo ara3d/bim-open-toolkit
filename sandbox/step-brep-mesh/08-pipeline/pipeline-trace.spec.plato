@@ -1,0 +1,27 @@
+//==
+// # Pipeline: invariants and constructors of the trace types
+//
+// SPEC-DSL.md section 3. Not compiled; each invariant cites the law in
+// pipeline-trace.laws.plato that checks it.
+
+spec Trace
+{
+    invariant self.RoundsAreMonotone;   // Law_TraceRoundsAreMonotone
+}
+
+spec Incremental
+{
+    constructor IncrementalOf;
+}
+
+spec IncrementalOf(m: BrepModel, changed: Array<BrepEdgeIndex>): Incremental
+{
+    ensures m.ReusedTouchNoChangedEdge(result, changed);   // Law_ReusedFacesTouchNoChangedEdge
+    ensures result.Reused.Count + result.Redone.Count == m.Faces.Count;   // Law_IncrementalCoversEveryFace
+    measure m.Faces.Count * changed.Count;
+}
+
+spec Pending
+{
+    constructor PendingOf;
+}

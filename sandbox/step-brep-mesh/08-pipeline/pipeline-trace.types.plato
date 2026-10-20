@@ -1,29 +1,16 @@
 //==
-// # Catalog: pipeline stages, runs, and traces
+// # Pipeline: events, traces, runs and rounds
 //
-// TYPE-CATALOG.md section 11, layer 8: every stage returns the same shape,
-// the run is a list of events, and a run names what makes it reproducible.
+// TYPE-CATALOG.md section 11, layer 8: the run is a list of events, a run
+// names what makes it reproducible, and a round names what it reuses (moved
+// from catalog-validation at the catalog merge, validation, 2026-10-20). The
+// section's StageOutcome<T> names layer 9's RunStage, so it is in
+// 09-tooling/tooling-reports.types.plato until layer 8 has its own Stage
+// (FINDINGS F-58).
 //
 // Sections, in order:
-//  - Stage outcomes
 //  - Events and traces
 //  - Runs and rounds
-
-//==
-// # Stage outcomes
-
-// What every stage returns: which stage, its value, its report, and how long
-// it took. The catalog's Stage (Parsing .. Validating) is not added: layer
-// 9's RunStage exists with other cases (TRACK.md, Contract requests), so
-// Stage is RunStage until the supervisor aligns them. Removes: a stage whose
-// report or time is returned in a different place from the next stage's.
-type StageOutcome<T>
-{
-    Stage: RunStage;
-    Value: T;
-    Report: Report;
-    Elapsed: Elapsed;
-}
 
 //==
 // # Events and traces
@@ -69,7 +56,7 @@ type Pending
 
 // What a round reused and what it redid. Built by IncrementalOf from the
 // changed edges. Invariant: no reused face cites a changed edge
-// (ReusedFacesTouchNoChangedEdge).
+// (Law_ReusedFacesTouchNoChangedEdge).
 type Incremental
 {
     Reused: Array<BrepFaceIndex>;

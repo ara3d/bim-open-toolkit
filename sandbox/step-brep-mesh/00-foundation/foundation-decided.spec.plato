@@ -46,7 +46,7 @@ spec DecidedRound
 
 spec KeepReason { ensures self.CaseNumber >= 0 && self.CaseNumber < 4; }   // Law_KeepReasonRoundTrips
 
-spec WorkBudget { invariant self.WorkTotal >= 0; }
+>>>
 
 spec TerminationCertificate
 {

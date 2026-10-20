@@ -1,38 +1,16 @@
 //==
-// # Catalog: claims, evidence, allowances
+// # Validation: claims, evidence, allowances
 //
-// TYPE-CATALOG.md section 10, layers 0 and 7: what a check asserts, the
-// evidence it found, and where every allowance's number came from.
+// TYPE-CATALOG.md section 10, layer 7: what a check asserts, the evidence
+// it found, and where every allowance's number came from (moved from
+// catalog-validation at the catalog merge, validation, 2026-10-20). A law's
+// name is layer 0's LawName.
 //
 // Sections, in order:
-//  - Law names
 //  - Claims and evidence
 //  - Allowances
 //  - Compensated sums
 //  - Scope and budgets of a check
-
-//==
-// # Law names
-
-// The runner's identity of a law: the name a LawRun records. The catalog
-// marks LawId as existing in tooling-law-runner.types.plato; it does not
-// (LawRun.Law is a String), so it is declared here and only LawIdOf(LawRun)
-// builds it (TRACK.md, Contract requests). Removes: a law identity typed by
-// hand.
-type LawId
-    implements IValue
-{
-    Name: String;
-}
-
-// The public form of a law's identity, built only from a LawId
-// (LawNameOf), so a Check's law cannot be a typo. Removes: a check that
-// names a law no runner knows.
-type LawName
-    implements IValue
-{
-    Value: String;
-}
 
 //==
 // # Claims and evidence
@@ -55,7 +33,7 @@ type Evidence
     | SampledEvidence(Worst: Measure, At: Provenance, Samples: SampleCount)
     | OracleEvidence(Expected: Measure, Actual: Measure, Allowance: Allowance);
 
-// The catalog's extended Check (a contract request: Check stays as it is):
+// The catalog's extended Check (Check itself is unchanged, FINDINGS F-58):
 // a claim, its evidence, and whether it held. Built from a library Check by
 // ToCheckRecord. Removes: a check whose evidence kind is guessed from its
 // numbers.

@@ -181,8 +181,12 @@ layer's own and may change inside the layer.
   section 4 proofs; `Check` and `Diagnostic` discharge `Where` through their field);
   `IBudgeted { Work(x): WorkBudget }` (no implementer yet).
 - Budgets (`foundation-budgets.types.plato`, TYPE-CATALOG.md section 10): `TimeBudget { Milliseconds }`,
-  `Elapsed { Milliseconds }`, `WorkBudget { Evaluations; Insertions; Flips; Projections }`; their
-  functions and laws are still staged in catalog-validation.
+  `Elapsed { Milliseconds }`, `WorkBudget { Evaluations; Insertions; Flips; Projections }`, with
+  `TimeBudgetOf`, `ElapsedOf`, `IsWithin(Elapsed, TimeBudget)`, `WorkBudgetOf`, `NoWork`,
+  `Add(WorkBudget, WorkBudget)`, `IsWithin(WorkBudget, WorkBudget)` (`BrepFoundationBudgets`; laws
+  `BrepFoundationBudgetsLaws`; catalog merge, validation). A budget's total is `WorkTotal`.
+- `LawName { Value: String }` (`foundation-diagnostics.types.plato`): a law's name, the type of
+  `Check.Law`; `CheckWithin` and `CheckExact` still take the name as a `String` and wrap it.
 - Decided values (`BrepFoundationDecided`, TYPE-CATALOG.md section 5): `UndecidedReason = OutOfDomain |
   DegenerateAt(Side) | NoConvergence(Iterations) | Unbounded | NotApplicable(Kind) | BelowResolution |
   ToleranceExceeded(By: Measure) | Fails(Property: String)`; one sum `Decided(Value: T) |
@@ -539,6 +543,17 @@ layer's own and may change inside the layer.
   `CheckCheckedMesh(m, mesh)` with `IsClosedWhereShellIs`, `PassesMeshChecks`. The laws of the
   layer 2, 3 and 5 proofs are here (`BrepCheckingProofsKernelLaws`, `BrepCheckingProofsRegionsLaws`)
   because they take this layer's witnesses.
+- Claims (`BrepCheckingClaims`, TYPE-CATALOG.md section 10): `Claim { Law: LawName; Subject; Tolerance:
+  Measure }`, `Evidence = ExactEvidence | SampledEvidence | OracleEvidence`, `CheckRecord { Claim;
+  Evidence; Holds }` built by `ToCheckRecord(c: Check, kind, samples)`; `AllowanceSource`, `Allowance`
+  with `AllowanceFromRounding`, `AllowanceFromModelTolerance`, `AllowanceFromCriteria`,
+  `AllowanceFromOracleBound`, `AllowanceStated`; `CompensatedSum` (Kahan, `CompensatedSumOf`, beside
+  layer 6's Neumaier `CompensatedSum(values)`); `OracleAgreement` (`OracleAgreementOf`); `CheckScope`,
+  `PairBudget` (`PairBudgetOf`, `ScopeAllows`); `SampleGrid` (`SampleGridOf`); `Expectation =
+  ShouldPass | ShouldFail(Law) | ShouldWarn(Code)`; `LevelProof` (`LevelProofOf`, `Proves`);
+  `Check(m: BrepModel, level): Report`. Laws `BrepCheckingClaimsLaws`.
+- Concept (`validation.concepts.plato`): `ICheckable { Check(x, level): Report }`; no type declares it
+  (FINDINGS F-58).
 
 ### 8. `08-pipeline`
 
@@ -569,6 +584,30 @@ layer's own and may change inside the layer.
   is not built yet (FINDINGS F-58).
 - The laws of the layer 1, 4 and 6 proofs that use this layer's witnesses or fixtures:
   `StepToMeshProofsDiscretizationLaws`, `StepToMeshProofsMeshLaws`, `StepToMeshProofsBSplinesLaws`.
+- Traces (`StepToMeshTrace`, TYPE-CATALOG.md section 11): `MeshingEvent` (seven cases), `Trace { Events }`
+  (`RoundsOf`, `RoundsAreMonotone`, `Recorded`), `RunKey { ModelHash; Options; LibraryCommit; Profile }`,
+  `Pending { Requests: RequestSet; Faces }` (`PendingOf`), `Incremental { Reused; Redone }`
+  (`IncrementalOf(m, changed)`, `ReusedTouchNoChangedEdge`). Laws `StepToMeshTraceLaws`. Section 11's
+  `StageOutcome<T>` is layer 9's (it names `RunStage`).
+- Concept (`pipeline.concepts.plato`): `ITraced { Trace(x): Trace }`, no implementer until
+  `PipelineState` holds a `Trace` (FINDINGS F-58).
+
+### 9. `09-tooling`
+
+Layer 9's names are its own (its README lists them) except these, which other tracks and the host read:
+
+- `LawRun { Law: LawName; Witness; Stage: RunStage; Verdict: LawVerdict; Measure; Where; Elapsed }`
+  (`Untimed` is the zero `Elapsed` this runner records); `LawVerdict = Held | Failed |
+  FailedAsExpected | HeldUnexpectedly | Skipped(Reason) | Error(Message) | Obligation |
+  OverBudget(Elapsed)`, with `IsDefectVerdict`, `VerdictName`, `VerdictReason`.
+- Reports (`ToolingReports`, sections 10, 11, 16): `StageOutcome<T> { Stage: RunStage; Value; Report;
+  Elapsed }`, `RowDump`, `DiffSummary` (`DiffSummaryOf`), `Benchmark` (`MeetsBenchmark`), `CorpusRow`
+  (`tooling-corpus-rows.types.plato`, names the staged repair track's `DefectReport`), `WitnessSpec`,
+  `VerdictDelta` (`VerdictDeltaOf`, `IsChange`, `VerdictOrdinal`), `IsMet(Expectation, LawVerdict)`,
+  `InvarianceOf(Perturbation): LawName`, `Diff(a, b, tol): ModelDiff`, `Witnesses(BrepModel)`.
+  Laws `ToolingReportsLaws`.
+- Concepts (`tooling.concepts.plato`): `IDiffable { Diff(a, b, tol): ModelDiff }`, `IWitnessed {
+  Witnesses(x): Array<WitnessSpec> }`; no type declares them (FINDINGS F-58).
 
 ## Naming rules
 
@@ -602,6 +641,23 @@ Format: date, layer, old name, new name, reason.
 - 2026-10-20, 0, (staged) `TimeBudget`, `Elapsed`, `WorkBudget` moved from catalog-validation to
   `foundation-budgets.types.plato`, so layer 0's `TerminationCertificate` and `IBudgeted` resolve
   without the staging folder (catalog merge, meshing).
+- 2026-10-20, 0, `Check.Law: String`, `Check.Law: LawName`; 9, `LawRun.Law: String`, `LawRun.Law:
+  LawName`: a law's identity is typed. The catalog's `LawId { Name }` and `LawName { Value }` were one
+  thing; `LawId` is deleted. `CheckWithin` and `CheckExact` keep a `String` parameter (about 450
+  literal call sites) and wrap it; 18 readers changed (`.Law.Value` where a `String` is needed,
+  `== LawName(...)` where compared), 10 of them in the staged repair track (catalog merge, validation).
+- 2026-10-20, 9, `LawVerdict` gains `Error(Message)`, `Obligation`, `OverBudget(Elapsed)` from the
+  catalog's `LawVerdictDetail`, which is deleted; `Pass` and `Fail` were `Held` and `Failed`,
+  `FailedAsExpected` and `HeldUnexpectedly` stay (the runner produces both). `Failed` takes no
+  `Evidence` payload (FINDINGS F-58). `SkipReason` is `VerdictReason`, and the summary table gains
+  three columns (catalog merge, validation).
+- 2026-10-20, 9, `LawRun` gains `Elapsed: Elapsed`, zero (`LawRun.Untimed`) at the runner's four
+  constructor sites, which do not time (catalog merge, validation).
+- 2026-10-20, 9, catalog-validation's `PerturbationKind` deleted: its three cases renamed three of
+  `Perturbation`'s six with other payload types; `InvarianceOf` takes `Perturbation`, every reversal
+  naming `Law_ReversalIsAnInvolution` (catalog merge, validation).
+- 2026-10-20, 0, catalog-validation's `TotalWork(WorkBudget)` deleted for layer 0's `WorkTotal`, the
+  same sum (catalog merge, validation).
 
 - 2026-10-20, 1, (none), `ProjectDecided(ArenaSurface, Point3D): Projection` beside `Project`, which
   keeps returning a `UvCoordinate`; `IProjectable3D`'s obligation is `ProjectDecided`. The catalog

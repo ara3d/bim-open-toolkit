@@ -22,13 +22,23 @@
 // witnesses). HeldUnexpectedly: it holds one of those laws, which is a
 // defect in the witness or the law. Skipped: the law was not evaluated,
 // and Reason says why (a parameter only a generator supplies, or a cost
-// the runner does not pay per call).
+// the runner does not pay per call). Error: evaluating the law faulted,
+// with the message. Obligation: a law stated for a prover, not evaluated.
+// OverBudget: evaluated past its time budget, with the time it took. The
+// last three are the catalog's (TYPE-CATALOG.md section 10, merged from
+// catalog-validation's LawVerdictDetail, 2026-10-20); this runner produces
+// none of them yet, the host's sweep does. Failed carries no Evidence: the
+// run's Measure and Where hold what the runner knows, and a Check has no
+// measure kind to build one from (FINDINGS F-58).
 type LawVerdict
     = Held
     | Failed
     | FailedAsExpected
     | HeldUnexpectedly
-    | Skipped(Reason: String);
+    | Skipped(Reason: String)
+    | Error(Message: String)
+    | Obligation
+    | OverBudget(Elapsed: Elapsed);
 
 // Where in the pipeline a run looked at its witness. ModelStage: the
 // model's own validation (ValidateBrep at Oracle level). MeshedStage: the
@@ -45,15 +55,17 @@ type RunStage
 // exports one (a Check's Worst), the first failing index for a law
 // quantified over indices, and NaN where neither exists (layer 0's
 // convention for an absent measure). Where is the check's location, or
-// Nowhere.
+// Nowhere. Elapsed is the wall time of the run; this runner does not time a
+// run and records zero (LawRun.Untimed), the host's sweep times each law.
 type LawRun
 {
-    Law: String;
+    Law: LawName;
     Witness: String;
     Stage: RunStage;
     Verdict: LawVerdict;
     Measure: Number;
     Where: Provenance;
+    Elapsed: Elapsed;
 }
 
 // Every run, with the backend it ran under. Backend is supplied by the

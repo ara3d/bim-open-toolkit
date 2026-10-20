@@ -1,0 +1,64 @@
+//==
+// # Tooling: stage outcomes, row dumps, diff summaries, benchmarks
+//
+// TYPE-CATALOG.md sections 11 and 16, layer 9 (moved from catalog-validation
+// at the catalog merge, validation, 2026-10-20). CorpusRow is in
+// tooling-corpus-rows.types.plato, since it names the staged repair track's
+// DefectReport.
+//
+// Sections, in order:
+//  - Stage outcomes
+//  - Diffs
+//  - Benchmarks
+
+//==
+// # Stage outcomes
+
+// What every stage returns: which stage, its value, its report, and how long
+// it took. Section 11's type, here rather than in layer 8 because its Stage
+// is this layer's RunStage: the catalog's Stage (Parsing .. Validating) is
+// not added, since RunStage names where the law runner looked, not a
+// pipeline stage (FINDINGS F-58). Removes: a stage whose report or time is
+// returned in a different place from the next stage's.
+type StageOutcome<T>
+{
+    Stage: RunStage;
+    Value: T;
+    Report: Report;
+    Elapsed: Elapsed;
+}
+
+//==
+// # Diffs
+
+// One row of a kernel table as printable cells, so "the developer dumps the
+// row" is a function. Removes: a row printed field by field by hand.
+type RowDump
+{
+    Table: TableName;
+    Row: Integer;
+    Cells: Array<CellValue>;
+}
+
+// The first difference and how many there were, in all and per table (one
+// Count per ModelTable case, in case order; ModelTable is this layer's table
+// name for diffs, wider than TableName: it adds closures, tolerances, and
+// units). Removes: "first only" hiding a renumbering that moved everything.
+type DiffSummary
+{
+    First: ModelDiff;
+    Count: Integer;
+    ByTable: Array<Count>;
+}
+
+//==
+// # Benchmarks
+
+// A recorded number a law compares against (F-56 item 2's 4.99 degrees),
+// with the run it was recorded at. Removes: a magic constant in a law.
+type Benchmark
+{
+    Law: LawName;
+    Recorded: Measure;
+    At: RunKey;
+}

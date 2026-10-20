@@ -137,7 +137,7 @@ library BrepCheckingCommon
     // keep it well formed (CheckWithin), and the law, the hold and the
     // provenance are the check's own.
     AsWarning(c: Check): Check
-        => CheckWithin(c.Law, c.Holds ? 0.0 : 2.0, 1.0, c.Where);
+        => CheckWithin(c.Law.Value, c.Holds ? 0.0 : 2.0, 1.0, c.Where);
 
     // The report of a quality threshold: a failure is Info.
     QualityReport(c: Check, message: String): Report

@@ -131,6 +131,11 @@ Laws (33, all pass, cpu64, 2026-10-20):
     `catalog-repair-defects.types.plato` in section 5's pattern; the decided track may adopt it.
   - validation track (section 10): `LawName { Value: String }`, `WorkBudget { Evaluations; Insertions;
     Flips; Projections }`, exact shape.
+    Merged 2026-10-20 (catalog merge, validation): `LawName` is layer 0's
+    (`foundation-diagnostics.types.plato`) and `Check.Law` is a `LawName`, so `FailedDefectOf`,
+    `MappedSampleCheck` and the `DefectOf` spec were changed at that merge. Layer 9's `CorpusRow`
+    (`09-tooling/tooling-corpus-rows.types.plato`) names this track's `DefectReport` and compiles
+    only with this folder staged; check its payload when this track merges.
   - proof-carrying track (section 4): `PreparedModel { Model: BrepModel }`, narrower than the catalog
     (no `Decoded`).
   - editing track (section 12): `ModelEdit = Geometric | Topological | Tolerance`, with
