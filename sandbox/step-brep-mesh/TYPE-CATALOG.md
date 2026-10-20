@@ -68,7 +68,8 @@ ledger's "types added" column.
   (points, so segments + 1), `Round { Value: Integer }` (a refinement round), `Depth`. **Removes:**
   a segment count passed where a sample count is expected, the off-by-one at every polyline's
   end; a round counter compared with a segment floor.
-- `PowerOfTwo { Exponent: Integer }`: the only scale factor the metamorphic scaling laws use.
+- `PowerOfTwoFactor { Exponent: Integer }` (the library already has a function `PowerOfTwo`):
+  the only scale factor the metamorphic scaling laws use.
   **Removes:** a scale test that fails on rounding because the factor was 3.
 - `Resolution { Value: Number }`: `ResolutionAt(magnitude)` returns it, never a bare `Number`.
   **Removes:** a rounding floor compared with a tolerance in the wrong direction.
@@ -88,7 +89,9 @@ rule) and one `Number` for every curve parameter. Chunk Y1 splits them. The full
   them. **Removes:** a pcurve evaluated at a 3D curve's parameter.
 - `EdgeParameter { Value: Number }`: on an edge's canonical domain, increasing from `Start` to
   `End` (what `EdgeDiscretization.Parameters` holds). **Removes:** a reversed coedge's sample
-  taken at the un-reversed parameter. `ToCurveParameter(m, e, t)` applies `SameSense`.
+  taken at the un-reversed parameter. `ToCurveParameter(m, e, t)` wraps `t` into the curve's
+  domain; layer 2's `EdgeDomain` already runs in increasing curve parameter whatever `SameSense`
+  is (corrected 2026-10-20 by the foundation track).
 - `ArcLength { Value: ModelLength }` and `NormalizedParameter { Value: Fraction }`: a position
   along an edge by length or by fraction of its domain. **Removes:** a midpoint computed as the
   parameter midpoint on a curve whose speed varies.

@@ -82,6 +82,14 @@ server. Fallback if the server does not answer in ten minutes: the pinned CLI
 `dotnet C:/Users/cdigg/.plato-cli/bac65e1c/Plato.CLI.dll` with the library folders and your
 folder as roots (PLATO-PRIMER.md section E).
 
+Two server defects the foundation track found (2026-10-20): after you rename or delete a
+declaration the server may keep the old name alive and report a phantom ambiguity (CHK203);
+copy your folder to a fresh path under your scratchpad and check that copy. And the server does
+not report a missing interface function (LINT001): run the pinned CLI's `lint` over the library
+and your folder once at the end (PLATO-PRIMER.md E.2) and fix what it names in your files.
+Names already taken: `PowerOfTwo` is a library function, so the foundation type is
+`PowerOfTwoFactor`; the stdlib has `VertexRemap`, so the kernel one is `BrepVertexRemap`.
+
 Done means: zero type errors in your folder, every `Law_Catalog_` law you wrote passes (or is an
 obligation you explain), `TRACK.md` filled in with the types added, the laws and their verdicts,
 durations per step, and the "Requests to other tracks" list.
