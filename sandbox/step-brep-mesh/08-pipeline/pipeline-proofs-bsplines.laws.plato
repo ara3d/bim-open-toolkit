@@ -1,16 +1,15 @@
 //==
-// # Catalog: laws of the geometry proofs
+// # Laws of the B-spline proofs (layer 1)
 //
-// Two laws per proof type, as in catalog-proofs-kernel.laws.plato. The
-// B-spline laws run over layer 8's five curve fixtures and a sixth with a
-// negative weight; the frame laws run over the runner's own Frame3D and
-// AngleTolerance values.
+// Two laws per B-spline proof type of 01-geometry/geometry-proofs.types.plato,
+// over this layer's five curve fixtures (CurveFixture) and a sixth with a
+// negative weight, which is why they are layer 8's. The frame laws are layer
+// 1's (geometry-proofs.laws.plato).
 //
 // Sections, in order:
 //  - B-splines
-//  - Frames
 
-library CatalogProofsGeometryLaws
+library StepToMeshProofsBSplinesLaws
 {
     //==
     // # B-splines
@@ -28,14 +27,14 @@ library CatalogProofsGeometryLaws
 
     // CheckWellFormedBSpline succeeds exactly when the record keeps every
     // shape rule.
-    Law_Catalog_WellFormedBSplineIffWellShaped(k: Integer): Boolean
+    Law_WellFormedBSplineIffWellShaped(k: Integer): Boolean
         => CheckWellFormedBSpline(CatalogCurveAt(k)).IsDecided == CatalogCurveAt(k).IsWellShaped;
 
     // A WellFormedBSpline keeps its record's counts.
-    Law_Catalog_WellFormedBSplineKeepsRecord(k: Integer): Boolean
+    Law_WellFormedBSplineKeepsRecord(k: Integer): Boolean
         => CatalogWellFormedKeeps(CatalogCurveAt(k), CheckWellFormedBSpline(CatalogCurveAt(k)));
 
-    // The claim of Law_Catalog_WellFormedBSplineKeepsRecord for the result
+    // The claim of Law_WellFormedBSplineKeepsRecord for the result
     // w of checking record d.
     CatalogWellFormedKeeps(d: BSplineCurveData, w: DecidedWellFormedBSpline): Boolean
         => match (w) {
@@ -45,10 +44,10 @@ library CatalogProofsGeometryLaws
 
     // Of the well-formed fixtures, CheckClampedBSpline accepts exactly the
     // ones layer 8's fixture notes call clamped: every one but fixture 3.
-    Law_Catalog_ClampedBSplineIffFixtureClamped(k: Integer): Boolean
+    Law_ClampedBSplineIffFixtureClamped(k: Integer): Boolean
         => CatalogClampedIff(k.FixtureIndex(Integer.CurveFixtureCount) != 3, CheckWellFormedBSpline(CurveFixture(k)));
 
-    // The claim of Law_Catalog_ClampedBSplineIffFixtureClamped for the
+    // The claim of Law_ClampedBSplineIffFixtureClamped for the
     // result w of the well-formedness check.
     CatalogClampedIff(clamped: Boolean, w: DecidedWellFormedBSpline): Boolean
         => match (w) {
@@ -58,10 +57,10 @@ library CatalogProofsGeometryLaws
 
     // A ClampedBSpline starts at its first control point and ends at its
     // last, within the rounding allowance of its control points' size.
-    Law_Catalog_ClampedBSplineInterpolatesEnds(k: Integer): Boolean
+    Law_ClampedBSplineInterpolatesEnds(k: Integer): Boolean
         => CatalogClampedEnds(CheckWellFormedBSpline(CatalogCurveAt(k)));
 
-    // The claim of Law_Catalog_ClampedBSplineInterpolatesEnds for the
+    // The claim of Law_ClampedBSplineInterpolatesEnds for the
     // result w of the well-formedness check.
     CatalogClampedEnds(w: DecidedWellFormedBSpline): Boolean
         => match (w) {
@@ -69,7 +68,7 @@ library CatalogProofsGeometryLaws
             Undecided(r) => true;
         };
 
-    // The claim of Law_Catalog_ClampedBSplineInterpolatesEnds for the
+    // The claim of Law_ClampedBSplineInterpolatesEnds for the
     // result c of the clamping check.
     CatalogClampedEndsOf(c: DecidedClampedBSpline): Boolean
         => match (c) {
@@ -77,31 +76,6 @@ library CatalogProofsGeometryLaws
                     <= ResolutionAt(4.0 * p.Data.ControlPoints.Reduce(0.0, (m, q) => m.Max(q.PositionVector.Length))).Value
                 && p.Data.BSplinePoint(p.Data.Basis.SplineDomain.End).Distance(p.Data.ControlPoints.Last)
                     <= ResolutionAt(4.0 * p.Data.ControlPoints.Reduce(0.0, (m, q) => m.Max(q.PositionVector.Length))).Value;
-            Undecided(r) => true;
-        };
-
-    //==
-    // # Frames
-
-    // CheckOrthonormalFrame succeeds exactly when the frame's
-    // orthonormality deviation is within the tolerance.
-    Law_Catalog_OrthonormalFrameIffWithinTolerance(f: Frame3D, tol: AngleTolerance): Boolean
-        => CheckOrthonormalFrame(f, tol).IsDecided == (f.OrthonormalityDeviation <= tol.Value.Radians);
-
-    // Every right-handed orthonormal frame (IsOrthonormalWithin) passes the
-    // check.
-    Law_Catalog_RigidFrameIsOrthonormal(f: Frame3D, tol: AngleTolerance): Boolean
-        => f.IsOrthonormalWithin(tol) ? CheckOrthonormalFrame(f, tol).IsDecided : true;
-
-    // An OrthonormalFrame records the sign of the frame's Handedness.
-    Law_Catalog_OrthonormalFrameRecordsHandedness(f: Frame3D, tol: AngleTolerance): Boolean
-        => CatalogHandednessRecorded(f, CheckOrthonormalFrame(f, tol));
-
-    // The claim of Law_Catalog_OrthonormalFrameRecordsHandedness for the
-    // result d of checking f.
-    CatalogHandednessRecorded(f: Frame3D, d: DecidedOrthonormalFrame): Boolean
-        => match (d) {
-            Decided(p) => p.Handedness == (f.Handedness > 0.0 ? Sign.Positive : Sign.Negative) && p.Frame == f;
             Undecided(r) => true;
         };
 }

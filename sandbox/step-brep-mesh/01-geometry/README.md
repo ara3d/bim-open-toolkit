@@ -25,6 +25,7 @@ files present that day.
 | `geometry-splines.library.plato` | spline domains, shape predicates, breakpoints; evaluation, side tests and inverse search bodies in `bspline-*.library.plato` | `BrepGeometrySplines` |
 | `limit-normal.library.plato` | `LimitNormal`: the surface normal, and its limit on a sphere's pole or a cone's apex (step C, TKT-325) | `PolesLimitNormal` |
 | `geometry-decided.{types,library,laws,spec}.plato` | section 5: `SurfaceNormal`, `Projection`, `ClosestParameterResult`, `ClosureDecision`, their predicates and case numbers; 4 laws (catalog merge, 2026-10-20). `NormalOr` and `LimitNormal` still return a `Direction3D` | `BrepGeometryDecided`, `BrepGeometryDecidedLaws` |
+| `geometry-proofs.{types,library,laws,spec}.plato` | section 4: `WellFormedBSpline`, `ClampedBSpline`, `OrthonormalFrame` and their `Decided*` sums, built only by `CheckWellFormedBSpline`, `CheckClampedBSpline` (over `HasClampedEnds`, in `geometry-splines.library.plato`), `CheckOrthonormalFrame` (over `IsOrthonormalEitherHandWithin`, in `geometry.library.plato`); 3 frame laws. The B-spline proofs' 4 laws use layer 8's fixtures and are in `08-pipeline/pipeline-proofs-bsplines.laws.plato` (catalog merge, proofs, 2026-10-20) | `BrepGeometryProofs`, `BrepGeometryProofsLaws` |
 | `geometry.laws.plato` | 95 laws, 3 oracles, their helpers and measures | `BrepGeometryLaws` |
 | `geometry.spec.plato` | invariants, contracts, theorems (SPEC-DSL.md section 3 only) | |
 

@@ -1,10 +1,12 @@
 //==
-// # Catalog: the constructors of the kernel proofs
+// # Proofs about the kernel model, its loops, and its shells (constructors)
 //
-// One Check* function per proof type of catalog-proofs-kernel.types.plato,
-// the only function that builds it (catalog-proofs.spec.plato). Each calls
-// the library's own predicate and never restates it; IsDecided reads the
-// verdict, and the IToleranced and IHasProvenance obligations follow.
+// One Check* function per proof type of topology-proofs.types.plato, the
+// only function that builds it (topology-proofs.spec.plato). Each calls the
+// library's own predicate and never restates it; IsDecided reads the
+// verdict, and the IToleranced and IHasProvenance obligations follow. A
+// property checked and found false is Fails, naming the predicate; an input
+// the predicate cannot be asked of is OutOfDomain.
 //
 // Sections, in order:
 //  - The whole model
@@ -13,7 +15,7 @@
 //  - Verdicts
 //  - Concept obligations
 
-library CatalogProofsKernel
+library BrepTopologyProofs
 {
     //==
     // # The whole model
@@ -24,16 +26,6 @@ library CatalogProofsKernel
         => m.IsEveryIndexInRange
             ? DecidedInRangeModel.Decided(InRangeModel(m))
             : DecidedInRangeModel.Undecided(UndecidedReason.OutOfDomain);
-
-    // PrepareModel's result as a PreparedModel when its tolerances are well
-    // formed (positive and finite); NotApplicable otherwise.
-    CheckPreparedModel(raw: RawDecodedModel): DecidedPreparedModel
-    {
-        var d = raw.PrepareModel;
-        return d.Model.Tolerances.IsWellFormed
-            ? DecidedPreparedModel.Decided(PreparedModel(d.Model, d))
-            : DecidedPreparedModel.Undecided(UndecidedReason.NotApplicable("tolerances not well formed"));
-    }
 
     // The model as a ResolvableModel when its length tolerance is resolvable
     // at its coordinate extent; BelowResolution otherwise.
@@ -46,12 +38,12 @@ library CatalogProofsKernel
     // # Loops
 
     // Loop l as a ChainedLoop when it is intact and chains end to start;
-    // OutOfDomain when it is not intact, NotApplicable when it breaks.
+    // OutOfDomain when it is not intact, Fails when it breaks.
     CheckChainedLoop(m: BrepModel, l: BrepLoopIndex): DecidedChainedLoop
         => m.IsLoopIntact(l)
             ? (m.ChainsEndToStart(m.Loops[l])
                 ? DecidedChainedLoop.Decided(ChainedLoop(l))
-                : DecidedChainedLoop.Undecided(UndecidedReason.NotApplicable("loop does not chain")))
+                : DecidedChainedLoop.Undecided(UndecidedReason.Fails("ChainsEndToStart")))
             : DecidedChainedLoop.Undecided(UndecidedReason.OutOfDomain);
 
     //==
@@ -69,30 +61,32 @@ library CatalogProofsKernel
         => m.EdgesOfShell(s).All(e => m.CountsAsEdge(e) ? m.UseCount(s, e).IsZeroOrTwo : true);
 
     // Shell s as a ClosedShell, with its reduced counts, when it uses every
-    // counted edge twice; OutOfDomain when it cannot be checked.
+    // counted edge twice; Fails when an edge is free or overused,
+    // OutOfDomain when it cannot be checked.
     CheckClosedShell(m: BrepModel, s: ShellIndex): DecidedClosedShell
         => m.IsCheckableShell(s)
             ? (m.UsesEveryEdgeTwice(s)
                 ? DecidedClosedShell.Decided(ClosedShell(s, m.ReducedCounts(s)))
-                : DecidedClosedShell.Undecided(UndecidedReason.NotApplicable("shell has a free or overused edge")))
+                : DecidedClosedShell.Undecided(UndecidedReason.Fails("UsesEveryEdgeTwice")))
             : DecidedClosedShell.Undecided(UndecidedReason.OutOfDomain);
 
     // The closed shell as an OrientedShell when its edge uses run opposite
-    // (HasCoherentOrientation). OutOfDomain when m is not the kind of model
-    // the closed shell can be checked in.
+    // (HasCoherentOrientation); Fails otherwise. OutOfDomain when m is not
+    // the kind of model the closed shell can be checked in.
     CheckOrientedShell(m: BrepModel, c: ClosedShell): DecidedOrientedShell
         => m.IsCheckableShell(c.Shell)
             ? (m.HasCoherentOrientation(c.Shell)
                 ? DecidedOrientedShell.Decided(OrientedShell(c.Shell, c.Counts))
-                : DecidedOrientedShell.Undecided(UndecidedReason.NotApplicable("shell orientation is not coherent")))
+                : DecidedOrientedShell.Undecided(UndecidedReason.Fails("HasCoherentOrientation")))
             : DecidedOrientedShell.Undecided(UndecidedReason.OutOfDomain);
 
-    // Shell s as a ConnectedShell when its faces form at most one class.
+    // Shell s as a ConnectedShell when its faces form at most one class;
+    // Fails when they form several.
     CheckConnectedShell(m: BrepModel, s: ShellIndex): DecidedConnectedShell
         => m.IsCheckableShell(s)
             ? (m.ShellComponentCount(s) <= 1
                 ? DecidedConnectedShell.Decided(ConnectedShell(s))
-                : DecidedConnectedShell.Undecided(UndecidedReason.NotApplicable("shell has several components")))
+                : DecidedConnectedShell.Undecided(UndecidedReason.Fails("ShellComponentCount <= 1")))
             : DecidedConnectedShell.Undecided(UndecidedReason.OutOfDomain);
 
     //==
@@ -100,10 +94,6 @@ library CatalogProofsKernel
 
     // True when the check built its proof.
     IsDecided(d: DecidedInRangeModel): Boolean
-        => match (d) { Decided(v) => true; Undecided(r) => false; };
-
-    // True when the check built its proof.
-    IsDecided(d: DecidedPreparedModel): Boolean
         => match (d) { Decided(v) => true; Undecided(r) => false; };
 
     // True when the check built its proof.
@@ -128,10 +118,6 @@ library CatalogProofsKernel
 
     //==
     // # Concept obligations
-
-    // The tolerances PrepareModel floored.
-    Tolerance(x: PreparedModel): Tolerances
-        => x.Model.Tolerances;
 
     // The tolerances whose length part was found resolvable.
     Tolerance(x: ResolvableModel): Tolerances

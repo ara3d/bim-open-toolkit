@@ -1,10 +1,11 @@
 //==
-// # Catalog: laws of the parameter-space proofs
+// # Laws of the parameter-space proofs (layer 5)
 //
-// Two laws per proof type, as in catalog-proofs-kernel.laws.plato. The
-// runner cannot build a UvLoop, so the laws build squares (counter-
-// clockwise for a positive side, clockwise for a negative one) and a
-// bow-tie from its Numbers, and take faces of the kernel laws' witnesses.
+// Two laws per proof type of 05-face-meshing/face-meshing-proofs.types.plato,
+// as in validation-proofs-kernel.laws.plato. The runner cannot build a
+// UvLoop, so the laws build squares (counter-clockwise for a positive side,
+// clockwise for a negative one) and a bow-tie from its Numbers, and take
+// faces of this layer's witnesses (CatalogProofModelAt).
 //
 // Sections, in order:
 //  - Loops
@@ -12,7 +13,7 @@
 //  - Closed loops
 //  - Oriented regions
 
-library CatalogProofsRegionsLaws
+library BrepCheckingProofsRegionsLaws
 {
     //==
     // # Loops
@@ -44,19 +45,19 @@ library CatalogProofsRegionsLaws
 
     // CheckSimpleUvLoop succeeds exactly when the loop, as a region with
     // no holes, is simple under the tolerance.
-    Law_Catalog_SimpleUvLoopIffSimpleRegion(k: Integer, x: Number, y: Number, tol: UvTolerance): Boolean
+    Law_SimpleUvLoopIffSimpleRegion(k: Integer, x: Number, y: Number, tol: UvTolerance): Boolean
         => (tol.U.Value > 0.0 && tol.V.Value > 0.0)
             ? CheckSimpleUvLoop(CatalogLoopAt(k, x, y), tol).IsDecided
                 == UvRegion(CatalogLoopAt(k, x, y), [CatalogLoopAt(k, x, y)].Take(0)).IsSimpleRegion(tol)
             : true;
 
     // A SimpleUvLoop keeps the loop and the tolerance it was checked under.
-    Law_Catalog_SimpleUvLoopRecordsTolerance(k: Integer, x: Number, y: Number, tol: UvTolerance): Boolean
+    Law_SimpleUvLoopRecordsTolerance(k: Integer, x: Number, y: Number, tol: UvTolerance): Boolean
         => (tol.U.Value > 0.0 && tol.V.Value > 0.0)
             ? CatalogSimpleUvLoopRecords(CatalogLoopAt(k, x, y), tol, CheckSimpleUvLoop(CatalogLoopAt(k, x, y), tol))
             : true;
 
-    // The claim of Law_Catalog_SimpleUvLoopRecordsTolerance for the result
+    // The claim of Law_SimpleUvLoopRecordsTolerance for the result
     // d of checking loop l under tol.
     CatalogSimpleUvLoopRecords(l: UvLoop, tol: UvTolerance, d: DecidedSimpleUvLoop): Boolean
         => match (d) {
@@ -66,7 +67,7 @@ library CatalogProofsRegionsLaws
 
     // The bow-tie is never simple, under any tolerance: the check refuses
     // it.
-    Law_Catalog_BowtieIsNotSimple(x: Number, y: Number, tol: UvTolerance): Boolean
+    Law_BowtieIsNotSimple(x: Number, y: Number, tol: UvTolerance): Boolean
         => (tol.U.Value > 0.0 && tol.V.Value > 0.0)
             ? CheckSimpleUvLoop(CatalogBowtieLoop(x, y), tol).IsDecided.Not
             : true;
@@ -76,7 +77,7 @@ library CatalogProofsRegionsLaws
 
     // CheckClosedUvLoop succeeds exactly when the face is intact and the
     // loop winds zero times in u and in v.
-    Law_Catalog_ClosedUvLoopIffUnwound(k: Integer, f: Integer, x: Number, y: Number, s: Number): Boolean
+    Law_ClosedUvLoopIffUnwound(k: Integer, f: Integer, x: Number, y: Number, s: Number): Boolean
     {
         var m = CatalogProofModelAt(k);
         var i = BrepFaceIndex(f);
@@ -86,11 +87,11 @@ library CatalogProofsRegionsLaws
     }
 
     // A ClosedUvLoop names its face and keeps its loop.
-    Law_Catalog_ClosedUvLoopRecordsFace(k: Integer, f: Integer, x: Number, y: Number, s: Number): Boolean
+    Law_ClosedUvLoopRecordsFace(k: Integer, f: Integer, x: Number, y: Number, s: Number): Boolean
         => CatalogClosedUvLoopRecords(BrepFaceIndex(f), CatalogSquareLoop(x, y, s),
             CheckClosedUvLoop(CatalogProofModelAt(k), BrepFaceIndex(f), CatalogSquareLoop(x, y, s)));
 
-    // The claim of Law_Catalog_ClosedUvLoopRecordsFace for the result d of
+    // The claim of Law_ClosedUvLoopRecordsFace for the result d of
     // checking loop l of face f.
     CatalogClosedUvLoopRecords(f: BrepFaceIndex, l: UvLoop, d: DecidedClosedUvLoop): Boolean
         => match (d) {
@@ -103,7 +104,7 @@ library CatalogProofsRegionsLaws
 
     // CheckOrientedUvRegion succeeds exactly when the face is intact, the
     // outer loop is positive in its chart, and every hole negative.
-    Law_Catalog_OrientedUvRegionIffWindings(k: Integer, f: Integer, x: Number, y: Number, s: Number): Boolean
+    Law_OrientedUvRegionIffWindings(k: Integer, f: Integer, x: Number, y: Number, s: Number): Boolean
     {
         var m = CatalogProofModelAt(k);
         var i = BrepFaceIndex(f);
@@ -115,11 +116,11 @@ library CatalogProofsRegionsLaws
     }
 
     // An OrientedUvRegion names its face and keeps its holes.
-    Law_Catalog_OrientedUvRegionRecordsFace(k: Integer, f: Integer, x: Number, y: Number, s: Number): Boolean
+    Law_OrientedUvRegionRecordsFace(k: Integer, f: Integer, x: Number, y: Number, s: Number): Boolean
         => CatalogOrientedUvRegionRecords(BrepFaceIndex(f), CatalogRegionAt(x, y, s),
             CheckOrientedUvRegion(CatalogProofModelAt(k), BrepFaceIndex(f), CatalogRegionAt(x, y, s)));
 
-    // The claim of Law_Catalog_OrientedUvRegionRecordsFace for the result d
+    // The claim of Law_OrientedUvRegionRecordsFace for the result d
     // of checking region r of face f.
     CatalogOrientedUvRegionRecords(f: BrepFaceIndex, r: UvRegion, d: DecidedOrientedUvRegion): Boolean
         => match (d) {

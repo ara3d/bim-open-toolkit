@@ -77,6 +77,15 @@ library BrepGeometrySplines
             ? true
             : (b.Knots.Count - b.Degree - 2).Range.All(j => b.Knots.KnotAt(j + 1) < b.Knots.KnotAt(j + 1 + b.Degree));
 
+    // True when the first Degree + 1 knots are equal and the last Degree + 1
+    // are equal: the knot vector is clamped at both ends. Knots are copied
+    // from the file, so the comparison is exact by construction.
+    // Precondition: the basis is well shaped for some control count, so it
+    // has at least 2 (Degree + 1) knots.
+    HasClampedEnds(b: SplineBasis): Boolean
+        => (b.Degree + 1).Range.All(i => b.Knots.KnotAt(i) == b.Knots.KnotAt(0))
+            && (b.Degree + 1).Range.All(i => b.Knots.KnotAt(b.Knots.Count - 1 - i) == b.Knots.KnotAt(b.Knots.Count - 1));
+
     // True when the domain [Knots[Degree], Knots[n]] has positive length, which
     // also gives at least Degree + 1 control points and two distinct knots.
     HasNonEmptyDomain(b: SplineBasis, controlCount: Integer): Boolean

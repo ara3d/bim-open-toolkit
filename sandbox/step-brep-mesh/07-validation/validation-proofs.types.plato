@@ -1,0 +1,24 @@
+//==
+// # Proofs about validation reports (types)
+//
+// TYPE-CATALOG.md section 4, layer 7. Built only by CheckValidatedReport
+// (validation-proofs.library.plato), as validation-proofs.spec.plato states.
+//
+// Sections, in order:
+//  - Reports
+
+//==
+// # Reports
+
+// A report with no error, and the conformance level that produced it.
+// Removes: a Structural report presented as oracle-clean.
+type ValidatedReport
+{
+    Report: Report;
+    Level: ConformanceLevel;
+}
+
+// A ValidatedReport, or why the validation found an error.
+type DecidedValidatedReport
+    = Decided(Value: ValidatedReport)
+    | Undecided(Reason: UndecidedReason);

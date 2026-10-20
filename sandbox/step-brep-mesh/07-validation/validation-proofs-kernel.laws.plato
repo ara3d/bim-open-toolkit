@@ -1,17 +1,17 @@
 //==
-// # Catalog: laws of the kernel proofs
+// # Laws of the kernel proofs (layers 2 and 3)
 //
-// Two laws per proof type: its constructor succeeds exactly when the
+// Two laws per proof type of 02-topology/topology-proofs.types.plato and
+// 03-step/step-proofs.types.plato: its constructor succeeds exactly when the
 // library's predicate holds, stated again from the library's own functions,
 // and the facts the proof records equal what the library computes. The
 // runner cannot build a BrepModel, so the laws take an Integer selector
-// over layer 7's witnesses (CatalogProofModelAt), the negative ones
-// included.
+// over this layer's witnesses (CatalogProofModelAt), the negative ones
+// included; that is why they are layer 7's and not layer 2's.
 //
 // A law that reads a proof's facts passes the Decided* result to a helper
 // as a typed parameter and matches there: a match on a local initialised
-// by a call into a library file that sorts later (this folder's
-// .library.plato files sort after its .laws.plato files) is not typed
+// by a call into a library file that sorts later is not typed
 // (PLATO-PRIMER.md F).
 //
 // Sections, in order:
@@ -20,7 +20,7 @@
 //  - Loops
 //  - Shells
 
-library CatalogProofsKernelLaws
+library BrepCheckingProofsKernelLaws
 {
     //==
     // # Witnesses
@@ -52,14 +52,14 @@ library CatalogProofsKernelLaws
     // # The whole model
 
     // CheckInRangeModel succeeds exactly when every index is in range.
-    Law_Catalog_InRangeModelIffIndicesInRange(k: Integer): Boolean
+    Law_InRangeModelIffIndicesInRange(k: Integer): Boolean
         => CheckInRangeModel(CatalogProofModelAt(k)).IsDecided == CatalogProofModelAt(k).IsEveryIndexInRange;
 
     // An InRangeModel holds the model it checked: the same table sizes.
-    Law_Catalog_InRangeModelKeepsModel(k: Integer): Boolean
+    Law_InRangeModelKeepsModel(k: Integer): Boolean
         => CatalogInRangeModelKeeps(CatalogProofModelAt(k), CheckInRangeModel(CatalogProofModelAt(k)));
 
-    // The claim of Law_Catalog_InRangeModelKeepsModel for the result d of
+    // The claim of Law_InRangeModelKeepsModel for the result d of
     // checking m.
     CatalogInRangeModelKeeps(m: BrepModel, d: DecidedInRangeModel): Boolean
         => match (d) {
@@ -69,15 +69,15 @@ library CatalogProofsKernelLaws
 
     // CheckPreparedModel succeeds exactly when PrepareModel's tolerances
     // are well formed.
-    Law_Catalog_PreparedModelIffTolerancesWellFormed(k: Integer): Boolean
+    Law_PreparedModelIffTolerancesWellFormed(k: Integer): Boolean
         => CheckPreparedModel(CatalogRawModelAt(k)).IsDecided == CatalogRawModelAt(k).PrepareModel.Model.Tolerances.IsWellFormed;
 
     // A PreparedModel's tolerances are those PrepareModel chose, its Model
     // is its decoded model, and it keeps PrepareModel's diagnostics.
-    Law_Catalog_PreparedModelRecordsPreparation(k: Integer): Boolean
+    Law_PreparedModelRecordsPreparation(k: Integer): Boolean
         => CatalogPreparedModelRecords(CatalogRawModelAt(k).PrepareModel, CheckPreparedModel(CatalogRawModelAt(k)));
 
-    // The claim of Law_Catalog_PreparedModelRecordsPreparation, given
+    // The claim of Law_PreparedModelRecordsPreparation, given
     // PrepareModel's own result e. Exact by construction: the tolerances
     // are copies from one deterministic computation.
     CatalogPreparedModelRecords(e: DecodedModel, d: DecidedPreparedModel): Boolean
@@ -91,15 +91,15 @@ library CatalogProofsKernelLaws
     // CheckResolvableModel succeeds exactly when the length tolerance is
     // resolvable at the coordinate extent, over every witness with the
     // runner's tolerance x (zero and negative ones included).
-    Law_Catalog_ResolvableModelIffResolvable(k: Integer, x: Number): Boolean
+    Law_ResolvableModelIffResolvable(k: Integer, x: Number): Boolean
         => CheckResolvableModel(CatalogWithLengthTolerance(CatalogProofModelAt(k), x)).IsDecided
             == LengthTolerance(x).IsResolvable(CatalogWithLengthTolerance(CatalogProofModelAt(k), x).CoordinateExtent);
 
     // A ResolvableModel records the coordinate extent the check read.
-    Law_Catalog_ResolvableModelRecordsExtent(k: Integer): Boolean
+    Law_ResolvableModelRecordsExtent(k: Integer): Boolean
         => CatalogResolvableModelRecords(CatalogProofModelAt(k), CheckResolvableModel(CatalogProofModelAt(k)));
 
-    // The claim of Law_Catalog_ResolvableModelRecordsExtent for the result
+    // The claim of Law_ResolvableModelRecordsExtent for the result
     // d of checking m.
     CatalogResolvableModelRecords(m: BrepModel, d: DecidedResolvableModel): Boolean
         => match (d) {
@@ -112,7 +112,7 @@ library CatalogProofsKernelLaws
 
     // CheckChainedLoop succeeds exactly when the loop is intact and chains
     // end to start.
-    Law_Catalog_ChainedLoopIffChains(k: Integer, l: Integer): Boolean
+    Law_ChainedLoopIffChains(k: Integer, l: Integer): Boolean
     {
         var m = CatalogProofModelAt(k);
         var i = BrepLoopIndex(l);
@@ -120,10 +120,10 @@ library CatalogProofsKernelLaws
     }
 
     // A ChainedLoop names the loop it checked, and points at it.
-    Law_Catalog_ChainedLoopRecordsLoop(k: Integer, l: Integer): Boolean
+    Law_ChainedLoopRecordsLoop(k: Integer, l: Integer): Boolean
         => CatalogChainedLoopRecords(BrepLoopIndex(l), CheckChainedLoop(CatalogProofModelAt(k), BrepLoopIndex(l)));
 
-    // The claim of Law_Catalog_ChainedLoopRecordsLoop for the result d of
+    // The claim of Law_ChainedLoopRecordsLoop for the result d of
     // checking loop l.
     CatalogChainedLoopRecords(l: BrepLoopIndex, d: DecidedChainedLoop): Boolean
         => match (d) {
@@ -136,7 +136,7 @@ library CatalogProofsKernelLaws
 
     // CheckClosedShell succeeds exactly when every index is in range, the
     // shell exists, and each of its counted edges has zero or two uses.
-    Law_Catalog_ClosedShellIffEdgesUsedTwice(k: Integer, s: Integer): Boolean
+    Law_ClosedShellIffEdgesUsedTwice(k: Integer, s: Integer): Boolean
     {
         var m = CatalogProofModelAt(k);
         var i = ShellIndex(s);
@@ -147,10 +147,10 @@ library CatalogProofsKernelLaws
     }
 
     // A ClosedShell records the shell's reduced counts.
-    Law_Catalog_ClosedShellRecordsCounts(k: Integer, s: Integer): Boolean
+    Law_ClosedShellRecordsCounts(k: Integer, s: Integer): Boolean
         => CatalogClosedShellRecords(CatalogProofModelAt(k), ShellIndex(s), CheckClosedShell(CatalogProofModelAt(k), ShellIndex(s)));
 
-    // The claim of Law_Catalog_ClosedShellRecordsCounts for the result d of
+    // The claim of Law_ClosedShellRecordsCounts for the result d of
     // checking shell s of m.
     CatalogClosedShellRecords(m: BrepModel, s: ShellIndex, d: DecidedClosedShell): Boolean
         => match (d) {
@@ -160,17 +160,17 @@ library CatalogProofsKernelLaws
 
     // Every shell of every positive witness is a ClosedShell: the fact the
     // witnesses' own laws assert as DeclaredClosed.
-    Law_Catalog_PositiveWitnessShellsAreClosed(k: Integer, s: Integer): Boolean
+    Law_PositiveWitnessShellsAreClosed(k: Integer, s: Integer): Boolean
         => BrepModel.WitnessAt(k).IsShellInRange(ShellIndex(s))
             ? CheckClosedShell(BrepModel.WitnessAt(k), ShellIndex(s)).IsDecided
             : true;
 
     // CheckOrientedShell succeeds on a closed shell exactly when its edge
     // uses run opposite.
-    Law_Catalog_OrientedShellIffCoherent(k: Integer, s: Integer): Boolean
+    Law_OrientedShellIffCoherent(k: Integer, s: Integer): Boolean
         => CatalogOrientedShellIffCoherent(CatalogProofModelAt(k), CheckClosedShell(CatalogProofModelAt(k), ShellIndex(s)));
 
-    // The claim of Law_Catalog_OrientedShellIffCoherent for the result d of
+    // The claim of Law_OrientedShellIffCoherent for the result d of
     // checking a shell of m for closure.
     CatalogOrientedShellIffCoherent(m: BrepModel, d: DecidedClosedShell): Boolean
         => match (d) {
@@ -179,10 +179,10 @@ library CatalogProofsKernelLaws
         };
 
     // An OrientedShell keeps the closed shell's index and counts.
-    Law_Catalog_OrientedShellKeepsCounts(k: Integer, s: Integer): Boolean
+    Law_OrientedShellKeepsCounts(k: Integer, s: Integer): Boolean
         => CatalogOrientedShellKeeps(CatalogProofModelAt(k), CheckClosedShell(CatalogProofModelAt(k), ShellIndex(s)));
 
-    // The claim of Law_Catalog_OrientedShellKeepsCounts for the result d of
+    // The claim of Law_OrientedShellKeepsCounts for the result d of
     // checking a shell of m for closure.
     CatalogOrientedShellKeeps(m: BrepModel, d: DecidedClosedShell): Boolean
         => match (d) {
@@ -190,7 +190,7 @@ library CatalogProofsKernelLaws
             Undecided(r) => true;
         };
 
-    // The claim of Law_Catalog_OrientedShellKeepsCounts for the result o of
+    // The claim of Law_OrientedShellKeepsCounts for the result o of
     // checking closed shell c for orientation.
     CatalogOrientedShellKeepsCountsOf(c: ClosedShell, o: DecidedOrientedShell): Boolean
         => match (o) {
@@ -200,7 +200,7 @@ library CatalogProofsKernelLaws
 
     // CheckConnectedShell succeeds exactly when the shell's faces form at
     // most one class.
-    Law_Catalog_ConnectedShellIffOneComponent(k: Integer, s: Integer): Boolean
+    Law_ConnectedShellIffOneComponent(k: Integer, s: Integer): Boolean
     {
         var m = CatalogProofModelAt(k);
         var i = ShellIndex(s);
@@ -209,10 +209,10 @@ library CatalogProofsKernelLaws
     }
 
     // A ConnectedShell names the shell it checked.
-    Law_Catalog_ConnectedShellRecordsShell(k: Integer, s: Integer): Boolean
+    Law_ConnectedShellRecordsShell(k: Integer, s: Integer): Boolean
         => CatalogConnectedShellRecords(ShellIndex(s), CheckConnectedShell(CatalogProofModelAt(k), ShellIndex(s)));
 
-    // The claim of Law_Catalog_ConnectedShellRecordsShell for the result d
+    // The claim of Law_ConnectedShellRecordsShell for the result d
     // of checking shell s.
     CatalogConnectedShellRecords(s: ShellIndex, d: DecidedConnectedShell): Boolean
         => match (d) {

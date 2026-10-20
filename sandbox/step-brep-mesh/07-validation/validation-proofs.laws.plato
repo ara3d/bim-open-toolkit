@@ -1,0 +1,40 @@
+//==
+// # Laws of the validated-report proof
+//
+// Two laws, as in validation-proofs-kernel.laws.plato, over this layer's
+// witnesses (CatalogProofModelAt) at both conformance levels.
+//
+// Sections, in order:
+//  - Reports
+
+library BrepCheckingProofsLaws
+{
+    //==
+    // # Reports
+
+    // Structural for an even k, Geometric for an odd one.
+    CatalogLevelAt(k: Integer): ConformanceLevel
+        => ((k % 2) + 2) % 2 == 0 ? ConformanceLevel.Structural : ConformanceLevel.Geometric;
+
+    // CheckValidatedReport succeeds exactly when ValidateBrep at the level
+    // finds no error.
+    Law_ValidatedReportIffClean(k: Integer, l: Integer): Boolean
+        => CheckValidatedReport(CatalogProofModelAt(k), CatalogLevelAt(l)).IsDecided
+            == CatalogProofModelAt(k).ValidateBrep(CatalogLevelAt(l)).IsClean;
+
+    // A ValidatedReport records the level that produced it and that
+    // level's report.
+    Law_ValidatedReportRecordsLevel(k: Integer, l: Integer): Boolean
+        => CatalogValidatedRecords(CatalogLevelAt(l), CatalogProofModelAt(k).ValidateBrep(CatalogLevelAt(l)),
+            CheckValidatedReport(CatalogProofModelAt(k), CatalogLevelAt(l)));
+
+    // The claim of Law_ValidatedReportRecordsLevel for the result d
+    // of checking at level, given that level's report.
+    CatalogValidatedRecords(level: ConformanceLevel, report: Report, d: DecidedValidatedReport): Boolean
+        => match (d) {
+            Decided(p) => p.Level == level
+                && p.Report.Checks.Count == report.Checks.Count
+                && p.Report.Diagnostics.Count == report.Diagnostics.Count;
+            Undecided(r) => true;
+        };
+}

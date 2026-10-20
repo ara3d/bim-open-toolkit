@@ -1,0 +1,38 @@
+//==
+// # Specs of the B-spline and placement proofs
+//
+// One spec per proof type of geometry-proofs.types.plato: the invariant its
+// value keeps and the single function permitted to build it. The
+// compiler-derived record constructor is unavailable outside it. Not
+// compiled; the runner skips this file.
+//
+// Sections, in order:
+//  - B-splines
+//  - Frames
+
+//==
+// # B-splines
+
+spec WellFormedBSpline
+{
+    invariant self.Data.IsWellShaped;   // Law_WellFormedBSplineIffWellShaped
+    constructor CheckWellFormedBSpline;
+}
+
+spec ClampedBSpline
+{
+    invariant self.Data.IsWellShaped && self.Data.Basis.HasClampedEnds;   // Law_ClampedBSplineIffFixtureClamped
+    invariant self.Data.BSplinePoint(self.Data.Basis.SplineDomain.Start) == self.Data.ControlPoints.First;   // within rounding; Law_ClampedBSplineInterpolatesEnds
+    constructor CheckClampedBSpline;
+}
+
+//==
+// # Frames
+
+spec OrthonormalFrame
+{
+    // tol is the constructor's AngleTolerance.
+    invariant self.Frame.IsOrthonormalEitherHandWithin(tol);   // Law_OrthonormalFrameIffWithinTolerance
+    invariant self.Handedness == (self.Frame.Handedness > 0.0 ? Sign.Positive : Sign.Negative);   // Law_OrthonormalFrameRecordsHandedness
+    constructor CheckOrthonormalFrame;
+}

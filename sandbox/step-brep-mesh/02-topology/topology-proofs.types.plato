@@ -1,11 +1,13 @@
 //==
-// # Catalog: proofs about the kernel model, its loops, and its shells
+// # Proofs about the kernel model, its loops, and its shells (types)
 //
-// TYPE-CATALOG.md section 4, layers 2 and 3. Each type holds the checked
-// value (or its index) and the facts its check produced, and only its
-// Check* constructor (catalog-proofs-kernel.library.plato) builds it, as
-// catalog-proofs.spec.plato states. A function that needs the property asks
-// for the type, so nobody re-checks it or forgets to.
+// TYPE-CATALOG.md section 4, layer 2. Each type holds the checked value (or
+// its index) and the facts its check produced, and only its Check*
+// constructor (topology-proofs.library.plato) builds it, as
+// topology-proofs.spec.plato states. A function that needs the property
+// asks for the type, so nobody re-checks it or forgets to. Each Decided*
+// sum is its constructor's result, in layer 0's pattern. Layer 3's
+// PreparedModel is in step-proofs.types.plato.
 //
 // Sections, in order:
 //  - The whole model
@@ -23,16 +25,6 @@ type InRangeModel
     Model: BrepModel;
 }
 
-// A model that PrepareModel finished: tolerances floored, folds applied,
-// closures marked. Model is Decoded.Model, kept as the field layers 4 to 8
-// read. Removes: a raw model meshed with the default tolerances.
-type PreparedModel
-    implements IToleranced
-{
-    Model: BrepModel;
-    Decoded: DecodedModel;
-}
-
 // A model whose length tolerance is no smaller than the rounding floor at
 // its coordinate extent (layer 0's IsResolvable), with the extent the check
 // read. Removes: a 32-bit model at coordinate 1e6 meshed with chordal 1e-4.
@@ -42,6 +34,16 @@ type ResolvableModel
     Model: BrepModel;
     Extent: ModelLength;
 }
+
+// An InRangeModel, or why the model has an index out of range.
+type DecidedInRangeModel
+    = Decided(Value: InRangeModel)
+    | Undecided(Reason: UndecidedReason);
+
+// A ResolvableModel, or why the tolerance is below the rounding floor.
+type DecidedResolvableModel
+    = Decided(Value: ResolvableModel)
+    | Undecided(Reason: UndecidedReason);
 
 //==
 // # Loops
@@ -53,6 +55,11 @@ type ChainedLoop
 {
     Loop: BrepLoopIndex;
 }
+
+// A ChainedLoop, or why the loop does not chain.
+type DecidedChainedLoop
+    = Decided(Value: ChainedLoop)
+    | Undecided(Reason: UndecidedReason);
 
 //==
 // # Shells
@@ -86,3 +93,18 @@ type ConnectedShell
 {
     Shell: ShellIndex;
 }
+
+// A ClosedShell, or why the shell is not closed.
+type DecidedClosedShell
+    = Decided(Value: ClosedShell)
+    | Undecided(Reason: UndecidedReason);
+
+// An OrientedShell, or why the closed shell is not coherently oriented.
+type DecidedOrientedShell
+    = Decided(Value: OrientedShell)
+    | Undecided(Reason: UndecidedReason);
+
+// A ConnectedShell, or why the shell is not connected.
+type DecidedConnectedShell
+    = Decided(Value: ConnectedShell)
+    | Undecided(Reason: UndecidedReason);

@@ -1,0 +1,56 @@
+//==
+// # Proofs whose check reads this layer's checks (constructors)
+//
+// The constructors of TYPE-CATALOG.md section 4 that call a layer 7
+// function: CheckCheckedMesh (its type is layer 6's, mesh-proofs.types.plato;
+// it reads RestrictedToShell) and CheckValidatedReport (it runs
+// ValidateBrep). A property checked and found false is Fails, naming the
+// predicate.
+//
+// Sections, in order:
+//  - The model mesh
+//  - Reports
+
+library BrepCheckingProofs
+{
+    //==
+    // # The model mesh
+
+    // True when, on every shell of m that is closed (CheckClosedShell), the
+    // mesh's elements of that shell form a closed mesh.
+    IsClosedWhereShellIs(m: BrepModel, mesh: ModelMesh): Boolean
+        => m.Shells.Count.Range.All(s =>
+            m.CheckClosedShell(ShellIndex(s)).IsDecided ? m.RestrictedToShell(mesh, ShellIndex(s)).IsClosed : true);
+
+    // True when a well-formed mesh is manifold, consistently oriented, and
+    // closed where m's shells are. Precondition: mesh.IsWellFormed.
+    PassesMeshChecks(m: BrepModel, mesh: ModelMesh): Boolean
+        => mesh.IsManifold && mesh.IsConsistentlyOriented && m.IsClosedWhereShellIs(mesh);
+
+    // The mesh of model m as a CheckedMesh, with its component counts, when
+    // it passes the mesh checks; Fails when it does not, OutOfDomain when it
+    // is not well formed.
+    CheckCheckedMesh(m: BrepModel, mesh: ModelMesh): DecidedCheckedMesh
+        => mesh.IsWellFormed
+            ? (m.PassesMeshChecks(mesh)
+                ? DecidedCheckedMesh.Decided(CheckedMesh(mesh, mesh.ComponentCountsOf))
+                : DecidedCheckedMesh.Undecided(UndecidedReason.Fails("PassesMeshChecks")))
+            : DecidedCheckedMesh.Undecided(UndecidedReason.OutOfDomain);
+
+    //==
+    // # Reports
+
+    // The model's validation at level as a ValidatedReport when it has no
+    // error; Fails otherwise.
+    CheckValidatedReport(m: BrepModel, level: ConformanceLevel): DecidedValidatedReport
+    {
+        var r = m.ValidateBrep(level);
+        return r.IsClean
+            ? DecidedValidatedReport.Decided(ValidatedReport(r, level))
+            : DecidedValidatedReport.Undecided(UndecidedReason.Fails("IsClean"));
+    }
+
+    // True when the check built its proof.
+    IsDecided(d: DecidedValidatedReport): Boolean
+        => match (d) { Decided(v) => true; Undecided(r) => false; };
+}

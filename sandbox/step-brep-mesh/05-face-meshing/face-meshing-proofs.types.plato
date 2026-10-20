@@ -1,8 +1,10 @@
 //==
-// # Catalog: proofs about a face's loops and region in parameter space
+// # Proofs about a face's loops and region in parameter space (types)
 //
 // TYPE-CATALOG.md section 4, layer 5. Built only by the Check* constructors
-// of catalog-proofs-regions.library.plato.
+// of face-meshing-proofs.library.plato, as face-meshing-proofs.spec.plato
+// states; each Decided* sum is its constructor's result, in layer 0's
+// pattern.
 //
 // Sections, in order:
 //  - Loops and regions
@@ -39,3 +41,18 @@ type OrientedUvRegion
     Face: BrepFaceIndex;
     Region: UvRegion;
 }
+
+// A SimpleUvLoop, or why the loop is not simple.
+type DecidedSimpleUvLoop
+    = Decided(Value: SimpleUvLoop)
+    | Undecided(Reason: UndecidedReason);
+
+// A ClosedUvLoop, or why the loop does not close in the plane.
+type DecidedClosedUvLoop
+    = Decided(Value: ClosedUvLoop)
+    | Undecided(Reason: UndecidedReason);
+
+// An OrientedUvRegion, or why the region is not oriented.
+type DecidedOrientedUvRegion
+    = Decided(Value: OrientedUvRegion)
+    | Undecided(Reason: UndecidedReason);

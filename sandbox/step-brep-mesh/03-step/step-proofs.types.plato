@@ -1,0 +1,27 @@
+//==
+// # Proofs about a prepared model (types)
+//
+// TYPE-CATALOG.md section 4, layer 3. Built only by CheckPreparedModel
+// (step-proofs.library.plato), as step-proofs.spec.plato states. The other
+// kernel proofs are layer 2's (topology-proofs.types.plato).
+//
+// Sections, in order:
+//  - Prepared models
+
+//==
+// # Prepared models
+
+// A model that PrepareModel finished: tolerances floored, folds applied,
+// closures marked. Model is Decoded.Model, kept as the field layers 4 to 8
+// read. Removes: a raw model meshed with the default tolerances.
+type PreparedModel
+    implements IToleranced
+{
+    Model: BrepModel;
+    Decoded: DecodedModel;
+}
+
+// A PreparedModel, or why preparation gave unusable tolerances.
+type DecidedPreparedModel
+    = Decided(Value: PreparedModel)
+    | Undecided(Reason: UndecidedReason);

@@ -29,6 +29,8 @@ mathematics, on hand-written witnesses, and on public files.
 | `validation-corpus.library.plato` | `BrepCorpus` | the public STEP corpus as data |
 | `validation.laws.plato` | `BrepCheckingLaws` | cross-check laws, oracle-against-closed-form laws, check-and-law agreement, levels, corpus |
 | `validation-witnesses.laws.plato` | `BrepWitnessesLaws` | witness and negative-witness laws; the laws that mesh a witness are layer 8's `pipeline-witnesses.laws.plato` |
+| `validation-proofs.{types,library,laws,spec}.plato` | `BrepCheckingProofs`, `BrepCheckingProofsLaws` | section 4: `ValidatedReport` and `CheckValidatedReport` (over `ValidateBrep`), and layer 6's `CheckCheckedMesh` (over `RestrictedToShell`), with `IsClosedWhereShellIs`, `PassesMeshChecks`; 2 laws (catalog merge, proofs, 2026-10-20) |
+| `validation-proofs-kernel.laws.plato`, `validation-proofs-regions.laws.plato` | `BrepCheckingProofsKernelLaws`, `BrepCheckingProofsRegionsLaws` | the 15 laws of the layer 2 and 3 proofs and the 7 of the layer 5 proofs, over the witnesses (`CatalogProofModelAt`) (catalog merge, proofs, 2026-10-20) |
 | `validation.spec.plato` | (spec) | invariants, entry-point and oracle contracts, the three deferred functions, every witness, theorems, conjectures |
 
 ## Three independent sources of truth

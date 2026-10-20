@@ -1,0 +1,20 @@
+//==
+// # Spec of the prepared-model proof
+//
+// The invariant a PreparedModel keeps and the single function permitted to
+// build it; the laws named beside it are in
+// 07-validation/validation-proofs-kernel.laws.plato. Not compiled; the
+// runner skips this file.
+//
+// Sections, in order:
+//  - Prepared models
+
+//==
+// # Prepared models
+
+spec PreparedModel
+{
+    invariant self.Model.Tolerances.IsWellFormed;   // Law_PreparedModelIffTolerancesWellFormed
+    invariant self.Model.Faces.Count == self.Decoded.Model.Faces.Count;   // Law_PreparedModelRecordsPreparation
+    constructor CheckPreparedModel;
+}

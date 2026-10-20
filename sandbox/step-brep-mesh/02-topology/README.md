@@ -20,6 +20,7 @@ eleven algorithms bodies; the genus track (TKT-328) gave the last, `SharesCurveP
 | `topology-indices.{library,laws}.plato` | libraries `BrepTopologyIndices`, `BrepTopologyIndicesLaws`: `RowCount`, `IsRowInRange`, `IsInTable` over `TableName`; 1 law (catalog merge, 2026-10-20) |
 | `topology.laws.plato` | library `BrepTopologyLaws`: 41 laws |
 | `topology.spec.plato` | invariants of `BrepModel` and `ShellCounts`, 13 function contracts, 4 theorems |
+| `topology-proofs.{types,library,spec}.plato` | library `BrepTopologyProofs`, section 4: `InRangeModel`, `ResolvableModel`, `ChainedLoop`, `ClosedShell`, `OrientedShell`, `ConnectedShell` and their `Decided*` sums, each built only by its `Check*` constructor; `IsDecided`; the `IToleranced` and `IHasProvenance` obligations. The 13 laws over them take layer 7's witnesses and are in `07-validation/validation-proofs-kernel.laws.plato` (catalog merge, proofs, 2026-10-20) |
 
 ## The objects
 

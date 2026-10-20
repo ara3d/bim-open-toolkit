@@ -18,6 +18,7 @@ and states the rules both faces of the edge rely on when they consume it. It own
 | `termination.laws.plato` | 9 laws: the discretization returns on an edge off its face's surface, within `SegmentBound`, and reports it |
 | `discretization.spec.plato` | type invariants, contracts of the 6 functions the design pass deferred and 4 constructors, 6 theorems. Since chunk B, `SagittaByHullBound` (the non-closed-form half of `Sagitta`, chunk F) is the one still bodiless |
 | `discretization-decided.{types,library,laws,spec}.plato` | section 5: `SplitDecision = Split(At) \| KeepBecause(Reason: KeepReason)`, `IsSplit`; blocks `DiscretizationDecided`, `DiscretizationDecidedLaws` (1 law) (catalog merge, 2026-10-20). No discretization function returns it yet |
+| `discretization-proofs.{types,library,spec}.plato` | library `EdgeDiscretizingProofs`, section 4: `CompleteDiscretization`, `PartialDiscretization`, `CanonicalDiscretization`, `DirectedDiscretization`, `MeetsCriteriaProof` and their `Decided*` sums; `Check*` constructors, the total `DirectedAlong`, `IsCanonical`, `WorstSagitta`. The 10 laws use layer 8's witness criteria and are in `08-pipeline/pipeline-proofs-discretization.laws.plato` (catalog merge, proofs, 2026-10-20) |
 
 ## The objects
 

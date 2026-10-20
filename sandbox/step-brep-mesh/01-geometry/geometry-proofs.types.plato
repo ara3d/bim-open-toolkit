@@ -1,0 +1,61 @@
+//==
+// # Proofs about B-spline records and placements (types)
+//
+// TYPE-CATALOG.md section 4, layer 1. Built only by the Check* constructors
+// of geometry-proofs.library.plato, as geometry-proofs.spec.plato states;
+// each Decided* sum is its constructor's result, in layer 0's pattern
+// (Decided(Value) | Undecided(Reason)).
+//
+// Sections, in order:
+//  - B-splines
+//  - Frames
+
+//==
+// # B-splines
+
+// A curve record that keeps every shape rule (IsWellShaped): knots
+// non-decreasing, counts consistent, weights positive, multiplicities
+// bounded. Removes: IsWellFormed re-run at every CanEvaluate sample (F-53
+// item 1).
+type WellFormedBSpline
+{
+    Data: BSplineCurveData;
+}
+
+// A well-formed curve whose knot vector is clamped at both ends
+// (HasClampedEnds): the first Degree + 1 knots equal and the last Degree + 1
+// equal, so the curve starts at its first control point and ends at its
+// last. Removes: closure or an end point read from a curve that does not
+// interpolate its ends.
+type ClampedBSpline
+{
+    Data: BSplineCurveData;
+}
+
+// A WellFormedBSpline, or why the record breaks a shape rule.
+type DecidedWellFormedBSpline
+    = Decided(Value: WellFormedBSpline)
+    | Undecided(Reason: UndecidedReason);
+
+// A ClampedBSpline, or why the well-formed curve is not clamped.
+type DecidedClampedBSpline
+    = Decided(Value: ClampedBSpline)
+    | Undecided(Reason: UndecidedReason);
+
+//==
+// # Frames
+
+// A placement that is orthonormal within an AngleTolerance
+// (IsOrthonormalEitherHandWithin), of either handedness, with Handedness the
+// sign of X x Y . Z. The stdlib documents orthonormality and never checks
+// it. Removes: a mirrored placement whose determinant sign was never read.
+type OrthonormalFrame
+{
+    Frame: Frame3D;
+    Handedness: Sign;
+}
+
+// An OrthonormalFrame, or by how much the frame misses orthonormality.
+type DecidedOrthonormalFrame
+    = Decided(Value: OrthonormalFrame)
+    | Undecided(Reason: UndecidedReason);

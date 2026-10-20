@@ -491,10 +491,15 @@ library BrepGeometry
             .Max(Direction3D(f.XAxis.Vector.Cross(f.YAxis.Vector)).AngleBetweenDirections(Direction3D(f.ZAxis.Vector * f.Handedness)).Radians);
 
     // True when the frame is orthonormal and right-handed within the angle
-    // tolerance: the frame of a rigid motion. A placement may be mirrored and
-    // is judged by OrthonormalityDeviation alone.
+    // tolerance: the frame of a rigid motion. Use it for a motion; use
+    // IsOrthonormalEitherHandWithin for a placement, which may be mirrored.
     IsOrthonormalWithin(f: Frame3D, tol: AngleTolerance): Boolean
         => f.OrthonormalityDeviation <= tol.Value.Radians && f.Handedness > 0.0;
+
+    // True when the frame is orthonormal within the angle tolerance, of
+    // either handedness: the test of a placement (OrthonormalityDeviation).
+    IsOrthonormalEitherHandWithin(f: Frame3D, tol: AngleTolerance): Boolean
+        => f.OrthonormalityDeviation <= tol.Value.Radians;
 
     // How far the plane frame is from orthonormal and counter-clockwise, in
     // radians: the axes' relative length errors and |Y - quarter-turn of X|.

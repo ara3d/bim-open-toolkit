@@ -9,6 +9,7 @@
 //  - Transformations
 //  - Domains
 //  - Indexed tables
+//  - Tolerances and provenance
 
 //==
 // # Transformations
@@ -59,4 +60,24 @@ interface IIndexedTable<TIndex, TRow>
     RowCountOf(x: Self): Integer;
     RowAt(x: Self, i: TIndex): TRow;
     IsRowIndex(x: Self, i: TIndex): Boolean;
+}
+
+//==
+// # Tolerances and provenance
+
+// A value that carries the tolerances it was made under (layer 3's
+// PreparedModel, layer 2's ResolvableModel). Removes: a mesh validated under
+// a different tolerance from the one it was built with.
+interface IToleranced
+{
+    Tolerance(x: Self): Tolerances;
+}
+
+// A value a diagnostic can point at: the kernel element it is about (the
+// proofs of layers 2 and 4; Check and Diagnostic discharge it through their
+// Where field). Removes: a diagnostic about a checked loop or shell located
+// Nowhere.
+interface IHasProvenance
+{
+    Where(x: Self): Provenance;
 }

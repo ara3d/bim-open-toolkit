@@ -176,7 +176,9 @@ layer's own and may change inside the layer.
   `CurveRemap`, `Curve2DRemap`, `PcurveRemap`, `SurfaceRemap`, `KernelRemap` (`To<Name>Remap`,
   `NewOfValues`, `KernelRemapChanging`, `RemovalNewOf`, `IdentityNewOf`, `IsInjectiveOnKept`).
 - Concepts (`foundation.concepts.plato`): `IScaled`, `IMoved`, `IReversible`, `IHasDomain<TDomain>`,
-  `IIndexedTable<TIndex, TRow>` (`RowCountOf`, `RowAt`, `IsRowIndex`) (no implementer yet).
+  `IIndexedTable<TIndex, TRow>` (`RowCountOf`, `RowAt`, `IsRowIndex`) (no implementer yet);
+  `IToleranced { Tolerance(x): Tolerances }`, `IHasProvenance { Where(x): Provenance }` (the
+  section 4 proofs; `Check` and `Diagnostic` discharge `Where` through their field).
 - Decided values (`BrepFoundationDecided`, TYPE-CATALOG.md section 5): `UndecidedReason = OutOfDomain |
   DegenerateAt(Side) | NoConvergence(Iterations) | Unbounded | NotApplicable(Kind) | BelowResolution |
   ToleranceExceeded(By: Measure) | Fails(Property: String)`; one sum `Decided(Value: T) |
@@ -222,7 +224,8 @@ layer's own and may change inside the layer.
 - Per-point tolerances by direction kind: `ParameterToleranceAt(g, c | p, t, tol)`,
   `UvToleranceAt(g, s, uv, tol)`, `UvFloorOf(g, s, tol)`.
 - Placements: `Handedness(f: Frame3D)`, `PlacementHandedness(g, s)` (the determinant sign layers 2
-  and 3 fold), `OrthonormalityDeviation`, `IsOrthonormalWithin`.
+  and 3 fold), `OrthonormalityDeviation`, `IsOrthonormalWithin` (right-handed: a motion),
+  `IsOrthonormalEitherHandWithin` (either hand: a placement).
 - File-geometry measures layer 7 grades: `PlacementDeviation`, `TrimExcess`, `TrimBoxExcess`,
   `SegmentGap`, `SupportGap`, `PcurveToCurveGap`, `CurveToPcurveGap`, `PcurveDomainExcess`,
   `CollapsedLineSpread`, `OffsetReferenceAngle`, `ExtrusionProfileAngle`.
@@ -240,6 +243,11 @@ layer's own and may change inside the layer.
   Found(T, Distance) | Ambiguous(Candidates) | Failed(Reason)` (`IsFound`), `ClosureDecision =
   ClosedByEnds(Gap) | OpenByEnds(Gap) | ClosedByPeriod | UndecidableWithoutEvaluation` (`ClosesCurve`,
   `IsDecided`). `NormalOr` and `LimitNormal` still return a `Direction3D` (FINDINGS F-58).
+- Proofs (`BrepGeometryProofs`, TYPE-CATALOG.md section 4): `WellFormedBSpline { Data }`,
+  `ClampedBSpline { Data }`, `OrthonormalFrame { Frame; Handedness: Sign }`, each with a `Decided<Name>`
+  sum, built only by `CheckWellFormedBSpline(d)`, `CheckClampedBSpline(w: WellFormedBSpline)`,
+  `CheckOrthonormalFrame(f, tol)`; `IsDecided`. `HasClampedEnds(SplineBasis)` in
+  `BrepGeometrySplines`.
 
 ### 2. `02-topology`
 
@@ -290,6 +298,12 @@ layer's own and may change inside the layer.
   `Law_DegenerateEdgeHasCoincidentVertices`, `Law_ShellIsConnected`, `Law_ShellIsOrientable`,
   `Law_PolyLoopEdgesPairUp`, `Law_PolyLoopHasThreePoints`, `Law_NoRedundantVertexLoop` (Warning),
   `Law_ParameterizationSignIsConstantOnFace`.
+- Proofs (`BrepTopologyProofs`, TYPE-CATALOG.md section 4): `InRangeModel { Model }`,
+  `ResolvableModel { Model; Extent: ModelLength }`, `ChainedLoop { Loop }`, `ClosedShell { Shell;
+  Counts }`, `OrientedShell { Shell; Counts }`, `ConnectedShell { Shell }`, each with a
+  `Decided<Name>` sum, built only by `CheckInRangeModel(m)`, `CheckResolvableModel(m)`,
+  `CheckChainedLoop(m, l)`, `CheckClosedShell(m, s)`, `CheckOrientedShell(m, c: ClosedShell)`,
+  `CheckConnectedShell(m, s)`; `IsDecided`, `IsCheckableShell`, `UsesEveryEdgeTwice`.
 
 ### 3. `03-step`
 
@@ -330,6 +344,8 @@ layer's own and may change inside the layer.
 - `DecodeResult = Decoded(Model: DecodedModel) | NoShape(Reason) | Unreadable(Diagnostics)`
   (`StepDecided`), built by `ToDecodeResult(DecodedModel)` and `DecodeBrepResult(file)`; `DecodeBrep`
   still returns the record (FINDINGS F-58).
+- Proofs (`StepReadingProofs`, TYPE-CATALOG.md section 4): `PreparedModel { Model; Decoded }`
+  (`IToleranced`), `DecidedPreparedModel`, built only by `CheckPreparedModel(raw)`.
 
 ### 4. `04-discretization`
 
@@ -355,6 +371,11 @@ layer's own and may change inside the layer.
   `TurningAngle(d, i): Angle`, `TangentDeviation(m, d, plan, i): Angle`.
 - `SplitDecision = Split(At: EdgeParameter) | KeepBecause(Reason: KeepReason)`, `IsSplit`
   (`DiscretizationDecided`).
+- Proofs (`EdgeDiscretizingProofs`, TYPE-CATALOG.md section 4): `CompleteDiscretization { ByEdge }`,
+  `PartialDiscretization { ByEdge; Failed }`, `CanonicalDiscretization { Discretization }`,
+  `MeetsCriteriaProof { Edge; Criteria; Worst: Measure }`, each with a `Decided<Name>` sum and its
+  `Check<Name>(m, ...)`; `DirectedDiscretization { Discretization; Sense }`, built by the total
+  `DirectedAlong(c, s)`; `IsCanonical(m, d)`, `WorstSagitta(m, d)`.
 
 ### 5. `05-face-meshing`
 
@@ -390,6 +411,10 @@ layer's own and may change inside the layer.
   (`IsFlipped`); `FaceMeshResult = Meshed(Mesh, Advisory, Diagnostics) | Blocked(Requests,
   Diagnostics)` (`IsBlocked`), built by `ToFaceMeshResult(FaceMeshOutcome)`;
   `HasBlockingRequest(FaceMeshOutcome)`. `MeshFace` still returns `FaceMeshOutcome` (FINDINGS F-58).
+- Proofs (`FaceMeshingProofs`, TYPE-CATALOG.md section 4): `SimpleUvLoop { Loop; Tolerance }`,
+  `ClosedUvLoop { Face; Loop }`, `OrientedUvRegion { Face; Region }`, each with a `Decided<Name>`
+  sum, built only by `CheckSimpleUvLoop(l, tol)`, `CheckClosedUvLoop(m, f, l)`,
+  `CheckOrientedUvRegion(m, f, r)`; `AsRegion(UvLoop)`, `IsOrientedIn(m, f, r)`.
 
 ### 6. `06-mesh`
 
@@ -416,6 +441,12 @@ layer's own and may change inside the layer.
 - Conversions: `ToTriangleMesh3D(mesh)`, `ToQuadMesh3D(mesh): QuadMeshOutcome`,
   `ToPolygonMesh3D(mesh)`, `ToSplitTriangleMesh3D(mesh): SplitTriangleMesh3D`.
 - Laws, among them: `Law_CornerProvenanceIsOnItsElementFace`, `Law_VectorAreaVanishes`.
+- Proofs (`ModelMeshProofs`, TYPE-CATALOG.md section 4): `MeshedFaceSet { Faces; Outcomes }`,
+  `FullyMeshedModel { Model; Outcomes }`, `WatertightMesh { Mesh }`, `CheckedMesh { Mesh; Counts:
+  Array<MeshComponentCounts> }`, `QualityGradedMesh { Mesh; Triangles; Quads }`, `PlanarQuad { Quad;
+  Deviation }`, `ConvexQuad { Quad }`, each with a `Decided<Name>` sum and its `Check<Name>`
+  (`CheckCheckedMesh` is layer 7's); `IsMeshedFaceSet`, `FacesInOrder`, `ComponentCountsOf(mesh)`,
+  `IsMeasurable(mesh)`.
 
 ### 7. `07-validation`
 
@@ -447,6 +478,11 @@ layer's own and may change inside the layer.
   `Law_MeshEulerEqualsBrepEuler` (per shell, on reduced counts),
   `Law_VertexReevaluatesFromProvenance`, `Law_FaceAreaMatchesOracle`,
   `Law_DivergenceEqualsTorusVolume`, `Law_EveryFaceIsMeshed`.
+- Proofs (`BrepCheckingProofs`, TYPE-CATALOG.md section 4): `ValidatedReport { Report; Level }`,
+  `DecidedValidatedReport`, built only by `CheckValidatedReport(m, level)`; layer 6's
+  `CheckCheckedMesh(m, mesh)` with `IsClosedWhereShellIs`, `PassesMeshChecks`. The laws of the
+  layer 2, 3 and 5 proofs are here (`BrepCheckingProofsKernelLaws`, `BrepCheckingProofsRegionsLaws`)
+  because they take this layer's witnesses.
 
 ### 8. `08-pipeline`
 
@@ -472,9 +508,11 @@ layer's own and may change inside the layer.
   `Law_PendingRequestsAreRefinable`, `Law_PowerOfTwoScalingKeepsConnectivity`,
   `Law_RigidMotionMovesPositions`.
 - `MeshResult = Succeeded(Mesh: CheckedMesh, Report, Rounds: Count) | Incomplete(Mesh, Pending, Report) |
-  Failed(Report)` (`StepToMeshDecided`), built by `ToMeshResult(m, MeshOutcome)` through the proofs
-  track's `CheckCheckedMesh`; `IsSucceeded`. `MeshModel` still returns `MeshOutcome`, so `Incomplete`
+  Failed(Report)` (`StepToMeshDecided`), built by `ToMeshResult(m, MeshOutcome)` through layer 7's
+  `CheckCheckedMesh`; `IsSucceeded`. `MeshModel` still returns `MeshOutcome`, so `Incomplete`
   is not built yet (FINDINGS F-58).
+- The laws of the layer 1, 4 and 6 proofs that use this layer's witnesses or fixtures:
+  `StepToMeshProofsDiscretizationLaws`, `StepToMeshProofsMeshLaws`, `StepToMeshProofsBSplinesLaws`.
 
 ## Naming rules
 
@@ -495,6 +533,17 @@ layer's own and may change inside the layer.
 ## Changes to this contract
 
 Format: date, layer, old name, new name, reason.
+
+- 2026-10-20, 2 to 7, `UndecidedReason.NotApplicable(Kind)` for a section 4 check that found its
+  property false, `UndecidedReason.Fails(Property)` naming the predicate: `NotApplicable` reads as
+  "the question does not apply". `OutOfDomain`, `BelowResolution` and `ToleranceExceeded` keep
+  their uses (catalog merge, proofs).
+- 2026-10-20, 1, (none), `HasClampedEnds(SplineBasis)` in `geometry-splines.library.plato` beside
+  `KnotMultiplicityBounded`: layer 1 had no clamped-knot predicate (catalog merge, proofs).
+- 2026-10-20, 1, (none), `IsOrthonormalEitherHandWithin(Frame3D, AngleTolerance)` beside
+  `IsOrthonormalWithin`: the latter also demands right-handedness, so the placement check had
+  called `OrthonormalityDeviation <= tol` directly; `CheckOrthonormalFrame` now calls the named
+  predicate (catalog merge, proofs).
 
 - 2026-10-20, 8 to 5, `HasBlockingRequest(FaceMeshOutcome)` moved from `pipeline.library.plato` to
   `face-meshing-decided.library.plato`: it names only layer 5's types, and layer 5's

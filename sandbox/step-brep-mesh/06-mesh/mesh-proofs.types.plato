@@ -1,15 +1,18 @@
 //==
-// # Catalog: proofs about face meshes, the model mesh, and reports
+// # Proofs about face meshes and the model mesh (types)
 //
-// TYPE-CATALOG.md section 4, layers 5 to 7; CheckedMesh is chunk Y4 of
+// TYPE-CATALOG.md section 4, layers 5 and 6; CheckedMesh is chunk Y4 of
 // docs/plans/step-mesher-v2.md. Built only by the Check* constructors of
-// catalog-proofs-mesh.library.plato.
+// mesh-proofs.library.plato, except CheckedMesh, whose constructor reads
+// layer 7's RestrictedToShell and is in
+// 07-validation/validation-proofs.library.plato. Each Decided* sum is its
+// constructor's result, in layer 0's pattern. Layer 7's ValidatedReport is
+// in validation-proofs.types.plato.
 //
 // Sections, in order:
 //  - Face outcomes
 //  - The model mesh
 //  - Quads
-//  - Reports
 
 //==
 // # Face outcomes
@@ -31,6 +34,16 @@ type FullyMeshedModel
     Model: BrepModel;
     Outcomes: Array<FaceMeshOutcome>;
 }
+
+// A MeshedFaceSet, or why some face is not meshed.
+type DecidedMeshedFaceSet
+    = Decided(Value: MeshedFaceSet)
+    | Undecided(Reason: UndecidedReason);
+
+// A FullyMeshedModel, or why some face of the model is not meshed.
+type DecidedFullyMeshedModel
+    = Decided(Value: FullyMeshedModel)
+    | Undecided(Reason: UndecidedReason);
 
 //==
 // # The model mesh
@@ -63,6 +76,21 @@ type QualityGradedMesh
     Quads: Array<QuadQuality>;
 }
 
+// A WatertightMesh, or why the mesh has a boundary edge.
+type DecidedWatertightMesh
+    = Decided(Value: WatertightMesh)
+    | Undecided(Reason: UndecidedReason);
+
+// A CheckedMesh, or why the mesh failed its topology checks.
+type DecidedCheckedMesh
+    = Decided(Value: CheckedMesh)
+    | Undecided(Reason: UndecidedReason);
+
+// A QualityGradedMesh, or why the mesh could not be measured.
+type DecidedQualityGradedMesh
+    = Decided(Value: QualityGradedMesh)
+    | Undecided(Reason: UndecidedReason);
+
 //==
 // # Quads
 
@@ -82,13 +110,12 @@ type ConvexQuad
     Quad: QuadFace;
 }
 
-//==
-// # Reports
+// A PlanarQuad, or why the quad is not planar.
+type DecidedPlanarQuad
+    = Decided(Value: PlanarQuad)
+    | Undecided(Reason: UndecidedReason);
 
-// A report with no error, and the conformance level that produced it.
-// Removes: a Structural report presented as oracle-clean.
-type ValidatedReport
-{
-    Report: Report;
-    Level: ConformanceLevel;
-}
+// A ConvexQuad, or why the quad is not strictly convex.
+type DecidedConvexQuad
+    = Decided(Value: ConvexQuad)
+    | Undecided(Reason: UndecidedReason);

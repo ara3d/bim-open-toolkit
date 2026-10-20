@@ -1,0 +1,66 @@
+//==
+// # Specs of the kernel proofs
+//
+// One spec per proof type of topology-proofs.types.plato: the invariant its
+// value keeps and the single function permitted to build it. The
+// compiler-derived record constructor is unavailable outside it. Each
+// invariant is the predicate the constructor tested, and the laws named
+// beside it (07-validation/validation-proofs-kernel.laws.plato) check that
+// the constructor succeeds exactly when it holds. m is the model the
+// constructor was given. Not compiled; the runner skips this file.
+//
+// Sections, in order:
+//  - The whole model
+//  - Loops
+//  - Shells
+
+//==
+// # The whole model
+
+spec InRangeModel
+{
+    invariant self.Model.IsEveryIndexInRange;   // Law_InRangeModelIffIndicesInRange
+    constructor CheckInRangeModel;
+}
+
+spec ResolvableModel
+{
+    invariant self.Model.Tolerances.Length.IsResolvable(self.Model.CoordinateExtent);   // Law_ResolvableModelIffResolvable
+    invariant self.Extent.Value == self.Model.CoordinateExtent;   // exact by construction; Law_ResolvableModelRecordsExtent
+    constructor CheckResolvableModel;
+}
+
+//==
+// # Loops
+
+spec ChainedLoop
+{
+    invariant m.IsLoopIntact(self.Loop) && m.ChainsEndToStart(m.Loops[self.Loop]);   // Law_ChainedLoopIffChains
+    constructor CheckChainedLoop;
+}
+
+//==
+// # Shells
+
+spec ClosedShell
+{
+    invariant m.IsEveryIndexInRange && m.IsShellInRange(self.Shell);
+    invariant forall (e: BrepEdgeIndex) in m.EdgesOfShell(self.Shell) :
+        m.CountsAsEdge(e) ? m.UseCount(self.Shell, e).IsZeroOrTwo : true;   // Law_ClosedShellIffEdgesUsedTwice
+    invariant self.Counts == m.ReducedCounts(self.Shell);   // Law_ClosedShellRecordsCounts
+    constructor CheckClosedShell;
+}
+
+spec OrientedShell
+{
+    invariant CheckClosedShell(m, self.Shell).IsDecided;
+    invariant m.HasCoherentOrientation(self.Shell);   // Law_OrientedShellIffCoherent
+    invariant self.Counts == m.ReducedCounts(self.Shell);   // Law_OrientedShellKeepsCounts
+    constructor CheckOrientedShell;
+}
+
+spec ConnectedShell
+{
+    invariant m.ShellComponentCount(self.Shell) <= 1;   // Law_ConnectedShellIffOneComponent
+    constructor CheckConnectedShell;
+}

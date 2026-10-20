@@ -1,8 +1,10 @@
 //==
-// # Catalog: proofs about edge discretizations
+// # Proofs about edge discretizations (types)
 //
 // TYPE-CATALOG.md section 4, layer 4. Built only by the constructors of
-// catalog-proofs-discretization.library.plato.
+// discretization-proofs.library.plato, as discretization-proofs.spec.plato
+// states; each Decided* sum is its constructor's result, in layer 0's
+// pattern.
 //
 // Sections, in order:
 //  - Whole tables
@@ -27,6 +29,16 @@ type PartialDiscretization
     ByEdge: Array<EdgeDiscretization>;
     Failed: Array<BrepEdgeIndex>;
 }
+
+// A CompleteDiscretization, or why some edge is missing.
+type DecidedCompleteDiscretization
+    = Decided(Value: CompleteDiscretization)
+    | Undecided(Reason: UndecidedReason);
+
+// A PartialDiscretization, or why the table is not partial.
+type DecidedPartialDiscretization
+    = Decided(Value: PartialDiscretization)
+    | Undecided(Reason: UndecidedReason);
 
 //==
 // # One edge
@@ -61,3 +73,13 @@ type MeetsCriteriaProof
     Criteria: DiscretizationCriteria;
     Worst: Measure;
 }
+
+// A CanonicalDiscretization, or why the polyline is not canonical.
+type DecidedCanonicalDiscretization
+    = Decided(Value: CanonicalDiscretization)
+    | Undecided(Reason: UndecidedReason);
+
+// A MeetsCriteriaProof, or why the discretization misses its criteria.
+type DecidedMeetsCriteriaProof
+    = Decided(Value: MeetsCriteriaProof)
+    | Undecided(Reason: UndecidedReason);

@@ -1,17 +1,20 @@
 //==
-// # Catalog: the constructors of the mesh and report proofs
+// # Proofs about face meshes and the model mesh (constructors)
 //
-// One Check* function per proof type of catalog-proofs-mesh.types.plato,
-// each over the predicates of layers 5 to 7.
+// One Check* function per proof type of mesh-proofs.types.plato, each over
+// the predicates of layers 5 and 6. CheckCheckedMesh reads layer 7's
+// RestrictedToShell and is in 07-validation/validation-proofs.library.plato;
+// its verdict and ComponentCountsOf are here. A property checked and found
+// false is Fails, naming the predicate; an input the predicate cannot be
+// asked of is OutOfDomain.
 //
 // Sections, in order:
 //  - Face outcomes
 //  - The model mesh
 //  - Quads
-//  - Reports
 //  - Verdicts
 
-library CatalogProofsMesh
+library ModelMeshProofs
 {
     //==
     // # Face outcomes
@@ -31,53 +34,36 @@ library CatalogProofsMesh
     FacesInOrder(m: BrepModel): Array<BrepFaceIndex>
         => m.Faces.Count.MapRange(i => BrepFaceIndex(i));
 
-    // The pairs as a MeshedFaceSet when every face's outcome is meshed.
+    // The pairs as a MeshedFaceSet when every face's outcome is meshed;
+    // Fails otherwise.
     CheckMeshedFaceSet(faces: Array<BrepFaceIndex>, outcomes: Array<FaceMeshOutcome>): DecidedMeshedFaceSet
         => IsMeshedFaceSet(faces, outcomes)
             ? DecidedMeshedFaceSet.Decided(MeshedFaceSet(faces, outcomes))
-            : DecidedMeshedFaceSet.Undecided(UndecidedReason.NotApplicable("some face is not meshed"));
+            : DecidedMeshedFaceSet.Undecided(UndecidedReason.Fails("IsMeshedFaceSet"));
 
     // The model and its outcomes as a FullyMeshedModel when the outcomes
-    // are a meshed face set over every face of m, in face order.
+    // are a meshed face set over every face of m, in face order; Fails
+    // otherwise.
     CheckFullyMeshedModel(m: BrepModel, outcomes: Array<FaceMeshOutcome>): DecidedFullyMeshedModel
         => IsMeshedFaceSet(m.FacesInOrder, outcomes)
             ? DecidedFullyMeshedModel.Decided(FullyMeshedModel(m, outcomes))
-            : DecidedFullyMeshedModel.Undecided(UndecidedReason.NotApplicable("some face of the model is not meshed"));
+            : DecidedFullyMeshedModel.Undecided(UndecidedReason.Fails("IsMeshedFaceSet over every face"));
 
     //==
     // # The model mesh
 
-    // The mesh as a WatertightMesh when it is well formed and closed.
+    // The mesh as a WatertightMesh when it is well formed and closed; Fails
+    // when an edge lacks two sides, OutOfDomain when it is not well formed.
     CheckWatertightMesh(mesh: ModelMesh): DecidedWatertightMesh
         => mesh.IsWellFormed
             ? (mesh.IsClosed
                 ? DecidedWatertightMesh.Decided(WatertightMesh(mesh))
-                : DecidedWatertightMesh.Undecided(UndecidedReason.NotApplicable("mesh has a boundary or non-manifold edge")))
+                : DecidedWatertightMesh.Undecided(UndecidedReason.Fails("IsClosed")))
             : DecidedWatertightMesh.Undecided(UndecidedReason.OutOfDomain);
-
-    // True when, on every shell of m that is closed (CheckClosedShell), the
-    // mesh's elements of that shell form a closed mesh.
-    IsClosedWhereShellIs(m: BrepModel, mesh: ModelMesh): Boolean
-        => m.Shells.Count.Range.All(s =>
-            m.CheckClosedShell(ShellIndex(s)).IsDecided ? m.RestrictedToShell(mesh, ShellIndex(s)).IsClosed : true);
 
     // The counts of each component of the mesh, in component order.
     ComponentCountsOf(mesh: ModelMesh): Array<MeshComponentCounts>
         => mesh.ComponentCountsOf(mesh.EdgeTableOf, mesh.ComponentsOf);
-
-    // True when a well-formed mesh is manifold, consistently oriented, and
-    // closed where m's shells are. Precondition: mesh.IsWellFormed.
-    PassesMeshChecks(m: BrepModel, mesh: ModelMesh): Boolean
-        => mesh.IsManifold && mesh.IsConsistentlyOriented && m.IsClosedWhereShellIs(mesh);
-
-    // The mesh of model m as a CheckedMesh, with its component counts, when
-    // it passes the mesh checks; OutOfDomain when it is not well formed.
-    CheckCheckedMesh(m: BrepModel, mesh: ModelMesh): DecidedCheckedMesh
-        => mesh.IsWellFormed
-            ? (m.PassesMeshChecks(mesh)
-                ? DecidedCheckedMesh.Decided(CheckedMesh(mesh, mesh.ComponentCountsOf))
-                : DecidedCheckedMesh.Undecided(UndecidedReason.NotApplicable("mesh is not manifold, oriented, and closed")))
-            : DecidedCheckedMesh.Undecided(UndecidedReason.OutOfDomain);
 
     // True when every element of the mesh has corners naming positions, so
     // its quality can be measured.
@@ -106,26 +92,14 @@ library CatalogProofsMesh
                 : DecidedPlanarQuad.Undecided(UndecidedReason.ToleranceExceeded(ModelLength(fm.QuadWarp(q) - c.SurfaceChordal).ToMeasure)))
             : DecidedPlanarQuad.Undecided(UndecidedReason.OutOfDomain);
 
-    // Quad q of the face mesh as a ConvexQuad when it is strictly convex.
+    // Quad q of the face mesh as a ConvexQuad when it is strictly convex;
+    // Fails when it is not, OutOfDomain when it cannot be measured.
     CheckConvexQuad(fm: FaceMesh, q: FaceIndex): DecidedConvexQuad
         => fm.IsMeasurableQuad(q)
             ? (fm.IsConvexQuad(q)
                 ? DecidedConvexQuad.Decided(ConvexQuad(fm.Quads[q]))
-                : DecidedConvexQuad.Undecided(UndecidedReason.NotApplicable("quad is not strictly convex")))
+                : DecidedConvexQuad.Undecided(UndecidedReason.Fails("IsConvexQuad")))
             : DecidedConvexQuad.Undecided(UndecidedReason.OutOfDomain);
-
-    //==
-    // # Reports
-
-    // The model's validation at level as a ValidatedReport when it has no
-    // error.
-    CheckValidatedReport(m: BrepModel, level: ConformanceLevel): DecidedValidatedReport
-    {
-        var r = m.ValidateBrep(level);
-        return r.IsClean
-            ? DecidedValidatedReport.Decided(ValidatedReport(r, level))
-            : DecidedValidatedReport.Undecided(UndecidedReason.NotApplicable("validation found an error"));
-    }
 
     //==
     // # Verdicts
@@ -156,9 +130,5 @@ library CatalogProofsMesh
 
     // True when the check built its proof.
     IsDecided(d: DecidedConvexQuad): Boolean
-        => match (d) { Decided(v) => true; Undecided(r) => false; };
-
-    // True when the check built its proof.
-    IsDecided(d: DecidedValidatedReport): Boolean
         => match (d) { Decided(v) => true; Undecided(r) => false; };
 }

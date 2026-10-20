@@ -1,21 +1,21 @@
 //==
-// # Catalog: laws of the mesh and report proofs
+// # Laws of the face-mesh and model-mesh proofs (layer 6, and CheckedMesh)
 //
-// Two laws per proof type, as in catalog-proofs-kernel.laws.plato. Face
-// outcomes are the unit box's faces meshed by MeshFace under layer 8's
-// witness criteria, one of them knocked out; model meshes are layer 6's
-// literal tetrahedron, its reversal, the tetrahedron with one face
-// removed, and the unit box's pipeline mesh; quads are one-quad face
-// meshes built from the runner's Numbers.
+// Two laws per proof type of 06-mesh/mesh-proofs.types.plato, as in
+// 07-validation/validation-proofs-kernel.laws.plato. Face outcomes are the
+// unit box's faces meshed by MeshFace under this layer's witness criteria,
+// one of them knocked out; model meshes are layer 6's literal tetrahedron,
+// its reversal, the tetrahedron with one face removed, and the unit box's
+// pipeline mesh (WitnessMesh), which is why these laws are layer 8's; quads
+// are one-quad face meshes built from the runner's Numbers.
 //
 // Sections, in order:
 //  - Witnesses
 //  - Face outcomes
 //  - The model mesh
 //  - Quads
-//  - Reports
 
-library CatalogProofsMeshLaws
+library StepToMeshProofsMeshLaws
 {
     //==
     // # Witnesses
@@ -77,7 +77,7 @@ library CatalogProofsMeshLaws
     // CheckFullyMeshedModel succeeds exactly when there is one outcome per
     // face, outcome i is of face i, and each holds a non-empty mesh and no
     // blocking request.
-    Law_Catalog_FullyMeshedModelIffEveryFaceMeshed(j: Integer): Boolean
+    Law_FullyMeshedModelIffEveryFaceMeshed(j: Integer): Boolean
         => CheckFullyMeshedModel(BrepModel.CatalogBox, CatalogBoxOutcomes(j)).IsDecided
             == (CatalogBoxOutcomes(j).Count == BrepModel.CatalogBox.Faces.Count
                 ? CatalogBoxOutcomes(j).Count.Range.All(i =>
@@ -87,10 +87,10 @@ library CatalogProofsMeshLaws
                 : false);
 
     // A FullyMeshedModel keeps every outcome.
-    Law_Catalog_FullyMeshedModelKeepsOutcomes(j: Integer): Boolean
+    Law_FullyMeshedModelKeepsOutcomes(j: Integer): Boolean
         => CatalogFullyMeshedKeeps(CatalogBoxOutcomes(j), CheckFullyMeshedModel(BrepModel.CatalogBox, CatalogBoxOutcomes(j)));
 
-    // The claim of Law_Catalog_FullyMeshedModelKeepsOutcomes for the result
+    // The claim of Law_FullyMeshedModelKeepsOutcomes for the result
     // d of checking outcomes o.
     CatalogFullyMeshedKeeps(o: Array<FaceMeshOutcome>, d: DecidedFullyMeshedModel): Boolean
         => match (d) {
@@ -100,15 +100,15 @@ library CatalogProofsMeshLaws
 
     // CheckMeshedFaceSet over faces 0 to 2 of the box succeeds exactly when
     // their three outcomes are meshed.
-    Law_Catalog_MeshedFaceSetIffFacesMeshed(j: Integer): Boolean
+    Law_MeshedFaceSetIffFacesMeshed(j: Integer): Boolean
         => CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], CatalogBoxOutcomes(j).Take(3)).IsDecided
             == 3.Range.All(i => CatalogBoxOutcomes(j)[i].Mesh.IsEmptyFaceMesh.Not && CatalogBoxOutcomes(j)[i].HasBlockingRequest.Not);
 
     // A MeshedFaceSet pairs each face with its outcome.
-    Law_Catalog_MeshedFaceSetPairsFaces(j: Integer): Boolean
+    Law_MeshedFaceSetPairsFaces(j: Integer): Boolean
         => CatalogMeshedFaceSetPairs(CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], CatalogBoxOutcomes(j).Take(3)));
 
-    // The claim of Law_Catalog_MeshedFaceSetPairsFaces for one result.
+    // The claim of Law_MeshedFaceSetPairsFaces for one result.
     CatalogMeshedFaceSetPairs(d: DecidedMeshedFaceSet): Boolean
         => match (d) {
             Decided(p) => p.Faces.Count == p.Outcomes.Count
@@ -122,15 +122,15 @@ library CatalogProofsMeshLaws
 
     // CheckWatertightMesh succeeds exactly when the mesh is well formed and
     // every edge has two element sides.
-    Law_Catalog_WatertightMeshIffClosed(k: Integer): Boolean
+    Law_WatertightMeshIffClosed(k: Integer): Boolean
         => CheckWatertightMesh(CatalogMeshAt(k)).IsDecided
             == (CatalogMeshAt(k).IsWellFormed ? CatalogMeshAt(k).IsClosed : false);
 
     // A WatertightMesh keeps its mesh.
-    Law_Catalog_WatertightMeshKeepsMesh(k: Integer): Boolean
+    Law_WatertightMeshKeepsMesh(k: Integer): Boolean
         => CatalogWatertightKeeps(CatalogMeshAt(k), CheckWatertightMesh(CatalogMeshAt(k)));
 
-    // The claim of Law_Catalog_WatertightMeshKeepsMesh for the result d of
+    // The claim of Law_WatertightMeshKeepsMesh for the result d of
     // checking mesh.
     CatalogWatertightKeeps(mesh: ModelMesh, d: DecidedWatertightMesh): Boolean
         => match (d) {
@@ -141,7 +141,7 @@ library CatalogProofsMeshLaws
     // CheckCheckedMesh succeeds exactly when the mesh is well formed,
     // manifold, consistently oriented, and closed on every shell of the box
     // that uses each counted edge twice.
-    Law_Catalog_CheckedMeshIffMeshChecks(k: Integer): Boolean
+    Law_CheckedMeshIffMeshChecks(k: Integer): Boolean
     {
         var m = BrepModel.CatalogBox;
         var mesh = CatalogMeshAt(k);
@@ -157,15 +157,15 @@ library CatalogProofsMeshLaws
 
     // The closed tetrahedron, its reversal, and the box's pipeline mesh are
     // checked meshes; the tetrahedron without a face is not.
-    Law_Catalog_ClosedWitnessMeshesAreChecked(k: Integer): Boolean
+    Law_ClosedWitnessMeshesAreChecked(k: Integer): Boolean
         => CheckCheckedMesh(BrepModel.CatalogBox, CatalogMeshAt(k)).IsDecided == (((k % 4) + 4) % 4 != 2);
 
     // A CheckedMesh carries ComponentCountsOf of its mesh, one per
     // component.
-    Law_Catalog_CheckedMeshRecordsCounts(k: Integer): Boolean
+    Law_CheckedMeshRecordsCounts(k: Integer): Boolean
         => CatalogCheckedMeshRecords(CatalogMeshAt(k), CheckCheckedMesh(BrepModel.CatalogBox, CatalogMeshAt(k)));
 
-    // The claim of Law_Catalog_CheckedMeshRecordsCounts for the result d of
+    // The claim of Law_CheckedMeshRecordsCounts for the result d of
     // checking mesh.
     CatalogCheckedMeshRecords(mesh: ModelMesh, d: DecidedCheckedMesh): Boolean
     {
@@ -180,7 +180,7 @@ library CatalogProofsMeshLaws
 
     // CheckQualityGradedMesh succeeds exactly when the mesh is well formed
     // and every element's corners name positions.
-    Law_Catalog_QualityGradedMeshIffMeasurable(k: Integer): Boolean
+    Law_QualityGradedMeshIffMeasurable(k: Integer): Boolean
         => CheckQualityGradedMesh(CatalogMeshAt(k)).IsDecided
             == (CatalogMeshAt(k).IsWellFormed
                 ? CatalogMeshAt(k).ElementCount.Range.All(e => CatalogMeshAt(k).HasValidCorners(ElementIndex(e)))
@@ -188,10 +188,10 @@ library CatalogProofsMeshLaws
 
     // A QualityGradedMesh holds TriangleQualityAt of each triangle and
     // QuadQualityAt of each quad, in element order.
-    Law_Catalog_QualityGradedMeshRecordsQualities(k: Integer, j: Integer): Boolean
+    Law_QualityGradedMeshRecordsQualities(k: Integer, j: Integer): Boolean
         => CatalogQualityRecords(CatalogMeshAt(k), j, CheckQualityGradedMesh(CatalogMeshAt(k)));
 
-    // The claim of Law_Catalog_QualityGradedMeshRecordsQualities at
+    // The claim of Law_QualityGradedMeshRecordsQualities at
     // triangle and quad j. Exact by construction: the same metric of the
     // same corners.
     CatalogQualityRecords(mesh: ModelMesh, j: Integer, d: DecidedQualityGradedMesh): Boolean
@@ -208,22 +208,22 @@ library CatalogProofsMeshLaws
 
     // CheckPlanarQuad succeeds exactly when the quad is measurable and its
     // warp is within the surface chordal.
-    Law_Catalog_PlanarQuadIffWarpWithinChordal(cx: Number, cy: Number, z: Number, c: Number): Boolean
+    Law_PlanarQuadIffWarpWithinChordal(cx: Number, cy: Number, z: Number, c: Number): Boolean
         => CheckPlanarQuad(CatalogQuadMesh(cx, cy, z), FaceIndex(0), CatalogQuadCriteria(c)).IsDecided
             == (CatalogQuadMesh(cx, cy, z).IsMeasurableQuad(FaceIndex(0))
                 ? CatalogQuadMesh(cx, cy, z).QuadWarp(FaceIndex(0)) <= c
                 : false);
 
     // The unit square is planar under any positive chordal.
-    Law_Catalog_UnitSquareQuadIsPlanar(c: Number): Boolean
+    Law_UnitSquareQuadIsPlanar(c: Number): Boolean
         => c > 0.0 ? CheckPlanarQuad(CatalogQuadMesh(1.0, 1.0, 0.0), FaceIndex(0), CatalogQuadCriteria(c)).IsDecided : true;
 
     // A PlanarQuad records the quad and its warp as its Deviation.
-    Law_Catalog_PlanarQuadRecordsWarp(cx: Number, cy: Number, z: Number, c: Number): Boolean
+    Law_PlanarQuadRecordsWarp(cx: Number, cy: Number, z: Number, c: Number): Boolean
         => CatalogPlanarRecords(CatalogQuadMesh(cx, cy, z),
             CheckPlanarQuad(CatalogQuadMesh(cx, cy, z), FaceIndex(0), CatalogQuadCriteria(c)));
 
-    // The claim of Law_Catalog_PlanarQuadRecordsWarp for the result d of
+    // The claim of Law_PlanarQuadRecordsWarp for the result d of
     // checking quad 0 of fm.
     CatalogPlanarRecords(fm: FaceMesh, d: DecidedPlanarQuad): Boolean
         => match (d) {
@@ -233,50 +233,21 @@ library CatalogProofsMeshLaws
 
     // CheckConvexQuad succeeds exactly when the quad is measurable and
     // strictly convex.
-    Law_Catalog_ConvexQuadIffConvex(cx: Number, cy: Number, z: Number): Boolean
+    Law_ConvexQuadIffConvex(cx: Number, cy: Number, z: Number): Boolean
         => CheckConvexQuad(CatalogQuadMesh(cx, cy, z), FaceIndex(0)).IsDecided
             == (CatalogQuadMesh(cx, cy, z).IsMeasurableQuad(FaceIndex(0))
                 ? CatalogQuadMesh(cx, cy, z).IsConvexQuad(FaceIndex(0))
                 : false);
 
     // A ConvexQuad records the quad it checked.
-    Law_Catalog_ConvexQuadRecordsQuad(cx: Number, cy: Number, z: Number): Boolean
+    Law_ConvexQuadRecordsQuad(cx: Number, cy: Number, z: Number): Boolean
         => CatalogConvexRecords(CatalogQuadMesh(cx, cy, z), CheckConvexQuad(CatalogQuadMesh(cx, cy, z), FaceIndex(0)));
 
-    // The claim of Law_Catalog_ConvexQuadRecordsQuad for the result d of
+    // The claim of Law_ConvexQuadRecordsQuad for the result d of
     // checking quad 0 of fm.
     CatalogConvexRecords(fm: FaceMesh, d: DecidedConvexQuad): Boolean
         => match (d) {
             Decided(p) => p.Quad == fm.Quads[0];
-            Undecided(r) => true;
-        };
-
-    //==
-    // # Reports
-
-    // Structural for an even k, Geometric for an odd one.
-    CatalogLevelAt(k: Integer): ConformanceLevel
-        => ((k % 2) + 2) % 2 == 0 ? ConformanceLevel.Structural : ConformanceLevel.Geometric;
-
-    // CheckValidatedReport succeeds exactly when ValidateBrep at the level
-    // finds no error.
-    Law_Catalog_ValidatedReportIffClean(k: Integer, l: Integer): Boolean
-        => CheckValidatedReport(CatalogProofModelAt(k), CatalogLevelAt(l)).IsDecided
-            == CatalogProofModelAt(k).ValidateBrep(CatalogLevelAt(l)).IsClean;
-
-    // A ValidatedReport records the level that produced it and that
-    // level's report.
-    Law_Catalog_ValidatedReportRecordsLevel(k: Integer, l: Integer): Boolean
-        => CatalogValidatedRecords(CatalogLevelAt(l), CatalogProofModelAt(k).ValidateBrep(CatalogLevelAt(l)),
-            CheckValidatedReport(CatalogProofModelAt(k), CatalogLevelAt(l)));
-
-    // The claim of Law_Catalog_ValidatedReportRecordsLevel for the result d
-    // of checking at level, given that level's report.
-    CatalogValidatedRecords(level: ConformanceLevel, report: Report, d: DecidedValidatedReport): Boolean
-        => match (d) {
-            Decided(p) => p.Level == level
-                && p.Report.Checks.Count == report.Checks.Count
-                && p.Report.Diagnostics.Count == report.Diagnostics.Count;
             Undecided(r) => true;
         };
 }

@@ -42,6 +42,7 @@ P41, P42, P43 are ISO 10303-21, -41, -42, -43; AIM is the AP242 integrated schem
 | `step-raw-witnesses.laws.plato` | laws | `StepRawWitnessesLaws` | `Law_RawUnitCubePreparesToUnitBox`, `Law_RawTwoCubesPreparesToTwoBodies`: TKT-312's acceptance |
 | `step.spec.plato` | spec | | type invariants, a contract for each of the 21 functions that were deferred (19 still are) and for `DecodeBrep`, `DecodeBrepWith`, `PrepareModel`, `PrepareModelWith`, 3 theorems |
 | `step-decided.{types,library,laws,spec}.plato` | types, library, laws | `StepDecided`, `StepDecidedLaws` | section 5: `DecodeResult = Decoded \| NoShape \| Unreadable`, `ToDecodeResult`, `DecodeBrepResult(file)` (the decode as a sum, beside `DecodeBrep`), 1 law (catalog merge, 2026-10-20) |
+| `step-proofs.{types,library,spec}.plato` | types, library | `StepReadingProofs` | section 4: `PreparedModel` (`IToleranced`) and `DecidedPreparedModel`, built only by `CheckPreparedModel(raw)`; its 2 laws are in `07-validation/validation-proofs-kernel.laws.plato` (catalog merge, proofs, 2026-10-20) |
 
 Counts: 32 types; 236 library functions, 217 with bodies and 19 deferred (chunk D, TKT-326, gave
 `Reduced` and `ToleranceDiagnostics` bodies and added six helpers); 188 laws (seven of
