@@ -87,6 +87,10 @@ declaration the server may keep the old name alive and report a phantom ambiguit
 copy your folder to a fresh path under your scratchpad and check that copy. And the server does
 not report a missing interface function (LINT001): run the pinned CLI's `lint` over the library
 and your folder once at the end (PLATO-PRIMER.md E.2) and fix what it names in your files.
+A third (validation track): a call chained onto a payload-free qualified case
+(`Expectation.ShouldPass.IsMet(v)`) makes the server skip the whole compile and report 0 laws and
+0 type errors, the library's known error included. Write `IsMet(Expectation.ShouldPass, v)`. Any
+run that reports fewer type errors than the known one did not compile.
 Names already taken: `PowerOfTwo` is a library function, so the foundation type is
 `PowerOfTwoFactor`; the stdlib has `VertexRemap`, so the kernel one is `BrepVertexRemap`.
 
