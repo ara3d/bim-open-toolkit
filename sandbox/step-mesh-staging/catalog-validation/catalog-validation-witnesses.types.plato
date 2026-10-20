@@ -1,0 +1,87 @@
+//==
+// # Catalog: witnesses, verdicts, and proofs of level
+//
+// TYPE-CATALOG.md section 10: what a witness is built from and for, the
+// verdict of a law with its payload, and the proof that a report ran the
+// checks of a level.
+//
+// Sections, in order:
+//  - Sampling and witnesses
+//  - Expectations and verdicts
+//  - Levels
+
+//==
+// # Sampling and witnesses
+
+// A sample grid over a surface domain, built once per arena (chunk H2):
+// the plan, the domain, and whether the grid was checked against the
+// domain. Removes: a grid rebuilt for every check.
+type SampleGrid
+{
+    Plan: SamplePlan;
+    Domain: SurfaceDomain;
+    Checked: Boolean;
+}
+
+// What a generated witness is rebuilt from: its family, the seed, and the
+// drawn parameters (chunk T1). Removes: a failing generated witness nobody
+// can rebuild.
+type WitnessSpec
+{
+    Family: WitnessFamily;
+    Seed: Integer;
+    Parameters: Array<Number>;
+}
+
+// The catalog's Perturbation as a sum (chunk T2), under a new name since
+// layer 9's Perturbation exists (TRACK.md, Contract requests). RigidMotion
+// by a pose; PowerOfTwoScale, exact in binary floating point; VertexJitter
+// within a length, from a seed. Each names its invariance law
+// (InvarianceOf). Removes: a perturbation whose kept property is unwritten.
+type PerturbationKind
+    = RigidMotion(Motion: Pose3D)
+    | PowerOfTwoScale(Factor: PowerOfTwoFactor)
+    | VertexJitter(Within: ModelLength, Seed: Integer);
+
+//==
+// # Expectations and verdicts
+
+// What a witness is for: to pass, to fail one law, or to warn with one code.
+// Removes: a negative witness that quietly started passing.
+type Expectation
+    = ShouldPass
+    | ShouldFail(Law: LawName)
+    | ShouldWarn(Code: String);
+
+// The catalog's Verdict, under a new name since layer 9's LawVerdict exists
+// (TRACK.md, Contract requests): a verdict with its payload. Removes: a
+// failure whose evidence is lost between the run and the report.
+type LawVerdictDetail
+    = Pass
+    | Fail(Evidence: Evidence)
+    | Error(Message: String)
+    | Obligation
+    | Skipped(Why: String)
+    | OverBudget(Elapsed: Elapsed);
+
+// One law's verdict in two sweeps, what the merge procedure traces to a
+// chunk. Built only by VerdictDeltaOf. Removes: a regression found by
+// reading two reports side by side.
+type VerdictDelta
+{
+    Law: LawName;
+    Before: LawVerdictDetail;
+    After: LawVerdictDetail;
+}
+
+//==
+// # Levels
+
+// The check families that ran for a report, with the level they prove.
+// Built only by LevelProofOf, so a ValidatedReport cannot claim a level its
+// checks did not run. Invariant: every family Level requires is in Ran.
+type LevelProof
+{
+    Level: ConformanceLevel;
+    Ran: Array<CheckFamily>;
+}

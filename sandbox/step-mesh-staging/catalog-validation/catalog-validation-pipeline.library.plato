@@ -1,0 +1,122 @@
+//==
+// # Catalog: traces, rounds, reports, and diffs (functions)
+//
+// The constructors and predicates of catalog-validation-pipeline.types.plato
+// and catalog-validation-reports.types.plato, and BrepModel's ICheckable and
+// IDiffable functions.
+//
+// Sections, in order:
+//  - Traces
+//  - Incremental rounds
+//  - Checking and diffing a model
+
+library CatalogValidationPipeline
+{
+    //==
+    // # Traces
+
+    // The round an event names, as zero or one rounds: FaceMeshed and
+    // RoundEnded name one, the other events none.
+    RoundsOf(e: MeshingEvent): Array<Round>
+        => match (e) {
+            EdgeDiscretized(edge, segments) => Round.First.NoRounds;
+            EdgeRefined(edge, from, to, why) => Round.First.NoRounds;
+            FaceMeshed(face, triangles, quads, round) => [round];
+            FaceBlocked(face, requests) => Round.First.NoRounds;
+            RoundEnded(round, pending) => [round];
+            Assembled(vertices) => Round.First.NoRounds;
+            Validated(level, clean) => Round.First.NoRounds;
+        };
+
+    // An empty array of rounds; r only fixes the element type.
+    NoRounds(r: Round): Array<Round>
+        => [r].Take(0);
+
+    // The rounds a trace names, in event order.
+    RoundsOf(t: Trace): Array<Round>
+        => t.Events.FlatMap(e => e.RoundsOf);
+
+    // True when the rounds a trace names never decrease.
+    RoundsAreMonotone(t: Trace): Boolean
+    {
+        var rounds = t.RoundsOf;
+        return (rounds.Count - 1).Max(0).MapRange(i => rounds[i].Value <= rounds[i + 1].Value).All(x => x);
+    }
+
+    // The trace with one more event at its end.
+    Recorded(t: Trace, e: MeshingEvent): Trace
+        => Trace(t.Events.Append(e));
+
+    //==
+    // # Incremental rounds
+
+    // True when face f cites any edge in changed.
+    TouchesAny(m: BrepModel, f: BrepFaceIndex, changed: Array<BrepEdgeIndex>): Boolean
+        => changed.Any(e => m.FaceUsesEdge(f, e));
+
+    // Every face of the model, in face order.
+    ModelFaceIndices(m: BrepModel): Array<BrepFaceIndex>
+        => m.Faces.Count.MapRange(k => BrepFaceIndex(k));
+
+    // The faces of a round split by the edges it changed: a face citing a
+    // changed edge is redone, every other face reused.
+    IncrementalOf(m: BrepModel, changed: Array<BrepEdgeIndex>): Incremental
+        => Incremental(
+            m.ModelFaceIndices.FlatMap(f => m.TouchesAny(f, changed) ? m.ModelFaceIndices.Take(0) : [f]),
+            m.ModelFaceIndices.FlatMap(f => m.TouchesAny(f, changed) ? [f] : m.ModelFaceIndices.Take(0)));
+
+    // True when no reused face cites a changed edge.
+    ReusedTouchNoChangedEdge(m: BrepModel, inc: Incremental, changed: Array<BrepEdgeIndex>): Boolean
+        => inc.Reused.All(f => !m.TouchesAny(f, changed));
+
+    // What the next round must redo: the requests and the faces citing the
+    // edges the round changed.
+    PendingOf(m: BrepModel, requests: RequestSet, changed: Array<BrepEdgeIndex>): Pending
+        => Pending(requests, m.IncrementalOf(changed).Redone);
+
+    //==
+    // # Checking and diffing a model
+
+    // A model's validation at a level: BrepModel's ICheckable.
+    Check(m: BrepModel, level: ConformanceLevel): Report
+        => m.ValidateBrep(level);
+
+    // Two models compared table by table under the model's length tolerance:
+    // BrepModel's IDiffable.
+    Diff(a: BrepModel, b: BrepModel, tol: Tolerances): DecidedDifference
+    {
+        var differences = ModelDifferences(a, b, tol.Length.Value);
+        return differences.Count == 0
+            ? DecidedDifference.NoDifference
+            : DecidedDifference.Different(differences[0], differences.Count);
+    }
+
+    // The position of a table in ModelTable's case order.
+    ModelTableOrdinal(t: ModelTable): Integer
+        => match (t) {
+            CurveRows => 0;
+            Curve2DRows => 1;
+            PcurveRows => 2;
+            SurfaceRows => 3;
+            ClosureRows => 4;
+            VertexRows => 5;
+            EdgeRows => 6;
+            LoopRows => 7;
+            FaceRows => 8;
+            ShellRows => 9;
+            BodyRows => 10;
+            ToleranceRow => 11;
+            UnitRow => 12;
+        };
+
+    // The number of ModelTable cases.
+    ModelTableCount(_: ModelTable): Integer
+        => 13;
+
+    // The summary of a non-empty list of differences: the first, the count,
+    // and a count per table in ModelTable order.
+    DiffSummaryOf(differences: Array<LocatedDifference<ModelTable>>): DiffSummary
+        => DiffSummary(differences[0], differences.Count,
+            ModelTable.ModelTableCount.MapRange(k =>
+                CountOf(differences.Map(d => d.Table.ModelTableOrdinal == k ? 1 : 0).Reduce(0, (a, x) => a + x))));
+}

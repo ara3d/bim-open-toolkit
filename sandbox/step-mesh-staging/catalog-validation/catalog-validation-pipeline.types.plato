@@ -1,0 +1,77 @@
+//==
+// # Catalog: pipeline stages, runs, and traces
+//
+// TYPE-CATALOG.md section 11, layer 8: every stage returns the same shape,
+// the run is a list of events, and a run names what makes it reproducible.
+//
+// Sections, in order:
+//  - Stage outcomes
+//  - Events and traces
+//  - Runs and rounds
+
+//==
+// # Stage outcomes
+
+// What every stage returns: which stage, its value, its report, and how long
+// it took. The catalog's Stage (Parsing .. Validating) is not added: layer
+// 9's RunStage exists with other cases (TRACK.md, Contract requests), so
+// Stage is RunStage until the supervisor aligns them. Removes: a stage whose
+// report or time is returned in a different place from the next stage's.
+type StageOutcome<T>
+{
+    Stage: RunStage;
+    Value: T;
+    Report: Report;
+    Elapsed: Elapsed;
+}
+
+//==
+// # Events and traces
+
+// One thing that happened in a meshing run. Removes: probes reconstructed
+// from printouts.
+type MeshingEvent
+    = EdgeDiscretized(Edge: BrepEdgeIndex, Segments: SegmentCount)
+    | EdgeRefined(Edge: BrepEdgeIndex, From: SegmentCount, To: SegmentCount, Why: RefinementReason)
+    | FaceMeshed(Face: BrepFaceIndex, Triangles: Count, Quads: Count, Round: Round)
+    | FaceBlocked(Face: BrepFaceIndex, Requests: RequestSet)
+    | RoundEnded(Round: Round, Pending: Count)
+    | Assembled(Vertices: Count)
+    | Validated(Level: ConformanceLevel, Clean: Boolean);
+
+// A run as data: its events in the order they happened. Invariant: the
+// rounds the events name never decrease (RoundsAreMonotone).
+type Trace
+{
+    Events: Array<MeshingEvent>;
+}
+
+//==
+// # Runs and rounds
+
+// What makes a run reproducible, written into every report and corpus row.
+// Removes: a corpus report whose library state nobody can name.
+type RunKey
+{
+    ModelHash: String;
+    Options: MeshingOptions;
+    LibraryCommit: String;
+    Profile: String;
+}
+
+// What the next round must redo: the merged requests and the faces they
+// touch, derived from the round's changed edges, not from "all faces".
+type Pending
+{
+    Requests: RequestSet;
+    Faces: Array<BrepFaceIndex>;
+}
+
+// What a round reused and what it redid. Built by IncrementalOf from the
+// changed edges. Invariant: no reused face cites a changed edge
+// (ReusedFacesTouchNoChangedEdge).
+type Incremental
+{
+    Reused: Array<BrepFaceIndex>;
+    Redone: Array<BrepFaceIndex>;
+}

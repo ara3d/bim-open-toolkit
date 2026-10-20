@@ -1,0 +1,72 @@
+//==
+// # Catalog: types borrowed from tracks running beside this one
+//
+// Declared here with the catalog's shape so this folder compiles; the owning
+// track's declaration wins at merge and the supervisor deletes these
+// (TRACK.md, Requests to other tracks).
+//
+// Sections, in order:
+//  - Discretization (section 7)
+//  - Repair (section 13)
+
+//==
+// # Discretization (section 7)
+
+// Which discretization criterion a segment fails. Removes: "does not meet
+// criteria" with no name.
+type CriterionName
+    = ChordalCriterion
+    | AngularCriterion
+    | MaxLengthCriterion
+    | MinSegmentsCriterion
+    | ParameterSpaceCriterion;
+
+// Refinement requests merged per edge with the strongest kept (built by
+// MergeRequests). Removes: two faces' requests on one edge applied in
+// sequence, the second undoing the first.
+type RequestSet
+{
+    ByEdge: Array<EdgeRefinementRequest>;
+}
+
+//==
+// # Repair (section 13)
+
+// A defect a repair can address, with its address and measure. Removes:
+// repairs keyed on diagnostic code strings.
+type Defect
+    = FreeEdge(Edge: BrepEdgeIndex)
+    | EdgeUsedThrice(Edge: BrepEdgeIndex, Uses: Count)
+    | GapAtVertex(Edge: BrepEdgeIndex, End: EdgeEnd, Gap: ModelLength)
+    | VertexOffCurve(Vertex: BrepVertexIndex, Edge: BrepEdgeIndex, Distance: ModelLength)
+    | EdgeOffSurface(Edge: BrepEdgeIndex, Face: BrepFaceIndex, Distance: ModelLength)
+    | MissingPcurve(Edge: BrepEdgeIndex, Face: BrepFaceIndex)
+    | PcurveOffCurve(Pcurve: PcurveIndex, Gap: ModelLength)
+    | LoopNotChained(Loop: BrepLoopIndex, AtSlot: CoedgeSlot)
+    | LoopOpenInUv(Face: BrepFaceIndex, Bound: BoundSlot, Gap: UvDelta)
+    | LoopSelfIntersects(Face: BrepFaceIndex, Bound: BoundSlot, I: CoedgeSlot, J: CoedgeSlot)
+    | SeamRunsSameWay(Face: BrepFaceIndex, Edge: BrepEdgeIndex)
+    | MisorientedFace(Face: BrepFaceIndex)
+    | NotOrientable(Shell: ShellIndex)
+    | DegenerateEdge(Edge: BrepEdgeIndex)
+    | DuplicateVertex(A: BrepVertexIndex, B: BrepVertexIndex, Distance: ModelLength)
+    | RedundantVertexLoop(Face: BrepFaceIndex, Bound: BoundSlot)
+    | NoOuterBound(Face: BrepFaceIndex)
+    | TwoOuterBounds(Face: BrepFaceIndex)
+    | TrimOutsideDomain(Surface: SurfaceIndex, Excess: Number)
+    | KnotMultiplicityTooHigh(Curve: CurveIndex, At: Integer)
+    | KnotsNotNonDecreasing(Curve: CurveIndex, At: Integer)
+    | ZeroLengthDirection(Instance: StepInstanceId)
+    | NonOrthonormalPlacement(Surface: SurfaceIndex, Deviation: Measure)
+    | ToleranceBelowResolution(Tolerance: LengthTolerance, Resolution: Resolution)
+    | DeclaredClosedButOpen(Shell: ShellIndex, FreeEdges: Count)
+    | ShellDisconnected(Shell: ShellIndex, Components: Count);
+
+// The validator's output in the form a repair planner reads: the defects,
+// a count per DefectClass, and per face the indices of its defects.
+type DefectReport
+{
+    Defects: Array<Defect>;
+    ByClass: Array<Count>;
+    ByFace: JaggedArray<Integer>;
+}
