@@ -1,0 +1,411 @@
+//==
+// # CatalogRepairDiagnosis
+//
+// TYPE-CATALOG.md section 13: the obvious action for each defect (Diagnose),
+// what an action costs (CostOf), what a policy permits, and the projection of
+// an action onto layer 3's StepRepair. Diagnose takes the model because three
+// answers depend on it: whether a seam's face is in a closed shell, how many
+// bounds a face has to promote, and the tolerances a RaiseTolerance replaces.
+//
+// Sections, in order:
+//  - Faces an action touches
+//  - Cost
+//  - Tolerances raised
+//  - Diagnosis
+//  - Policies
+//  - Projection onto StepRepair
+
+library CatalogRepairDiagnosis
+{
+    //==
+    // # Faces an action touches
+
+    // The faces of m whose index satisfies keep, in face order.
+    FacesWhere(m: BrepModel, keep: Function1<BrepFaceIndex, Boolean>): Array<BrepFaceIndex>
+        => m.Faces.Count.MapRange(i => BrepFaceIndex(i)).FlatMap(f => [f].Take(keep(f) ? 1 : 0));
+
+    // The faces that use an edge with v as an end.
+    FacesAtVertex(m: BrepModel, v: BrepVertexIndex): Array<BrepFaceIndex>
+        => m.FacesWhere(f => m.Edges.Count.Range.Any(e =>
+            m.Edges[e].Start == v || m.Edges[e].End == v ? m.FaceUsesEdge(f, BrepEdgeIndex(e)) : false));
+
+    // The faces on surface s.
+    FacesOnSurface(m: BrepModel, s: SurfaceIndex): Array<BrepFaceIndex>
+        => m.FacesWhere(f => m.Faces[f].Surface == s);
+
+    // The faces that use an edge on curve c.
+    FacesOnCurve(m: BrepModel, c: CurveIndex): Array<BrepFaceIndex>
+        => m.FacesWhere(f => m.Edges.Count.Range.Any(e =>
+            m.Edges[e].Curve == c ? m.FaceUsesEdge(f, BrepEdgeIndex(e)) : false));
+
+    // The faces with a bound on loop l.
+    FacesOfLoop(m: BrepModel, l: BrepLoopIndex): Array<BrepFaceIndex>
+        => m.FacesWhere(f => m.Faces[f].Bounds.Any(b => b.Loop == l));
+
+    // The faces whose surface carries pcurve p; none when p is out of range.
+    FacesOfPcurve(m: BrepModel, p: PcurveIndex): Array<BrepFaceIndex>
+        => m.Geometry.Pcurves.IsValidIndex(p.Value)
+            ? m.FacesOnSurface(m.Geometry.Pcurves[p].Surface)
+            : BrepFaceIndex.NoFaceIndices;
+
+    // Face f alone, or none when f is out of range.
+    OneFace(m: BrepModel, f: BrepFaceIndex): Array<BrepFaceIndex>
+        => [f].Take(m.IsFaceInRange(f) ? 1 : 0);
+
+    // The faces an action changes: for a shell action the shell's faces, for
+    // RaiseTolerance every face, for SkipInstance none (it acts on the file).
+    FacesTouchedBy(m: BrepModel, a: RepairAction): Array<BrepFaceIndex>
+        => match (a) {
+            MergeVertices(keep, drop) => m.FacesAtVertex(drop);
+            SnapVertexToCurve(v, e) => m.FacesAtVertex(v);
+            ExtendEdgeToVertex(e, end) => m.FacesOfEdge(e);
+            AddPcurveByProjection(e, f) => m.OneFace(f);
+            ReplacePcurve(p, with) => m.FacesOfPcurve(p);
+            CloseLoopByBridge(f, b, gap) => m.OneFace(f);
+            ReverseFace(f) => m.OneFace(f);
+            ReverseLoop(l) => m.FacesOfLoop(l);
+            FlipShell(s) => m.ShellFaces(s);
+            DropEdge(e) => m.FacesOfEdge(e);
+            DropBound(f, b) => m.OneFace(f);
+            PromoteToOuter(f, b) => m.OneFace(f);
+            ClampTrim(s) => m.FacesOnSurface(s);
+            CutKnotMultiplicity(c, at) => m.FacesOnCurve(c);
+            SortKnots(c) => m.FacesOnCurve(c);
+            RaiseTolerance(t) => m.FacesWhere(f => true);
+            SplitSeamEdge(f, e) => m.OneFace(f);
+            InsertSeam(f, dir) => m.OneFace(f);
+            InsertPoleLoop(f, side) => m.OneFace(f);
+            DeclareOpen(s) => m.ShellFaces(s);
+            SkipInstance(i) => BrepFaceIndex.NoFaceIndices;
+        };
+
+    //==
+    // # Cost
+
+    // How far an action reaches, given the faces it touches: a shell action
+    // its whole shell, RaiseTolerance the whole model, any other action Local
+    // when it touches at most two faces and NeedsNeighbours otherwise.
+    LocalityOf(a: RepairAction, faces: Array<BrepFaceIndex>): Locality
+        => match (a) {
+            MergeVertices(keep, drop) => LocalityOver(faces);
+            SnapVertexToCurve(v, e) => LocalityOver(faces);
+            ExtendEdgeToVertex(e, end) => LocalityOver(faces);
+            AddPcurveByProjection(e, f) => LocalityOver(faces);
+            ReplacePcurve(p, with) => LocalityOver(faces);
+            CloseLoopByBridge(f, b, gap) => LocalityOver(faces);
+            ReverseFace(f) => LocalityOver(faces);
+            ReverseLoop(l) => LocalityOver(faces);
+            FlipShell(s) => Locality.WholeShell;
+            DropEdge(e) => LocalityOver(faces);
+            DropBound(f, b) => LocalityOver(faces);
+            PromoteToOuter(f, b) => LocalityOver(faces);
+            ClampTrim(s) => LocalityOver(faces);
+            CutKnotMultiplicity(c, at) => LocalityOver(faces);
+            SortKnots(c) => LocalityOver(faces);
+            RaiseTolerance(t) => Locality.WholeModel;
+            SplitSeamEdge(f, e) => LocalityOver(faces);
+            InsertSeam(f, dir) => LocalityOver(faces);
+            InsertPoleLoop(f, side) => LocalityOver(faces);
+            DeclareOpen(s) => Locality.WholeShell;
+            SkipInstance(i) => LocalityOver(faces);
+        };
+
+    // Local for at most two faces, else NeedsNeighbours with the faces.
+    LocalityOver(faces: Array<BrepFaceIndex>): Locality
+        => faces.Count <= 2 ? Locality.Local : Locality.NeedsNeighbours(faces);
+
+    // The factor by which an action grows the length tolerance: To's length
+    // over the model's for RaiseTolerance (1 when the model's is not
+    // positive), 1 for every other action.
+    ToleranceGrowthOf(m: BrepModel, a: RepairAction): Ratio
+        => match (a) {
+            MergeVertices(keep, drop) => Ratio(1.0);
+            SnapVertexToCurve(v, e) => Ratio(1.0);
+            ExtendEdgeToVertex(e, end) => Ratio(1.0);
+            AddPcurveByProjection(e, f) => Ratio(1.0);
+            ReplacePcurve(p, with) => Ratio(1.0);
+            CloseLoopByBridge(f, b, gap) => Ratio(1.0);
+            ReverseFace(f) => Ratio(1.0);
+            ReverseLoop(l) => Ratio(1.0);
+            FlipShell(s) => Ratio(1.0);
+            DropEdge(e) => Ratio(1.0);
+            DropBound(f, b) => Ratio(1.0);
+            PromoteToOuter(f, b) => Ratio(1.0);
+            ClampTrim(s) => Ratio(1.0);
+            CutKnotMultiplicity(c, at) => Ratio(1.0);
+            SortKnots(c) => Ratio(1.0);
+            RaiseTolerance(t) => m.Tolerances.Length.Value > 0.0
+                ? Ratio(t.Length.Value / m.Tolerances.Length.Value)
+                : Ratio(1.0);
+            SplitSeamEdge(f, e) => Ratio(1.0);
+            InsertSeam(f, dir) => Ratio(1.0);
+            InsertPoleLoop(f, side) => Ratio(1.0);
+            DeclareOpen(s) => Ratio(1.0);
+            SkipInstance(i) => Ratio(1.0);
+        };
+
+    // What action a costs on model m.
+    CostOf(m: BrepModel, a: RepairAction): RepairCost
+        => RepairCost(CountOf(m.FacesTouchedBy(a).Count), m.ToleranceGrowthOf(a), LocalityOf(a, m.FacesTouchedBy(a)));
+
+    // Action a with its cost.
+    FixedBy(m: BrepModel, a: RepairAction): Fixability
+        => Fixability.Fixable(a, m.CostOf(a));
+
+    //==
+    // # Tolerances raised
+
+    // The model's tolerances with the length tolerance raised to at least to.
+    RaisedLength(m: BrepModel, to: Number): Tolerances
+        => Tolerances(
+            LengthTolerance(to > m.Tolerances.Length.Value ? to : m.Tolerances.Length.Value),
+            m.Tolerances.Angle,
+            m.Tolerances.LengthParameter,
+            m.Tolerances.AngleParameter);
+
+    // The model's tolerances with the angle tolerance raised to at least to.
+    RaisedAngle(m: BrepModel, to: Angle): Tolerances
+        => Tolerances(
+            m.Tolerances.Length,
+            AngleTolerance(to.Radians > m.Tolerances.Angle.Value.Radians ? to : m.Tolerances.Angle.Value),
+            m.Tolerances.LengthParameter,
+            m.Tolerances.AngleParameter);
+
+    //==
+    // # Diagnosis
+
+    // Whether face f is in a shell of m that is closed (layer 8's
+    // IsClosedShell: declared closed, and every edge used twice, opposite).
+    IsInClosedShell(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.Shells.Count.Range.Any(s => m.ShellFaces(ShellIndex(s)).Any(x => x == f)
+            ? m.IsClosedShell(ShellIndex(s))
+            : false);
+
+    // The repair of seam edge e on face f whose uses run one way: not fixable
+    // locally when f is in a closed shell, else split the seam edge.
+    DiagnoseSeam(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex): Fixability
+        => m.IsInClosedShell(f)
+            ? Fixability.Unfixable("A seam whose uses run one way cannot be repaired locally on a closed shell.")
+            : m.FixedBy(RepairAction.SplitSeamEdge(f, e));
+
+    // The bound slots of face f that keep(bound) selects, in bound order;
+    // none when f is out of range.
+    BoundSlotsWhere(m: BrepModel, f: BrepFaceIndex, keep: Function1<FaceBound, Boolean>): Array<BoundSlot>
+        => m.IsFaceInRange(f)
+            ? m.Faces[f].Bounds.Count.Range.FlatMap(b => [BoundSlot(b)].Take(keep(m.Faces[f].Bounds[b]) ? 1 : 0))
+            : [BoundSlot(0)].Take(0);
+
+    // A choice of making one of the given bounds face f's only outer bound;
+    // Unfixable when there is none to choose.
+    PromoteOneOf(f: BrepFaceIndex, bounds: Array<BoundSlot>): Fixability
+        => bounds.Count > 0
+            ? Fixability.FixableWithChoice(bounds.Map(b => RepairAction.PromoteToOuter(f, b)))
+            : Fixability.Unfixable("The face has no bound to promote.");
+
+    // The obvious repair of each defect on model m. Unfixable for
+    // NotOrientable, for SeamRunsSameWay on a closed shell (DiagnoseSeam), for
+    // ShellDisconnected (no action splits a shell), for Unclassified, and for
+    // NoOuterBound and TwoOuterBounds on a face with no bound to promote.
+    // FreeEdge offers declaring each shell that cites the edge open, or
+    // dropping the edge; EdgeOffSurface offers a projected pcurve or a raised
+    // length tolerance.
+    Diagnose(m: BrepModel, d: Defect): Fixability
+        => match (d) {
+            FreeEdge(e) => Fixability.FixableWithChoice(
+                m.Shells.Count.Range
+                    .FlatMap(s => [RepairAction.DeclareOpen(ShellIndex(s))].Take(m.UseCount(ShellIndex(s), e) > 0 ? 1 : 0))
+                    .Concatenate([RepairAction.DropEdge(e)]));
+            EdgeUsedThrice(e, n) => m.FixedBy(RepairAction.DropEdge(e));
+            GapAtVertex(e, end, gap) => m.FixedBy(RepairAction.ExtendEdgeToVertex(e, end));
+            VertexOffCurve(v, e, dist) => m.FixedBy(RepairAction.SnapVertexToCurve(v, e));
+            EdgeOffSurface(e, f, dist) => Fixability.FixableWithChoice([
+                RepairAction.AddPcurveByProjection(e, f),
+                RepairAction.RaiseTolerance(m.RaisedLength(dist.Value))]);
+            MissingPcurve(e, f) => m.FixedBy(RepairAction.AddPcurveByProjection(e, f));
+            PcurveOffCurve(p, gap) => m.FixedBy(RepairAction.RaiseTolerance(m.RaisedLength(gap.Value)));
+            LoopNotChained(l, s) => m.FixedBy(RepairAction.ReverseLoop(l));
+            LoopOpenInUv(f, b, gap) => m.FixedBy(RepairAction.CloseLoopByBridge(f, b, gap));
+            LoopSelfIntersects(f, b, i, j) => m.FixedBy(RepairAction.DropBound(f, b));
+            SeamRunsSameWay(f, e) => m.DiagnoseSeam(f, e);
+            MisorientedFace(f) => m.FixedBy(RepairAction.ReverseFace(f));
+            NotOrientable(s) => Fixability.Unfixable("No choice of face senses makes the shell coherently oriented.");
+            DegenerateEdge(e) => m.FixedBy(RepairAction.DropEdge(e));
+            DuplicateVertex(a, b, dist) => m.FixedBy(RepairAction.MergeVertices(a, b));
+            RedundantVertexLoop(f, b) => m.FixedBy(RepairAction.DropBound(f, b));
+            NoOuterBound(f) => PromoteOneOf(f, m.BoundSlotsWhere(f, x => true));
+            TwoOuterBounds(f) => PromoteOneOf(f, m.BoundSlotsWhere(f, x => x.IsOuter));
+            TrimOutsideDomain(s, x) => m.FixedBy(RepairAction.ClampTrim(s));
+            KnotMultiplicityTooHigh(c, at) => m.FixedBy(RepairAction.CutKnotMultiplicity(c, at));
+            KnotsNotNonDecreasing(c, at) => m.FixedBy(RepairAction.SortKnots(c));
+            ZeroLengthDirection(i) => m.FixedBy(RepairAction.SkipInstance(i));
+            NonOrthonormalPlacement(s, dev) => m.FixedBy(RepairAction.RaiseTolerance(m.RaisedAngle(dev)));
+            ToleranceBelowResolution(t, r) => m.FixedBy(RepairAction.RaiseTolerance(m.RaisedLength(r.Value)));
+            DeclaredClosedButOpen(s, n) => m.FixedBy(RepairAction.DeclareOpen(s));
+            ShellDisconnected(s, n) => Fixability.Unfixable("No repair action splits a shell into its components.");
+            Unclassified(law, w) => Fixability.Unfixable("No defect family is known for this law.");
+        };
+
+    // Whether a diagnosis is Unfixable.
+    IsUnfixable(x: Fixability): Boolean
+        => match (x) {
+            Fixable(a, c) => false;
+            FixableWithChoice(options) => false;
+            Unfixable(why) => true;
+        };
+
+    // The actions a diagnosis offers, the chosen one first: one, the
+    // options, or none.
+    ActionsOf(x: Fixability): Array<RepairAction>
+        => match (x) {
+            Fixable(a, c) => [a];
+            FixableWithChoice(options) => options;
+            Unfixable(why) => [RepairAction.SortKnots(CurveIndex(0))].Take(0);
+        };
+
+    // The chosen action of a diagnosis, as an array of zero or one.
+    FirstActionOf(x: Fixability): Array<RepairAction>
+        => ActionsOf(x).Take(ActionsOf(x).Count > 0 ? 1 : 0);
+
+    // The repair plan for the given defects on model m: one step per fixable
+    // defect, its first action, expecting the defect's law; Unfixable defects
+    // are left out. Steps are ordered by class (ClassRank), stably, so
+    // structure is fixed before tolerances and tolerances before geometry.
+    PlanOf(m: BrepModel, defects: Array<Defect>): RepairPlan
+        => RepairPlan(defects
+            .FlatMap(d => FirstActionOf(m.Diagnose(d)).Map(a => RepairStep(d, a, ExpectedLawOf(d))))
+            .Sort((x, y) => ClassRank(ClassOf(x.Defect)) <= ClassRank(ClassOf(y.Defect))));
+
+    //==
+    // # Policies
+
+    // Whether an action changes a table's size (a merge, a drop, a split, an
+    // insertion, a bridge, a skip).
+    ChangesTopology(a: RepairAction): Boolean
+        => match (a) {
+            MergeVertices(keep, drop) => true;
+            SnapVertexToCurve(v, e) => false;
+            ExtendEdgeToVertex(e, end) => false;
+            AddPcurveByProjection(e, f) => true;
+            ReplacePcurve(p, with) => false;
+            CloseLoopByBridge(f, b, gap) => true;
+            ReverseFace(f) => false;
+            ReverseLoop(l) => false;
+            FlipShell(s) => false;
+            DropEdge(e) => true;
+            DropBound(f, b) => true;
+            PromoteToOuter(f, b) => false;
+            ClampTrim(s) => false;
+            CutKnotMultiplicity(c, at) => false;
+            SortKnots(c) => false;
+            RaiseTolerance(t) => false;
+            SplitSeamEdge(f, e) => true;
+            InsertSeam(f, dir) => true;
+            InsertPoleLoop(f, side) => true;
+            DeclareOpen(s) => false;
+            SkipInstance(i) => true;
+        };
+
+    // Whether an action flips a whole shell.
+    FlipsShell(a: RepairAction): Boolean
+        => match (a) {
+            MergeVertices(keep, drop) => false;
+            SnapVertexToCurve(v, e) => false;
+            ExtendEdgeToVertex(e, end) => false;
+            AddPcurveByProjection(e, f) => false;
+            ReplacePcurve(p, with) => false;
+            CloseLoopByBridge(f, b, gap) => false;
+            ReverseFace(f) => false;
+            ReverseLoop(l) => false;
+            FlipShell(s) => true;
+            DropEdge(e) => false;
+            DropBound(f, b) => false;
+            PromoteToOuter(f, b) => false;
+            ClampTrim(s) => false;
+            CutKnotMultiplicity(c, at) => false;
+            SortKnots(c) => false;
+            RaiseTolerance(t) => false;
+            SplitSeamEdge(f, e) => false;
+            InsertSeam(f, dir) => false;
+            InsertPoleLoop(f, side) => false;
+            DeclareOpen(s) => false;
+            SkipInstance(i) => false;
+        };
+
+    // Whether policy p permits action a at cost c: tolerance growth within
+    // its bound, a topology change only if allowed, a shell flip only if
+    // allowed. The work budget is the repair's to honour, not the plan's.
+    Permits(p: RepairPolicy, a: RepairAction, c: RepairCost): Boolean
+        => c.ToleranceGrowth.Value <= p.MaxToleranceGrowth.Value
+            && (ChangesTopology(a) ? p.AllowTopologyChange : true)
+            && (FlipsShell(a) ? p.AllowShellFlip : true);
+
+    //==
+    // # Projection onto StepRepair
+
+    // The layer 3 StepRepair an action is, when it is one the decoder makes:
+    // MergeVertices is MergedInto its kept vertex, DropEdge is
+    // DroppedZeroLengthEdge, SkipInstance is Skipped. Any other action is
+    // NotProjected with an Info diagnostic. Only the decoder's own entries are
+    // meant to be projected: a DropEdge of an edge of positive extent also
+    // projects to DroppedZeroLengthEdge.
+    ToStepRepair(action: RepairAction): StepRepairProjection
+        => match (action) {
+            MergeVertices(keep, drop) => StepRepairProjection.Projected(StepRepair.MergedInto(keep));
+            SnapVertexToCurve(v, e) => NotADecodeRepair(action);
+            ExtendEdgeToVertex(e, end) => NotADecodeRepair(action);
+            AddPcurveByProjection(e, f) => NotADecodeRepair(action);
+            ReplacePcurve(p, with) => NotADecodeRepair(action);
+            CloseLoopByBridge(f, b, gap) => NotADecodeRepair(action);
+            ReverseFace(f) => NotADecodeRepair(action);
+            ReverseLoop(l) => NotADecodeRepair(action);
+            FlipShell(s) => NotADecodeRepair(action);
+            DropEdge(e) => StepRepairProjection.Projected(StepRepair.DroppedZeroLengthEdge);
+            DropBound(f, b) => NotADecodeRepair(action);
+            PromoteToOuter(f, b) => NotADecodeRepair(action);
+            ClampTrim(s) => NotADecodeRepair(action);
+            CutKnotMultiplicity(c, at) => NotADecodeRepair(action);
+            SortKnots(c) => NotADecodeRepair(action);
+            RaiseTolerance(t) => NotADecodeRepair(action);
+            SplitSeamEdge(f, e) => NotADecodeRepair(action);
+            InsertSeam(f, dir) => NotADecodeRepair(action);
+            InsertPoleLoop(f, side) => NotADecodeRepair(action);
+            DeclareOpen(s) => NotADecodeRepair(action);
+            SkipInstance(i) => StepRepairProjection.Projected(StepRepair.Skipped);
+        };
+
+    // The projection of an action the decoder never makes.
+    NotADecodeRepair(action: RepairAction): StepRepairProjection
+        => StepRepairProjection.NotProjected(Diagnostic(
+            Severity.Info,
+            "REPAIR-NOT-A-DECODE-REPAIR",
+            "The repair action is not one the decoder makes, so it has no StepRepair.",
+            Provenance.Nowhere,
+            Number.Unmeasured));
+
+    // The action a decoder repair record stands for. The record does not
+    // hold what was removed, so the caller passes the raw model's index of
+    // the dropped vertex (read for MergedInto) and of the dropped edge (read
+    // for DroppedZeroLengthEdge); Skipped is SkipInstance of the record's
+    // instance.
+    ToRepairAction(r: RepairRecord, droppedVertex: BrepVertexIndex, droppedEdge: BrepEdgeIndex): RepairAction
+        => match (r.Repair) {
+            MergedInto(v) => RepairAction.MergeVertices(v, droppedVertex);
+            DroppedZeroLengthEdge => RepairAction.DropEdge(droppedEdge);
+            Skipped => RepairAction.SkipInstance(r.Source.Instance);
+        };
+
+    // The action a seam repair is, for seam edge e: AddSeamEdge inserts a
+    // seam along its direction, SplitAtSeam splits e.
+    ToRepairAction(s: SeamRepair, e: BrepEdgeIndex): RepairAction
+        => match (s) {
+            AddSeamEdge(f, dir, at) => RepairAction.InsertSeam(f, dir);
+            SplitAtSeam(f) => RepairAction.SplitSeamEdge(f, e);
+        };
+
+    // Whether a projection is exactly StepRepair r.
+    ProjectsTo(p: StepRepairProjection, r: StepRepair): Boolean
+        => match (p) {
+            Projected(x) => x == r;
+            NotProjected(finding) => false;
+        };
+}

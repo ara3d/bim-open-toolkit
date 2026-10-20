@@ -1,0 +1,18 @@
+//==
+// # Catalog repair: concepts
+//
+// TYPE-CATALOG.md section 15, the concept this track owns.
+//
+// Sections, in order:
+//  - Repair
+
+//==
+// # Repair
+
+// A value that reports its own defects and accepts a repair plan under a
+// policy. Removes: a repair pass written once per model type.
+interface IRepairable
+{
+    Defects(x: Self): DefectReport;
+    Repair(x: Self, plan: RepairPlan, policy: RepairPolicy): RepairOutcome;
+}

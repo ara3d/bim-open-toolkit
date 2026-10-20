@@ -1,0 +1,303 @@
+//==
+// # CatalogRepairDefects
+//
+// TYPE-CATALOG.md section 13: classifying defects, the law each one breaks,
+// and the map from a failed Check to a Defect. A Check holds one Provenance,
+// the worst sample's, so DefectOf builds a case only when that provenance and
+// the check's Worst and Bound give its whole address and measure; every other
+// failed check becomes Unclassified, never a case with a made-up index or
+// measure.
+//
+// Sections, in order:
+//  - Classes
+//  - Faces named
+//  - Expected laws
+//  - From checks to defects
+//  - Defect reports
+
+library CatalogRepairDefects
+{
+    //==
+    // # Classes
+
+    // The class of a defect: Tolerance for a tolerance under the rounding
+    // floor; Geometric for a measured distance, gap, trim, or placement
+    // deviation; Structural for counts, incidence, orientation, knot order,
+    // and the file's own structure. An Unclassified defect is Structural, so
+    // a plan never runs it after geometry.
+    ClassOf(d: Defect): DefectClass
+        => match (d) {
+            FreeEdge(e) => DefectClass.Structural;
+            EdgeUsedThrice(e, n) => DefectClass.Structural;
+            GapAtVertex(e, end, gap) => DefectClass.Geometric;
+            VertexOffCurve(v, e, dist) => DefectClass.Geometric;
+            EdgeOffSurface(e, f, dist) => DefectClass.Geometric;
+            MissingPcurve(e, f) => DefectClass.Structural;
+            PcurveOffCurve(p, gap) => DefectClass.Geometric;
+            LoopNotChained(l, s) => DefectClass.Structural;
+            LoopOpenInUv(f, b, gap) => DefectClass.Geometric;
+            LoopSelfIntersects(f, b, i, j) => DefectClass.Geometric;
+            SeamRunsSameWay(f, e) => DefectClass.Structural;
+            MisorientedFace(f) => DefectClass.Structural;
+            NotOrientable(s) => DefectClass.Structural;
+            DegenerateEdge(e) => DefectClass.Structural;
+            DuplicateVertex(a, b, dist) => DefectClass.Geometric;
+            RedundantVertexLoop(f, b) => DefectClass.Structural;
+            NoOuterBound(f) => DefectClass.Structural;
+            TwoOuterBounds(f) => DefectClass.Structural;
+            TrimOutsideDomain(s, x) => DefectClass.Geometric;
+            KnotMultiplicityTooHigh(c, at) => DefectClass.Structural;
+            KnotsNotNonDecreasing(c, at) => DefectClass.Structural;
+            ZeroLengthDirection(i) => DefectClass.Structural;
+            NonOrthonormalPlacement(s, dev) => DefectClass.Geometric;
+            ToleranceBelowResolution(t, r) => DefectClass.Tolerance;
+            DeclaredClosedButOpen(s, n) => DefectClass.Structural;
+            ShellDisconnected(s, n) => DefectClass.Structural;
+            Unclassified(law, w) => DefectClass.Structural;
+        };
+
+    // The position of a class in a plan's order: Structural 0, Tolerance 1,
+    // Geometric 2, Quality 3.
+    ClassRank(c: DefectClass): Integer
+        => match (c) {
+            Structural => 0;
+            Tolerance => 1;
+            Geometric => 2;
+            Quality => 3;
+        };
+
+    // The four classes in DefectReport.ByClass order.
+    AllClasses(_: DefectClass): Array<DefectClass>
+        => [DefectClass.Structural, DefectClass.Geometric, DefectClass.Tolerance, DefectClass.Quality];
+
+    //==
+    // # Faces named
+
+    // No face.
+    NoFaceIndices(_: BrepFaceIndex): Array<BrepFaceIndex>
+        => 0.MapRange(k => BrepFaceIndex(k));
+
+    // The faces a defect names in its address: one for the face cases, none
+    // for the others (an edge's faces need the model).
+    FacesOf(d: Defect): Array<BrepFaceIndex>
+        => match (d) {
+            FreeEdge(e) => BrepFaceIndex.NoFaceIndices;
+            EdgeUsedThrice(e, n) => BrepFaceIndex.NoFaceIndices;
+            GapAtVertex(e, end, gap) => BrepFaceIndex.NoFaceIndices;
+            VertexOffCurve(v, e, dist) => BrepFaceIndex.NoFaceIndices;
+            EdgeOffSurface(e, f, dist) => [f];
+            MissingPcurve(e, f) => [f];
+            PcurveOffCurve(p, gap) => BrepFaceIndex.NoFaceIndices;
+            LoopNotChained(l, s) => BrepFaceIndex.NoFaceIndices;
+            LoopOpenInUv(f, b, gap) => [f];
+            LoopSelfIntersects(f, b, i, j) => [f];
+            SeamRunsSameWay(f, e) => [f];
+            MisorientedFace(f) => [f];
+            NotOrientable(s) => BrepFaceIndex.NoFaceIndices;
+            DegenerateEdge(e) => BrepFaceIndex.NoFaceIndices;
+            DuplicateVertex(a, b, dist) => BrepFaceIndex.NoFaceIndices;
+            RedundantVertexLoop(f, b) => [f];
+            NoOuterBound(f) => [f];
+            TwoOuterBounds(f) => [f];
+            TrimOutsideDomain(s, x) => BrepFaceIndex.NoFaceIndices;
+            KnotMultiplicityTooHigh(c, at) => BrepFaceIndex.NoFaceIndices;
+            KnotsNotNonDecreasing(c, at) => BrepFaceIndex.NoFaceIndices;
+            ZeroLengthDirection(i) => BrepFaceIndex.NoFaceIndices;
+            NonOrthonormalPlacement(s, dev) => BrepFaceIndex.NoFaceIndices;
+            ToleranceBelowResolution(t, r) => BrepFaceIndex.NoFaceIndices;
+            DeclaredClosedButOpen(s, n) => BrepFaceIndex.NoFaceIndices;
+            ShellDisconnected(s, n) => BrepFaceIndex.NoFaceIndices;
+            Unclassified(law, w) => BrepFaceIndex.NoFaceIndices;
+        };
+
+    //==
+    // # Expected laws
+
+    // The law that holds once the defect is repaired: the law of layer 2, 3,
+    // 5 or 7 whose failure the defect stands for. An Unclassified defect names
+    // its own law.
+    ExpectedLawOf(d: Defect): LawName
+        => match (d) {
+            FreeEdge(e) => LawName("Law_EveryEdgeUsedTwiceInClosedShell");
+            EdgeUsedThrice(e, n) => LawName("Law_OpenShellEdgesUsedAtMostTwice");
+            GapAtVertex(e, end, gap) => LawName("Law_EdgeDomainEndsAtVertices");
+            VertexOffCurve(v, e, dist) => LawName("Law_VertexCoincidesWithCurveEnd");
+            EdgeOffSurface(e, f, dist) => LawName("Law_EdgeLiesOnAdjacentSurfaces");
+            MissingPcurve(e, f) => LawName("Law_CurveAgreesWithPcurve");
+            PcurveOffCurve(p, gap) => LawName("Law_PcurveAgreesWithCurve");
+            LoopNotChained(l, s) => LawName("Law_LoopsChainEndToStart");
+            LoopOpenInUv(f, b, gap) => LawName("Law_RegionLoopClosesInPlane");
+            LoopSelfIntersects(f, b, i, j) => LawName("Law_MeshedFaceHasSimpleRegion");
+            SeamRunsSameWay(f, e) => LawName("Law_SeamUsesRunOpposite");
+            MisorientedFace(f) => LawName("Law_LoopWindingMatchesSameSense");
+            NotOrientable(s) => LawName("Law_ShellIsOrientable");
+            DegenerateEdge(e) => LawName("Law_EdgeHasPositiveExtent");
+            DuplicateVertex(a, b, dist) => LawName("Law_CoincidentEndsAreOneVertex");
+            RedundantVertexLoop(f, b) => LawName("Law_NoRedundantVertexLoop");
+            NoOuterBound(f) => LawName("Law_AtLeastOneBound");
+            TwoOuterBounds(f) => LawName("Law_AtMostOneOuterBound");
+            TrimOutsideDomain(s, x) => LawName("Law_RectangularTrimmedInsideBasis");
+            KnotMultiplicityTooHigh(c, at) => LawName("Law_BSplineCurveKnotMultiplicityBounded");
+            KnotsNotNonDecreasing(c, at) => LawName("Law_BSplineCurveKnotsNonDecreasing");
+            ZeroLengthDirection(i) => LawName("Law_Where_Direction_WR1");
+            NonOrthonormalPlacement(s, dev) => LawName("Law_SurfacePlacementOrthonormal");
+            ToleranceBelowResolution(t, r) => LawName("Law_LengthToleranceResolvable");
+            DeclaredClosedButOpen(s, n) => LawName("Law_DeclaredClosedIsClosed");
+            ShellDisconnected(s, n) => LawName("Law_ShellIsConnected");
+            Unclassified(law, w) => LawName(law);
+        };
+
+    //==
+    // # From checks to defects
+    //
+    // One helper per provenance kind: the case when the provenance is that
+    // kind, Unclassified otherwise.
+
+    // make(f) when w is a kernel face.
+    FaceDefectAt(law: String, w: Provenance, make: Function1<BrepFaceIndex, Defect>): Defect
+        => match (w) {
+            Nowhere => Defect.Unclassified(law, w);
+            WholeInput => Defect.Unclassified(law, w);
+            AtInstance(id) => Defect.Unclassified(law, w);
+            KernelCurve(i) => Defect.Unclassified(law, w);
+            KernelSurface(i) => Defect.Unclassified(law, w);
+            KernelVertex(i) => Defect.Unclassified(law, w);
+            KernelEdge(i) => Defect.Unclassified(law, w);
+            KernelLoop(i) => Defect.Unclassified(law, w);
+            KernelFace(i) => make(i);
+            KernelShell(i) => Defect.Unclassified(law, w);
+            KernelBody(i) => Defect.Unclassified(law, w);
+            MeshVertex(i) => Defect.Unclassified(law, w);
+            MeshElement(i) => Defect.Unclassified(law, w);
+        };
+
+    // make(s) when w is a kernel shell.
+    ShellDefectAt(law: String, w: Provenance, make: Function1<ShellIndex, Defect>): Defect
+        => match (w) {
+            Nowhere => Defect.Unclassified(law, w);
+            WholeInput => Defect.Unclassified(law, w);
+            AtInstance(id) => Defect.Unclassified(law, w);
+            KernelCurve(i) => Defect.Unclassified(law, w);
+            KernelSurface(i) => Defect.Unclassified(law, w);
+            KernelVertex(i) => Defect.Unclassified(law, w);
+            KernelEdge(i) => Defect.Unclassified(law, w);
+            KernelLoop(i) => Defect.Unclassified(law, w);
+            KernelFace(i) => Defect.Unclassified(law, w);
+            KernelShell(i) => make(i);
+            KernelBody(i) => Defect.Unclassified(law, w);
+            MeshVertex(i) => Defect.Unclassified(law, w);
+            MeshElement(i) => Defect.Unclassified(law, w);
+        };
+
+    // make(e) when w is a kernel edge.
+    EdgeDefectAt(law: String, w: Provenance, make: Function1<BrepEdgeIndex, Defect>): Defect
+        => match (w) {
+            Nowhere => Defect.Unclassified(law, w);
+            WholeInput => Defect.Unclassified(law, w);
+            AtInstance(id) => Defect.Unclassified(law, w);
+            KernelCurve(i) => Defect.Unclassified(law, w);
+            KernelSurface(i) => Defect.Unclassified(law, w);
+            KernelVertex(i) => Defect.Unclassified(law, w);
+            KernelEdge(i) => make(i);
+            KernelLoop(i) => Defect.Unclassified(law, w);
+            KernelFace(i) => Defect.Unclassified(law, w);
+            KernelShell(i) => Defect.Unclassified(law, w);
+            KernelBody(i) => Defect.Unclassified(law, w);
+            MeshVertex(i) => Defect.Unclassified(law, w);
+            MeshElement(i) => Defect.Unclassified(law, w);
+        };
+
+    // make(s) when w is a surface of the arena.
+    SurfaceDefectAt(law: String, w: Provenance, make: Function1<SurfaceIndex, Defect>): Defect
+        => match (w) {
+            Nowhere => Defect.Unclassified(law, w);
+            WholeInput => Defect.Unclassified(law, w);
+            AtInstance(id) => Defect.Unclassified(law, w);
+            KernelCurve(i) => Defect.Unclassified(law, w);
+            KernelSurface(i) => make(i);
+            KernelVertex(i) => Defect.Unclassified(law, w);
+            KernelEdge(i) => Defect.Unclassified(law, w);
+            KernelLoop(i) => Defect.Unclassified(law, w);
+            KernelFace(i) => Defect.Unclassified(law, w);
+            KernelShell(i) => Defect.Unclassified(law, w);
+            KernelBody(i) => Defect.Unclassified(law, w);
+            MeshVertex(i) => Defect.Unclassified(law, w);
+            MeshElement(i) => Defect.Unclassified(law, w);
+        };
+
+    // make(id) when w is a STEP instance.
+    InstanceDefectAt(law: String, w: Provenance, make: Function1<StepInstanceId, Defect>): Defect
+        => match (w) {
+            Nowhere => Defect.Unclassified(law, w);
+            WholeInput => Defect.Unclassified(law, w);
+            AtInstance(id) => make(id);
+            KernelCurve(i) => Defect.Unclassified(law, w);
+            KernelSurface(i) => Defect.Unclassified(law, w);
+            KernelVertex(i) => Defect.Unclassified(law, w);
+            KernelEdge(i) => Defect.Unclassified(law, w);
+            KernelLoop(i) => Defect.Unclassified(law, w);
+            KernelFace(i) => Defect.Unclassified(law, w);
+            KernelShell(i) => Defect.Unclassified(law, w);
+            KernelBody(i) => Defect.Unclassified(law, w);
+            MeshVertex(i) => Defect.Unclassified(law, w);
+            MeshElement(i) => Defect.Unclassified(law, w);
+        };
+
+    // The defect a failed check stands for, by its law's name. Mapped, the
+    // laws whose provenance and measure give the whole address:
+    // Law_LoopWindingMatchesSameSense at a face (MisorientedFace),
+    // Law_ShellIsOrientable at a shell (NotOrientable),
+    // Law_AtMostOneOuterBound at a face (TwoOuterBounds),
+    // Law_EdgeHasPositiveExtent at an edge (DegenerateEdge),
+    // Law_SurfacePlacementOrthonormal at a surface (NonOrthonormalPlacement,
+    // Worst in radians), Law_Where_Direction_WR1 at an instance
+    // (ZeroLengthDirection), and Law_LengthToleranceResolvable
+    // (ToleranceBelowResolution: Bound is the tolerance, Worst the
+    // resolution). Every other law, and a mapped law reported at another kind
+    // of provenance, is Unclassified. The check is not read for Holds.
+    FailedDefectOf(c: Check): Defect
+        => c.Law == "Law_LoopWindingMatchesSameSense" ? FaceDefectAt(c.Law, c.Where, f => Defect.MisorientedFace(f))
+            : c.Law == "Law_ShellIsOrientable" ? ShellDefectAt(c.Law, c.Where, s => Defect.NotOrientable(s))
+            : c.Law == "Law_AtMostOneOuterBound" ? FaceDefectAt(c.Law, c.Where, f => Defect.TwoOuterBounds(f))
+            : c.Law == "Law_EdgeHasPositiveExtent" ? EdgeDefectAt(c.Law, c.Where, e => Defect.DegenerateEdge(e))
+            : c.Law == "Law_SurfacePlacementOrthonormal" ? SurfaceDefectAt(c.Law, c.Where, s => Defect.NonOrthonormalPlacement(s, Angle(c.Worst)))
+            : c.Law == "Law_Where_Direction_WR1" ? InstanceDefectAt(c.Law, c.Where, i => Defect.ZeroLengthDirection(i))
+            : c.Law == "Law_LengthToleranceResolvable" ? Defect.ToleranceBelowResolution(LengthTolerance(c.Bound), Resolution(c.Worst))
+            : Defect.Unclassified(c.Law, c.Where);
+
+    // The defect one check found, or NotApplicable when the check holds.
+    DefectOf(c: Check): DecidedDefect
+        => c.Holds
+            ? DecidedDefect.Undecided(UndecidedReason.NotApplicable("The check holds."))
+            : DecidedDefect.Defect(FailedDefectOf(c));
+
+    // The defect of a decided result as an array of zero or one.
+    DefectsIn(d: DecidedDefect): Array<Defect>
+        => match (d) {
+            Defect(x) => [x];
+            Undecided(r) => [Defect.FreeEdge(BrepEdgeIndex(0))].Take(0);
+        };
+
+    //==
+    // # Defect reports
+
+    // The positions in ds of the defects that name face f.
+    PositionsNamingFace(ds: Array<Defect>, f: Integer): Array<Integer>
+        => ds.Count.Range.FlatMap(i => [i].Take(FacesOf(ds[i]).Any(x => x.Value == f) ? 1 : 0));
+
+    // The highest face index the defects name, -1 when none.
+    HighestFaceNamed(ds: Array<Defect>): Integer
+        => ds.Reduce(-1, (a, d) => FacesOf(d).Reduce(a, (b, f) => f.Value > b ? f.Value : b));
+
+    // The report of the given defects: by class and by face.
+    DefectReportOf(ds: Array<Defect>): DefectReport
+        => DefectReport(
+            ds,
+            DefectClass.AllClasses.Map(k => CountOf(ds.FlatMap(d => [d].Take(ClassOf(d) == k ? 1 : 0)).Count)),
+            FromRows((HighestFaceNamed(ds) + 1).MapRange(f => PositionsNamingFace(ds, f))));
+
+    // The defects of a validation report: one per failed check, in report
+    // order (DefectOf).
+    DefectsOf(r: Report): DefectReport
+        => DefectReportOf(r.Checks.FlatMap(c => DefectsIn(DefectOf(c))));
+}

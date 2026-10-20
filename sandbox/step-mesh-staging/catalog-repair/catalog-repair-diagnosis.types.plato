@@ -1,0 +1,109 @@
+//==
+// # Catalog repair: repair actions, fixability, cost
+//
+// TYPE-CATALOG.md section 13. A repair action is data, one case per defect
+// family, so the decoder's three ad hoc repairs (layer 3's StepRepair) do not
+// grow into thirty with no common shape: StepRepair becomes the projection
+// ToStepRepair.
+//
+// Sections, in order:
+//  - Actions
+//  - Fixability and cost
+//  - Gap and seam choices
+//  - The decode-repair projection
+
+//==
+// # Actions
+
+// One repair, as data. MergeVertices: Drop's uses become Keep's.
+// SnapVertexToCurve: move Vertex onto Edge's curve end. ExtendEdgeToVertex:
+// extend Edge's curve at End to its vertex. AddPcurveByProjection: project
+// Edge's curve onto Face's surface. ReplacePcurve: put With in Pcurve's place.
+// CloseLoopByBridge: close a bound's chart image across Gap. ReverseFace,
+// ReverseLoop, FlipShell: orientation. DropEdge, DropBound: removal.
+// PromoteToOuter: make Bound the face's one outer bound. ClampTrim: clamp a
+// trim into its surface's domain. CutKnotMultiplicity, SortKnots: knot vector
+// repairs. RaiseTolerance: replace the model's tolerances with To.
+// SplitSeamEdge: split a seam whose uses run one way into two edges.
+// InsertSeam: cut a closed face along Direction. InsertPoleLoop: add the
+// vertex loop of a pole at Side. DeclareOpen: clear a shell's closed flag.
+// SkipInstance: leave a STEP instance undecoded (layer 3's Skipped; added
+// beside the catalog's list so StepRepair projects from every case).
+// Removes: thirty ad hoc repairs with no common shape.
+type RepairAction
+    = MergeVertices(Keep: BrepVertexIndex, Drop: BrepVertexIndex)
+    | SnapVertexToCurve(Vertex: BrepVertexIndex, Edge: BrepEdgeIndex)
+    | ExtendEdgeToVertex(Edge: BrepEdgeIndex, End: EdgeEnd)
+    | AddPcurveByProjection(Edge: BrepEdgeIndex, Face: BrepFaceIndex)
+    | ReplacePcurve(Pcurve: PcurveIndex, With: BrepCurve2D)
+    | CloseLoopByBridge(Face: BrepFaceIndex, Bound: BoundSlot, Gap: UvDelta)
+    | ReverseFace(Face: BrepFaceIndex)
+    | ReverseLoop(Loop: BrepLoopIndex)
+    | FlipShell(Shell: ShellIndex)
+    | DropEdge(Edge: BrepEdgeIndex)
+    | DropBound(Face: BrepFaceIndex, Bound: BoundSlot)
+    | PromoteToOuter(Face: BrepFaceIndex, Bound: BoundSlot)
+    | ClampTrim(Surface: SurfaceIndex)
+    | CutKnotMultiplicity(Curve: CurveIndex, At: Integer)
+    | SortKnots(Curve: CurveIndex)
+    | RaiseTolerance(To: Tolerances)
+    | SplitSeamEdge(Face: BrepFaceIndex, Edge: BrepEdgeIndex)
+    | InsertSeam(Face: BrepFaceIndex, Direction: SurfaceParameter)
+    | InsertPoleLoop(Face: BrepFaceIndex, Side: DomainSide)
+    | DeclareOpen(Shell: ShellIndex)
+    | SkipInstance(Instance: StepInstanceId);
+
+//==
+// # Fixability and cost
+
+// What a repair costs: how many faces it touches, how much it grows the
+// length tolerance (1 when it does not), and how far it reaches. Built only
+// by CostOf, so a Local repair touches at most two faces
+// (Law_Catalog_LocalRepairTouchesAtMostTwoFaces). Removes: a tolerance
+// raised tenfold by a repair reported as small.
+type RepairCost
+{
+    TouchedFaces: Count;
+    ToleranceGrowth: Ratio;
+    Locality: Locality;
+}
+
+// What Diagnose says about one defect: one action and its cost, a choice of
+// actions (never an empty one), or why none applies. Removes: a repair
+// attempted on a defect no action can fix.
+type Fixability
+    = Fixable(Action: RepairAction, Cost: RepairCost)
+    | FixableWithChoice(Options: Array<RepairAction>)
+    | Unfixable(Why: String);
+
+//==
+// # Gap and seam choices
+
+// The choice a gap repair makes, as data: snap to an existing vertex, insert
+// a vertex at Point, extend the curve By a length, or bridge From to To with
+// a new segment. Removes: a gap closed by whichever move the code tried
+// first.
+type GapClosure
+    = SnapToExisting(Vertex: BrepVertexIndex)
+    | InsertVertexAt(Point: ModelPoint)
+    | ExtendCurve(By: ModelLength)
+    | Bridge(From: ModelPoint, To: ModelPoint);
+
+// The repair of a seam whose uses run one way: add a seam edge on Face along
+// Direction at parameter At, or split Face at its seam. The case the research
+// names as not fixable locally on a closed shell, so it has its own type and
+// its own Unfixable reason there (DiagnoseSeam). Removes: a seam repair that
+// tears a closed shell open.
+type SeamRepair
+    = AddSeamEdge(Face: BrepFaceIndex, Direction: SurfaceParameter, At: Number)
+    | SplitAtSeam(Face: BrepFaceIndex);
+
+//==
+// # The decode-repair projection
+
+// What ToStepRepair returns: the layer 3 StepRepair an action projects to,
+// or the diagnostic saying the action is not one the decoder makes. Removes:
+// a ledger entry silently dropped from ProvenanceMap.Repairs.
+type StepRepairProjection
+    = Projected(Repair: StepRepair)
+    | NotProjected(Finding: Diagnostic);
