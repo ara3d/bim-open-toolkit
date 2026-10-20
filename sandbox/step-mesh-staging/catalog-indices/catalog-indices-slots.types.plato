@@ -1,0 +1,69 @@
+//==
+// # Catalog indices: slots and positions
+//
+// TYPE-CATALOG.md section 3. Typed positions still passed as Integer in the library: inside a
+// face's bounds, inside a loop, inside an edge discretization, inside a face mesh's two index
+// spaces. Each follows foundation-indices.types.plato: one Integer, -1 (any negative) meaning
+// none; IsNone, IsPresent, xs[i] and xs.IsValidIndex(i) come from the stdlib's IIndex functions.
+//
+// Sections, in order:
+//  - Topology slots
+//  - Discretization positions
+//  - Face mesh index spaces
+
+//==
+// # Topology slots
+
+// The position of a FaceBound in BrepFace.Bounds. Removes: a bound slot and a coedge slot swapped
+// at a call site (CoedgeSite holds two Integers today).
+type BoundSlot
+    implements IValue, IHashable, IComparable, IIndex
+{
+    Value: Integer;
+}
+
+// The position of a coedge in its loop's coedge list. Removes: the same swap as BoundSlot.
+type CoedgeSlot
+    implements IValue, IHashable, IComparable, IIndex
+{
+    Value: Integer;
+}
+
+//==
+// # Discretization positions
+
+// The position of a sample in an EdgeDiscretization, 0 being the edge's start vertex and
+// Count - 1 its end vertex. Removes: a sample position read as an interior slot (one off).
+type EdgeSampleIndex
+    implements IValue, IHashable, IComparable, IIndex
+{
+    Value: Integer;
+}
+
+// The slot inside MeshVertexSite.EdgeInterior or FaceInterior: interior slot k is edge sample
+// k + 1 (Law_Catalog_InteriorSlotIsSampleMinusOne). Removes: the off-by-one between a sample and
+// its interior slot, done by hand.
+type InteriorSlot
+    implements IValue, IHashable, IComparable, IIndex
+{
+    Value: Integer;
+}
+
+//==
+// # Face mesh index spaces
+
+// An index into UvTriangulation.Points or FaceMesh.UvPoints: a parameter-space point, distinct
+// from any 3D vertex. Removes: a parameter point index used to read Positions.
+type UvPointIndex
+    implements IValue, IHashable, IComparable, IIndex
+{
+    Value: Integer;
+}
+
+// An index into one face mesh's own vertices, distinct from VertexIndex, which stays the
+// assembled mesh's global vertex. Removes: a local index written into an assembled triangle.
+type LocalVertexIndex
+    implements IValue, IHashable, IComparable, IIndex
+{
+    Value: Integer;
+}

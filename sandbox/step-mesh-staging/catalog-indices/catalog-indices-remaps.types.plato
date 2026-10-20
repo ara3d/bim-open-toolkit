@@ -1,0 +1,68 @@
+//==
+// # Catalog indices: remaps
+//
+// TYPE-CATALOG.md section 3. What a structural edit or a repair returns: for each table, the new
+// index of every old row, or none (-1) for a removed row. NewOf has one entry per old row.
+// Removes: stale indices held across a removal. The vertex remap is BrepVertexRemap because the
+// stdlib's geometry/remeshing.types.plato declares VertexRemap.
+//
+// Sections, in order:
+//  - Topology remaps
+//  - Geometry remaps
+//  - The bundle
+
+//==
+// # Topology remaps
+
+// New index of each old row of BrepModel.Vertices.
+type BrepVertexRemap implements IValue { NewOf: Array<BrepVertexIndex>; }
+
+// New index of each old row of BrepModel.Edges.
+type EdgeRemap implements IValue { NewOf: Array<BrepEdgeIndex>; }
+
+// New index of each old row of BrepModel.Loops.
+type LoopRemap implements IValue { NewOf: Array<BrepLoopIndex>; }
+
+// New index of each old row of BrepModel.Faces.
+type FaceRemap implements IValue { NewOf: Array<BrepFaceIndex>; }
+
+// New index of each old row of BrepModel.Shells.
+type ShellRemap implements IValue { NewOf: Array<ShellIndex>; }
+
+// New index of each old row of BrepModel.Bodies.
+type BodyRemap implements IValue { NewOf: Array<BodyIndex>; }
+
+//==
+// # Geometry remaps
+
+// New index of each old row of GeometrySet.Curves.
+type CurveRemap implements IValue { NewOf: Array<CurveIndex>; }
+
+// New index of each old row of GeometrySet.Curves2D.
+type Curve2DRemap implements IValue { NewOf: Array<Curve2DIndex>; }
+
+// New index of each old row of GeometrySet.Pcurves.
+type PcurveRemap implements IValue { NewOf: Array<PcurveIndex>; }
+
+// New index of each old row of GeometrySet.Surfaces.
+type SurfaceRemap implements IValue { NewOf: Array<SurfaceIndex>; }
+
+//==
+// # The bundle
+
+// One remap per kernel table: the result of a structural edit or a repair. A table the edit did
+// not touch carries the identity remap. Removes: one table renumbered and another forgotten.
+type KernelRemap
+    implements IValue
+{
+    Vertices: BrepVertexRemap;
+    Edges: EdgeRemap;
+    Loops: LoopRemap;
+    Faces: FaceRemap;
+    Shells: ShellRemap;
+    Bodies: BodyRemap;
+    Curves: CurveRemap;
+    Curves2D: Curve2DRemap;
+    Pcurves: PcurveRemap;
+    Surfaces: SurfaceRemap;
+}

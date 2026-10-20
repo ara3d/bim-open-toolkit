@@ -1,0 +1,98 @@
+//==
+// # Catalog indices: specification
+//
+// Invariants and constructors of TYPE-CATALOG.md section 3 (SPEC-DSL.md section 3). Not compiled.
+// Each invariant is a Law_Catalog_ in catalog-indices.laws.plato or a one-line predicate.
+//
+// Sections, in order:
+//  - Slots and positions
+//  - Keys
+//  - Corners
+//  - Remaps
+
+//==
+// # Slots and positions
+
+spec BoundSlot { invariant IsSlotOrNone(self.Value); }
+spec CoedgeSlot { invariant IsSlotOrNone(self.Value); }
+spec EdgeSampleIndex { invariant IsSlotOrNone(self.Value); constructor ToEdgeSample; }
+spec UvPointIndex { invariant IsSlotOrNone(self.Value); }
+spec LocalVertexIndex { invariant IsSlotOrNone(self.Value); }
+
+spec InteriorSlot
+{
+    invariant IsSlotOrNone(self.Value);
+    constructor ToInteriorSlot;
+}
+
+spec ToInteriorSlot(k: EdgeSampleIndex, sampleCount: Integer): InteriorSlot
+{
+    ensures k.IsInteriorSample(sampleCount) ? result.Value == k.Value - 1 : result.IsNone;   // Law_Catalog_InteriorSlotIsSampleMinusOne, Law_Catalog_EndSampleHasNoInteriorSlot
+}
+
+spec ElementSide { invariant self.Side >= 0; }
+
+//==
+// # Keys
+
+spec EdgeKey
+{
+    invariant IsWellFormed(self);   // Law_Catalog_EdgeKeyIsOrdered
+    constructor EdgeKeyOf;
+    constructor ToEdgeKey;
+}
+
+spec EdgeKeyOf(a: VertexIndex, b: VertexIndex): EdgeKey
+{
+    requires a != b;
+    ensures result.A.Value < result.B.Value;
+    ensures result == EdgeKeyOf(b, a);   // Law_Catalog_EdgeKeyIsSymmetric
+}
+
+spec ToSite(m: BrepModel, k: SampleKey, sampleCount: Integer): MeshVertexSite
+{
+    requires match (k) { AtVertex(v) => m.IsVertexInRange(v); AtEdgeSample(e, s) => m.IsEdgeInRange(e) && s.Value >= 0 && s.Value < sampleCount; };
+    requires sampleCount >= 2;
+    ensures Law_Catalog_FirstSampleIsStartVertex, Law_Catalog_LastSampleIsEndVertex, Law_Catalog_InteriorSampleIsEdgeInteriorSite on the edge arm;
+}
+
+//==
+// # Corners
+
+spec CornerIndex
+{
+    constructor TriangleCorner;
+    constructor QuadCorner;
+}
+
+spec TriangleCorner(t: Integer, slot: Integer): CornerIndex
+{
+    requires t >= 0;
+    requires slot >= 0 && slot < 3;
+}
+
+spec QuadCorner(triangleCount: Integer, q: Integer, slot: Integer): CornerIndex
+{
+    requires triangleCount >= 0;
+    requires q >= 0;
+    requires slot >= 0 && slot < 4;
+    ensures Law_Catalog_TriangleAndQuadCornersNeverCollide;
+}
+
+//==
+// # Remaps
+
+spec FaceRemap
+{
+    invariant self.NewOf.All(i => IsSlotOrNone(i.Value));
+    invariant forall i, j: IsInjectiveOnKept(self.NewOf.IndexValues, i, j);   // Law_Catalog_RemapIsInjectiveOnKept
+    constructor ToFaceRemap;
+}
+// BrepVertexRemap, EdgeRemap, LoopRemap, ShellRemap, BodyRemap, CurveRemap, Curve2DRemap,
+// PcurveRemap and SurfaceRemap carry the same two invariants, each built by its To<Name>.
+
+spec KernelRemap
+{
+    invariant forall t: TableName, i, j: IsInjectiveOnKept(self.NewOfValues(t), i, j);
+    constructor KernelRemapChanging;
+}

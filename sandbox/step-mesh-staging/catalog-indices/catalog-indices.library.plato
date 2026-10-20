@@ -1,0 +1,266 @@
+//==
+// # Catalog indices: constructors, conversions, predicates
+//
+// TYPE-CATALOG.md section 3. Every body here is its own specification; nothing is deferred.
+// Out-of-range inputs give the none index (-1) of the result's index type, as the typed indices
+// of foundation-indices.types.plato do; the spec file names the ranges a caller must keep to.
+//
+// Sections, in order:
+//  - Interior slots and edge samples
+//  - Corners
+//  - Edge keys
+//  - Sample keys to sites
+//  - Kernel tables
+//  - Remaps
+
+library CatalogIndices
+{
+    //==
+    // # Interior slots and edge samples
+
+    // True when v is a slot or a typed index value: a position (0 or more) or none (-1).
+    IsSlotOrNone(v: Integer): Boolean
+        => v >= -1;
+
+    // True when sample k of a discretization of sampleCount samples is interior: neither the
+    // start vertex (0) nor the end vertex (sampleCount - 1).
+    IsInteriorSample(k: EdgeSampleIndex, sampleCount: Integer): Boolean
+        => k.Value > 0 && k.Value < sampleCount - 1;
+
+    // The interior slot of sample k: k - 1 for an interior sample, none for an end or an
+    // out-of-range sample.
+    ToInteriorSlot(k: EdgeSampleIndex, sampleCount: Integer): InteriorSlot
+        => k.IsInteriorSample(sampleCount) ? InteriorSlot(k.Value - 1) : InteriorSlot(-1);
+
+    // The edge sample of interior slot s: s + 1, or none for the none slot.
+    ToEdgeSample(s: InteriorSlot): EdgeSampleIndex
+        => s.Value >= 0 ? EdgeSampleIndex(s.Value + 1) : EdgeSampleIndex(-1);
+
+    //==
+    // # Corners
+    //
+    // The corners of a mesh of triangleCount triangles followed by quads: triangle t owns corners
+    // 3t to 3t + 2, quad q owns the four after all the triangles' corners. These two are the only
+    // functions that build a CornerIndex from arithmetic.
+
+    // Corner slot (0 to 2) of triangle t.
+    TriangleCorner(t: Integer, slot: Integer): CornerIndex
+        => CornerIndex(3 * t + slot);
+
+    // Corner slot (0 to 3) of quad q in a mesh whose triangles number triangleCount.
+    QuadCorner(triangleCount: Integer, q: Integer, slot: Integer): CornerIndex
+        => CornerIndex(3 * triangleCount + 4 * q + slot);
+
+    // True when (t, slot) names a corner of one of triangleCount triangles.
+    IsTriangleCornerInput(triangleCount: Integer, t: Integer, slot: Integer): Boolean
+        => t >= 0 && t < triangleCount && slot >= 0 && slot < 3;
+
+    // True when (q, slot) names a corner of a quad.
+    IsQuadCornerInput(q: Integer, slot: Integer): Boolean
+        => q >= 0 && slot >= 0 && slot < 4;
+
+    //==
+    // # Edge keys
+
+    // The undirected key of the edge between a and b, the smaller index first.
+    EdgeKeyOf(a: VertexIndex, b: VertexIndex): EdgeKey
+        => a.Value <= b.Value ? EdgeKey(a, b) : EdgeKey(b, a);
+
+    // The undirected key of a directed edge: its direction forgotten.
+    ToEdgeKey(h: HalfEdgeKey): EdgeKey
+        => EdgeKeyOf(h.From, h.To);
+
+    // EdgeKey's invariant: A < B, so a key names a real edge of two distinct vertices.
+    IsWellFormed(k: EdgeKey): Boolean
+        => k.A.Value < k.B.Value;
+
+    //==
+    // # Sample keys to sites
+    //
+    // MeshVertexSite (mesh-numbering.types.plato) counts an edge's interior points from zero in
+    // the edge's forward direction, so sample 0 is the start vertex, sample sampleCount - 1 the end
+    // vertex, and sample k between them interior slot k - 1.
+
+    // The site of sample `sample` of edge e, whose discretization has sampleCount samples and runs
+    // from vertex start to vertex end. An out-of-range sample gives EdgeInterior with the none slot.
+    ToSiteOnEdge(e: BrepEdgeIndex, sample: EdgeSampleIndex, sampleCount: Integer, start: BrepVertexIndex, end: BrepVertexIndex): MeshVertexSite
+        => sample.Value == 0 && sampleCount >= 2
+            ? MeshVertexSite.ModelVertex(start)
+            : (sample.Value == sampleCount - 1 && sampleCount >= 2
+                ? MeshVertexSite.ModelVertex(end)
+                : MeshVertexSite.EdgeInterior(e, sample.ToInteriorSlot(sampleCount).Value));
+
+    // The site of key k in model m; sampleCount is the sample count of k's edge (ignored for a
+    // vertex key). An edge out of range gives EdgeInterior with the none slot.
+    ToSite(m: BrepModel, k: SampleKey, sampleCount: Integer): MeshVertexSite
+        => match (k) {
+            AtVertex(v) => MeshVertexSite.ModelVertex(v);
+            AtEdgeSample(e, s) => m.ToSiteOfEdgeSample(e, s, sampleCount);
+        };
+
+    // ToSite's edge arm, with the edge read only when it is in range.
+    ToSiteOfEdgeSample(m: BrepModel, e: BrepEdgeIndex, s: EdgeSampleIndex, sampleCount: Integer): MeshVertexSite
+        => m.IsEdgeInRange(e)
+            ? ToSiteOnEdge(e, s, sampleCount, m.Edges[e].Start, m.Edges[e].End)
+            : MeshVertexSite.EdgeInterior(e, -1);
+
+    //==
+    // # Kernel tables
+
+    // The position of t in TableName's declaration order, 0 to 9.
+    Ordinal(t: TableName): Integer
+        => match (t) {
+            VerticesTable => 0;
+            EdgesTable => 1;
+            LoopsTable => 2;
+            FacesTable => 3;
+            ShellsTable => 4;
+            BodiesTable => 5;
+            CurvesTable => 6;
+            Curves2DTable => 7;
+            PcurvesTable => 8;
+            SurfacesTable => 9;
+        };
+
+    // The table of ordinal k, k taken modulo 10 into 0 to 9.
+    TableNameAt(k: Integer): TableName
+    {
+        var r = ((k % 10) + 10) % 10;
+        return r == 0 ? TableName.VerticesTable
+            : r == 1 ? TableName.EdgesTable
+            : r == 2 ? TableName.LoopsTable
+            : r == 3 ? TableName.FacesTable
+            : r == 4 ? TableName.ShellsTable
+            : r == 5 ? TableName.BodiesTable
+            : r == 6 ? TableName.CurvesTable
+            : r == 7 ? TableName.Curves2DTable
+            : r == 8 ? TableName.PcurvesTable
+            : TableName.SurfacesTable;
+    }
+
+    // The row count of table t of model m.
+    RowCount(m: BrepModel, t: TableName): Integer
+        => match (t) {
+            VerticesTable => m.Vertices.Count;
+            EdgesTable => m.Edges.Count;
+            LoopsTable => m.Loops.Count;
+            FacesTable => m.Faces.Count;
+            ShellsTable => m.Shells.Count;
+            BodiesTable => m.Bodies.Count;
+            CurvesTable => m.Geometry.Curves.Count;
+            Curves2DTable => m.Geometry.Curves2D.Count;
+            PcurvesTable => m.Geometry.Pcurves.Count;
+            SurfacesTable => m.Geometry.Surfaces.Count;
+        };
+
+    // True when row i exists in table t of model m: the range check of every table, once.
+    IsRowInRange(m: BrepModel, t: TableName, i: Integer): Boolean
+        => i >= 0 && i < m.RowCount(t);
+
+    // The library's own range predicate for table t, applied to the typed index of row i.
+    IsInTable(m: BrepModel, t: TableName, i: Integer): Boolean
+        => match (t) {
+            VerticesTable => m.IsVertexInRange(BrepVertexIndex(i));
+            EdgesTable => m.IsEdgeInRange(BrepEdgeIndex(i));
+            LoopsTable => m.IsLoopInRange(BrepLoopIndex(i));
+            FacesTable => m.IsFaceInRange(BrepFaceIndex(i));
+            ShellsTable => m.IsShellInRange(ShellIndex(i));
+            BodiesTable => m.IsBodyInRange(BodyIndex(i));
+            CurvesTable => m.Geometry.IsCurveInRange(CurveIndex(i));
+            Curves2DTable => m.Geometry.IsCurve2DInRange(Curve2DIndex(i));
+            PcurvesTable => m.Geometry.IsPcurveInRange(PcurveIndex(i));
+            SurfacesTable => m.Geometry.IsSurfaceInRange(SurfaceIndex(i));
+        };
+
+    //==
+    // # Remaps
+    //
+    // A remap is built from its Integer form, NewOf as plain values, by the conversion of its
+    // table; NewOfValues reads it back. The Integer form is where remaps are composed and checked.
+
+    // The values of an array of typed indices.
+    IndexValues(xs: Array<$T>): Array<Integer> where $T: IIndex
+        => xs.Map(x => x.Value);
+
+    // The Integer form of removing row `removed` from a table of count rows: rows before it keep
+    // their index, the row itself is none, rows after it move down one.
+    RemovalNewOf(count: Integer, removed: Integer): Array<Integer>
+        => count.MapRange(i => i < removed ? i : (i == removed ? -1 : i - 1));
+
+    // The Integer form of the identity remap of a table of count rows.
+    IdentityNewOf(count: Integer): Array<Integer>
+        => count.MapRange(i => i);
+
+    // A vertex remap from its Integer form.
+    ToBrepVertexRemap(xs: Array<Integer>): BrepVertexRemap => BrepVertexRemap(xs.Map(i => BrepVertexIndex(i)));
+
+    // An edge remap from its Integer form.
+    ToEdgeRemap(xs: Array<Integer>): EdgeRemap => EdgeRemap(xs.Map(i => BrepEdgeIndex(i)));
+
+    // A loop remap from its Integer form.
+    ToLoopRemap(xs: Array<Integer>): LoopRemap => LoopRemap(xs.Map(i => BrepLoopIndex(i)));
+
+    // A face remap from its Integer form.
+    ToFaceRemap(xs: Array<Integer>): FaceRemap => FaceRemap(xs.Map(i => BrepFaceIndex(i)));
+
+    // A shell remap from its Integer form.
+    ToShellRemap(xs: Array<Integer>): ShellRemap => ShellRemap(xs.Map(i => ShellIndex(i)));
+
+    // A body remap from its Integer form.
+    ToBodyRemap(xs: Array<Integer>): BodyRemap => BodyRemap(xs.Map(i => BodyIndex(i)));
+
+    // A curve remap from its Integer form.
+    ToCurveRemap(xs: Array<Integer>): CurveRemap => CurveRemap(xs.Map(i => CurveIndex(i)));
+
+    // A 2D curve remap from its Integer form.
+    ToCurve2DRemap(xs: Array<Integer>): Curve2DRemap => Curve2DRemap(xs.Map(i => Curve2DIndex(i)));
+
+    // A pcurve remap from its Integer form.
+    ToPcurveRemap(xs: Array<Integer>): PcurveRemap => PcurveRemap(xs.Map(i => PcurveIndex(i)));
+
+    // A surface remap from its Integer form.
+    ToSurfaceRemap(xs: Array<Integer>): SurfaceRemap => SurfaceRemap(xs.Map(i => SurfaceIndex(i)));
+
+    // The Integer form of table t's remap in r.
+    NewOfValues(r: KernelRemap, t: TableName): Array<Integer>
+        => match (t) {
+            VerticesTable => r.Vertices.NewOf.IndexValues;
+            EdgesTable => r.Edges.NewOf.IndexValues;
+            LoopsTable => r.Loops.NewOf.IndexValues;
+            FacesTable => r.Faces.NewOf.IndexValues;
+            ShellsTable => r.Shells.NewOf.IndexValues;
+            BodiesTable => r.Bodies.NewOf.IndexValues;
+            CurvesTable => r.Curves.NewOf.IndexValues;
+            Curves2DTable => r.Curves2D.NewOf.IndexValues;
+            PcurvesTable => r.Pcurves.NewOf.IndexValues;
+            SurfacesTable => r.Surfaces.NewOf.IndexValues;
+        };
+
+    // The Integer form for table u: changed when u is t, the identity of count rows otherwise.
+    NewOfFor(u: TableName, t: TableName, changed: Array<Integer>, count: Integer): Array<Integer>
+        => u.Ordinal == t.Ordinal ? changed : count.IdentityNewOf;
+
+    // A kernel remap whose table t has the Integer form changed and every other table the
+    // identity of count rows.
+    KernelRemapChanging(t: TableName, changed: Array<Integer>, count: Integer): KernelRemap
+        => KernelRemap(
+            TableName.VerticesTable.NewOfFor(t, changed, count).ToBrepVertexRemap,
+            TableName.EdgesTable.NewOfFor(t, changed, count).ToEdgeRemap,
+            TableName.LoopsTable.NewOfFor(t, changed, count).ToLoopRemap,
+            TableName.FacesTable.NewOfFor(t, changed, count).ToFaceRemap,
+            TableName.ShellsTable.NewOfFor(t, changed, count).ToShellRemap,
+            TableName.BodiesTable.NewOfFor(t, changed, count).ToBodyRemap,
+            TableName.CurvesTable.NewOfFor(t, changed, count).ToCurveRemap,
+            TableName.Curves2DTable.NewOfFor(t, changed, count).ToCurve2DRemap,
+            TableName.PcurvesTable.NewOfFor(t, changed, count).ToPcurveRemap,
+            TableName.SurfacesTable.NewOfFor(t, changed, count).ToSurfaceRemap);
+
+    // True when entries i and j of newOf, both kept, map to distinct indices; vacuous when either
+    // is out of range, removed, or i is j.
+    IsInjectiveOnKept(newOf: Array<Integer>, i: Integer, j: Integer): Boolean
+        => newOf.IsValidIndex(i)
+            ? (newOf.IsValidIndex(j)
+                ? (i != j && newOf[i] >= 0 && newOf[j] >= 0 ? newOf[i] != newOf[j] : true)
+                : true)
+            : true;
+}

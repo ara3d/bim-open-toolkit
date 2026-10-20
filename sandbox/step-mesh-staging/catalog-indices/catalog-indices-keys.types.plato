@@ -1,0 +1,81 @@
+//==
+// # Catalog indices: keys and addresses
+//
+// TYPE-CATALOG.md section 3. Keys identify a thing combinatorially, so nothing is looked up or
+// welded by position, and nothing depends on the order a pair was written in.
+//
+// Sections, in order:
+//  - Element sides
+//  - Vertex pairs
+//  - Boundary samples
+//  - Kernel tables
+
+//==
+// # Element sides
+
+// One side of one assembled element, Side counted from 0 in the element's corner order: a
+// half-edge by address. Removes: an undirected edge index used where the traversal direction
+// matters.
+type ElementSide
+    implements IValue
+{
+    Element: ElementIndex;
+    Side: Integer;
+}
+
+// The two element sides on one mesh edge, First and Second in no promised order. Removes: a
+// neighbour found by searching the elements again.
+type ElementSidePair
+    implements IValue
+{
+    First: ElementSide;
+    Second: ElementSide;
+}
+
+//==
+// # Vertex pairs
+
+// A directed mesh edge, From then To. Removes: a direction lost by storing an unordered pair.
+type HalfEdgeKey
+    implements IValue
+{
+    From: VertexIndex;
+    To: VertexIndex;
+}
+
+// An undirected mesh edge with A < B, built only through EdgeKeyOf. Removes: a lookup with the
+// pair in the wrong order (the stdlib's VertexPair does not enforce the order).
+type EdgeKey
+    implements IValue
+{
+    A: VertexIndex;
+    B: VertexIndex;
+}
+
+//==
+// # Boundary samples
+
+// The combinatorial identity of a boundary point before meshing, the key both faces of an edge
+// share: a model vertex, or sample Sample of edge Edge's discretization. ToSite converts it to the
+// post-numbering MeshVertexSite. Removes: welding by position.
+type SampleKey
+    implements IValue
+    = AtVertex(Vertex: BrepVertexIndex)
+    | AtEdgeSample(Edge: BrepEdgeIndex, Sample: EdgeSampleIndex);
+
+//==
+// # Kernel tables
+
+// Which kernel table a diff, a remap, or a repair names: six topology tables of BrepModel and
+// four geometry tables of GeometrySet. Removes: the string "Faces" compared with "faces".
+type TableName
+    = VerticesTable
+    | EdgesTable
+    | LoopsTable
+    | FacesTable
+    | ShellsTable
+    | BodiesTable
+    | CurvesTable
+    | Curves2DTable
+    | PcurvesTable
+    | SurfacesTable;
