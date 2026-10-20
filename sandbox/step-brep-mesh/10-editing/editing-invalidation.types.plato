@@ -1,5 +1,5 @@
 //==
-// # Catalog editing: invalidation and incremental meshing
+// # Editing: invalidation and incremental meshing
 //
 // TYPE-CATALOG.md section 12. What an edit stales downstream, the incremental
 // re-mesh result, and an edit shown before it is written.

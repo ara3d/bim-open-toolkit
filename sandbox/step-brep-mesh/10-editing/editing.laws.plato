@@ -1,5 +1,5 @@
 //==
-// # Catalog editing: laws
+// # Editing: laws
 //
 // TYPE-CATALOG.md section 12. BrepModel holds arrays, so the runner cannot
 // make one; every law takes Integer selectors (drawn in [-8, 8]) and builds
@@ -17,7 +17,7 @@
 //  - Closures
 //  - Euler operators
 
-library CatalogEditingLaws
+library BrepEditingLaws
 {
     //==
     // # Witnesses and edits
@@ -218,7 +218,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_InverseUndoes(k: Integer, i: Integer): Boolean
+    Law_InverseUndoes(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => InverseUndoesAt(w, k, i));
 
     // A whole-model transform, then its inverse, puts every vertex back
@@ -235,7 +235,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_TransformInverseRestoresVertices(i: Integer): Boolean
+    Law_TransformInverseRestoresVertices(i: Integer): Boolean
         => 2.Range.All(w => TransformInverseRestoresVerticesAt(w, i));
 
     // A loop that chains end to start still does once reversed: its coedges
@@ -249,7 +249,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_ReversedLoopStillChains(i: Integer): Boolean
+    Law_ReversedLoopStillChains(i: Integer): Boolean
         => 2.Range.All(w => ReversedLoopStillChainsAt(w, i));
 
     // A refused edit leaves the model as it was.
@@ -261,7 +261,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_RefusedLeavesModelUnchanged(k: Integer, i: Integer): Boolean
+    Law_RefusedLeavesModelUnchanged(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => RefusedLeavesModelUnchangedAt(w, k, i));
 
     // An edit whose index is out of range of its table is refused, never
@@ -275,7 +275,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_OutOfRangeEditIsRefused(k: Integer, i: Integer): Boolean
+    Law_OutOfRangeEditIsRefused(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => OutOfRangeEditIsRefusedAt(w, k, i));
 
     // An edit whose index is in range is applied: the edits with bodies
@@ -289,7 +289,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_InRangeEditIsApplied(k: Integer, i: Integer): Boolean
+    Law_InRangeEditIsApplied(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => InRangeEditIsAppliedAt(w, k, i));
 
     // A two-edit script, then the script it returned, gives the model back
@@ -306,7 +306,7 @@ library CatalogEditingLaws
 
     // The statement above, over both witnesses, with each edit at every index
     // from -1 to 9.
-    Law_Catalog_ScriptInverseUndoes(k1: Integer, k2: Integer): Boolean
+    Law_ScriptInverseUndoes(k1: Integer, k2: Integer): Boolean
         => 2.Range.All(w => 11.Range.All(i => 11.Range.All(j => ScriptInverseUndoesAt(w, k1, i - 1, k2, j - 1))));
 
     //==
@@ -325,7 +325,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses and every table.
-    Law_Catalog_RemapIsIdentityForGeometricEdits(k: Integer, i: Integer): Boolean
+    Law_RemapIsIdentityForGeometricEdits(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => 10.Range.All(t => RemapIsIdentityForGeometricEditsAt(w, k, i, t)));
 
     // Composing the identity remap before any remap gives that remap.
@@ -338,7 +338,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses and every table.
-    Law_Catalog_ComposeWithIdentityIsIdentity(k: Integer, i: Integer): Boolean
+    Law_ComposeWithIdentityIsIdentity(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => 10.Range.All(t => ComposeWithIdentityIsIdentityAt(w, k, i, t)));
 
     // A face removal's remap sends the removed face to none and keeps the
@@ -353,7 +353,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_RemoveFaceRemapDropsTheFace(i: Integer): Boolean
+    Law_RemoveFaceRemapDropsTheFace(i: Integer): Boolean
         => 2.Range.All(w => RemoveFaceRemapDropsTheFaceAt(w, i));
 
     //==
@@ -374,7 +374,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_InvalidationCoversChangedFaces(k: Integer, i: Integer): Boolean
+    Law_InvalidationCoversChangedFaces(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => InvalidationCoversChangedFacesAt(w, k, i));
 
     // Every index an invalidation names is in range of the model.
@@ -386,7 +386,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_InvalidationIsInRange(k: Integer, i: Integer): Boolean
+    Law_InvalidationIsInRange(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => InvalidationIsInRangeAt(w, k, i));
 
     //==
@@ -405,7 +405,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_ClosureContainsSelection(k: Integer, i: Integer): Boolean
+    Law_ClosureContainsSelection(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => ClosureContainsSelectionAt(w, k, i));
 
     // Every index a closure names is in range.
@@ -419,7 +419,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_ClosureIsInRange(k: Integer, i: Integer): Boolean
+    Law_ClosureIsInRange(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => ClosureIsInRangeAt(w, k, i));
 
     // The closure of an edge holds every face that uses it.
@@ -431,7 +431,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_ClosureHoldsFacesOfEdge(i: Integer): Boolean
+    Law_ClosureHoldsFacesOfEdge(i: Integer): Boolean
         => 2.Range.All(w => ClosureHoldsFacesOfEdgeAt(w, i));
 
     // The closure of a face holds every edge its loops cite.
@@ -443,7 +443,7 @@ library CatalogEditingLaws
     }
 
     // The statement above, over both witnesses.
-    Law_Catalog_ClosureHoldsEdgesOfFace(i: Integer): Boolean
+    Law_ClosureHoldsEdgesOfFace(i: Integer): Boolean
         => 2.Range.All(w => ClosureHoldsEdgesOfFaceAt(w, i));
 
     //==
@@ -451,6 +451,6 @@ library CatalogEditingLaws
 
     // Every Euler operator keeps Euler-Poincare: the change to V - E + 2F - L
     // is -2 times the change to the number of through holes.
-    Law_Catalog_EulerOperatorKeepsCharacteristic(k: Integer): Boolean
+    Law_EulerOperatorKeepsCharacteristic(k: Integer): Boolean
         => EulerOperatorAt(k).CountDelta.CharacteristicDelta == 0 - 2 * EulerOperatorAt(k).HoleDelta;
 }

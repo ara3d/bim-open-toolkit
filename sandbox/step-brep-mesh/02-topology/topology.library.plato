@@ -1056,6 +1056,16 @@ library BrepTopology
     EulerPoincare(c: ShellCounts): Integer
         => c.Vertices - c.Edges + 2 * c.Faces - c.Loops;
 
+    // The counts after a signed change; non-negative when the change removes
+    // no more cells than c holds.
+    WithDelta(c: ShellCounts, d: ShellCountsDelta): ShellCounts
+        => ShellCounts(c.Vertices + d.Vertices, c.Edges + d.Edges, c.Faces + d.Faces, c.Loops + d.Loops);
+
+    // V - E + 2F - L of a delta: the change it makes to EulerPoincare, so
+    // c.WithDelta(d).EulerPoincare == c.EulerPoincare + d.CharacteristicDelta.
+    CharacteristicDelta(d: ShellCountsDelta): Integer
+        => d.Vertices - d.Edges + 2 * d.Faces - d.Loops;
+
     // The genus (2 - chi) / 2 that the counts imply for a closed, connected,
     // orientable shell. Meaningful only when EulerPoincare is even and at most 2.
     ImpliedGenus(c: ShellCounts): Integer
@@ -1277,6 +1287,17 @@ library BrepTopology
     Reversed(face: BrepFace): BrepFace
         => BrepFace(face.Surface, face.SameSense.Not,
             face.Bounds.Map(b => FaceBound(b.Loop, b.Orientation.Not, b.IsOuter)));
+
+    // The loop traversed the other way: an edge loop's coedges in reverse
+    // order, each flipped, a poly loop's points in reverse order, a vertex
+    // loop as it is. Reversing twice gives the loop back exactly.
+    Reversed(loop: BrepLoop): BrepLoop
+        => match (loop) {
+            EdgeLoop(coedges) => BrepLoop.EdgeLoop(coedges.Count.MapRange(i =>
+                Coedge(coedges[coedges.Count - 1 - i].Edge, coedges[coedges.Count - 1 - i].Orientation.Opposite)));
+            VertexLoop(vertex) => loop;
+            PolyLoop(points) => BrepLoop.PolyLoop(points.Count.MapRange(i => points[points.Count - 1 - i]));
+        };
 
     // The model with every face in faces reversed; other rows unchanged.
     WithFacesReversed(m: BrepModel, faces: Array<BrepFaceIndex>): BrepModel

@@ -67,6 +67,18 @@ type ShellCounts
     Loops: Integer;
 }
 
+// A signed change to a shell's cell counts, field by field as in ShellCounts:
+// what one Euler operator adds (positive) or removes (negative). WithDelta
+// applies it; CharacteristicDelta is its change to V - E + 2F - L.
+type ShellCountsDelta
+    implements IValue
+{
+    Vertices: Integer;
+    Edges: Integer;
+    Faces: Integer;
+    Loops: Integer;
+}
+
 //==
 // # Addresses
 

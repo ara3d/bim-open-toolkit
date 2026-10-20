@@ -480,6 +480,7 @@ open by never baking read-only into a type". These types are the door.
   edits that change no table size. `TopologicalEdit = SplitEdge(Edge, At: EdgeParameter) | MergeEdges(A, B) | SplitFace(Face, Along: Array<EdgeParameter>) | RemoveFace(Face) | AddFace(BrepFace) | ReverseFace(Face) | ReverseLoop(Loop) | RetrimFace(Face, Bounds: Array<FaceBound>)`:
   edits that change table sizes and return a `KernelRemap`. `ToleranceEdit = SetTolerances(Tolerances) | ScaleTolerances(Number)`.
   `ModelEdit = Geometric(GeometricEdit) | Topological(TopologicalEdit) | Tolerance(ToleranceEdit)`.
+  `RestoreFace(At: BrepFaceIndex, Face: BrepFace, Uses: Array<FaceUse>)` is `RemoveFace`'s inverse: `AddFace` has no index and no shell membership, so it cannot put a removed face back (editing merge, 2026-10-20).
 - `EulerOperator = MakeVertexEdge(..) | MakeEdgeFace(..) | KillEdgeMakeRing(..) | MakeEdgeKillRing(..) | KillEdgeVertex(..) | KillFaceMakeRingHole(..)`:
   the Euler operators as a sum, each with `Law_EulerOperatorKeepsCharacteristic`. The
   topological edits above compose from these. **Removes:** a split that forgets the vertex.

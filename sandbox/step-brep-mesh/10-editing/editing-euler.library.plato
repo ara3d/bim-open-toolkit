@@ -1,34 +1,35 @@
 //==
-// # Catalog editing: Euler operators
+// # Editing: Euler operators
 //
 // TYPE-CATALOG.md section 12. Each Euler operator's change to a shell's cell
-// counts, the table Law_Catalog_EulerOperatorKeepsCharacteristic reads. The
+// counts, the table Law_EulerOperatorKeepsCharacteristic reads. The
 // operators themselves are applied by a deferred body.
 //
 // Sections, in order:
 //  - Count deltas
 //  - Application
 
-library CatalogEditingEuler
+library BrepEditingEuler
 {
     //==
     // # Count deltas
     //
     // Layer 2's ShellCounts counts vertices V, edges E, faces F and face
     // bounds L, so V - E + 2F - L = V - E + F - R, R = L - F the rings, which
-    // Euler-Poincare sets to 2 (S - H) for S shells and H through holes. A
-    // delta is a ShellCounts whose fields may be negative (TRACK.md, Contract
-    // requests): every operator but KillFaceMakeRingHole keeps S and H.
+    // Euler-Poincare sets to 2 (S - H) for S shells and H through holes. An
+    // operator's change is a ShellCountsDelta, signed, and its
+    // CharacteristicDelta is the change to that value: every operator but
+    // KillFaceMakeRingHole keeps S and H.
 
     // The change each operator makes to V, E, F and L.
-    CountDelta(op: EulerOperator): ShellCounts
+    CountDelta(op: EulerOperator): ShellCountsDelta
         => match (op) {
-            MakeVertexEdge(loop, from, at, curve) => ShellCounts(1, 1, 0, 0);
-            MakeEdgeFace(loop, from, to, curve) => ShellCounts(0, 1, 1, 1);
-            KillEdgeMakeRing(edge) => ShellCounts(0, -1, 0, 1);
-            MakeEdgeKillRing(outer, ring, from, to, curve) => ShellCounts(0, 1, 0, -1);
-            KillEdgeVertex(edge, vertex) => ShellCounts(-1, -1, 0, 0);
-            KillFaceMakeRingHole(face, into) => ShellCounts(0, 0, -1, 0);
+            MakeVertexEdge(loop, from, at, curve) => ShellCountsDelta(1, 1, 0, 0);
+            MakeEdgeFace(loop, from, to, curve) => ShellCountsDelta(0, 1, 1, 1);
+            KillEdgeMakeRing(edge) => ShellCountsDelta(0, -1, 0, 1);
+            MakeEdgeKillRing(outer, ring, from, to, curve) => ShellCountsDelta(0, 1, 0, -1);
+            KillEdgeVertex(edge, vertex) => ShellCountsDelta(-1, -1, 0, 0);
+            KillFaceMakeRingHole(face, into) => ShellCountsDelta(0, 0, -1, 0);
         };
 
     // The change each operator makes to the number of through holes H.
@@ -41,10 +42,6 @@ library CatalogEditingEuler
             KillEdgeVertex(edge, vertex) => 0;
             KillFaceMakeRingHole(face, into) => 1;
         };
-
-    // V - E + 2F - L of a delta: the change to the shell's characteristic.
-    CharacteristicDelta(d: ShellCounts): Integer
-        => d.Vertices - d.Edges + 2 * d.Faces - d.Loops;
 
     //==
     // # Application

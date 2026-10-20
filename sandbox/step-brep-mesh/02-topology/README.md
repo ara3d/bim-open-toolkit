@@ -14,8 +14,8 @@ eleven algorithms bodies; the genus track (TKT-328) gave the last, `SharesCurveP
 | File | Holds |
 |---|---|
 | `topology-elements.types.plato` | `EdgeOrientation`, `Coedge`, `BrepVertex`, `BrepEdge`, `BrepLoop`, `FaceBound`, `BrepFace`, `BrepShell`, `BrepBody` |
-| `topology-model.types.plato` | `LengthUnit`, `BrepModel`, `ShellCounts`, `CoedgeSite`, `EdgeEnd` |
-| `topology.library.plato` | library `BrepTopology`: predicates, traversal, sense, edge and pcurve domains, vertex links, counts, connectivity, orientability, coupling measures, size and extent, model transforms; eleven given bodies (ten in chunk A, `SharesCurveParameter` by the genus track); eight declarations marked `belongs-in` layers 0 and 1 |
+| `topology-model.types.plato` | `LengthUnit`, `BrepModel`, `ShellCounts`, `ShellCountsDelta` (signed, an Euler operator's change; catalog merge, editing, 2026-10-20), `CoedgeSite`, `EdgeEnd` |
+| `topology.library.plato` | library `BrepTopology`: predicates, traversal, sense, edge and pcurve domains, vertex links, counts, connectivity, orientability, coupling measures, size and extent, model transforms (`Reversed` of a face and of a loop, the loop form from the editing merge, 2026-10-20), `WithDelta` and `CharacteristicDelta` over `ShellCountsDelta`; eleven given bodies (ten in chunk A, `SharesCurveParameter` by the genus track); eight declarations marked `belongs-in` layers 0 and 1 |
 | `topology-parameters.library.plato` | library `BrepTopologyParameters`: `ToCurveParameter(m, e, EdgeParameter): CurveParameter`, a wrap into the curve's domain (catalog merge, 2026-10-20) |
 | `topology-indices.{library,laws}.plato` | libraries `BrepTopologyIndices`, `BrepTopologyIndicesLaws`: `RowCount`, `IsRowInRange`, `IsInTable` over `TableName`; 1 law (catalog merge, 2026-10-20) |
 | `topology.laws.plato` | library `BrepTopologyLaws`: 41 laws |

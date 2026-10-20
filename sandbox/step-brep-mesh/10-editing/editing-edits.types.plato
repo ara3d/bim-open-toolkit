@@ -1,7 +1,7 @@
 //==
-// # Catalog editing: edits as data
+// # Editing: edits as data
 //
-// TYPE-CATALOG.md section 12. An edit is a value; Apply (CatalogEditingOutcome)
+// TYPE-CATALOG.md section 12. An edit is a value; Apply (BrepEditing)
 // evaluates it and returns its inverse, so undo is applying the inverse.
 //
 // Sections, in order:

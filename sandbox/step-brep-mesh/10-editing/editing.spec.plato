@@ -1,5 +1,5 @@
 //==
-// # Catalog editing: invariants, constructors and contracts
+// # Editing: invariants, constructors and contracts
 //
 // TYPE-CATALOG.md section 12, in the constructs of SPEC-DSL.md section 3. Not
 // compiled. Each invariant cites the law that states it, or is short enough
@@ -30,10 +30,10 @@ spec SelectionClosure
 
 spec ClosureOf(m: BrepModel, s: Selection): SelectionClosure
 {
-    ensures Law_Catalog_ClosureIsInRange;
-    ensures Law_Catalog_ClosureContainsSelection;
-    ensures Law_Catalog_ClosureHoldsFacesOfEdge;
-    ensures Law_Catalog_ClosureHoldsEdgesOfFace;
+    ensures Law_ClosureIsInRange;
+    ensures Law_ClosureContainsSelection;
+    ensures Law_ClosureHoldsFacesOfEdge;
+    ensures Law_ClosureHoldsEdgesOfFace;
     measure m.Faces.Count * (m.Edges.Count + m.Vertices.Count);
 }
 
@@ -43,11 +43,11 @@ spec ClosureOf(m: BrepModel, s: Selection): SelectionClosure
 spec EditOutcome
 {
     // Applied: the inverse restores the model it was applied to.
-    invariant Law_Catalog_InverseUndoes;
+    invariant Law_InverseUndoes;
     // Applied: the remap has one entry per row of every table before the edit.
-    invariant Law_Catalog_RemapIsIdentityForGeometricEdits;
+    invariant Law_RemapIsIdentityForGeometricEdits;
     // Refused: nothing changed.
-    invariant Law_Catalog_RefusedLeavesModelUnchanged;
+    invariant Law_RefusedLeavesModelUnchanged;
     constructor Apply;
     constructor AppliedInPlace;
 }
@@ -57,7 +57,7 @@ spec EditOutcome
 
 spec ScriptOutcome
 {
-    invariant Law_Catalog_ScriptInverseUndoes;
+    invariant Law_ScriptInverseUndoes;
     // ScriptRefused: Step is the position of the first refused edit.
     invariant match (self) { ScriptApplied(model, remap, inverse) => true; ScriptRefused(step, p, w) => step >= 0; };
     constructor Apply;
@@ -70,7 +70,7 @@ spec Transaction
 
 spec Invalidation
 {
-    invariant Law_Catalog_InvalidationIsInRange;
+    invariant Law_InvalidationIsInRange;
     invariant forall (k: Integer) in (self.Faces.Count - 1).Range : self.Faces[k] < self.Faces[k + 1];
     constructor InvalidationOf;
     constructor ToInvalidation;
@@ -81,8 +81,8 @@ spec Invalidation
 
 spec InvalidationOf(m: BrepModel, edit: ModelEdit): Invalidation
 {
-    ensures Law_Catalog_InvalidationCoversChangedFaces;
-    ensures Law_Catalog_InvalidationIsInRange;
+    ensures Law_InvalidationCoversChangedFaces;
+    ensures Law_InvalidationIsInRange;
 }
 
 spec Dirty
@@ -116,15 +116,15 @@ spec RemeshInvalidated(m: BrepModel, mesh: ModelMesh, inv: Invalidation, o: Mesh
 //
 // Every Apply refuses with the precondition named below before reading an
 // index, and an applied edit's Inverse, applied to its Model, gives m back
-// (Law_Catalog_InverseUndoes; within tolerance for Transform,
-// Law_Catalog_TransformInverseRestoresVertices).
+// (Law_InverseUndoes; within tolerance for Transform,
+// Law_TransformInverseRestoresVertices).
 
 spec Apply(m: BrepModel, edit: ModelEdit): EditOutcome
 {
-    ensures Law_Catalog_OutOfRangeEditIsRefused;
-    ensures Law_Catalog_InRangeEditIsApplied;
-    ensures Law_Catalog_InverseUndoes;
-    ensures Law_Catalog_RefusedLeavesModelUnchanged;
+    ensures Law_OutOfRangeEditIsRefused;
+    ensures Law_InRangeEditIsApplied;
+    ensures Law_InverseUndoes;
+    ensures Law_RefusedLeavesModelUnchanged;
 }
 
 spec ApplySplitEdge(m: BrepModel, e: BrepEdgeIndex, at: EdgeParameter): EditOutcome
@@ -181,9 +181,9 @@ spec ApplyRetrimFace(m: BrepModel, f: BrepFaceIndex, bounds: Array<FaceBound>): 
 //==
 // # Euler operators
 
-spec CountDelta(op: EulerOperator): ShellCounts
+spec CountDelta(op: EulerOperator): ShellCountsDelta
 {
-    ensures Law_Catalog_EulerOperatorKeepsCharacteristic;
+    ensures Law_EulerOperatorKeepsCharacteristic;
 }
 
 spec ApplyEuler(m: BrepModel, op: EulerOperator): EditOutcome

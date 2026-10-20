@@ -1,5 +1,5 @@
 //==
-// # Catalog editing: applying edits
+// # Editing: applying edits
 //
 // TYPE-CATALOG.md section 12. Apply evaluates one edit or a script against a
 // model and returns the new model, the remap, and the inverse, or refuses
@@ -16,7 +16,7 @@
 //  - Reading an outcome
 //  - Scripts and previews
 
-library CatalogEditingOutcome
+library BrepEditing
 {
     //==
     // # Remaps
@@ -94,17 +94,6 @@ library CatalogEditingOutcome
     // m with tolerances t.
     WithTolerances(m: BrepModel, t: Tolerances): BrepModel
         => BrepModel(m.Geometry, m.Vertices, m.Edges, m.Loops, m.Faces, m.Shells, m.Bodies, t, m.Unit);
-
-    // The loop traversed the other way: an edge loop's coedges in reverse
-    // order, each flipped, a poly loop's points in reverse order, a vertex
-    // loop as it is. Reversing twice gives the loop back exactly.
-    Reversed(loop: BrepLoop): BrepLoop
-        => match (loop) {
-            EdgeLoop(coedges) => BrepLoop.EdgeLoop(coedges.Count.MapRange(i =>
-                Coedge(coedges[coedges.Count - 1 - i].Edge, coedges[coedges.Count - 1 - i].Orientation.Opposite)));
-            VertexLoop(vertex) => loop;
-            PolyLoop(points) => BrepLoop.PolyLoop(points.Count.MapRange(i => points[points.Count - 1 - i]));
-        };
 
     // m with loop l reversed.
     WithLoopReversed(m: BrepModel, l: BrepLoopIndex): BrepModel

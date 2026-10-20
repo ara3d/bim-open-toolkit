@@ -1,5 +1,5 @@
 //==
-// # Catalog editing: selection closures
+// # Editing: selection closures
 //
 // TYPE-CATALOG.md section 12. ClosureOf grows a selection by what it touches,
 // through layer 2's traversals (FacesOfEdge, LoopCoedges, ShellFaces). Every
@@ -10,7 +10,7 @@
 //  - Incidence
 //  - Closures
 
-library CatalogEditingClosure
+library BrepEditingClosure
 {
     //==
     // # Index sets

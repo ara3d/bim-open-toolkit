@@ -41,6 +41,8 @@ higher layer's function lives in that higher layer: the laws that mesh layer 7's
 | 6 | `06-mesh` | `ModelMeshes` |
 | 7 | `07-validation` | `BrepChecking` |
 | 8 | `08-pipeline` | `StepToMesh` |
+| 9 | `09-tooling` | `ToolingDiffs`, `ToolingDumps`, `ToolingGenerators`, `ToolingLawRunner`, `ToolingReports` (one block per file) |
+| 10 | `10-editing` | `BrepEditing` |
 
 Laws live in `<stem>.laws.plato` in a block named `<LibraryBlock>Laws`.
 
@@ -316,13 +318,15 @@ layer's own and may change inside the layer.
   composed sense; `FaceNormalSign(m, f): Integer`, `sigma(SameSense) * epsilon` against
   `PartialU x PartialV`.
 - `ShellCounts { Vertices; Edges; Faces; Loops: Integer }`, `RawCounts(m, s)`,
+  `ShellCountsDelta { Vertices; Edges; Faces; Loops: Integer }` (signed), `WithDelta(c, d)`,
+  `CharacteristicDelta(d)`,
   `ReducedCounts(m, s)` (degenerate edges contracted, redundant vertex loops dropped, poly-loop
   points identified), `IsRedundantVertexLoop(m, f, b)`, `KeptBounds(m, f)`, `EulerPoincare(c)`,
   `ShellEulerPoincare`, `ShellGenus`, `OrientationFlips(m, s)`.
 - Size and extent: `ModelSize(m)` (the bounding diagonal of the model's defining points),
   `CoordinateExtent(m)` (their largest absolute coordinate), `BoundingDiagonal(points)`.
 - Model transforms: `ScaledPoint(p, factor)`, `ScaledBy(m, factor)`, `RigidlyMoved(m, motion)`,
-  `Reversed(face)`, `WithFacesReversed(m, faces)`, `WithEveryFaceReversed(m)`,
+  `Reversed(face)`, `Reversed(loop)`, `WithFacesReversed(m, faces)`, `WithEveryFaceReversed(m)`,
   `WithEdgeReversed(m, e)`.
 - Laws, among them: `Law_IndicesInRange`, `Law_LoopsChainEndToStart`,
   `Law_EveryEdgeUsedTwiceInClosedShell`, `Law_EdgeUsesHaveOppositeOrientation`,
@@ -609,6 +613,30 @@ Layer 9's names are its own (its README lists them) except these, which other tr
 - Concepts (`tooling.concepts.plato`): `IDiffable { Diff(a, b, tol): ModelDiff }`, `IWitnessed {
   Witnesses(x): Array<WitnessSpec> }`; no type declares them (FINDINGS F-58).
 
+### 10. `10-editing`
+
+TYPE-CATALOG.md sections 12 and 15; the README lists the helpers.
+
+- Selections: `Selection = Vertices(..) | Edges(..) | Faces(..) | Shells(..) | Bodies(..) | Everything`,
+  `SelectionClosure { Vertices; Edges; Faces }`, `Anchor = BySource(Source) | ByProvenance(Where) |
+  ByIndexAt(Commit, Index: KernelElement)`.
+- Edits: `GeometricEdit = MoveVertex | ReplaceCurve | ReplaceSurface | Transform(Target, By: Pose3D) |
+  Scale(Target, By: PowerOfTwo)`, `FaceUse { Shell; Slot }`, `TopologicalEdit = SplitEdge | MergeEdges |
+  SplitFace | RemoveFace | AddFace | RestoreFace(At, Face, Uses) | ReverseFace | ReverseLoop |
+  RetrimFace`, `ToleranceEdit = SetTolerances | ScaleTolerances`, `ModelEdit = Geometric | Topological
+  | Tolerance`, `EulerOperator` (six cases), `EditPrecondition` (16 cases), `EditOutcome =
+  Applied(Model, Remap: KernelRemap, Inverse: ModelEdit) | Refused(Precondition, Where)`,
+  `EditScript { Edits }`, `ScriptOutcome = ScriptApplied(Model, Remap, Inverse: EditScript) |
+  ScriptRefused(Step, Precondition, Where)`, `Transaction { Before; Script; After; Remap }`.
+- Invalidation: `Invalidation { Edges; Faces; WholeModel }`, `MeshPatch`, `EditPreview { Model; Report }`,
+  `Dirty { Since; Invalidation }`.
+- Concept (`editing.concepts.plato`): `IEditable { Apply(x, edit): EditOutcome }`; no type declares
+  it (FINDINGS F-58).
+- Functions: `Apply(m, ModelEdit): EditOutcome`, `Apply(m, EditScript): ScriptOutcome` (the
+  catalog's `ApplyScript`), `Preview(m, edit)`, `ClosureOf(m, Selection)`, `InvalidationOf(m, edit)`,
+  `DirtyAfter(Transaction)`, `CountDelta(op): ShellCountsDelta`, `HoleDelta(op): Integer`. Laws
+  `BrepEditingLaws` (17).
+
 ## Naming rules
 
 - Kernel topology types carry the `Brep` prefix (`BrepFace`), their indices `Brep<Thing>Index`,
@@ -628,6 +656,13 @@ Layer 9's names are its own (its README lists them) except these, which other tr
 ## Changes to this contract
 
 Format: date, layer, old name, new name, reason.
+
+- 2026-10-20, 2, (new) `ShellCountsDelta`, `WithDelta`, `CharacteristicDelta`: `ShellCounts` is
+  non-negative, an Euler operator's change is signed; layer 10's `CountDelta` returns the delta
+  (catalog merge, editing).
+- 2026-10-20, 2, (new) `Reversed(loop: BrepLoop)`, moved from layer 10 beside `Reversed(face)`
+  (catalog merge, editing).
+- 2026-10-20, 10, (new layer) `10-editing`, block `BrepEditing` (catalog merge, editing).
 
 - 2026-10-20, 4, `RefinementReason` with three cases, and `NoInteriorPointMeetsChordal(Segment:
   Chord)`, `PoleAdjacency`, `NeighbourDensity` added; every match (layer 5's `IsBlocking` and
