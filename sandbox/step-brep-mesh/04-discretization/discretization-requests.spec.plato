@@ -1,0 +1,70 @@
+//==
+// # Discretization requests: specification
+//
+// Invariants and constructors of TYPE-CATALOG.md section 7 (SPEC-DSL.md section 3).
+// Not compiled. Each invariant names the Law_ that checks it, or says it is an
+// obligation of a deferred function.
+//
+// Sections, in order:
+//  - Discretization
+
+//==
+// # Discretization
+
+spec Chord
+{
+    invariant self.From.Value >= 0;
+    invariant self.To.Value == self.From.Value + 1;   // Law_ChordsOfAreConsecutive
+    constructor ChordOf;
+    constructor ChordsOf;
+}
+
+spec ArcOf(d: EdgeDiscretization, c: Chord): Arc
+{
+    requires IsChordOf(c, d.Parameters.Count);
+    ensures result.Range.Start <= result.Range.End;   // RangeOf sorts
+}
+
+spec ChordMeasures
+{
+    invariant self.Sagitta.Value >= 0.0 && self.Length.Value >= 0.0;
+}
+
+spec CriterionVerdict
+{
+    invariant self.Holds == IsWithin(self.Worst, self.Bound);   // Law_VerdictHoldsIffWithin, Law_VerdictAcrossKindsFails
+    constructor VerdictOf;
+    constructor ChordalVerdict;
+    constructor AngularVerdict;
+}
+
+spec Seed { invariant self.At.Value.IsFinite; }
+
+spec SegmentDensity { invariant self.SegmentsPerUnitLength >= 0.0; }
+
+spec SegmentsFor(d: SegmentDensity, length: ModelLength): SegmentCount
+{
+    ensures result.Value >= 1;                                                     // Law_SegmentsForIsAtLeastOne
+    ensures result.Value.ToNumber >= d.SegmentsPerUnitLength * length.Value;        // Law_SegmentsForCoversLength
+}
+
+spec RequestSet
+{
+    invariant forall i in 1..self.ByEdge.Count: self.ByEdge[i - 1].Edge.Value < self.ByEdge[i].Edge.Value;   // Law_MergeRequestsIsOnePerEdge
+    constructor MergeRequests;
+}
+
+spec MergeRequests(xs: Array<EdgeRefinementRequest>): RequestSet
+{
+    ensures MergeRequests(result.ByEdge) == result;                                // Law_MergeRequestsIsIdempotent
+    ensures forall r in xs: RequestFor(result, r.Edge)[0].Chordal <= r.Chordal
+        && RequestFor(result, r.Edge)[0].Segments >= r.Segments;                   // Law_MergeRequestsKeepsStrongest
+    ensures forall m in result.ByEdge: exists r in RequestsOn(xs, m.Edge): r.Chordal == m.Chordal;   // Law_MergeRequestsInventsNothing
+}
+
+spec DiscretizationDelta
+{
+    invariant forall i in 1..self.Changed.Count: self.Changed[i - 1].Value < self.Changed[i].Value;
+    constructor DeltaOf;   // Law_DeltaNamesEveryRequestedEdge
+}
+

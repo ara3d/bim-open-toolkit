@@ -18,7 +18,7 @@
 //   Discretization: layer 04's edge criteria; they fix every boundary point.
 //   SurfaceChordal: the largest distance, in model units, from a sample point of an element (the
 //     midpoint of an element edge that is not a model-edge segment, or the corner mean) to the
-//     surface (ElementDeviation).
+//     surface (ElementChordalDeviation).
 //   SurfaceAngular: the largest angle between the face normals at the two ends of an element edge
 //     that is not a model-edge segment: the normal turn across an element, as OpenCascade
 //     AngleInterior and ACIS SPANORMALTOL define it (EdgeNormalTurn). The same value separately

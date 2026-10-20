@@ -1,7 +1,7 @@
 //==
 // # Catalog: claims, evidence, allowances, and budgets (functions)
 //
-// The constructors and predicates of catalog-validation-budgets.types.plato,
+// The constructors and predicates of 00-foundation/foundation-budgets.types.plato (moved there at the meshing merge),
 // catalog-validation-claims.types.plato and
 // catalog-validation-witnesses.types.plato.
 //

@@ -977,7 +977,7 @@ library BrepOracles
     ReferencedVertexCount(mesh: ModelMesh): Integer
     {
         var seen = new Buffer<Boolean>(mesh.Positions.Count);
-        var corners = mesh.ElementCount.Range.FlatMap(k => mesh.ElementCorners(ElementIndex(k)));
+        var corners = mesh.ElementCount.Range.FlatMap(k => mesh.ElementCornerList(ElementIndex(k)));
         var i = 0;
         while (i < corners.Count)
         {

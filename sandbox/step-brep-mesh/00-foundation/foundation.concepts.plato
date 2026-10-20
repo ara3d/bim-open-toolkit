@@ -10,6 +10,7 @@
 //  - Domains
 //  - Indexed tables
 //  - Tolerances and provenance
+//  - Budgets
 
 //==
 // # Transformations
@@ -80,4 +81,14 @@ interface IToleranced
 interface IHasProvenance
 {
     Where(x: Self): Provenance;
+}
+
+//==
+// # Budgets
+
+// A refinement result that reports the work it took, so the termination laws are one law over
+// every implementer. Removes: a refinement loop whose cost nobody can state.
+interface IBudgeted
+{
+    Work(x: Self): WorkBudget;
 }

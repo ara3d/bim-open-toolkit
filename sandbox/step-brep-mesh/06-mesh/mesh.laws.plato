@@ -38,7 +38,7 @@ library ModelMeshesLaws
 
     // Every corner of element e names a vertex of the mesh.
     ElementCornersInRange(mesh: ModelMesh, e: ElementIndex): Boolean
-        => mesh.IsElementInRange(e) ? mesh.ElementCorners(e).All(v => mesh.Positions.IsValidIndex(v)) : true;
+        => mesh.IsElementInRange(e) ? mesh.ElementCornerList(e).All(v => mesh.Positions.IsValidIndex(v)) : true;
 
     // The face element e approximates is a face of the model.
     ElementFaceIsModelFace(m: BrepModel, mesh: ModelMesh, e: ElementIndex): Boolean

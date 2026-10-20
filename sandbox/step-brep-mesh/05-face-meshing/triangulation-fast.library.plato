@@ -9,7 +9,7 @@
 // p splits its triangle, only the sides opposite p are tested, and each flip queues the two new
 // sides opposite p. Every side tested is a side of the triangulation before the insertion, and the
 // triangle across it is one the insertion has not touched, so a neighbour table of that
-// triangulation (UvDelaunay's NeighbourTable, built once per pass) answers every lookup; after a
+// triangulation (UvDelaunay's NeighbourSlots, built once per pass) answers every lookup; after a
 // kept insertion, UpdatedNeighbours rewrites the entries of the triangles around p. From a
 // constrained Delaunay triangulation this ends in one (a boundary segment is never flipped). The
 // surface pass becomes sequential too, so no pass flips the whole triangulation. The in-circle
@@ -242,12 +242,12 @@ library TriangulationFast
     // # The surface pass
 
     // The point a surface criterion asks for in triangle k after its circumcentre was refused:
-    // the parameter midpoint of its SplitSide, or its parameter centroid when every side is a
+    // the parameter midpoint of its SplitSideSlot, or its parameter centroid when every side is a
     // boundary segment (TriangulationRefine's SurfaceCandidate on the current triangles).
     SurfaceFallback(r: UvRegion, pts: Array<UvCoordinate>, points: Array<Point2D>, tris: Array<TriangleFace>, nb: Array<Integer>, k: Integer): UvCoordinate
     {
         var tri = tris[k];
-        var j = r.SplitSide(points, tri, nb, k);
+        var j = r.SplitSideSlot(points, tri, nb, k);
         return j < 0
             ? UvCoordinate((pts[tri.A].U + pts[tri.B].U + pts[tri.C].U) / 3.0, (pts[tri.A].V + pts[tri.B].V + pts[tri.C].V) / 3.0)
             : pts[tri.Corner(j)].UvMidpoint(pts[tri.Corner(j + 1)]);
@@ -265,7 +265,7 @@ library TriangulationFast
         var pts = t.Points;
         var points = pts.Map(x => chart.ChartPoint(x));
         var tris = t.Triangles;
-        var nb = NeighbourTable(tris, pts.Count);
+        var nb = NeighbourSlots(tris, pts.Count);
         var i = 0;
         while (i < failing.Count)
         {
@@ -306,7 +306,7 @@ library TriangulationFast
         var pts = t.Points;
         var points = pts.Map(x => chart.ChartPoint(x));
         var tris = t.Triangles;
-        var nb = NeighbourTable(tris, pts.Count);
+        var nb = NeighbourSlots(tris, pts.Count);
         var i = 0;
         while (i < bad.Count)
         {

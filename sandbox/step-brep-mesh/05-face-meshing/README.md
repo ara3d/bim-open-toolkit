@@ -28,6 +28,7 @@ Algorithms were deferred by the design pass, every one with a contract in `face-
 | `face-meshing.spec.plato` | invariants of 7 types, contracts of 15 functions (chunk B added `ExpandedPoles` and `CutWholePeriods`), 3 theorems |
 | `face-meshing-decided.{types,library,laws,spec}.plato` | section 5: `InsertionRejection`, `InsertionAttempt`, `FlipRejection`, `FlipAttempt`, `FaceMeshResult = Meshed(Mesh, Advisory, Diagnostics) \| Blocked(Requests, Diagnostics)`, `ToFaceMeshResult`, `HasBlockingRequest` (moved from layer 8); blocks `FaceMeshingDecided`, `FaceMeshingDecidedLaws` (6 laws) (catalog merge, 2026-10-20). `MeshFace` still returns `FaceMeshOutcome` |
 | `face-meshing-proofs.{types,library,spec}.plato` | library `FaceMeshingProofs`, section 4: `SimpleUvLoop`, `ClosedUvLoop`, `OrientedUvRegion` and their `Decided*` sums, built by `CheckSimpleUvLoop`, `CheckClosedUvLoop`, `CheckOrientedUvRegion`; `AsRegion`, `IsOrientedIn`. The 7 laws take layer 7's witnesses and are in `07-validation/validation-proofs-regions.laws.plato` (catalog merge, proofs, 2026-10-20) |
+| `face-meshing-charts.{types,library,laws,spec}.plato` | section 8: `ConstraintSource`, `Constraint`, `ConstrainedTriangulation`, `Cavity`, `NeighbourTable`, `DelaunayCertificate`, `EarCandidate`, `Bridge`, `ElementInChart`, `ElementDeviation`, `RefinementTarget`, `SeamCopy`, `SeamPair`, `PoleRun`, `LiftTable`, `QuadGridSides`, `GridCounts`; `OrientationOf`, `OrientationWithin`; blocks `FaceMeshingCharts`, `FaceMeshingChartsLaws` (15 laws) (catalog merge, meshing, 2026-10-20). The functions that shared these names are now `NeighbourSlots`, `ElementChordalDeviation`, `SplitSideSlot`; `FaceChart.Mirrored` is a `Parity` |
 
 The contract names one library block, `FaceMeshing`, for this layer. The layer is large enough that
 the region half has its own block, `UvRegions`; `FaceMeshing` keeps the contract's name and the entry
@@ -168,7 +169,7 @@ cylinder strip, so a value copied from OpenCascade or ACIS means the same here. 
 **Chordal deviation is measured by projection.** `SurfaceDistance(p)` is the distance from `p` to
 the surface point that inverse evaluation returns, which is never less than the true distance; a bound
 on it therefore bounds the truth whatever the quality of the projection, and it does not depend on
-the parameterization, so elements at a pole are measured like any other. `ElementDeviation` takes the
+the parameterization, so elements at a pole are measured like any other. `ElementChordalDeviation` takes the
 largest over the midpoints of the element's surface edges and the mean of its corners
 (OpenCascade's sample points), and `Law_ElementDeviationWithinSurfaceChordal` bounds it by
 `SurfaceChordal` plus the length tolerance, since the corners themselves may lie that far off the
@@ -427,7 +428,7 @@ Skipped, with reasons:
 
 - T5 (`ProjectNear` keeps the seed's coordinate at a pole): layer 01's function. If it lands, the
   free-parameter rules in `Unwrap` and `ImagePoints` can go; nothing here depends on it.
-- T7 (exact deviation oracles on planes, cylinders, spheres): `ElementDeviation` by projection is
+- T7 (exact deviation oracles on planes, cylinders, spheres): `ElementChordalDeviation` by projection is
   already an upper bound, so the law is sound; closed forms are an implementation choice and layer
   07's oracles.
 - C11's convergence theorem: the floors are raised by layer 08 (`RaisedFloors`), so the theorem is

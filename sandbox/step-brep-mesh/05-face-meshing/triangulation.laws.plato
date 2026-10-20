@@ -70,7 +70,7 @@ library TriangulationLaws
     FlippableEdgeCount(r: UvRegion, t: UvTriangulation, chart: FaceChart): Integer
     {
         var points = t.ChartPointsOf(chart);
-        var nb = NeighbourTable(t.Triangles, t.Points.Count);
+        var nb = NeighbourSlots(t.Triangles, t.Points.Count);
         return (3 * t.Triangles.Count).Range.Reduce(0, (n, s) =>
             nb[s] > s / 3 ? (r.IsFlippableCdt(points, t.Triangles[s / 3], s % 3, t.Triangles[nb[s]]) ? n + 1 : n) : n);
     }
@@ -179,7 +179,7 @@ library TriangulationLaws
     SidesSharedByNeighbours(r: UvRegion, t: UvTriangulation): Boolean
     {
         var n = t.Points.Count;
-        var nb = NeighbourTable(t.Triangles, n);
+        var nb = NeighbourSlots(t.Triangles, n);
         var codes = (3 * t.Triangles.Count).MapRange(s => EdgeCode(t.Triangles[s / 3].Corner(s % 3), t.Triangles[s / 3].Corner(s % 3 + 1), n));
         var sorted = codes.Sort((x, y) => x <= y);
         return (3 * t.Triangles.Count).Range.All(s =>

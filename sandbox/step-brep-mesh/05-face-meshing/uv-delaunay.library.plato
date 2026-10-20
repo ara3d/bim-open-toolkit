@@ -76,7 +76,7 @@ library UvDelaunay
 
     // For each directed edge slot 3 t + j of the triangles over n points, the triangle that holds
     // the same edge the other way round, or -1 when none does (a boundary segment).
-    NeighbourTable(tris: Array<TriangleFace>, n: Integer): Array<Integer>
+    NeighbourSlots(tris: Array<TriangleFace>, n: Integer): Array<Integer>
     {
         var codes = (3 * tris.Count).MapRange(s => EdgeCode(tris[s / 3].Corner(s % 3), tris[s / 3].Corner(s % 3 + 1), n));
         var order = codes.SortedIndices((x, y) => x <= y);
@@ -113,7 +113,7 @@ library UvDelaunay
     Delaunayed(r: UvRegion, points: Array<Point2D>, tris: Array<TriangleFace>): Array<TriangleFace>
     {
         var result = tris.EmptyList.AddRange(tris);
-        var nb = new List<Integer>().AddRange(NeighbourTable(tris, points.Count));
+        var nb = new List<Integer>().AddRange(NeighbourSlots(tris, points.Count));
         var queue = new List<Integer>().AddRange((3 * tris.Count).Range);
         var i = 0;
         var flips = 0;
@@ -185,7 +185,7 @@ library UvDelaunay
     // The side of triangle `tri` refinement splits: the longest in the chart that is not a
     // boundary segment and has a neighbour (slot k * 3 + j in nb); -1 when every side is a
     // boundary segment, and the triangle is split at its centroid instead.
-    SplitSide(r: UvRegion, points: Array<Point2D>, tri: TriangleFace, nb: Array<Integer>, k: Integer): Integer
+    SplitSideSlot(r: UvRegion, points: Array<Point2D>, tri: TriangleFace, nb: Array<Integer>, k: Integer): Integer
         => 3.Range.Reduce(-1, (best, j) =>
             (r.IsConstrained(tri.Corner(j), tri.Corner(j + 1)) || nb[3 * k + j] < 0)
                 ? best

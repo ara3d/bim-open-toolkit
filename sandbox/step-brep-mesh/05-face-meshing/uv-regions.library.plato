@@ -565,7 +565,7 @@ library UvRegions
 
     // Face f's chart for region r: mirrored by FaceNormalSign, scaled by the mean speeds.
     ChartOf(m: BrepModel, f: BrepFaceIndex, r: UvRegion): FaceChart
-        => FaceChart(m.IsChartMirrored(f), m.MeanSpeed(f, r, SurfaceParameter.ParameterU), m.MeanSpeed(f, r, SurfaceParameter.ParameterV));
+        => FaceChart(m.IsChartMirrored(f) ? Parity.Odd : Parity.Even, m.MeanSpeed(f, r, SurfaceParameter.ParameterU), m.MeanSpeed(f, r, SurfaceParameter.ParameterV));
 
     // Chunk A body, from the contract MeanSpeed: the mean of |PartialU|
     // (ParameterU) or |PartialV| at twenty-one points along each of three
@@ -617,7 +617,7 @@ library UvRegions
 
     // The parameters in a face chart, scales included: where the triangulator works.
     ChartPoint(chart: FaceChart, uv: UvCoordinate): Point2D
-        => Point2D((chart.Mirrored ? -chart.ScaleU : chart.ScaleU) * uv.U, chart.ScaleV * uv.V);
+        => Point2D((chart.Mirrored == Parity.Odd ? -chart.ScaleU : chart.ScaleU) * uv.U, chart.ScaleV * uv.V);
 
     // The midpoint of two parameter points.
     UvMidpoint(a: UvCoordinate, b: UvCoordinate): UvCoordinate

@@ -527,7 +527,7 @@ library FaceMeshing
 
     // Element k's deviation from the surface: the largest surface distance over its sample
     // points, which are the midpoints of its surface edges and the mean of its corner positions.
-    ElementDeviation(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, k: ElementIndex): Number
+    ElementChordalDeviation(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, k: ElementIndex): Number
     {
         var cs = fm.ElementCorners(k);
         var ps = fm.ElementPositions(k);
@@ -548,7 +548,7 @@ library FaceMeshing
     }
 
     // How far the surface strays from element k, the other half of the Hausdorff distance to
-    // ElementDeviation's: the largest distance from the surface point at a parameter sample of
+    // ElementChordalDeviation's: the largest distance from the surface point at a parameter sample of
     // the element (its parameter centroid, and the parameter midpoint of each surface edge) to
     // the flat element. Exact point-to-triangle distances, one surface evaluation per sample.
     ElementCoverageGap(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, k: ElementIndex): Number
@@ -779,6 +779,9 @@ library FaceMeshing
             LoopSelfIntersects => true;
             TooCoarseInParameterSpace => false;
             QuadCountMismatch => false;
+            NoInteriorPointMeetsChordal(c) => false;
+            PoleAdjacency => false;
+            NeighbourDensity => false;
         };
 
     // True when d and d2 hold the same discretization for every edge face f cites (layer 04's
@@ -829,6 +832,15 @@ library FaceMeshing
                 Provenance.KernelEdge(q.Edge), q.Chordal);
             QuadCountMismatch => Diagnostic(Severity.Info, "FACE-QUAD-COUNT-MISMATCH",
                 "This edge has fewer segments than the opposite side of a four-sided face; the face is meshed with triangles this round.",
+                Provenance.KernelEdge(q.Edge), q.Chordal);
+            NoInteriorPointMeetsChordal(c) => Diagnostic(Severity.Warning, "EDGE-CHORD-NO-INTERIOR-POINT",
+                "No interior point of a segment of this edge meets the chordal bound; the edge is asked to refine.",
+                Provenance.KernelEdge(q.Edge), q.Chordal);
+            PoleAdjacency => Diagnostic(Severity.Info, "FACE-EDGE-NEAR-POLE",
+                "This edge runs next to a pole of a face; the edge is asked to refine.",
+                Provenance.KernelEdge(q.Edge), q.Chordal);
+            NeighbourDensity => Diagnostic(Severity.Info, "FACE-EDGE-NEIGHBOUR-DENSITY",
+                "A neighbouring edge is denser than this one; the edge is asked to refine to match.",
                 Provenance.KernelEdge(q.Edge), q.Chordal);
         };
 

@@ -63,7 +63,7 @@ library BrepFoundationPointsLaws
 
     // A mirrored chart reverses the sign of u and keeps v.
     Law_MirrorNegatesChartX(scaleU: Number, scaleV: Number, p: UvPoint): Boolean
-        => FaceChart(true, scaleU, scaleV).ToChart(p).X == 0.0 - FaceChart(false, scaleU, scaleV).ToChart(p).X;   // exact by construction
+        => FaceChart(Parity.Odd, scaleU, scaleV).ToChart(p).X == 0.0 - FaceChart(Parity.Even, scaleU, scaleV).ToChart(p).X;   // exact by construction
 
     //==
     // # Model points

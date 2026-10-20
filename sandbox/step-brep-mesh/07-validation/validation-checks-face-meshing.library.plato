@@ -14,7 +14,7 @@
 //  - A FaceMeshOutcome: the outcome laws.
 // Findings are located at the face. Where layer 5 exports the measure a
 // criterion compares (ElementNormalDeviation, EdgeNormalTurn,
-// ElementDeviation, QuadWarp) the check folds it with CheckWithin against the
+// ElementChordalDeviation, QuadWarp) the check folds it with CheckWithin against the
 // criterion, so a failure is a Warning below ten times the criterion and an
 // Error above; elsewhere the law's Boolean is folded and a failure is an
 // Error. Every comment names the Law_, its family, and its severity rule.
@@ -98,7 +98,7 @@ library BrepCheckingFaceMeshing
             (k, j) => Provenance.KernelFace(fm.Face));
 
     // Law_ElementDeviationWithinSurfaceChordal at every element, measured by
-    // ElementDeviation against SurfaceChordal plus Tolerances.Length.
+    // ElementChordalDeviation against SurfaceChordal plus Tolerances.Length.
     // Geometry: W/E.
     Check_ElementDeviationWithinSurfaceChordal(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria): Check
         => CheckAllWithin("Law_ElementDeviationWithinSurfaceChordal", fm.ElementCount,
@@ -403,8 +403,8 @@ library BrepCheckingFaceMeshing
                 : 0.0)
             : 0.0;
 
-    // ElementDeviation behind Law_ElementDeviationWithinSurfaceChordal's
+    // ElementChordalDeviation behind Law_ElementDeviationWithinSurfaceChordal's
     // guard.
     DeviationExcess(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, k: ElementIndex): Number
-        => (m.CanMeasure(fm, k) && m.IsDiscretizedFace(fm.Face, d)) ? m.ElementDeviation(d, fm, k) : 0.0;
+        => (m.CanMeasure(fm, k) && m.IsDiscretizedFace(fm.Face, d)) ? m.ElementChordalDeviation(d, fm, k) : 0.0;
 }

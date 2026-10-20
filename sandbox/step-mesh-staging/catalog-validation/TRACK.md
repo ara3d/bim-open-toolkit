@@ -9,7 +9,7 @@ Status: ready: catalog-validation
   against 2 expected: 30 `Law_Catalog_` laws, all pass under cpu64; zero type errors in this folder.
 
 Types added (32 of this track, plus 4 borrowed):
-- Budgets (3): `TimeBudget`, `Elapsed`, `WorkBudget` (`catalog-validation-budgets.types.plato`).
+- Budgets (3): `TimeBudget`, `Elapsed`, `WorkBudget` (`catalog-validation-budgets.types.plato`; moved to `00-foundation/foundation-budgets.types.plato` at the catalog-meshing merge, 2026-10-20, its laws stay here).
 - Section 10 (18): `LawId`, `LawName`, `Claim`, `Evidence`, `CheckRecord`, `AllowanceSource`,
   `Allowance`, `CompensatedSum`, `OracleAgreement`, `CheckScope`, `PairBudget`, `SampleGrid`,
   `WitnessSpec`, `PerturbationKind`, `Expectation`, `LawVerdictDetail`, `VerdictDelta`, `LevelProof`

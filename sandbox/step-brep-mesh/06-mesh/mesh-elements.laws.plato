@@ -1,5 +1,5 @@
 //==
-// # Catalog meshing: mesh assembly laws (TYPE-CATALOG.md section 9)
+// # Mesh elements: laws (TYPE-CATALOG.md section 9)
 //
 // The witness meshes are literals chosen by an Integer: layer 6's unit tetrahedron and its
 // reversal (MeshWitnessAt, triangles only) and a square pyramid with one quad, so the quad
@@ -12,7 +12,7 @@
 //  - Elements
 //  - Slices and provenance
 
-library CatalogMeshingAssemblyLaws
+library ModelMeshElementsLaws
 {
     //==
     // # Witnesses
@@ -74,12 +74,12 @@ library CatalogMeshingAssemblyLaws
     // # Corner attributes
 
     // The corner attributes of every witness hold 3T + 4Q values.
-    Law_Catalog_CornerCountIsThreeTPlusFourQ(k: Integer): Boolean
+    Law_CornerCountIsThreeTPlusFourQ(k: Integer): Boolean
         => MeshingMeshAt(k).CornerNormalsOf.IsPerCornerOf(MeshingMeshAt(k))
             && MeshingMeshAt(k).CornerUvsOf.IsPerCornerOf(MeshingMeshAt(k));
 
     // A corner attribute read at an element's corner is the mesh's own per-corner value.
-    Law_Catalog_CornerUvAtAgreesWithMesh(k: Integer): Boolean
+    Law_CornerUvAtAgreesWithMesh(k: Integer): Boolean
     {
         var mesh = MeshingMeshAt(k);
         var uvs = mesh.CornerUvsOf;
@@ -92,22 +92,22 @@ library CatalogMeshingAssemblyLaws
 
     // ResolveElement agrees with the library's IsTriangle and IsQuad and with the T + q
     // numbering of quads.
-    Law_Catalog_ResolveElementAgreesWithAccessors(k: Integer): Boolean
+    Law_ResolveElementAgreesWithAccessors(k: Integer): Boolean
     {
         var mesh = MeshingMeshAt(k);
         return MeshingElementProbe(mesh).All(e => MeshingRefAgrees(mesh, e, mesh.ResolveElement(e)));
     }
 
-    // CornersOf gives the corners of the library's ElementCorners, in the same order, and none
+    // CornersOf gives the corners of the library's ElementCornerList, in the same order, and none
     // for an index out of the mesh.
-    Law_Catalog_CornersOfAgreesWithElementCorners(k: Integer): Boolean
+    Law_CornersOfAgreesWithElementCorners(k: Integer): Boolean
     {
         var mesh = MeshingMeshAt(k);
-        return MeshingElementProbe(mesh).All(e => MeshingSameVertices(mesh.CornersOf(e).CornerList, mesh.ElementCorners(e)));
+        return MeshingElementProbe(mesh).All(e => MeshingSameVertices(mesh.CornersOf(e).CornerList, mesh.ElementCornerList(e)));
     }
 
     // A resolved element has as many corners as its kind.
-    Law_Catalog_CornersOfHasItsKindsCount(k: Integer): Boolean
+    Law_CornersOfHasItsKindsCount(k: Integer): Boolean
     {
         var mesh = MeshingMeshAt(k);
         return MeshingElementProbe(mesh).All(e => MeshingCountAgrees(mesh, e, mesh.ResolveElement(e)));
@@ -117,7 +117,7 @@ library CatalogMeshingAssemblyLaws
     // # Slices and provenance
 
     // Every element of the slice to face f is on face f.
-    Law_Catalog_SliceElementsAreOnItsFaces(k: Integer, f: Integer): Boolean
+    Law_SliceElementsAreOnItsFaces(k: Integer, f: Integer): Boolean
     {
         var mesh = MeshingMeshAt(k);
         var s = mesh.SliceOf([BrepFaceIndex(f)]);
@@ -125,24 +125,24 @@ library CatalogMeshingAssemblyLaws
     }
 
     // The slice to every face holds every element.
-    Law_Catalog_SliceOfAllFacesIsWholeMesh(k: Integer): Boolean
+    Law_SliceOfAllFacesIsWholeMesh(k: Integer): Boolean
     {
         var mesh = MeshingMeshAt(k);
         return mesh.SliceOf(MeshingFaceCountAt(k).Range.Map(f => BrepFaceIndex(f))).Elements.Count == mesh.ElementCount;
     }
 
     // Every corner of every element is listed under its element's face in the provenance index.
-    Law_Catalog_ProvenanceIndexListsElementCorners(k: Integer): Boolean
+    Law_ProvenanceIndexListsElementCorners(k: Integer): Boolean
     {
         var mesh = MeshingMeshAt(k);
         var p = mesh.ProvenanceIndexOf(MeshingFaceCountAt(k));
         return mesh.ElementCount.Range.All(e =>
-            mesh.ElementCorners(ElementIndex(e)).All(v => p.ByFace.Row(mesh.ElementFaceAt(e).Value).Any(x => x == v)));
+            mesh.ElementCornerList(ElementIndex(e)).All(v => p.ByFace.Row(mesh.ElementFaceAt(e).Value).Any(x => x == v)));
     }
 
     // The provenance index lists no vertex under a face it is not on: each witness face has as
     // many vertices as its one element has corners.
-    Law_Catalog_ProvenanceIndexListsNothingElse(k: Integer): Boolean
+    Law_ProvenanceIndexListsNothingElse(k: Integer): Boolean
     {
         var mesh = MeshingMeshAt(k);
         var p = mesh.ProvenanceIndexOf(MeshingFaceCountAt(k));
@@ -150,7 +150,7 @@ library CatalogMeshingAssemblyLaws
     }
 
     // An element's provenance names the element's face and the round it was given.
-    Law_Catalog_ElementProvenanceNamesElementFace(k: Integer, r: Integer): Boolean
+    Law_ElementProvenanceNamesElementFace(k: Integer, r: Integer): Boolean
     {
         var mesh = MeshingMeshAt(k);
         return mesh.ElementCount.Range.All(e =>

@@ -74,7 +74,7 @@ type UvSample
 // # The chart a region is oriented and triangulated in
 
 // The chart of one face: (u, v) maps to (s * ScaleU * u, ScaleV * v), with s = -1 when Mirrored
-// and +1 otherwise. Mirrored is true exactly when layer 02's FaceNormalSign is -1 (the face
+// is Odd and +1 when it is Even. Mirrored is Odd exactly when layer 02's FaceNormalSign is -1 (the face
 // normal points against PartialU x PartialV), so that du x dv in the chart maps to a positive
 // multiple of the face normal at each point. ScaleU and ScaleV are
 // positive: the mean speeds |PartialU| and |PartialV| over the face, so a length in the chart
@@ -83,7 +83,7 @@ type UvSample
 type FaceChart
     implements IValue
 {
-    Mirrored: Boolean;
+    Mirrored: Parity;
     ScaleU: Number;
     ScaleV: Number;
 }

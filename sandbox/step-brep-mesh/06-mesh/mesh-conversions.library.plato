@@ -30,7 +30,7 @@ library ModelMeshConversions
     // The mesh as a PolygonMesh3D, which holds triangles and quads together: the positions
     // unchanged, one face row per element in element order, corners in winding order.
     ToPolygonMesh3D(mesh: ModelMesh): PolygonMesh3D
-        => PolygonMesh3D(mesh.Positions, FromRows(mesh.ElementCount.MapRange(k => mesh.ElementCorners(ElementIndex(k)))));
+        => PolygonMesh3D(mesh.Positions, FromRows(mesh.ElementCount.MapRange(k => mesh.ElementCornerList(ElementIndex(k)))));
 
     // The model mesh corner that slot s of triangle k of ToTriangleMesh3D(mesh) comes from: corner
     // 3k + s for k < T; for half h of quad q (k = T + 2q + h), quad slot s for h = 0 and quad slot 0,

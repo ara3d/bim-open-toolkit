@@ -112,7 +112,7 @@ library StepToMeshLaws
                 m.CanMeasure(x.Mesh, ElementIndex(k))
                     ? (x.Mesh.ShortestEdgeLength(ElementIndex(k)) < 2.0 * o.Face.Discretization.MinLength
                         ? w
-                        : w.Max(m.ElementDeviation(s.Discretizations, x.Mesh, ElementIndex(k))))
+                        : w.Max(m.ElementChordalDeviation(s.Discretizations, x.Mesh, ElementIndex(k))))
                     : w));
 
     //==

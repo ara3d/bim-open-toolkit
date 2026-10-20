@@ -1,5 +1,5 @@
 //==
-// # Catalog meshing: discretization laws (TYPE-CATALOG.md section 7)
+// # Discretization requests: laws (TYPE-CATALOG.md section 7)
 //
 // The runner cannot build an array, so laws over request lists take Integer selectors and build
 // the list inside the body (MeshingRequestsAt): up to eight requests over three edges, with
@@ -11,7 +11,7 @@
 //  - Density
 //  - Requests and deltas
 
-library CatalogMeshingDiscretizationLaws
+library EdgeDiscretizingRequestsLaws
 {
     //==
     // # Helpers
@@ -48,27 +48,27 @@ library CatalogMeshingDiscretizationLaws
     // # Chords and criteria
 
     // The chords of n segments are n consecutive chords of a polyline of n + 1 samples.
-    Law_Catalog_ChordsOfAreConsecutive(n: Integer): Boolean
+    Law_ChordsOfAreConsecutive(n: Integer): Boolean
         => ChordsOf(SegmentCountOf(n)).Count == SegmentCountOf(n).Value
             && ChordsOf(SegmentCountOf(n)).All(c => IsChordOf(c, SegmentCountOf(n).Value + 1));
 
     // A length verdict holds exactly when the worst length is no larger than the bound.
-    Law_Catalog_VerdictHoldsIffWithin(worst: Number, bound: Number): Boolean
+    Law_VerdictHoldsIffWithin(worst: Number, bound: Number): Boolean
         => VerdictOf(CriterionName.ChordalCriterion, ModelLength(worst).ToMeasure, ModelLength(bound).ToMeasure).Holds == (worst <= bound);
 
     // A length is never judged against an angle bound.
-    Law_Catalog_VerdictAcrossKindsFails(worst: Number, bound: Number): Boolean
+    Law_VerdictAcrossKindsFails(worst: Number, bound: Number): Boolean
         => VerdictOf(CriterionName.AngularCriterion, ModelLength(worst).ToMeasure, Angle(bound).ToMeasure).Holds.Not;
 
     //==
     // # Density
 
     // A density asks for at least one segment.
-    Law_Catalog_SegmentsForIsAtLeastOne(rate: Number, length: Number): Boolean
+    Law_SegmentsForIsAtLeastOne(rate: Number, length: Number): Boolean
         => SegmentsFor(SegmentDensity(rate), ModelLength(length)).Value >= 1;
 
     // A positive density covers the length: segments at least rate times length.
-    Law_Catalog_SegmentsForCoversLength(rate: Number, length: Number): Boolean
+    Law_SegmentsForCoversLength(rate: Number, length: Number): Boolean
         => (rate > 0.0 && length > 0.0)
             ? SegmentsFor(SegmentDensity(rate), ModelLength(length)).Value.ToNumber >= rate * length
             : true;
@@ -77,13 +77,13 @@ library CatalogMeshingDiscretizationLaws
     // # Requests and deltas
 
     // Merging a merged set changes nothing.
-    Law_Catalog_MergeRequestsIsIdempotent(k: Integer, n: Integer): Boolean
+    Law_MergeRequestsIsIdempotent(k: Integer, n: Integer): Boolean
         => MeshingSameRequests(
             MergeRequests(MergeRequests(MeshingRequestsAt(k, n)).ByEdge).ByEdge,
             MergeRequests(MeshingRequestsAt(k, n)).ByEdge);
 
     // The merged set holds one request per requested edge, sorted by edge.
-    Law_Catalog_MergeRequestsIsOnePerEdge(k: Integer, n: Integer): Boolean
+    Law_MergeRequestsIsOnePerEdge(k: Integer, n: Integer): Boolean
     {
         var s = MergeRequests(MeshingRequestsAt(k, n)).ByEdge;
         return s.Count == RequestedEdges(MeshingRequestsAt(k, n)).Count
@@ -92,7 +92,7 @@ library CatalogMeshingDiscretizationLaws
 
     // For every request, the merged request on its edge is at least as strong: no larger
     // Chordal, no smaller Segments.
-    Law_Catalog_MergeRequestsKeepsStrongest(k: Integer, n: Integer): Boolean
+    Law_MergeRequestsKeepsStrongest(k: Integer, n: Integer): Boolean
     {
         var xs = MeshingRequestsAt(k, n);
         var s = MergeRequests(xs);
@@ -103,7 +103,7 @@ library CatalogMeshingDiscretizationLaws
 
     // The merged request on an edge takes its Chordal and its Segments from requests on that
     // edge: merging invents no bound.
-    Law_Catalog_MergeRequestsInventsNothing(k: Integer, n: Integer): Boolean
+    Law_MergeRequestsInventsNothing(k: Integer, n: Integer): Boolean
     {
         var xs = MeshingRequestsAt(k, n);
         return MergeRequests(xs).ByEdge.All(m =>
@@ -112,7 +112,7 @@ library CatalogMeshingDiscretizationLaws
     }
 
     // The delta of a merged set names every requested edge.
-    Law_Catalog_DeltaNamesEveryRequestedEdge(k: Integer, n: Integer): Boolean
+    Law_DeltaNamesEveryRequestedEdge(k: Integer, n: Integer): Boolean
     {
         var xs = MeshingRequestsAt(k, n);
         var d = DeltaOf(MergeRequests(xs));

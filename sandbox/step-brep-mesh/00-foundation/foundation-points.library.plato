@@ -50,11 +50,11 @@ library BrepFoundationPoints
     //==
     // # The chart
 
-    // The signed u scale of a chart: -ScaleU when Mirrored.
+    // The signed u scale of a chart: -ScaleU when Mirrored is Odd.
     SignedScaleU(chart: FaceChart): Number
-        => chart.Mirrored ? 0.0 - chart.ScaleU : chart.ScaleU;
+        => chart.Mirrored == Parity.Odd ? 0.0 - chart.ScaleU : chart.ScaleU;
 
-    // uv in the chart: (s * ScaleU * u, ScaleV * v), s = -1 when Mirrored.
+    // uv in the chart: (s * ScaleU * u, ScaleV * v), s = -1 when Mirrored is Odd.
     ToChart(chart: FaceChart, uv: UvPoint): ChartPoint
         => ChartPoint(chart.SignedScaleU * uv.U, chart.ScaleV * uv.V);
 

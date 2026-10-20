@@ -1,5 +1,5 @@
 //==
-// # Catalog meshing: discretization constructors and predicates (TYPE-CATALOG.md section 7)
+// # Discretization requests: constructors and predicates (TYPE-CATALOG.md section 7)
 //
 // Sections, in order:
 //  - Chords and arcs
@@ -7,7 +7,7 @@
 //  - Density
 //  - Requests and deltas
 
-library CatalogMeshingDiscretization
+library EdgeDiscretizingRequests
 {
     //==
     // # Chords and arcs

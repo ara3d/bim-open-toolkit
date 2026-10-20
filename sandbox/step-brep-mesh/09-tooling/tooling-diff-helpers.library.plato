@@ -189,6 +189,9 @@ library ToolingDiffHelpers
             LoopSelfIntersects => "LoopSelfIntersects";
             TooCoarseInParameterSpace => "TooCoarseInParameterSpace";
             QuadCountMismatch => "QuadCountMismatch";
+            NoInteriorPointMeetsChordal(c) => "NoInteriorPointMeetsChordal";
+            PoleAdjacency => "PoleAdjacency";
+            NeighbourDensity => "NeighbourDensity";
         };
 
     //==

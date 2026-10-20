@@ -1,10 +1,10 @@
 //==
-// # Catalog: budgets and elapsed time
+// # Budgets and elapsed time
 //
-// TYPE-CATALOG.md section 10: the work and time budgets other tracks borrow
+// TYPE-CATALOG.md section 10: the work and time budgets every layer may name
 // (the termination laws decrease a WorkBudget; the law runner's 2 s rule is a
-// TimeBudget). Declared first so the other tracks can switch to these at
-// merge.
+// TimeBudget). In layer 0 because layer 0's TerminationCertificate and the
+// IBudgeted concept name WorkBudget.
 //
 // Sections, in order:
 //  - Time

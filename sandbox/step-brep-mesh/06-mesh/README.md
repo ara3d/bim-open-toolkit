@@ -26,6 +26,7 @@ Library blocks: `ModelMeshes` (the fixed name, in `mesh.library.plato`), with `M
 | `mesh-quality` | `TriangleQuality`, `QuadQuality`, `MeshQualityThresholds` and their functions |
 | `mesh-conversions` | `ToTriangleMesh3D`, `ToQuadMesh3D`, `ToPolygonMesh3D`, `ToSplitTriangleMesh3D` and their result types |
 | `mesh-proofs` | section 4 (block `ModelMeshProofs`; types, library, spec): `MeshedFaceSet`, `FullyMeshedModel`, `WatertightMesh`, `CheckedMesh`, `QualityGradedMesh`, `PlanarQuad`, `ConvexQuad`, their `Decided*` sums and `Check*` constructors, except `CheckCheckedMesh`, which reads layer 7's `RestrictedToShell` and is in `07-validation/validation-proofs.library.plato`. The 16 laws mesh layer 8's witnesses and are in `08-pipeline/pipeline-proofs-mesh.laws.plato` (catalog merge, proofs, 2026-10-20) |
+| `mesh-elements` | section 9: `CornerAttribute<T>`, `Crease`, `CreaseSet`, `ElementKind`, `ElementRef`, `ElementCorners`, `BoundaryCycle`, `BoundaryCycleList`, `NonManifoldEdge`, `PinchedVertex`, `MisorientedEdge`, `MeshSlice`, `ProvenanceIndex`, `ElementProvenance`; four defect finders deferred; blocks `ModelMeshElements`, `ModelMeshElementsLaws` (10 laws) (catalog merge, meshing, 2026-10-20). The function `ElementCorners(mesh, e)` is now `ElementCornerList` |
 
 Each stem has `.types.plato` where it declares types, `.library.plato`, `.laws.plato` (block
 `<Library>Laws`), and `.spec.plato` (SPEC-DSL.md section 3 constructs only).

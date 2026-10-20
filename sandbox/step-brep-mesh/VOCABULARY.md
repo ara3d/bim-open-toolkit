@@ -178,7 +178,11 @@ layer's own and may change inside the layer.
 - Concepts (`foundation.concepts.plato`): `IScaled`, `IMoved`, `IReversible`, `IHasDomain<TDomain>`,
   `IIndexedTable<TIndex, TRow>` (`RowCountOf`, `RowAt`, `IsRowIndex`) (no implementer yet);
   `IToleranced { Tolerance(x): Tolerances }`, `IHasProvenance { Where(x): Provenance }` (the
-  section 4 proofs; `Check` and `Diagnostic` discharge `Where` through their field).
+  section 4 proofs; `Check` and `Diagnostic` discharge `Where` through their field);
+  `IBudgeted { Work(x): WorkBudget }` (no implementer yet).
+- Budgets (`foundation-budgets.types.plato`, TYPE-CATALOG.md section 10): `TimeBudget { Milliseconds }`,
+  `Elapsed { Milliseconds }`, `WorkBudget { Evaluations; Insertions; Flips; Projections }`; their
+  functions and laws are still staged in catalog-validation.
 - Decided values (`BrepFoundationDecided`, TYPE-CATALOG.md section 5): `UndecidedReason = OutOfDomain |
   DegenerateAt(Side) | NoConvergence(Iterations) | Unbounded | NotApplicable(Kind) | BelowResolution |
   ToleranceExceeded(By: Measure) | Fails(Property: String)`; one sum `Decided(Value: T) |
@@ -187,8 +191,7 @@ layer's own and may change inside the layer.
   `DecidedFaceIndex`, `DecidedEdgeIndex`, `DecidedRange`, `DecidedRound`, each with `IsDecided` and
   `ValueOr(fallback)`; `KeepReason = MeetsCriteria | BelowMinLength | AtMinSegments | AtRoundLimit`;
   `TerminationCertificate { Work: WorkBudget; Decreased }`, built only by `CertifyRound(before, after)`,
-  with `WorkTotal(WorkBudget)` and `IsTerminal`; `CaseNumber` per multi-case sum. `WorkBudget` is
-  still staged in catalog-validation.
+  with `WorkTotal(WorkBudget)` and `IsTerminal`; `CaseNumber` per multi-case sum.
 
 ### 1. `01-geometry`
 
@@ -389,7 +392,9 @@ layer's own and may change inside the layer.
 - `EdgeDiscretizations { ByEdge: Array<EdgeDiscretization> }` indexed by `BrepEdgeIndex`.
 - `EdgeImage { Face: BrepFaceIndex; Pcurve: PcurveIndex }`, `ImagePoints(m, d, image)`: the one
   parameter-space image function face meshing uses.
-- `RefinementReason = LoopSelfIntersects | TooCoarseInParameterSpace | QuadCountMismatch`.
+- `RefinementReason = LoopSelfIntersects | TooCoarseInParameterSpace | QuadCountMismatch |
+  NoInteriorPointMeetsChordal(Segment: Chord) | PoleAdjacency | NeighbourDensity` (the last three
+  not produced yet).
 - `EdgeRefinementRequest { Edge: BrepEdgeIndex; Reason: RefinementReason; Chordal: Number; Segments: Integer }`.
 - `Discretize(m, e, c, floors)`, `DiscretizeAll(m, c, floors)` (total: `Undiscretized` for a
   rejected edge), `Refine(m, d, requests, c)` (only the requested edges change),
@@ -404,6 +409,12 @@ layer's own and may change inside the layer.
   `MeetsCriteriaProof { Edge; Criteria; Worst: Measure }`, each with a `Decided<Name>` sum and its
   `Check<Name>(m, ...)`; `DirectedDiscretization { Discretization; Sense }`, built by the total
   `DirectedAlong(c, s)`; `IsCanonical(m, d)`, `WorstSagitta(m, d)`.
+- Requests and criteria (`EdgeDiscretizingRequests`, TYPE-CATALOG.md section 7): `Chord { From; To:
+  EdgeSampleIndex }` (`ChordOf`, `ChordsOf`, `IsChordOf`), `Arc` (`ArcOf(d, c)`), `ChordMeasures`,
+  `CriterionName`, `CriterionVerdict` (`VerdictOf`, `ChordalVerdict`, `AngularVerdict`), `Seed`,
+  `SeedReason`, `SegmentDensity` (`SegmentsFor`), `DensityField` (`DensityAt`), `RequestSet`
+  (`MergeRequests(xs)`, `RequestFor(s, e)`, `Strongest`), `DiscretizationDelta` (`DeltaOf`,
+  `IsChanged`).
 
 ### 5. `05-face-meshing`
 
@@ -411,7 +422,7 @@ layer's own and may change inside the layer.
   `SeamCut` and `Pole` are synthetic boundary points; `FromEdge` indices run 1 to count - 2, end
   samples are `FromVertex`.
 - `UvLoop { Points; Sources }`, `UvRegion { Outer: UvLoop; Holes: Array<UvLoop> }`, `UvSample`,
-  `FaceChart { Mirrored; ScaleU; ScaleV }`, `QuadSides`.
+  `FaceChart { Mirrored: Parity; ScaleU; ScaleV }`, `QuadSides`.
 - `FaceMeshingCriteria { Discretization: DiscretizationCriteria; SurfaceChordal: Number; SurfaceAngular: Angle; PreferQuads: Boolean }`,
   with `ScaledBy(c, factor)`. `SurfaceAngular` is the normal turn along a surface edge.
 - `UvTriangulation { Points; Sources; Triangles: Array<TriangleFace>; Quads: Array<QuadFace> }`,
@@ -443,6 +454,16 @@ layer's own and may change inside the layer.
   `ClosedUvLoop { Face; Loop }`, `OrientedUvRegion { Face; Region }`, each with a `Decided<Name>`
   sum, built only by `CheckSimpleUvLoop(l, tol)`, `CheckClosedUvLoop(m, f, l)`,
   `CheckOrientedUvRegion(m, f, r)`; `AsRegion(UvLoop)`, `IsOrientedIn(m, f, r)`.
+- Charts and triangulation records (`FaceMeshingCharts`, TYPE-CATALOG.md section 8):
+  `ConstraintSource`, `Constraint`, `ConstrainedTriangulation`, `Cavity` (`Removes`),
+  `NeighbourTable { Across }` (`NeighbourTableOf(tris)`, `IsSideOf`, `AcrossOf`),
+  `DelaunayCertificate`, `EarCandidate`, `Bridge`, `ElementInChart { A; B; C; ... }`
+  (`ElementInChartOf`), `ElementDeviation` (`Worse`), `RefinementTarget` (`Changes`), `SeamCopy`,
+  `SeamPair`, `PoleRun`, `LiftTable` (`LiftTableOf(pointCount, pairs, runs)`), `QuadGridSides`,
+  `GridCounts` (`QuadGridSidesOf`, `GridCountsOf`); `OrientationOf(a, b, c)`,
+  `OrientationWithin(a, b, c, tol)`, `OrientationResolution`. The layer's functions
+  `NeighbourSlots(tris, n)`, `ElementChordalDeviation(m, d, fm, k)` and `SplitSideSlot(...)` were
+  renamed so no function shares a type's or case's name.
 
 ### 6. `06-mesh`
 
@@ -475,6 +496,13 @@ layer's own and may change inside the layer.
   Deviation }`, `ConvexQuad { Quad }`, each with a `Decided<Name>` sum and its `Check<Name>`
   (`CheckCheckedMesh` is layer 7's); `IsMeshedFaceSet`, `FacesInOrder`, `ComponentCountsOf(mesh)`,
   `IsMeasurable(mesh)`.
+- Elements, slices and provenance (`ModelMeshElements`, TYPE-CATALOG.md section 9):
+  `CornerAttribute<T>` (`CornerNormalsOf`, `CornerUvsOf`), `Crease`, `CreaseSet` (`CreasesAbove`),
+  `ElementKind`, `ElementRef` (`ResolveElement`), `ElementCorners = TriangleCorners | QuadCorners |
+  NoCorners` (`CornersOf`, `CornerList`), `BoundaryCycle`, `BoundaryCycleList`, `NonManifoldEdge`,
+  `PinchedVertex`, `MisorientedEdge` (their finders deferred), `MeshSlice` (`SliceOf`),
+  `ProvenanceIndex` (`ProvenanceIndexOf`), `ElementProvenance` (`ElementProvenanceOf`). The
+  function `ElementCorners(mesh, e)` is now `ElementCornerList(mesh, e)`.
 
 ### 7. `07-validation`
 
@@ -561,6 +589,19 @@ layer's own and may change inside the layer.
 ## Changes to this contract
 
 Format: date, layer, old name, new name, reason.
+
+- 2026-10-20, 4, `RefinementReason` with three cases, and `NoInteriorPointMeetsChordal(Segment:
+  Chord)`, `PoleAdjacency`, `NeighbourDensity` added; every match (layer 5's `IsBlocking` and
+  `RequestDiagnostic`, layer 9's `ReasonName`) gains their arms (catalog merge, meshing).
+- 2026-10-20, 5, `FaceChart.Mirrored: Boolean`, `Mirrored: Parity` (Odd negates u): six sites, read
+  as `== Parity.Odd` (catalog merge, meshing).
+- 2026-10-20, 5, `NeighbourTable(tris, n)`, `NeighbourSlots`; `ElementDeviation(m, d, fm, k)`,
+  `ElementChordalDeviation`; `SplitSide(r, points, tri, nb, k)`, `SplitSideSlot`; 6, `ElementCorners(mesh,
+  e)`, `ElementCornerList`: each function shared its name with a new type or case (catalog merge,
+  meshing).
+- 2026-10-20, 0, (staged) `TimeBudget`, `Elapsed`, `WorkBudget` moved from catalog-validation to
+  `foundation-budgets.types.plato`, so layer 0's `TerminationCertificate` and `IBudgeted` resolve
+  without the staging folder (catalog merge, meshing).
 
 - 2026-10-20, 1, (none), `ProjectDecided(ArenaSurface, Point3D): Projection` beside `Project`, which
   keeps returning a `UvCoordinate`; `IProjectable3D`'s obligation is `ProjectDecided`. The catalog

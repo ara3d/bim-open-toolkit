@@ -1,5 +1,5 @@
 //==
-// # Catalog meshing: face meshing laws (TYPE-CATALOG.md section 8)
+// # Face meshing charts: laws (TYPE-CATALOG.md section 8)
 //
 // Laws over chart points and deviations take the runner's random scalars; laws over triangle
 // lists, seam pairs, and constraints take Integer selectors and build their witnesses inside.
@@ -13,7 +13,7 @@
 //  - Seams and lifting
 //  - Four-sided regions
 
-library CatalogMeshingFaceMeshingLaws
+library FaceMeshingChartsLaws
 {
     //==
     // # Witnesses
@@ -72,7 +72,7 @@ library CatalogMeshingFaceMeshingLaws
     // # Orientation
 
     // A non-zero orientation agrees with the sign of the library's TwiceSignedArea.
-    Law_Catalog_OrientationOfAgreesWithLibrarySign(a: ChartPoint, b: ChartPoint, c: ChartPoint): Boolean
+    Law_OrientationOfAgreesWithLibrarySign(a: ChartPoint, b: ChartPoint, c: ChartPoint): Boolean
     {
         var o = OrientationOf(a, b, c);
         var area = TwiceSignedArea(a.ToPoint2D, b.ToPoint2D, c.ToPoint2D);
@@ -80,7 +80,7 @@ library CatalogMeshingFaceMeshingLaws
     }
 
     // With the exact resolution, the orientation is the library's sign itself.
-    Law_Catalog_ExactOrientationIsLibrarySign(a: ChartPoint, b: ChartPoint, c: ChartPoint): Boolean
+    Law_ExactOrientationIsLibrarySign(a: ChartPoint, b: ChartPoint, c: ChartPoint): Boolean
     {
         var area = TwiceSignedArea(a.ToPoint2D, b.ToPoint2D, c.ToPoint2D);
         return OrientationWithin(a, b, c, Resolution.Exact)
@@ -88,11 +88,11 @@ library CatalogMeshingFaceMeshingLaws
     }
 
     // Swapping two corners negates the orientation.
-    Law_Catalog_OrientationIsAntisymmetric(a: ChartPoint, b: ChartPoint, c: ChartPoint): Boolean
+    Law_OrientationIsAntisymmetric(a: ChartPoint, b: ChartPoint, c: ChartPoint): Boolean
         => OrientationOf(a, c, b) == OrientationOf(a, b, c).Negative;
 
     // An element's area has the sign of its orientation when the orientation is not Zero.
-    Law_Catalog_ElementInChartAreaHasItsOrientation(a: ChartPoint, b: ChartPoint, c: ChartPoint): Boolean
+    Law_ElementInChartAreaHasItsOrientation(a: ChartPoint, b: ChartPoint, c: ChartPoint): Boolean
     {
         var e = ElementInChartOf(a, b, c);
         return (e.Orientation == Sign.Positive ? e.Area > 0.0 : true) && (e.Orientation == Sign.Negative ? e.Area < 0.0 : true);
@@ -102,7 +102,7 @@ library CatalogMeshingFaceMeshingLaws
     // # Neighbours and certificates
 
     // The side across the side across s is s, for every side with an opposite.
-    Law_Catalog_NeighbourTableIsInvolution(k: Integer): Boolean
+    Law_NeighbourTableIsInvolution(k: Integer): Boolean
     {
         var t = NeighbourTableOf(MeshingTrianglesAt(k));
         return t.Across.Count.Range.All(i => t.Across[i].Element.IsNone ? true : AcrossOf(t, t.Across[i]) == SideAtSlot(i));
@@ -110,30 +110,30 @@ library CatalogMeshingFaceMeshingLaws
 
     // Every side of the closed tetrahedron has an opposite, and every side of one triangle has
     // none.
-    Law_Catalog_NeighbourTableSeesClosure(k: Integer): Boolean
+    Law_NeighbourTableSeesClosure(k: Integer): Boolean
         => NeighbourTableOf(MeshingTrianglesAt(0)).Across.All(s => s.Element.IsPresent)
             && NeighbourTableOf(MeshingTrianglesAt(2)).Across.All(s => s.Element.IsNone);
 
     // A Delaunay certificate is consistent.
-    Law_Catalog_DelaunayCertificateIsConsistent(checked: Integer, violations: Integer): Boolean
+    Law_DelaunayCertificateIsConsistent(checked: Integer, violations: Integer): Boolean
         => DelaunayCertificate(checked, violations).IsDelaunay ? DelaunayCertificate(checked, violations).IsConsistent : true;
 
     //==
     // # Constraints
 
     // The square's loop constraints are sides of its triangles.
-    Law_Catalog_LoopConstraintsAreSides(k: Integer): Boolean
+    Law_LoopConstraintsAreSides(k: Integer): Boolean
         => ConstrainedTriangulation.MeshingSquare.ConstraintsAreSides;
 
     // The other diagonal of the square is not a side: the check can fail.
-    Law_Catalog_OtherDiagonalIsNotASide(k: Integer): Boolean
+    Law_OtherDiagonalIsNotASide(k: Integer): Boolean
         => IsElementSide(ConstrainedTriangulation.MeshingSquare, Constraint(UvPointIndex(1), UvPointIndex(3), ConstraintSource.SeamCut)).Not;
 
     //==
     // # Deviations
 
     // The worse of two deviations bounds both.
-    Law_Catalog_WorseBoundsBoth(a: ElementDeviation, b: ElementDeviation): Boolean
+    Law_WorseBoundsBoth(a: ElementDeviation, b: ElementDeviation): Boolean
     {
         var w = Worse(a, b);
         return w.Chordal.Value >= a.Chordal.Value && w.Chordal.Value >= b.Chordal.Value
@@ -145,17 +145,17 @@ library CatalogMeshingFaceMeshingLaws
     // # Seams and lifting
 
     // The other copy of the other copy is the copy.
-    Law_Catalog_OtherCopyIsInvolution(k: Integer): Boolean
+    Law_OtherCopyIsInvolution(k: Integer): Boolean
         => MeshingCopyAt(k).OtherCopy.OtherCopy == MeshingCopyAt(k);
 
     // The two copies of a pair are its two ends.
-    Law_Catalog_CopiesAreTheEnds(min: Integer, max: Integer, k: Integer): Boolean
+    Law_CopiesAreTheEnds(min: Integer, max: Integer, k: Integer): Boolean
         => SeamPair(UvPointIndex(min), UvPointIndex(max)).CopyOf(MeshingCopyAt(k))
             != SeamPair(UvPointIndex(min), UvPointIndex(max)).CopyOf(MeshingCopyAt(k).OtherCopy)
             || min == max;
 
     // Both copies of every seam pair lift to one local vertex, and so do a pole run's points.
-    Law_Catalog_LiftTableJoinsSeamPairsAndPoles(k: Integer, n: Integer): Boolean
+    Law_LiftTableJoinsSeamPairsAndPoles(k: Integer, n: Integer): Boolean
     {
         var count = MeshingPointCount(n);
         var pairs = MeshingSeamPairs(k, count);
@@ -167,7 +167,7 @@ library CatalogMeshingFaceMeshingLaws
 
     // The lift table joins nothing else: one local vertex per point, less one per pair and one
     // per extra pole point, numbered from 0 with none skipped.
-    Law_Catalog_LiftTableJoinsNothingElse(k: Integer, n: Integer): Boolean
+    Law_LiftTableJoinsNothingElse(k: Integer, n: Integer): Boolean
     {
         var count = MeshingPointCount(n);
         var pairs = MeshingSeamPairs(k, count);
@@ -182,7 +182,7 @@ library CatalogMeshingFaceMeshingLaws
     // # Four-sided regions
 
     // The sides of a grid are structured and give back the grid's counts.
-    Law_Catalog_QuadGridSidesRoundTrip(across: Integer, along: Integer): Boolean
+    Law_QuadGridSidesRoundTrip(across: Integer, along: Integer): Boolean
     {
         var counts = GridCounts(SegmentCountOf(across), SegmentCountOf(along));
         var sides = QuadGridSidesOf(counts);

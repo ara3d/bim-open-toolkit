@@ -190,7 +190,7 @@ library ModelMeshTopology
         var vertexCount = mesh.Positions.Count;
         var elementCount = mesh.ElementCount;
         var incident = vertexCount.MapRange(v => elementCount.Range.FlatMap(e =>
-            mesh.ElementCorners(ElementIndex(e)).Any(c => c.Value == v) ? [e] : elementCount.Range.Take(0)));
+            mesh.ElementCornerList(ElementIndex(e)).Any(c => c.Value == v) ? [e] : elementCount.Range.Take(0)));
         var parent = new Buffer<Integer>(elementCount);
         var depth = new Buffer<Integer>(elementCount);
         var component = new Buffer<Integer>(elementCount);
@@ -216,7 +216,7 @@ library ModelMeshTopology
                 while (head < queue.Count)
                 {
                     var e = queue.At(head);
-                    var corners = mesh.ElementCorners(ElementIndex(e));
+                    var corners = mesh.ElementCornerList(ElementIndex(e));
                     var c = 0;
                     while (c < corners.Count)
                     {
@@ -273,7 +273,7 @@ library ModelMeshTopology
 
     // Whether elements a and b of the mesh have a corner vertex in common.
     SharesAVertex(mesh: ModelMesh, a: ElementIndex, b: ElementIndex): Boolean
-        => mesh.ElementCorners(a).Any(v => mesh.ElementCorners(b).Any(w => w.Value == v.Value));
+        => mesh.ElementCornerList(a).Any(v => mesh.ElementCornerList(b).Any(w => w.Value == v.Value));
 
     // Whether c names a component.
     IsComponentInRange(comps: MeshComponents, c: MeshComponentIndex): Boolean

@@ -1,5 +1,5 @@
 //==
-// # Catalog meshing: face meshing constructors and predicates (TYPE-CATALOG.md section 8)
+// # Face meshing charts: constructors and predicates (TYPE-CATALOG.md section 8)
 //
 // Sections, in order:
 //  - Constraints
@@ -9,7 +9,7 @@
 //  - Seams, poles, and lifting
 //  - Four-sided regions
 
-library CatalogMeshingFaceMeshing
+library FaceMeshingCharts
 {
     //==
     // # Constraints

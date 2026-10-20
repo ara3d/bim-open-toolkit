@@ -63,7 +63,7 @@ library TriangulationRefine
 
     // The parameters of chart point p: ChartPoint inverted.
     UvOfChartPoint(chart: FaceChart, p: Point2D): UvCoordinate
-        => UvCoordinate(p.X / (chart.Mirrored ? 0.0 - chart.ScaleU : chart.ScaleU), p.Y / chart.ScaleV);
+        => UvCoordinate(p.X / (chart.Mirrored == Parity.Odd ? 0.0 - chart.ScaleU : chart.ScaleU), p.Y / chart.ScaleV);
 
     // The side of triangle tri that is shortest in the chart (0, 1 or 2: from corner j to j + 1).
     ShortestSide(points: Array<Point2D>, tri: TriangleFace): Integer

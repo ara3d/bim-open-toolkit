@@ -448,12 +448,12 @@ library FaceMeshingLaws
     // themselves may lie that far from the surface).
     Law_ElementDeviationWithinSurfaceChordal(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex): Boolean
         => (m.CanMeasure(fm, k) && m.IsDiscretizedFace(fm.Face, d))
-            ? m.ElementDeviation(d, fm, k) <= c.SurfaceChordal + m.Tolerances.Length.Value
+            ? m.ElementChordalDeviation(d, fm, k) <= c.SurfaceChordal + m.Tolerances.Length.Value
             : true;
 
     // The surface under every element lies within SurfaceChordal plus the length tolerance of
     // the flat element, at the surface points of its parameter centroid and of its surface edges'
-    // parameter midpoints: coverage from the surface to the mesh, which ElementDeviation (mesh to
+    // parameter midpoints: coverage from the surface to the mesh, which ElementChordalDeviation (mesh to
     // surface) does not measure (review M6).
     Law_SurfaceWithinSurfaceChordalOfElement(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex): Boolean
         => (m.CanMeasure(fm, k) && m.IsDiscretizedFace(fm.Face, d))

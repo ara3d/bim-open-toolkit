@@ -70,7 +70,7 @@ library ModelMeshes
         => CornerVertexOf(mesh.Triangles, mesh.Quads, e, slot);
 
     // The corner vertices of element e in winding order; empty when e names no element.
-    ElementCorners(mesh: ModelMesh, e: ElementIndex): Array<VertexIndex>
+    ElementCornerList(mesh: ModelMesh, e: ElementIndex): Array<VertexIndex>
         => mesh.ElementArity(e).MapRange(s => mesh.ElementCorner(e, s));
 
     // The corner index of slot of element e, into CornerNormals and CornerUvs: 3e + slot for a
@@ -103,7 +103,7 @@ library ModelMeshes
     // element geometry applies first.
     HasValidCorners(mesh: ModelMesh, e: ElementIndex): Boolean
         => mesh.IsElementInRange(e)
-            ? mesh.ElementCorners(e).All(v => mesh.Positions.IsValidIndex(v))
+            ? mesh.ElementCornerList(e).All(v => mesh.Positions.IsValidIndex(v))
             : false;
 
     // Whether every element's corners name positions: the guard of every law that reads the

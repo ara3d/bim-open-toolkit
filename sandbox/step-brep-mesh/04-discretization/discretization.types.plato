@@ -90,12 +90,17 @@ type EdgeImage
 // Refinement requests
 
 // Why face meshing asks for a finer polyline on an edge: the face's loops cross in parameter space,
-// a segment is too long for the face's parameter-space test, or a structured quad grid needs a
-// higher count on this side.
+// a segment is too long for the face's parameter-space test, a structured quad grid needs a
+// higher count on this side, no interior point of a segment meets the chordal bound (Segment is
+// that chord), the edge runs next to a pole, or a neighbouring edge's density asks for a matching
+// one. The last three are not produced yet (TYPE-CATALOG.md section 7).
 type RefinementReason
     = LoopSelfIntersects
     | TooCoarseInParameterSpace
-    | QuadCountMismatch;
+    | QuadCountMismatch
+    | NoInteriorPointMeetsChordal(Segment: Chord)
+    | PoleAdjacency
+    | NeighbourDensity;
 
 // A request from face meshing for a finer polyline on one edge. `Chordal` is the chordal bound to
 // refine to (the current one when the request is about counts only); `Segments` is the least
