@@ -56,7 +56,7 @@ library FaceMeshingLaws
     LiftsToSharedPoint(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, uv: UvCoordinate, s: UvPointSource): Boolean
         => match (s) {
             FromVertex(v) => m.IsVertexInRange(v) ? m.LiftsNear(f, uv, m.Vertices[v].Point) : true;
-            FromEdge(e, k) => d.HasSample(e, k) ? m.LiftsNear(f, uv, d.ByEdge[e].Points[k]) : true;
+            FromEdge(e, k) => d.HasSample(e, k.Value) ? m.LiftsNear(f, uv, d.ByEdge[e].Points[k]) : true;
             SeamCut(side, k) => true;
             Pole(side, k) => true;
             Interior => true;
@@ -354,7 +354,7 @@ library FaceMeshingLaws
     PositionIsCopied(m: BrepModel, d: EdgeDiscretizations, s: UvPointSource, p: Point3D): Boolean
         => match (s) {
             FromVertex(v) => m.IsVertexInRange(v) ? p.SameCoordinates(m.Vertices[v].Point) : true;
-            FromEdge(e, k) => d.HasSample(e, k) ? p.SameCoordinates(d.ByEdge[e].Points[k]) : true;
+            FromEdge(e, k) => d.HasSample(e, k.Value) ? p.SameCoordinates(d.ByEdge[e].Points[k]) : true;
             SeamCut(side, k) => true;
             Pole(side, k) => true;
             Interior => true;
@@ -376,7 +376,7 @@ library FaceMeshingLaws
     ProvenanceAgrees(d: EdgeDiscretizations, f: BrepFaceIndex, s: UvPointSource, p: MeshVertexProvenance): Boolean
         => match (s) {
             FromVertex(v) => p == MeshVertexProvenance.OnVertex(v);
-            FromEdge(e, k) => d.HasSample(e, k)
+            FromEdge(e, k) => d.HasSample(e, k.Value)
                 ? p == MeshVertexProvenance.OnEdge(e, d.ByEdge[e].Parameters[k])   // exact by construction
                 : true;
             SeamCut(side, k) => p.IsOnFace(f);

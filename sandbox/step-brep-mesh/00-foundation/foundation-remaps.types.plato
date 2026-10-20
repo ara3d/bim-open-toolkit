@@ -1,5 +1,5 @@
 //==
-// # Catalog indices: remaps
+// # Foundation remaps
 //
 // TYPE-CATALOG.md section 3. What a structural edit or a repair returns: for each table, the new
 // index of every old row, or none (-1) for a removed row. NewOf has one entry per old row.

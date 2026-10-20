@@ -1,5 +1,5 @@
 //==
-// # Catalog indices: laws
+// # Foundation indices: laws
 //
 // TYPE-CATALOG.md section 3. Every law is exact: indices, slots, and sum tags only, so no
 // tolerance appears. Laws take Integers (the runner draws them in [-8, 8]) and build the typed
@@ -9,40 +9,39 @@
 //  - Interior slots and edge samples
 //  - Corners
 //  - Edge keys
-//  - Sample keys to sites
 //  - Kernel tables
 //  - Remaps
 
-library CatalogIndicesLaws
+library BrepFoundationIndicesLaws
 {
     //==
     // # Interior slots and edge samples
 
     // Interior sample k of an edge is interior slot k - 1.
-    Law_Catalog_InteriorSlotIsSampleMinusOne(k: Integer, sampleCount: Integer): Boolean
+    Law_InteriorSlotIsSampleMinusOne(k: Integer, sampleCount: Integer): Boolean
         => EdgeSampleIndex(k).IsInteriorSample(sampleCount)
             ? EdgeSampleIndex(k).ToInteriorSlot(sampleCount).Value == k - 1
             : true;
 
     // An end or out-of-range sample has no interior slot.
-    Law_Catalog_EndSampleHasNoInteriorSlot(k: Integer, sampleCount: Integer): Boolean
+    Law_EndSampleHasNoInteriorSlot(k: Integer, sampleCount: Integer): Boolean
         => EdgeSampleIndex(k).IsInteriorSample(sampleCount)
             ? true
             : EdgeSampleIndex(k).ToInteriorSlot(sampleCount).IsNone;
 
     // Every interior slot made from a sample is a slot or none.
-    Law_Catalog_InteriorSlotIsSlotOrNone(k: Integer, sampleCount: Integer): Boolean
+    Law_InteriorSlotIsSlotOrNone(k: Integer, sampleCount: Integer): Boolean
         => EdgeSampleIndex(k).ToInteriorSlot(sampleCount).Value.IsSlotOrNone;
 
     // Sample to slot to sample is the identity on interior samples.
-    Law_Catalog_InteriorSampleRoundTrip(k: Integer, sampleCount: Integer): Boolean
+    Law_InteriorSampleRoundTrip(k: Integer, sampleCount: Integer): Boolean
         => EdgeSampleIndex(k).IsInteriorSample(sampleCount)
             ? EdgeSampleIndex(k).ToInteriorSlot(sampleCount).ToEdgeSample == EdgeSampleIndex(k)
             : true;
 
     // Slot to sample to slot is the identity on the slots of a discretization of sampleCount
     // samples (0 to sampleCount - 3).
-    Law_Catalog_InteriorSlotRoundTrip(s: Integer, sampleCount: Integer): Boolean
+    Law_InteriorSlotRoundTrip(s: Integer, sampleCount: Integer): Boolean
         => s >= 0 && s < sampleCount - 2
             ? InteriorSlot(s).ToEdgeSample.ToInteriorSlot(sampleCount) == InteriorSlot(s)
             : true;
@@ -51,19 +50,19 @@ library CatalogIndicesLaws
     // # Corners
 
     // A triangle corner and a quad corner of one mesh never share an index.
-    Law_Catalog_TriangleAndQuadCornersNeverCollide(triangleCount: Integer, t: Integer, s: Integer, q: Integer, r: Integer): Boolean
+    Law_TriangleAndQuadCornersNeverCollide(triangleCount: Integer, t: Integer, s: Integer, q: Integer, r: Integer): Boolean
         => IsTriangleCornerInput(triangleCount, t, s) && IsQuadCornerInput(q, r)
             ? TriangleCorner(t, s) != QuadCorner(triangleCount, q, r)
             : true;
 
     // Two different triangle corners have different indices.
-    Law_Catalog_TriangleCornersDistinct(t1: Integer, s1: Integer, t2: Integer, s2: Integer): Boolean
+    Law_TriangleCornersDistinct(t1: Integer, s1: Integer, t2: Integer, s2: Integer): Boolean
         => s1 >= 0 && s1 < 3 && s2 >= 0 && s2 < 3 && (t1 != t2 || s1 != s2)
             ? TriangleCorner(t1, s1) != TriangleCorner(t2, s2)
             : true;
 
     // Two different quad corners of one mesh have different indices.
-    Law_Catalog_QuadCornersDistinct(triangleCount: Integer, q1: Integer, r1: Integer, q2: Integer, r2: Integer): Boolean
+    Law_QuadCornersDistinct(triangleCount: Integer, q1: Integer, r1: Integer, q2: Integer, r2: Integer): Boolean
         => IsQuadCornerInput(q1, r1) && IsQuadCornerInput(q2, r2) && (q1 != q2 || r1 != r2)
             ? QuadCorner(triangleCount, q1, r1) != QuadCorner(triangleCount, q2, r2)
             : true;
@@ -72,69 +71,41 @@ library CatalogIndicesLaws
     // # Edge keys
 
     // The key of two distinct vertices has A < B.
-    Law_Catalog_EdgeKeyIsOrdered(a: Integer, b: Integer): Boolean
+    Law_EdgeKeyIsOrdered(a: Integer, b: Integer): Boolean
         => a != b ? EdgeKeyOf(VertexIndex(a), VertexIndex(b)).IsWellFormed : true;
 
     // The key does not depend on the order the pair was given in.
-    Law_Catalog_EdgeKeyIsSymmetric(a: Integer, b: Integer): Boolean
+    Law_EdgeKeyIsSymmetric(a: Integer, b: Integer): Boolean
         => EdgeKeyOf(VertexIndex(a), VertexIndex(b)) == EdgeKeyOf(VertexIndex(b), VertexIndex(a));
 
     // A half-edge and its reverse have one undirected key.
-    Law_Catalog_HalfEdgeAndReverseShareKey(a: Integer, b: Integer): Boolean
+    Law_HalfEdgeAndReverseShareKey(a: Integer, b: Integer): Boolean
         => HalfEdgeKey(VertexIndex(a), VertexIndex(b)).ToEdgeKey == HalfEdgeKey(VertexIndex(b), VertexIndex(a)).ToEdgeKey;
-
-    //==
-    // # Sample keys to sites
-
-    // Sample 0 of an edge of at least two samples is its start vertex.
-    Law_Catalog_FirstSampleIsStartVertex(e: Integer, sampleCount: Integer, start: Integer, end: Integer): Boolean
-        => sampleCount >= 2
-            ? ToSiteOnEdge(BrepEdgeIndex(e), EdgeSampleIndex(0), sampleCount, BrepVertexIndex(start), BrepVertexIndex(end))
-                == MeshVertexSite.ModelVertex(BrepVertexIndex(start))
-            : true;
-
-    // The last sample of an edge of at least two samples is its end vertex.
-    Law_Catalog_LastSampleIsEndVertex(e: Integer, sampleCount: Integer, start: Integer, end: Integer): Boolean
-        => sampleCount >= 2
-            ? ToSiteOnEdge(BrepEdgeIndex(e), EdgeSampleIndex(sampleCount - 1), sampleCount, BrepVertexIndex(start), BrepVertexIndex(end))
-                == MeshVertexSite.ModelVertex(BrepVertexIndex(end))
-            : true;
-
-    // Interior sample k of edge e is the site EdgeInterior(e, k - 1).
-    Law_Catalog_InteriorSampleIsEdgeInteriorSite(e: Integer, k: Integer, sampleCount: Integer, start: Integer, end: Integer): Boolean
-        => EdgeSampleIndex(k).IsInteriorSample(sampleCount)
-            ? ToSiteOnEdge(BrepEdgeIndex(e), EdgeSampleIndex(k), sampleCount, BrepVertexIndex(start), BrepVertexIndex(end))
-                == MeshVertexSite.EdgeInterior(BrepEdgeIndex(e), k - 1)
-            : true;
 
     //==
     // # Kernel tables
 
     // Ordinal inverts TableNameAt on 0 to 9.
-    Law_Catalog_TableNameOrdinalRoundTrip(k: Integer): Boolean
+    Law_TableNameOrdinalRoundTrip(k: Integer): Boolean
         => k >= 0 && k < 10 ? TableNameAt(k).Ordinal == k : true;
-
-    // The one range check over all ten tables agrees with each table's own predicate.
-    Law_Catalog_RowInRangeAgreesWithTable(m: BrepModel, k: Integer, i: Integer): Boolean
-        => m.IsRowInRange(TableNameAt(k), i) == m.IsInTable(TableNameAt(k), i);
 
     //==
     // # Remaps
 
     // Removing one row keeps the other rows' new indices distinct, in every table.
-    Law_Catalog_RemapIsInjectiveOnKept(k: Integer, count: Integer, removed: Integer, i: Integer, j: Integer): Boolean
+    Law_RemapIsInjectiveOnKept(k: Integer, count: Integer, removed: Integer, i: Integer, j: Integer): Boolean
         => KernelRemapChanging(TableNameAt(k), RemovalNewOf(count, removed), count)
             .NewOfValues(TableNameAt(k))
             .IsInjectiveOnKept(i, j);
 
     // Removing a row marks exactly that row as removed.
-    Law_Catalog_RemovalDropsOnlyTheRemovedRow(count: Integer, removed: Integer, i: Integer): Boolean
+    Law_RemovalDropsOnlyTheRemovedRow(count: Integer, removed: Integer, i: Integer): Boolean
         => i >= 0 && i < count
             ? (RemovalNewOf(count, removed)[i] < 0) == (i == removed)
             : true;
 
     // A remap built from its Integer form reads back the same values, in every table.
-    Law_Catalog_RemapIntegerFormRoundTrip(k: Integer, count: Integer, removed: Integer, i: Integer): Boolean
+    Law_RemapIntegerFormRoundTrip(k: Integer, count: Integer, removed: Integer, i: Integer): Boolean
         => i >= 0 && i < count
             ? KernelRemapChanging(TableNameAt(k), RemovalNewOf(count, removed), count).NewOfValues(TableNameAt(k))[i]
                 == RemovalNewOf(count, removed)[i]

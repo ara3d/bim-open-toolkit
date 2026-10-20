@@ -230,7 +230,7 @@ library ModelMeshMeasures
     // Whether element e names one vertex at two of its corners: a topological degeneracy that no
     // tolerance excuses (3MF and glTF both forbid it).
     HasRepeatedCorner(mesh: ModelMesh, e: ElementIndex): Boolean
-        => mesh.ElementArity(e).MapRange(s => mesh.ElementSide(e, s))
+        => mesh.ElementArity(e).MapRange(s => mesh.ElementSideVertices(e, s))
                 .Any(p => p.A.Value == p.B.Value)
             || (mesh.IsQuad(e)
                 ? (mesh.ElementCorner(e, 0).Value == mesh.ElementCorner(e, 2).Value

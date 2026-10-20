@@ -94,7 +94,7 @@ library ModelMeshes
 
     // The directed side of element e that leaves corner slot, in winding order (not canonical: A
     // may exceed B). Both ends are -1 when e names no element.
-    ElementSide(mesh: ModelMesh, e: ElementIndex, slot: Integer): VertexPair
+    ElementSideVertices(mesh: ModelMesh, e: ElementIndex, slot: Integer): VertexPair
         => mesh.ElementArity(e) == 0
             ? VertexPair(VertexIndex(-1), VertexIndex(-1))
             : VertexPair(mesh.ElementCorner(e, slot), mesh.ElementCorner(e, (slot + 1) % mesh.ElementArity(e)));

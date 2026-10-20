@@ -21,7 +21,11 @@ body, because every body here is its own specification; nothing is deferred.
 | `foundation-counts.{types,library,laws}.plato` | `Count`, `NonZeroCount`, `SegmentCount`, `SampleCount`, `Round`, `Depth`; blocks `BrepFoundationCounts`, `BrepFoundationCountsLaws` (10 laws) |
 | `foundation-parameters.{types,library,laws}.plato` | section 2: the parameter kinds, angles, `ParameterRange`, `DirectedRange`, `PeriodicRange`, `IsoLine`; blocks `BrepFoundationParameters`, `BrepFoundationParametersLaws` (13 laws) |
 | `foundation-points.{types,library,laws}.plato` | `UvPoint`, `UvDelta`, `ChartPoint`, `ModelPoint`, `LocalPoint`, `UvBox`, `ChartBox`, `DomainCorner`; blocks `BrepFoundationPoints`, `BrepFoundationPointsLaws` (9 laws) |
-| `foundation.concepts.plato` | `IScaled`, `IMoved`, `IReversible`, `IHasDomain<TDomain>` (no implementer yet) |
+| `foundation-slots.types.plato` | section 3: `BoundSlot`, `CoedgeSlot`, `EdgeSampleIndex`, `InteriorSlot`, `UvPointIndex`, `LocalVertexIndex` |
+| `foundation-keys.types.plato` | `ElementSide`, `ElementSidePair`, `HalfEdgeKey`, `EdgeKey`, `SampleKey`, `TableName` |
+| `foundation-remaps.types.plato` | one remap per kernel table (`BrepVertexRemap` to `SurfaceRemap`) and the bundle `KernelRemap` |
+| `foundation-indices.{library,laws,spec}.plato` | slots to samples, `TriangleCorner`, `QuadCorner`, edge keys, `TableName` ordinals, remaps; blocks `BrepFoundationIndices`, `BrepFoundationIndicesLaws` (15 laws) (catalog merge, 2026-10-20) |
+| `foundation.concepts.plato` | `IScaled`, `IMoved`, `IReversible`, `IHasDomain<TDomain>`, `IIndexedTable<TIndex, TRow>` (no implementer yet) |
 | `foundation-values.spec.plato` | invariants and constructors of the catalog types above |
 
 The type files carry a `foundation-` prefix because the CLI gate of PLATO-PRIMER.md E.2 copies

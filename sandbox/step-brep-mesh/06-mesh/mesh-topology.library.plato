@@ -100,7 +100,7 @@ library ModelMeshTopology
     // Every directed element side, element by element in winding order: 3T + 4Q pairs.
     AllSides(mesh: ModelMesh): Array<VertexPair>
         => mesh.ElementCount.MapRange(k => ElementIndex(k))
-            .FlatMap(e => mesh.ElementArity(e).MapRange(s => mesh.ElementSide(e, s)));
+            .FlatMap(e => mesh.ElementArity(e).MapRange(s => mesh.ElementSideVertices(e, s)));
 
     // Whether a side joins two distinct vertices, and so is an edge of the complex.
     IsProper(p: VertexPair): Boolean

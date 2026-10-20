@@ -1,10 +1,11 @@
 //==
-// # Catalog indices: slots and positions
+// # Foundation slots and positions
 //
-// TYPE-CATALOG.md section 3. Typed positions still passed as Integer in the library: inside a
+// TYPE-CATALOG.md section 3. Typed positions that were Integers in the library: inside a
 // face's bounds, inside a loop, inside an edge discretization, inside a face mesh's two index
-// spaces. Each follows foundation-indices.types.plato: one Integer, -1 (any negative) meaning
-// none; IsNone, IsPresent, xs[i] and xs.IsValidIndex(i) come from the stdlib's IIndex functions.
+// spaces (UvPointIndex and LocalVertexIndex are not yet used by FaceMesh, FINDINGS F-58). Each
+// follows foundation-indices.types.plato: one Integer, -1 (any negative) meaning none;
+// IsNone, IsPresent, xs[i] and xs.IsValidIndex(i) come from the stdlib's IIndex functions.
 //
 // Sections, in order:
 //  - Topology slots
@@ -15,7 +16,7 @@
 // # Topology slots
 
 // The position of a FaceBound in BrepFace.Bounds. Removes: a bound slot and a coedge slot swapped
-// at a call site (CoedgeSite holds two Integers today).
+// at a call site (CoedgeSite held two Integers before 2026-10-20).
 type BoundSlot
     implements IValue, IHashable, IComparable, IIndex
 {
@@ -41,7 +42,7 @@ type EdgeSampleIndex
 }
 
 // The slot inside MeshVertexSite.EdgeInterior or FaceInterior: interior slot k is edge sample
-// k + 1 (Law_Catalog_InteriorSlotIsSampleMinusOne). Removes: the off-by-one between a sample and
+// k + 1 (Law_InteriorSlotIsSampleMinusOne). Removes: the off-by-one between a sample and
 // its interior slot, done by hand.
 type InteriorSlot
     implements IValue, IHashable, IComparable, IIndex

@@ -58,7 +58,7 @@ library UvRegions
         };
 
     // True when s is sample k of edge e.
-    IsEdgeSample(s: UvPointSource, e: BrepEdgeIndex, k: Integer): Boolean
+    IsEdgeSample(s: UvPointSource, e: BrepEdgeIndex, k: EdgeSampleIndex): Boolean
         => match (s) {
             FromVertex(w) => false;
             FromEdge(e2, k2) => e2 == e && k2 == k;
@@ -81,7 +81,7 @@ library UvRegions
     SampleIndex(s: UvPointSource): Integer
         => match (s) {
             FromVertex(w) => -1;
-            FromEdge(e, k) => k;
+            FromEdge(e, k) => k.Value;
             SeamCut(side, k) => -1;
             Pole(side, k) => -1;
             Interior => -1;
@@ -162,7 +162,7 @@ library UvRegions
     SampleSource(m: BrepModel, e: BrepEdgeIndex, n: Integer, k: Integer): UvPointSource
         => k == 0
             ? UvPointSource.FromVertex(m.FirstVertexAlongCurve(e))
-            : (k == n - 1 ? UvPointSource.FromVertex(m.LastVertexAlongCurve(e)) : UvPointSource.FromEdge(e, k));
+            : (k == n - 1 ? UvPointSource.FromVertex(m.LastVertexAlongCurve(e)) : UvPointSource.FromEdge(e, EdgeSampleIndex(k)));
 
     // The samples coedge c contributes to bound b of face f, in traversal order: n - 1 of them
     // for a discretization of n points. Precondition: n >= 2.

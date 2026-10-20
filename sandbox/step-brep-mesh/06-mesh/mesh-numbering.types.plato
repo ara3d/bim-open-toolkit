@@ -24,8 +24,8 @@
 type MeshVertexSite
     implements IValue
     = ModelVertex(Vertex: BrepVertexIndex)
-    | EdgeInterior(Edge: BrepEdgeIndex, Slot: Integer)
-    | FaceInterior(Face: BrepFaceIndex, Slot: Integer);
+    | EdgeInterior(Edge: BrepEdgeIndex, Slot: InteriorSlot)
+    | FaceInterior(Face: BrepFaceIndex, Slot: InteriorSlot);
 
 //==
 // # The numbering

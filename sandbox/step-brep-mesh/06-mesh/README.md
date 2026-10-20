@@ -11,13 +11,14 @@ are its elements degenerate or of poor shape) and converts it to the stdlib's me
 
 Library blocks: `ModelMeshes` (the fixed name, in `mesh.library.plato`), with `ModelMeshNumbering`,
 `ModelMeshAssembly`, `ModelMeshTopology`, `ModelMeshMeasures`, `ModelMeshQuality`, and
-`ModelMeshConversions` beside it, and a `...Laws` block for each.
+`ModelMeshConversions`, `ModelMeshSites` beside it, and a `...Laws` block for each.
 
 ## Files
 
 | Stem | Holds |
 |---|---|
 | `mesh-numbering` | `MeshVertexSite`, `MeshVertexNumbering`; sites to indices and back; `NumberMeshVertices`; face mesh points to sites (`GlobalVertexOf`) |
+| `mesh-sites` | `ToSite(m, SampleKey, sampleCount)`, `ToSiteOnEdge`: sample keys to sites; blocks `ModelMeshSites`, `ModelMeshSitesLaws` (3 laws) (catalog merge, 2026-10-20) |
 | `mesh` | `ModelMesh`; element and corner access; element geometry (`ElementTriangles`); `Reversed`; `RestrictedToFaces`; `SameConnectivity`; the tetrahedron witness |
 | `mesh-assembly` | `AssembleModelMesh` (body since chunk A), its preconditions (`CanAssemble`), where face mesh elements land; the watertightness law and theorem |
 | `mesh-topology` | `MeshEdgeTable`, components and their counts; manifold, closed, oriented; Euler characteristic, genus, pinched vertices |

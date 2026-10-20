@@ -1,5 +1,5 @@
 //==
-// # Catalog indices: keys and addresses
+// # Foundation keys and addresses
 //
 // TYPE-CATALOG.md section 3. Keys identify a thing combinatorially, so nothing is looked up or
 // welded by position, and nothing depends on the order a pair was written in.

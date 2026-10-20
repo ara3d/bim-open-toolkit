@@ -32,7 +32,7 @@
 // as a vertex or an edge.
 type UvPointSource
     = FromVertex(Vertex: BrepVertexIndex)
-    | FromEdge(Edge: BrepEdgeIndex, Index: Integer)
+    | FromEdge(Edge: BrepEdgeIndex, Index: EdgeSampleIndex)
     | SeamCut(Side: DomainSide, Index: Integer)
     | Pole(Side: DomainSide, Index: Integer)
     | Interior;

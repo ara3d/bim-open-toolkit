@@ -336,7 +336,7 @@ library BrepOracles
     // samples, each coedge shifted to join the one before it, then closed.
     EdgeLoopPath(m: BrepModel, f: BrepFaceIndex, j: Integer, n: Integer): GreenPath
         => m.ClosedPath(f, m.LoopCoedges(m.Faces[f].Bounds[j].Loop).Count.Range.Reduce(UvCoordinate.NoUvs, (acc, k) =>
-            acc.Concatenate(m.ShiftedCoedgePath(f, acc, CoedgeSite(f, j, k), n))));
+            acc.Concatenate(m.ShiftedCoedgePath(f, acc, CoedgeSite(f, BoundSlot(j), CoedgeSlot(k)), n))));
 
     // The lifted samples of the coedge at a site, shifted by whole periods to
     // join the path so far (acc); unshifted for the first coedge.

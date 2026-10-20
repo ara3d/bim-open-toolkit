@@ -72,8 +72,9 @@ type ShellCounts
 
 // Where one coedge sits: the face, the position of the bound in Face's Bounds,
 // and the position of the coedge in that bound's edge loop. Bound and Slot are
-// positions inside one row's own array, not indices into a model table, so
-// they are Integers (VOCABULARY.md's rule for corner slots). A site in range
+// positions inside one row's own array, not indices into a model table; each
+// has its own slot type (00-foundation/foundation-slots.types.plato), so the
+// two cannot be swapped at a call site. A site in range
 // (IsCoedgeSiteInRange) names exactly one Coedge and its FaceBound, which is
 // what composing the sense of a use needs; a coedge value alone does not say
 // which face uses it.
@@ -81,8 +82,8 @@ type CoedgeSite
     implements IValue
 {
     Face: BrepFaceIndex;
-    Bound: Integer;
-    Slot: Integer;
+    Bound: BoundSlot;
+    Slot: CoedgeSlot;
 }
 
 // One end of an edge: its Start end when IsStart, else its End end. A closed

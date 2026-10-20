@@ -253,7 +253,7 @@ library BrepTopology
     // The site of the coedge after this one in its loop, as the loop lists it,
     // the last wrapping to the first. Precondition: m.IsCoedgeSiteInRange(site).
     NextSite(m: BrepModel, site: CoedgeSite): CoedgeSite
-        => CoedgeSite(site.Face, site.Bound, (site.Slot + 1) % m.LoopCoedges(m.BoundAt(site).Loop).Count);
+        => CoedgeSite(site.Face, site.Bound, CoedgeSlot((site.Slot.Value + 1) % m.LoopCoedges(m.BoundAt(site).Loop).Count));
 
     //==
     // # Traversal
@@ -278,8 +278,8 @@ library BrepTopology
     CoedgeSitesOfFace(m: BrepModel, f: BrepFaceIndex): Array<CoedgeSite>
         => m.IsFaceInRange(f)
             ? m.Faces[f].Bounds.Count.Range.FlatMap(b =>
-                m.LoopCoedges(m.Faces[f].Bounds[b].Loop).Count.Range.Map(k => CoedgeSite(f, b, k)))
-            : 0.MapRange(k => CoedgeSite(f, k, k));
+                m.LoopCoedges(m.Faces[f].Bounds[b].Loop).Count.Range.Map(k => CoedgeSite(f, BoundSlot(b), CoedgeSlot(k))))
+            : 0.MapRange(k => CoedgeSite(f, BoundSlot(k), CoedgeSlot(k)));
 
     // Every coedge site of a shell, face by face.
     CoedgeSitesOfShell(m: BrepModel, s: ShellIndex): Array<CoedgeSite>

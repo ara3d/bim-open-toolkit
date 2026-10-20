@@ -1,5 +1,5 @@
 //==
-// # Catalog indices: constructors, conversions, predicates
+// # Foundation indices: slots, corners, keys, tables, remaps
 //
 // TYPE-CATALOG.md section 3. Every body here is its own specification; nothing is deferred.
 // Out-of-range inputs give the none index (-1) of the result's index type, as the typed indices
@@ -9,11 +9,10 @@
 //  - Interior slots and edge samples
 //  - Corners
 //  - Edge keys
-//  - Sample keys to sites
 //  - Kernel tables
 //  - Remaps
 
-library CatalogIndices
+library BrepFoundationIndices
 {
     //==
     // # Interior slots and edge samples
@@ -75,36 +74,6 @@ library CatalogIndices
         => k.A.Value < k.B.Value;
 
     //==
-    // # Sample keys to sites
-    //
-    // MeshVertexSite (mesh-numbering.types.plato) counts an edge's interior points from zero in
-    // the edge's forward direction, so sample 0 is the start vertex, sample sampleCount - 1 the end
-    // vertex, and sample k between them interior slot k - 1.
-
-    // The site of sample `sample` of edge e, whose discretization has sampleCount samples and runs
-    // from vertex start to vertex end. An out-of-range sample gives EdgeInterior with the none slot.
-    ToSiteOnEdge(e: BrepEdgeIndex, sample: EdgeSampleIndex, sampleCount: Integer, start: BrepVertexIndex, end: BrepVertexIndex): MeshVertexSite
-        => sample.Value == 0 && sampleCount >= 2
-            ? MeshVertexSite.ModelVertex(start)
-            : (sample.Value == sampleCount - 1 && sampleCount >= 2
-                ? MeshVertexSite.ModelVertex(end)
-                : MeshVertexSite.EdgeInterior(e, sample.ToInteriorSlot(sampleCount).Value));
-
-    // The site of key k in model m; sampleCount is the sample count of k's edge (ignored for a
-    // vertex key). An edge out of range gives EdgeInterior with the none slot.
-    ToSite(m: BrepModel, k: SampleKey, sampleCount: Integer): MeshVertexSite
-        => match (k) {
-            AtVertex(v) => MeshVertexSite.ModelVertex(v);
-            AtEdgeSample(e, s) => m.ToSiteOfEdgeSample(e, s, sampleCount);
-        };
-
-    // ToSite's edge arm, with the edge read only when it is in range.
-    ToSiteOfEdgeSample(m: BrepModel, e: BrepEdgeIndex, s: EdgeSampleIndex, sampleCount: Integer): MeshVertexSite
-        => m.IsEdgeInRange(e)
-            ? ToSiteOnEdge(e, s, sampleCount, m.Edges[e].Start, m.Edges[e].End)
-            : MeshVertexSite.EdgeInterior(e, -1);
-
-    //==
     // # Kernel tables
 
     // The position of t in TableName's declaration order, 0 to 9.
@@ -137,40 +106,6 @@ library CatalogIndices
             : r == 8 ? TableName.PcurvesTable
             : TableName.SurfacesTable;
     }
-
-    // The row count of table t of model m.
-    RowCount(m: BrepModel, t: TableName): Integer
-        => match (t) {
-            VerticesTable => m.Vertices.Count;
-            EdgesTable => m.Edges.Count;
-            LoopsTable => m.Loops.Count;
-            FacesTable => m.Faces.Count;
-            ShellsTable => m.Shells.Count;
-            BodiesTable => m.Bodies.Count;
-            CurvesTable => m.Geometry.Curves.Count;
-            Curves2DTable => m.Geometry.Curves2D.Count;
-            PcurvesTable => m.Geometry.Pcurves.Count;
-            SurfacesTable => m.Geometry.Surfaces.Count;
-        };
-
-    // True when row i exists in table t of model m: the range check of every table, once.
-    IsRowInRange(m: BrepModel, t: TableName, i: Integer): Boolean
-        => i >= 0 && i < m.RowCount(t);
-
-    // The library's own range predicate for table t, applied to the typed index of row i.
-    IsInTable(m: BrepModel, t: TableName, i: Integer): Boolean
-        => match (t) {
-            VerticesTable => m.IsVertexInRange(BrepVertexIndex(i));
-            EdgesTable => m.IsEdgeInRange(BrepEdgeIndex(i));
-            LoopsTable => m.IsLoopInRange(BrepLoopIndex(i));
-            FacesTable => m.IsFaceInRange(BrepFaceIndex(i));
-            ShellsTable => m.IsShellInRange(ShellIndex(i));
-            BodiesTable => m.IsBodyInRange(BodyIndex(i));
-            CurvesTable => m.Geometry.IsCurveInRange(CurveIndex(i));
-            Curves2DTable => m.Geometry.IsCurve2DInRange(Curve2DIndex(i));
-            PcurvesTable => m.Geometry.IsPcurveInRange(PcurveIndex(i));
-            SurfacesTable => m.Geometry.IsSurfaceInRange(SurfaceIndex(i));
-        };
 
     //==
     // # Remaps

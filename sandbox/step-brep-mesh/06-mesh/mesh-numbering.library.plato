@@ -76,8 +76,8 @@ library ModelMeshNumbering
     HasSite(n: MeshVertexNumbering, s: MeshVertexSite): Boolean
         => match (s) {
                ModelVertex(v) => v.Value >= 0 && v.Value < n.ModelVertexCount;
-               EdgeInterior(e, slot) => slot >= 0 && slot < n.EdgeInteriorCount(e);
-               FaceInterior(f, slot) => slot >= 0 && slot < n.FaceInteriorCount(f);
+               EdgeInterior(e, slot) => slot.Value >= 0 && slot.Value < n.EdgeInteriorCount(e);
+               FaceInterior(f, slot) => slot.Value >= 0 && slot.Value < n.FaceInteriorCount(f);
            };
 
     // The global index of a site: model vertex v is index v, the slot-th interior point of edge e
@@ -90,8 +90,8 @@ library ModelMeshNumbering
     IndexOfKnownSite(n: MeshVertexNumbering, s: MeshVertexSite): VertexIndex
         => match (s) {
                ModelVertex(v) => VertexIndex(v.Value);
-               EdgeInterior(e, slot) => VertexIndex(n.EdgeInteriorStart[e] + slot);
-               FaceInterior(f, slot) => VertexIndex(n.FaceInteriorStart[f] + slot);
+               EdgeInterior(e, slot) => VertexIndex(n.EdgeInteriorStart[e] + slot.Value);
+               FaceInterior(f, slot) => VertexIndex(n.FaceInteriorStart[f] + slot.Value);
            };
 
     // The site of global index i: the inverse of IndexOfSite over 0 to NumberedVertexCount - 1
@@ -110,9 +110,9 @@ library ModelMeshNumbering
         var f = n.FaceInteriorStart.RunContaining(i);
         var e = n.EdgeInteriorStart.RunContaining(i);
         return f >= 0
-            ? MeshVertexSite.FaceInterior(BrepFaceIndex(f), i - n.FaceInteriorStart[f])
+            ? MeshVertexSite.FaceInterior(BrepFaceIndex(f), InteriorSlot(i - n.FaceInteriorStart[f]))
             : (e >= 0
-                ? MeshVertexSite.EdgeInterior(BrepEdgeIndex(e), i - n.EdgeInteriorStart[e])
+                ? MeshVertexSite.EdgeInterior(BrepEdgeIndex(e), InteriorSlot(i - n.EdgeInteriorStart[e]))
                 : MeshVertexSite.ModelVertex(BrepVertexIndex(-1)));
     }
 
@@ -129,8 +129,8 @@ library ModelMeshNumbering
     SiteOf(p: MeshVertexProvenance, slot: Integer): MeshVertexSite
         => match (p) {
                OnVertex(v) => MeshVertexSite.ModelVertex(v);
-               OnEdge(e, t) => MeshVertexSite.EdgeInterior(e, slot);
-               OnFace(f, uv) => MeshVertexSite.FaceInterior(f, slot);
+               OnEdge(e, t) => MeshVertexSite.EdgeInterior(e, InteriorSlot(slot));
+               OnFace(f, uv) => MeshVertexSite.FaceInterior(f, InteriorSlot(slot));
            };
 
     // The global index of the slot-th sample of the cell a provenance names (VOCABULARY.md, fixed).
@@ -274,7 +274,7 @@ library ModelMeshNumbering
     // no local vertex.
     InteriorSiteOf(fm: FaceMesh, i: VertexIndex): MeshVertexSite
         => MeshVertexSite.FaceInterior(fm.Face,
-            fm.LocalVertex.IsValidIndex(i) ? fm.FaceInteriorRank(fm.LocalVertex[i]) : -1);
+            InteriorSlot(fm.LocalVertex.IsValidIndex(i) ? fm.FaceInteriorRank(fm.LocalVertex[i]) : -1));
 
     // The site of parameter-space point i of a face mesh: the model vertex for FromVertex; for
     // FromEdge(e, k), discretization point k of edge e, which is interior slot k - 1; otherwise (a
@@ -288,7 +288,7 @@ library ModelMeshNumbering
     SiteOfSource(fm: FaceMesh, i: VertexIndex, s: UvPointSource): MeshVertexSite
         => match (s) {
                FromVertex(v) => MeshVertexSite.ModelVertex(v);
-               FromEdge(e, k) => MeshVertexSite.EdgeInterior(e, k - 1);
+               FromEdge(e, k) => MeshVertexSite.EdgeInterior(e, InteriorSlot(k.Value - 1));
                SeamCut(side, k) => fm.InteriorSiteOf(i);
                Pole(side, k) => fm.InteriorSiteOf(i);
                Interior => fm.InteriorSiteOf(i);
@@ -325,7 +325,7 @@ library ModelMeshNumbering
            };
 
     // Whether a source is point k of edge e's discretization.
-    CitesEdgeSample(s: UvPointSource, e: BrepEdgeIndex, k: Integer): Boolean
+    CitesEdgeSample(s: UvPointSource, e: BrepEdgeIndex, k: EdgeSampleIndex): Boolean
         => match (s) {
                FromVertex(w) => false;
                FromEdge(edge, j) => edge.Value == e.Value && j == k;

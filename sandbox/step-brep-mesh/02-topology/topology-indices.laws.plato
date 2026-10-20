@@ -1,0 +1,17 @@
+//==
+// # Topology indices: laws
+//
+// TYPE-CATALOG.md section 3. Exact: indices and table tags only.
+//
+// Sections, in order:
+//  - Kernel tables
+
+library BrepTopologyIndicesLaws
+{
+    //==
+    // # Kernel tables
+
+    // The one range check over all ten tables agrees with each table's own predicate.
+    Law_RowInRangeAgreesWithTable(m: BrepModel, k: Integer, i: Integer): Boolean
+        => m.IsRowInRange(TableNameAt(k), i) == m.IsInTable(TableNameAt(k), i);
+}

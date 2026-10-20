@@ -167,8 +167,16 @@ layer's own and may change inside the layer.
   `ToCurveParameter(m, e, EdgeParameter)` read them against the model.
 - Points (`BrepFoundationPoints`): `UvPoint`, `UvDelta`, `ChartPoint`, `ModelPoint`, `LocalPoint`,
   `UvBox`, `ChartBox`, `DomainCorner` (`NextCorner`).
-- Concepts (`foundation.concepts.plato`): `IScaled`, `IMoved`, `IReversible`, `IHasDomain<TDomain>`
-  (no implementer yet).
+- Indices (`BrepFoundationIndices`, section 3): slots `BoundSlot`, `CoedgeSlot`, `EdgeSampleIndex`,
+  `InteriorSlot` (`IsInteriorSample`, `ToInteriorSlot`, `ToEdgeSample`), `UvPointIndex`,
+  `LocalVertexIndex`; keys `ElementSide`, `ElementSidePair`, `HalfEdgeKey`, `EdgeKey` (`EdgeKeyOf`,
+  `ToEdgeKey`, `IsWellFormed`), `SampleKey = AtVertex | AtEdgeSample`, `TableName` (ten tables,
+  `Ordinal`, `TableNameAt`); corners `TriangleCorner(t, slot)`, `QuadCorner(triangleCount, q, slot)`;
+  remaps `BrepVertexRemap`, `EdgeRemap`, `LoopRemap`, `FaceRemap`, `ShellRemap`, `BodyRemap`,
+  `CurveRemap`, `Curve2DRemap`, `PcurveRemap`, `SurfaceRemap`, `KernelRemap` (`To<Name>Remap`,
+  `NewOfValues`, `KernelRemapChanging`, `RemovalNewOf`, `IdentityNewOf`, `IsInjectiveOnKept`).
+- Concepts (`foundation.concepts.plato`): `IScaled`, `IMoved`, `IReversible`, `IHasDomain<TDomain>`,
+  `IIndexedTable<TIndex, TRow>` (`RowCountOf`, `RowAt`, `IsRowIndex`) (no implementer yet).
 
 ### 1. `01-geometry`
 
@@ -234,12 +242,14 @@ layer's own and may change inside the layer.
 - `BrepBody = ManifoldSolid(Outer: ShellIndex) | SolidWithVoids(Outer: ShellIndex, Voids: Array<ShellIndex>) | ShellSet(Shells: Array<ShellIndex>)`.
 - `LengthUnit = Metre | Millimetre | Centimetre | Inch | Foot | Scaled(MetresPerUnit: Number)`.
 - `BrepModel { Geometry: GeometrySet; Vertices: Array<BrepVertex>; Edges: Array<BrepEdge>; Loops: Array<BrepLoop>; Faces: Array<BrepFace>; Shells: Array<BrepShell>; Bodies: Array<BrepBody>; Tolerances: Tolerances; Unit: LengthUnit }`.
-- `CoedgeSite { Face: BrepFaceIndex; Bound: Integer; Slot: Integer }`,
+- `CoedgeSite { Face: BrepFaceIndex; Bound: BoundSlot; Slot: CoedgeSlot }`,
   `EdgeEnd { Edge: BrepEdgeIndex; IsStart: Boolean }`.
 - Range predicates `IsVertexInRange`, `IsEdgeInRange`, `IsLoopInRange`, `IsFaceInRange`,
   `IsShellInRange`, `IsBodyInRange`, `IsEveryIndexInRange(m)`; traversal `StartVertex(m, c)`,
   `EndVertex(m, c)`, `LoopCoedges`, `ShellFaces`, `EdgesOfShell`, `FacesOfEdge(m, e)`,
   `FacesOfEdge(m, s, e)`, `CoedgeSitesOfEdgeInFace`, `Opposite`.
+- Tables (`BrepTopologyIndices`): `RowCount(m, t: TableName)`, `IsRowInRange(m, t, i)`,
+  `IsInTable(m, t, i)`.
 - `EdgeDomain(m, e): CurveDomain` (range always increasing; a closed edge spans one period on a
   `Periodic` or `Closed` curve), `PcurveEdgeDomain(m, e, p)` (through layer 1's
   `PcurveRangeOver`), `IsClosedEdge`, `IsDegenerateEdge`, `SharesCurveParameter`.
@@ -327,7 +337,7 @@ layer's own and may change inside the layer.
 
 ### 5. `05-face-meshing`
 
-- `UvPointSource = FromVertex(Vertex: BrepVertexIndex) | FromEdge(Edge: BrepEdgeIndex, Index: Integer) | SeamCut(Side: DomainSide, Index: Integer) | Pole(Side: DomainSide, Index: Integer) | Interior`:
+- `UvPointSource = FromVertex(Vertex: BrepVertexIndex) | FromEdge(Edge: BrepEdgeIndex, Index: EdgeSampleIndex) | SeamCut(Side: DomainSide, Index: Integer) | Pole(Side: DomainSide, Index: Integer) | Interior`:
   `SeamCut` and `Pole` are synthetic boundary points; `FromEdge` indices run 1 to count - 2, end
   samples are `FromVertex`.
 - `UvLoop { Points; Sources }`, `UvRegion { Outer: UvLoop; Holes: Array<UvLoop> }`, `UvSample`,
@@ -355,10 +365,11 @@ layer's own and may change inside the layer.
 
 ### 6. `06-mesh`
 
-- `MeshVertexSite = ModelVertex(Vertex) | EdgeInterior(Edge, Slot) | FaceInterior(Face, Slot)`;
+- `MeshVertexSite = ModelVertex(Vertex) | EdgeInterior(Edge, Slot: InteriorSlot) | FaceInterior(Face, Slot: InteriorSlot)`;
   `MeshVertexNumbering { ModelVertexCount: Integer; EdgeInteriorStart: Array<Integer>; FaceInteriorStart: Array<Integer> }`
   (CSR offsets, E + 1 and F + 1 entries); `NumberMeshVertices(m, d, faceMeshes)`,
-  `GlobalIndex(n, p, slot)`, `IsSameNumbering`.
+  `GlobalIndex(n, p, slot)`, `IsSameNumbering`. Sites of sample keys (`ModelMeshSites`):
+  `ToSite(m, k: SampleKey, sampleCount)`, `ToSiteOnEdge`. `ElementSideVertices(mesh, e, slot): VertexPair`.
 - `ModelMesh { Positions: Array<Point3D>; Triangles: Array<TriangleFace>; Quads: Array<QuadFace>; CornerNormals: Array<Direction3D>; CornerUvs: Array<UvCoordinate>; ElementFace: Array<BrepFaceIndex>; VertexProvenance: Array<MeshVertexProvenance>; Numbering: MeshVertexNumbering }`:
   normals and parameter values per element corner, positions and provenance per vertex.
 - `AssembleModelMesh(m, faceMeshes, numbering)`: boundary vertices map to shared global indices
@@ -453,6 +464,15 @@ layer's own and may change inside the layer.
 
 Format: date, layer, old name, new name, reason.
 
+- 2026-10-20, 2, `CoedgeSite { Bound: Integer; Slot: Integer }`, `CoedgeSite { Bound: BoundSlot; Slot: CoedgeSlot }`:
+  the two positions can no longer be swapped at a call site (catalog merge, indices).
+- 2026-10-20, 6, `MeshVertexSite.EdgeInterior` and `FaceInterior` `Slot: Integer`, `Slot: InteriorSlot`:
+  an interior slot is not an edge sample (catalog merge, indices).
+- 2026-10-20, 5, `UvPointSource.FromEdge(Edge, Index: Integer)`, `FromEdge(Edge, Index: EdgeSampleIndex)`:
+  `IsEdgeSample` and `CitesEdgeSample` take an `EdgeSampleIndex`; `SampleIndex` still returns
+  the Integer (catalog merge, indices).
+- 2026-10-20, 6, `ElementSide(mesh, e, slot): VertexPair`, `ElementSideVertices(mesh, e, slot)`: the
+  name is now layer 0's type `ElementSide { Element; Side }` (catalog merge, indices).
 - 2026-10-20, 0, `ResolutionAt(magnitude): Number`, `ResolutionAt(magnitude): Resolution`: a rounding
   floor is typed (TYPE-CATALOG.md section 1); every caller reads `.Value`. The staging
   `ResolutionFor` is deleted (catalog merge, foundation).

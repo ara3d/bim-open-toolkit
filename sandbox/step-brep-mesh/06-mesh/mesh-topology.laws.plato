@@ -52,7 +52,7 @@ library ModelMeshTopologyLaws
     // Table law: every proper element side lies on a listed edge.
     Law_EdgeTableListsEveryProperSide(mesh: ModelMesh, e: ElementIndex, slot: Integer): Boolean
         => (mesh.IsElementInRange(e) ? (slot >= 0 && slot < mesh.ElementArity(e)) : false)
-            ? (mesh.ElementSide(e, slot).IsProper ? mesh.EdgeTableOf.ListsEdge(mesh.ElementSide(e, slot).Canonical) : true)
+            ? (mesh.ElementSideVertices(e, slot).IsProper ? mesh.EdgeTableOf.ListsEdge(mesh.ElementSideVertices(e, slot).Canonical) : true)
             : true;
 
     // Table law: edge k's count is the number of element sides on it, counted directly

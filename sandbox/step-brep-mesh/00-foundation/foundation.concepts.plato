@@ -1,13 +1,14 @@
 //==
 // # Concepts over the foundation types
 //
-// TYPE-CATALOG.md section 15, the concepts that need only section 1 and 2
+// TYPE-CATALOG.md section 15, the concepts that need only section 1 to 3
 // types and the stdlib. One concept states a law once over every type that
 // implements it.
 //
 // Sections, in order:
 //  - Transformations
 //  - Domains
+//  - Indexed tables
 
 //==
 // # Transformations
@@ -40,4 +41,22 @@ interface IReversible
 interface IHasDomain<TDomain>
 {
     Domain(x: Self): TDomain;
+}
+
+//==
+// # Indexed tables
+//
+// No kernel table implements IIndexedTable: the tables are Array<T> fields of BrepModel and
+// GeometrySet, Array<T> cannot gain an implements clause, and BrepModel cannot implement it once
+// per table because RowCountOf(x: Self) would then have six meanings. The one law over ten
+// tables is stated over TableName instead (Law_RowInRangeAgreesWithTable).
+
+// A table of TRow rows addressed by a TIndex typed index: its row count, the row at an index, and
+// whether an index names a row. The obligations are not named Count and At, which the stdlib's
+// ICountable and IIndexable already own. Removes: a range check written per table.
+interface IIndexedTable<TIndex, TRow>
+{
+    RowCountOf(x: Self): Integer;
+    RowAt(x: Self, i: TIndex): TRow;
+    IsRowIndex(x: Self, i: TIndex): Boolean;
 }

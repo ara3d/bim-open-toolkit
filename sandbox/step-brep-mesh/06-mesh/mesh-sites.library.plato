@@ -1,0 +1,41 @@
+//==
+// # Mesh sites: sample keys to mesh vertex sites
+//
+// TYPE-CATALOG.md section 3. A SampleKey (00-foundation/foundation-keys.types.plato) names a
+// boundary point before meshing; ToSite gives its MeshVertexSite (mesh-numbering.types.plato).
+//
+// Sections, in order:
+//  - Sample keys to sites
+
+library ModelMeshSites
+{
+    //==
+    // # Sample keys to sites
+    //
+    // MeshVertexSite (mesh-numbering.types.plato) counts an edge's interior points from zero in
+    // the edge's forward direction, so sample 0 is the start vertex, sample sampleCount - 1 the end
+    // vertex, and sample k between them interior slot k - 1.
+
+    // The site of sample `sample` of edge e, whose discretization has sampleCount samples and runs
+    // from vertex start to vertex end. An out-of-range sample gives EdgeInterior with the none slot.
+    ToSiteOnEdge(e: BrepEdgeIndex, sample: EdgeSampleIndex, sampleCount: Integer, start: BrepVertexIndex, end: BrepVertexIndex): MeshVertexSite
+        => sample.Value == 0 && sampleCount >= 2
+            ? MeshVertexSite.ModelVertex(start)
+            : (sample.Value == sampleCount - 1 && sampleCount >= 2
+                ? MeshVertexSite.ModelVertex(end)
+                : MeshVertexSite.EdgeInterior(e, sample.ToInteriorSlot(sampleCount)));
+
+    // The site of key k in model m; sampleCount is the sample count of k's edge (ignored for a
+    // vertex key). An edge out of range gives EdgeInterior with the none slot.
+    ToSite(m: BrepModel, k: SampleKey, sampleCount: Integer): MeshVertexSite
+        => match (k) {
+            AtVertex(v) => MeshVertexSite.ModelVertex(v);
+            AtEdgeSample(e, s) => m.ToSiteOfEdgeSample(e, s, sampleCount);
+        };
+
+    // ToSite's edge arm, with the edge read only when it is in range.
+    ToSiteOfEdgeSample(m: BrepModel, e: BrepEdgeIndex, s: EdgeSampleIndex, sampleCount: Integer): MeshVertexSite
+        => m.IsEdgeInRange(e)
+            ? ToSiteOnEdge(e, s, sampleCount, m.Edges[e].Start, m.Edges[e].End)
+            : MeshVertexSite.EdgeInterior(e, InteriorSlot(-1));
+}
