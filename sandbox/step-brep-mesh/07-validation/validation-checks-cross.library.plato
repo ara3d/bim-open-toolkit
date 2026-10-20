@@ -192,7 +192,7 @@ library BrepCrossChecking
     VolumeRoundoff(mesh: ModelMesh): Number
         => ResolutionAt(mesh.ElementCount.Range.Map(k => mesh.HasValidCorners(ElementIndex(k))
             ? mesh.ElementTriangles(ElementIndex(k)).Map(t => Tetrahedron(mesh.VolumeOrigin, t.A, t.B, t.C).SignedVolume.Abs).SumOf
-            : 0.0).SumOf);
+            : 0.0).SumOf).Value;
 
     // True when shell s's mesh and shell t's mesh share no referenced vertex.
     ShareNoVertex(m: BrepModel, mesh: ModelMesh, s: ShellIndex, t: ShellIndex): Boolean

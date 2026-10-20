@@ -32,7 +32,7 @@ library BsplineOraclesLaws
         var g = GeometrySet([], [], [], [surface], []);
         var seg = GreenSegment(UvCoordinate(u0.UnitFraction, v0.UnitFraction), UvCoordinate(u1.UnitFraction, v1.UnitFraction));
         var exact = 0.0 - 6.0 * (seg.To.U - seg.From.U) * 0.5 * (seg.From.V + seg.To.V);
-        return (surface.AreaSegmentByQuadrature(g, seg) - exact).Abs <= ResolutionAt(16.0);
+        return (surface.AreaSegmentByQuadrature(g, seg) - exact).Abs <= ResolutionAt(16.0).Value;
     }
 
     // The top of Witness_BSplinePatchSolid(b) has its Green area in layer
@@ -66,6 +66,6 @@ library BsplineOraclesLaws
     Law_QuarterCircleLength(_: Integer): Boolean
     {
         var m = 1.CurveEdgeModel;
-        return (m.Oracle_EdgeLength(BrepEdgeIndex(0)) - Number.Pi * 0.5).Abs <= m.Tolerances.Length.Value + ResolutionAt(4.0);
+        return (m.Oracle_EdgeLength(BrepEdgeIndex(0)) - Number.Pi * 0.5).Abs <= m.Tolerances.Length.Value + ResolutionAt(4.0).Value;
     }
 }

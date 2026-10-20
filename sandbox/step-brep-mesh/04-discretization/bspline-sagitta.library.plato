@@ -89,7 +89,7 @@ library BsplineSagitta
             var hull = d.Basis.BezierControls(values, piece.Start, piece.End);
             lower = lower.Max(hull.First.HullDistance(a, b)).Max(hull.Last.HullDistance(a, b));
             var bound = hull.Reduce(0.0, (r, h) => r.Max(h.HullDistance(a, b)));
-            if (bound <= lower + tol || pieces.Count >= Integer.HullPieceBudget || piece.End - piece.Start <= ResolutionAt(piece.Start.Abs.Max(piece.End.Abs)))
+            if (bound <= lower + tol || pieces.Count >= Integer.HullPieceBudget || piece.End - piece.Start <= ResolutionAt(piece.Start.Abs.Max(piece.End.Abs)).Value)
             {
                 upper = upper.Max(bound);
                 settled = settled && bound <= lower + tol;

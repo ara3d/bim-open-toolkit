@@ -225,7 +225,7 @@ library BrepOracles
     GreenAllowance(m: BrepModel, f: BrepFaceIndex): Number
         => m.CanGreen(f)
             ? (m.GreenArea(f, 2 * Integer.GreenChords) - m.GreenArea(f, Integer.GreenChords)).Abs / 3.0
-                + ResolutionAt(m.GreenArea(f, 2 * Integer.GreenChords) * m.GreenBoundary(f, 2 * Integer.GreenChords).Count.ToNumber)
+                + ResolutionAt(m.GreenArea(f, 2 * Integer.GreenChords) * m.GreenBoundary(f, 2 * Integer.GreenChords).Count.ToNumber).Value
             : Number.Unmeasured;
 
     // The area of face f from its n-chord boundary: the signed integral times
@@ -659,7 +659,7 @@ library BrepOracles
     IsCoplanarLineProfile(g: GeometrySet, profile: CurveIndex, axis: InfiniteLine3D): Boolean
         => g.CurveAt(profile).IsLineCase
             ? axis.Direction.Vector.Dot((g.Eval(profile, 0.0) - axis.Origin).Cross(g.Derivative(profile, 0.0))).Abs
-                <= ResolutionAt((g.Eval(profile, 0.0) - axis.Origin).Length * g.Derivative(profile, 0.0).Length)
+                <= ResolutionAt((g.Eval(profile, 0.0) - axis.Origin).Length * g.Derivative(profile, 0.0).Length).Value
             : false;
 
     // The distance from the axis of the profile's point at parameter t.
@@ -674,7 +674,7 @@ library BrepOracles
             ? true
             : (g.CurveAt(profile).IsCircleCase
                 ? g.Derivative(profile, 0.0).Dot(extrusion).Abs
-                    <= ResolutionAt(g.Derivative(profile, 0.0).Length * extrusion.Length)
+                    <= ResolutionAt(g.Derivative(profile, 0.0).Length * extrusion.Length).Value
                 : false);
 
     // True for the Line case of a curve.
@@ -751,7 +751,7 @@ library BrepOracles
         => m.IsShellInRange(s)
             ? (m.ShellVolume(s, 2 * Integer.GreenChords) - m.ShellVolume(s, Integer.GreenChords)).Abs / 3.0
                 + ResolutionAt(m.ShellVolume(s, 2 * Integer.GreenChords).Abs
-                    * m.ShellFaces(s).Map(f => m.GreenBoundary(f, 2 * Integer.GreenChords).Count).IntegerTotal.ToNumber)
+                    * m.ShellFaces(s).Map(f => m.GreenBoundary(f, 2 * Integer.GreenChords).Count).IntegerTotal.ToNumber).Value
             : Number.Unmeasured;
 
     // The volume a body encloses: the sum over its shells (the outer shell

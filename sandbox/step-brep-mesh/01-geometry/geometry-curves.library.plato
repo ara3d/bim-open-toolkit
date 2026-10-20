@@ -870,7 +870,7 @@ library BrepGeometryCurves
         var b = g.ClosestParameter(p, g.Eval(c, r.End));
         var period = g.PcurveParameterPeriod(p);
         var closedRun = r.End > r.Start
-            && g.Eval(c, r.Start).Distance(g.Eval(c, r.End)) <= ResolutionAt(g.EvaluationMagnitude(c, r.Start));
+            && g.Eval(c, r.Start).Distance(g.Eval(c, r.End)) <= ResolutionAt(g.EvaluationMagnitude(c, r.Start)).Value;
         return period > 0.0
             ? NumberInterval(a, closedRun ? a + period : a + (b - a).Wrap(period))
             : NumberInterval(a.Min(b), a.Max(b));

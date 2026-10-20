@@ -110,7 +110,7 @@ layer's own and may change inside the layer.
   parameter (a length along a unit axis, an angle or knot), set by layer 3 with
   `LengthParameterFloor(length, extent)` and `AngleParameterFloor(length, modelSize, extent)`.
   `ScaledTolerances(t, factor)` scales the length and the length floor and keeps the others.
-- Rounding: `ResolutionAt(magnitude)`, `ResolvableLength(length, extent)`, `IsResolvable`. A
+- Rounding: `ResolutionAt(magnitude): Resolution`, `ResolvableLength(length, extent)`, `IsResolvable`. A
   rounding floor is taken at the coordinate extent (the largest absolute coordinate), never at the
   model size.
 - The tolerance at a point: `ParameterToleranceAt(t: Tolerances, floor: ParameterTolerance, speed, cap)`,
@@ -148,6 +148,27 @@ layer's own and may change inside the layer.
   `NearestUnwrapped(t, reference, period)` and its domain forms, `PeriodicRepresentativeAbove`.
 - `Samples(range, count)`, `Samples(CurveDomain, SamplePlan)`, `Samples(SurfaceDomain, SamplePlan)`;
   `IntegerTotal(values)`; `Identical`, `Corresponds`.
+
+- Quantities (`BrepFoundationQuantities`, TYPE-CATALOG.md section 1): `ModelLength`, `Metres`,
+  `SquaredLength`, `AreaMeasure`, `VolumeMeasure`, `Ratio`, `Fraction` (built by `FractionOf`),
+  `PowerOfTwo { Exponent: Integer }` with `Factor`, `Inverse` and `ScaledBy` on each length power,
+  `Resolution { Value: Number }`, `MeasureKind`, `Measure { Value; Kind }` with the `ToMeasure`
+  overloads and `IsWithin(worst, bound)` (false across kinds).
+- Signs (`BrepFoundationSigns`): `Sign` (`SignWithin(x, tol: Resolution)`), `Sense = Same | Opposite`
+  (`Compose`, `ToSense` of `EdgeOrientation`, `Boolean` and `Parity`, `ToSign`), `Parity`
+  (`ParityOf`, `Compose`, `Flipped`), `Winding`.
+- Counts (`BrepFoundationCounts`): `Count`, `NonZeroCount`, `SegmentCount`, `SampleCount`, `Round`,
+  `Depth`, built by `CountOf`, `NonZeroCountOf`, `SegmentCountOf`, `First`/`NextRound`, `Root`/`Deeper`.
+- Parameters (`BrepFoundationParameters`, section 2): `CurveParameter`, `Curve2DParameter`,
+  `EdgeParameter`, `KnotParameter`, `ArcLength`, `NormalizedParameter`, `WrappedAngle`,
+  `UnwrappedAngle`, `ParameterRange` (`RangeLength`), `DirectedRange`, `PeriodicRange`
+  (`PeriodicRangeOf`, `FullPeriod`, `UnwrappedEnd`), `IsoLine { Constant: SurfaceParameter; At }`.
+  Layer 1's `IsBreakKnot(KnotParameter, SplineBasis, order)` and layer 2's
+  `ToCurveParameter(m, e, EdgeParameter)` read them against the model.
+- Points (`BrepFoundationPoints`): `UvPoint`, `UvDelta`, `ChartPoint`, `ModelPoint`, `LocalPoint`,
+  `UvBox`, `ChartBox`, `DomainCorner` (`NextCorner`).
+- Concepts (`foundation.concepts.plato`): `IScaled`, `IMoved`, `IReversible`, `IHasDomain<TDomain>`
+  (no implementer yet).
 
 ### 1. `01-geometry`
 
@@ -432,6 +453,15 @@ layer's own and may change inside the layer.
 
 Format: date, layer, old name, new name, reason.
 
+- 2026-10-20, 0, `ResolutionAt(magnitude): Number`, `ResolutionAt(magnitude): Resolution`: a rounding
+  floor is typed (TYPE-CATALOG.md section 1); every caller reads `.Value`. The staging
+  `ResolutionFor` is deleted (catalog merge, foundation).
+- 2026-10-20, 8, `PowerOfTwo(k): Number` (in `pipeline.laws.plato`), `PowerOfTwoValue(k)`: the name
+  is now layer 0's type `PowerOfTwo { Exponent }` (staging `PowerOfTwoFactor`), whose derived
+  constructor would join the function's overload group.
+- 2026-10-20, 2, `CoedgeRunsForwardOnCurve` body: kept as the XNOR of three Booleans. The `Compose` of three
+  `Sense` values is equal but took `Law_PowerOfTwoScalingScalesPositions` from 51 s to over 400 s in the
+  interpreter; retry when laws run compiled (TKT-354).
 - 2026-10-17, 2, `BrepEdgeUse` (reused), `Coedge` (declared): the stdlib type indexes a mesh edge
   (`UndirectedEdgeIndex`); the kernel needs `BrepEdgeIndex`. Found by the validation and primer
   agents.

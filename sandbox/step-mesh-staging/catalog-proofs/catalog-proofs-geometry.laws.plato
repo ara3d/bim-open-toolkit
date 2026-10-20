@@ -74,9 +74,9 @@ library CatalogProofsGeometryLaws
     CatalogClampedEndsOf(c: DecidedClampedBSpline): Boolean
         => match (c) {
             Decided(p) => p.Data.BSplinePoint(p.Data.Basis.SplineDomain.Start).Distance(p.Data.ControlPoints.First)
-                    <= ResolutionAt(4.0 * p.Data.ControlPoints.Reduce(0.0, (m, q) => m.Max(q.PositionVector.Length)))
+                    <= ResolutionAt(4.0 * p.Data.ControlPoints.Reduce(0.0, (m, q) => m.Max(q.PositionVector.Length))).Value
                 && p.Data.BSplinePoint(p.Data.Basis.SplineDomain.End).Distance(p.Data.ControlPoints.Last)
-                    <= ResolutionAt(4.0 * p.Data.ControlPoints.Reduce(0.0, (m, q) => m.Max(q.PositionVector.Length)));
+                    <= ResolutionAt(4.0 * p.Data.ControlPoints.Reduce(0.0, (m, q) => m.Max(q.PositionVector.Length))).Value;
             Undecided(r) => true;
         };
 

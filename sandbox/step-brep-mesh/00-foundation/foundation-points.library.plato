@@ -1,0 +1,117 @@
+//==
+// # Points and boxes (functions)
+//
+// Conversions between the parameter spaces of foundation-points.types.plato.
+//
+// Sections, in order:
+//  - Parameter-space points
+//  - The unit square
+//  - The chart
+//  - Model points
+//  - Boxes and corners
+
+library BrepFoundationPoints
+{
+    //==
+    // # Parameter-space points
+
+    // The step from b to a: a - b.
+    Subtract(a: UvPoint, b: UvPoint): UvDelta
+        => UvDelta(a.U - b.U, a.V - b.V);
+
+    // p moved by d.
+    Add(p: UvPoint, d: UvDelta): UvPoint
+        => UvPoint(p.U + d.U, p.V + d.V);
+
+    // A stdlib UvCoordinate read as natural parameters, for layers that still
+    // hold UvCoordinate while they move to UvPoint.
+    ToUvPoint(c: UvCoordinate): UvPoint
+        => UvPoint(c.U, c.V);
+
+    // The inverse of ToUvPoint.
+    ToUvCoordinate(p: UvPoint): UvCoordinate
+        => UvCoordinate(p.U, p.V);
+
+    //==
+    // # The unit square
+
+    // p's position in the unit square over domain d: (0, 0) at the start of
+    // both ranges, (1, 1) at their ends. Precondition: both ranges have
+    // positive length.
+    ToUnitSquare(d: SurfaceDomain, p: UvPoint): UvCoordinate
+        => UvCoordinate((p.U - d.U.Range.Start) / (d.U.Range.End - d.U.Range.Start),
+            (p.V - d.V.Range.Start) / (d.V.Range.End - d.V.Range.Start));
+
+    // The inverse of ToUnitSquare.
+    FromUnitSquare(d: SurfaceDomain, c: UvCoordinate): UvPoint
+        => UvPoint(d.U.Range.Start + c.U * (d.U.Range.End - d.U.Range.Start),
+            d.V.Range.Start + c.V * (d.V.Range.End - d.V.Range.Start));
+
+    //==
+    // # The chart
+
+    // The signed u scale of a chart: -ScaleU when Mirrored.
+    SignedScaleU(chart: FaceChart): Number
+        => chart.Mirrored ? 0.0 - chart.ScaleU : chart.ScaleU;
+
+    // uv in the chart: (s * ScaleU * u, ScaleV * v), s = -1 when Mirrored.
+    ToChart(chart: FaceChart, uv: UvPoint): ChartPoint
+        => ChartPoint(chart.SignedScaleU * uv.U, chart.ScaleV * uv.V);
+
+    // The inverse of ToChart. Precondition: ScaleU and ScaleV are positive.
+    FromChart(chart: FaceChart, p: ChartPoint): UvPoint
+        => UvPoint(p.X / chart.SignedScaleU, p.Y / chart.ScaleV);
+
+    //==
+    // # Model points
+
+    // p moved by a rigid motion.
+    Moved(p: ModelPoint, motion: Pose3D): ModelPoint
+        => ModelPoint(motion * p.Point);
+
+    // p placed in the model by its occurrence's placement.
+    Placed(p: LocalPoint, placement: Pose3D): ModelPoint
+        => ModelPoint(placement * p.Point);
+
+    //==
+    // # Boxes and corners
+
+    // The box spanned by two points, in either order.
+    UvBoxOf(a: UvPoint, b: UvPoint): UvBox
+        => UvBox(UvPoint(a.U.Min(b.U), a.V.Min(b.V)), UvPoint(a.U.Max(b.U), a.V.Max(b.V)));
+
+    // The box spanned by two chart points, in either order.
+    ChartBoxOf(a: ChartPoint, b: ChartPoint): ChartBox
+        => ChartBox(ChartPoint(a.X.Min(b.X), a.Y.Min(b.Y)), ChartPoint(a.X.Max(b.X), a.Y.Max(b.Y)));
+
+    // True when p lies in the box, boundary included.
+    Contains(b: UvBox, p: UvPoint): Boolean
+        => b.Min.U <= p.U && p.U <= b.Max.U && b.Min.V <= p.V && p.V <= b.Max.V;
+
+    // True when p lies in the chart box, boundary included.
+    Contains(b: ChartBox, p: ChartPoint): Boolean
+        => b.Min.X <= p.X && p.X <= b.Max.X && b.Min.Y <= p.Y && p.Y <= b.Max.Y;
+
+    // The surface domain's parameter rectangle as a box.
+    ToUvBox(d: SurfaceDomain): UvBox
+        => UvBoxOf(UvPoint(d.U.Range.Start, d.V.Range.Start), UvPoint(d.U.Range.End, d.V.Range.End));
+
+    // The point of domain d at corner c.
+    CornerPoint(d: SurfaceDomain, c: DomainCorner): UvPoint
+        => match (c) {
+            MinMin => UvPoint(d.U.Range.Start, d.V.Range.Start);
+            MinMax => UvPoint(d.U.Range.Start, d.V.Range.End);
+            MaxMin => UvPoint(d.U.Range.End, d.V.Range.Start);
+            MaxMax => UvPoint(d.U.Range.End, d.V.Range.End);
+        };
+
+    // The next corner counter-clockwise in (u, v): MinMin, MaxMin, MaxMax,
+    // MinMax. The side from c to c.NextCorner is one side of the domain.
+    NextCorner(c: DomainCorner): DomainCorner
+        => match (c) {
+            MinMin => DomainCorner.MaxMin;
+            MaxMin => DomainCorner.MaxMax;
+            MaxMax => DomainCorner.MinMax;
+            MinMax => DomainCorner.MinMin;
+        };
+}

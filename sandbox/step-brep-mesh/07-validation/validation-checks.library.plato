@@ -75,10 +75,10 @@ library BrepChecking
     ResolutionTolerances(mesh: ModelMesh): Tolerances
     {
         var extent = mesh.Positions.CoordinateExtentOf;
-        var length = LengthTolerance(16.0 * ResolutionAt(extent));
+        var length = LengthTolerance(16.0 * ResolutionAt(extent).Value);
         return Tolerances(
             length,
-            AngleTolerance(Angle(16.0 * ResolutionAt(Number.Tau))),
+            AngleTolerance(Angle(16.0 * ResolutionAt(Number.Tau).Value)),
             LengthParameterFloor(length, extent),
             AngleParameterFloor(length, mesh.Positions.BoundingDiagonal, extent));
     }

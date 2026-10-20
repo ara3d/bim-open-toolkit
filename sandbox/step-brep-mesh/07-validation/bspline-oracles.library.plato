@@ -163,7 +163,7 @@ library BsplineOracles
         var nn = svv.Dot(n);
         var h = (e * nn - 2.0 * f * mm + gg * l) / (2.0 * det);
         var k = (l * nn - mm * mm) / det;
-        return det <= ResolutionAt(e * gg) ? Number.MaxValue : h.Abs + (h * h - k).Max(0.0).Sqrt;
+        return det <= ResolutionAt(e * gg).Value ? Number.MaxValue : h.Abs + (h * h - k).Max(0.0).Sqrt;
     }
 
     // Body of layer 7's SampledCurvatureBound: the largest principal

@@ -397,7 +397,7 @@ library FaceMeshingLaws
                 ? true
                 : fm.Normals[i].AngleBetweenDirections(
                     Direction3D(m.FaceNormalAt(fm.Face, fm.UvPoints[i], fm.Normals[i].Vector))).Radians
-                    <= ResolutionAt(1.0))
+                    <= ResolutionAt(1.0).Value)
             : true;
 
     // Lift drops exactly the triangles with two corners that are one local vertex (identified

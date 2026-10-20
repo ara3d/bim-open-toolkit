@@ -33,7 +33,7 @@ Choices where the catalog sketches:
   `AddFace(BrepFace)` cannot undo `RemoveFace` exactly: it has no index and no shell membership.
 - `Transform` and `Scale` refuse a partial selection (`SelectionIsWholeModel`): moving part of a
   model needs the curves and surfaces it shares with the rest split first, which is a topological
-  edit. `Scale` takes `PowerOfTwoFactor`, so scaling and its inverse are exact.
+  edit. `Scale` takes `PowerOfTwo`, so scaling and its inverse are exact.
 - The script form returns `ScriptOutcome` (`ScriptApplied(Model, Remap, Inverse: EditScript)` or
   `ScriptRefused(Step, Precondition, Where)`), not `EditOutcome`: a script's inverse is a script, and
   it is known only after applying, so the catalog's `Inverse(script)` became the outcome's field.

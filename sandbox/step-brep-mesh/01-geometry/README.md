@@ -14,6 +14,7 @@ files present that day.
 | `geometry-curves.types.plato` | `BrepCurve`, `BrepCurve2D`, `CompositeSegment`, `CompositeSegment2D`, `CurveSupport`, `PreferredRepresentation`, `Pcurve` | |
 | `geometry-surfaces.types.plato` | `BrepSurface`, `TorusPart`, `SurfaceParameter` | |
 | `geometry-splines.types.plato` | `SplineBasis`, `BSplineCurveData`, `BSplineCurve2DData`, `BSplineSurfaceData` | |
+| `geometry-parameters.library.plato` | library `BrepGeometryParameters`: `IsBreakKnot(KnotParameter, SplineBasis, order)` over layer 0's `KnotParameter` (catalog merge, 2026-10-20) | |
 | `geometry-set.types.plato` | `GeometrySet` and the views `ArenaCurve`, `ArenaCurve2D`, `ArenaSurface` | |
 | `geometry.concepts.plato` | `INaturalCurve3D`, `INaturalCurve2D`, `INaturalSurface` | |
 | `geometry.library.plato` | the arena: index ranges, accessors, reference graph, well-formedness, placements, piece arithmetic, views, defining points | `BrepGeometry` |

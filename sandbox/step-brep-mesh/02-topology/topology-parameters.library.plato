@@ -1,0 +1,16 @@
+//==
+// # BrepTopologyParameters
+//
+// Layer 2 of the STEP B-rep to mesh design (README.md beside this file): the
+// conversion from layer 0's EdgeParameter to the CurveParameter of the edge's
+// curve, which needs the model.
+
+library BrepTopologyParameters
+{
+    // The parameter of edge e's curve at edge parameter t. Layer 2's
+    // EdgeDomain already runs in increasing curve parameter whatever the
+    // edge's SameSense, so the conversion only wraps t into the curve's
+    // domain, as EdgeCurvePoint does. Precondition: m.IsEdgeInRange(e).
+    ToCurveParameter(m: BrepModel, e: BrepEdgeIndex, t: EdgeParameter): CurveParameter
+        => CurveParameter(m.Geometry.Domain(m.Edges[e].Curve).Wrap(t.Value));
+}

@@ -101,7 +101,7 @@ library CatalogMeshingFaceMeshing
     // The rounding resolution of TwiceSignedArea on (a, b, c): the resolution at the product of
     // the largest coordinate differences of b and of c from a.
     OrientationResolution(a: ChartPoint, b: ChartPoint, c: ChartPoint): Resolution
-        => ResolutionFor((b.X - a.X).Abs.Max((b.Y - a.Y).Abs) * (c.X - a.X).Abs.Max((c.Y - a.Y).Abs));
+        => ResolutionAt((b.X - a.X).Abs.Max((b.Y - a.Y).Abs) * (c.X - a.X).Abs.Max((c.Y - a.Y).Abs));
 
     // The orientation of (a, b, c) in the chart: Positive counter-clockwise, Zero when the area is
     // rounding noise.

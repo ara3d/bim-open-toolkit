@@ -100,7 +100,7 @@ library BrepFoundationLaws
     {
         var reach = t.Length.Value.Max(speed * floor.Value);
         return t.IsWellFormed && floor.IsWellFormed && IsSpeedAndCap(speed, cap)
-            ? speed * t.ParameterToleranceAt(floor, speed, cap).Value <= reach + ResolutionAt(reach)
+            ? speed * t.ParameterToleranceAt(floor, speed, cap).Value <= reach + ResolutionAt(reach).Value
             : true;
     }
 
@@ -121,7 +121,7 @@ library BrepFoundationLaws
     // within the rounding at t.
     Law_CoincidenceComposesWithSummedTolerance(a: Point3D, b: Point3D, c: Point3D, t: LengthTolerance): Boolean
         => a.Coincident(b, t) && b.Coincident(c, t)
-            ? a.Coincident(c, LengthTolerance(t.Value * 2.0 + ResolutionAt(t.Value)))
+            ? a.Coincident(c, LengthTolerance(t.Value * 2.0 + ResolutionAt(t.Value).Value))
             : true;
 
     // Every direction whose squared length is finite is the same direction as
@@ -147,7 +147,7 @@ library BrepFoundationLaws
     // rounding at |t| + period.
     Law_WrapStaysInClass(t: Number, period: Number): Boolean
         => t.CanWrap(period) && (t - t.Wrap(period)).CanWrap(period)
-            ? PeriodicDistance(t.Wrap(period), t, period) <= ResolutionAt(t.Abs + period)
+            ? PeriodicDistance(t.Wrap(period), t, period) <= ResolutionAt(t.Abs + period).Value
             : true;
 
     // Adding a period does not change the wrapped value, measured around the
@@ -199,7 +199,7 @@ library BrepFoundationLaws
     // range's ends: Start + Wrap(t - Start, period) may round past End.
     Law_WrapOnClosedDomainStaysInRange(d: CurveDomain, t: Number): Boolean
     {
-        var slack = ResolutionAt(d.Range.Start.Abs + d.Range.End.Abs);
+        var slack = ResolutionAt(d.Range.Start.Abs + d.Range.End.Abs).Value;
         return d.HasSeam && !d.Periodicity.IsPeriodic && d.CanWrap(t)
             ? d.Range.Start - slack <= d.Wrap(t) && d.Wrap(t) <= d.Range.End + slack
             : true;
@@ -211,7 +211,7 @@ library BrepFoundationLaws
     Law_PeriodicRepresentativeAboveInPeriod(t: Number, reference: Number, period: Number): Boolean
     {
         var r = PeriodicRepresentativeAbove(t, reference, period);
-        var slack = ResolutionAt(t.Abs + reference.Abs + period);
+        var slack = ResolutionAt(t.Abs + reference.Abs + period).Value;
         return (t - reference).CanWrap(period) && (r - t).CanWrap(period)
             ? r >= reference
                 && r - reference <= period + slack

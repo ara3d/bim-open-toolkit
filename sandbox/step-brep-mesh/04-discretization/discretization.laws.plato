@@ -403,6 +403,6 @@ library EdgeDiscretizingLaws
     Law_ArcCriteriaCountMeetsChordal(radius: Number, sweep: Angle, c: DiscretizationCriteria, t: Tolerances): Boolean
         => (radius > 0.0 && sweep.Radians > 0.0 && sweep.Radians <= Number.Tau && c.IsWellFormed && t.Length.Value >= 0.0)
             ? radius.ArcSagitta(sweep / radius.ArcCriteriaCount(sweep, c, t).ToNumber)
-                <= c.EffectiveChordal(t) + ResolutionAt(radius)
+                <= c.EffectiveChordal(t) + ResolutionAt(radius).Value
             : true;
 }

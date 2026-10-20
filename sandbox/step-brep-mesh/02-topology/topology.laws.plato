@@ -439,7 +439,7 @@ library BrepTopologyLaws
     // every defining point lies in the cube of half-width CoordinateExtent
     // about the origin. Library, rounding: ResolutionAt of the size.
     Law_ModelSizeWithinExtent(m: BrepModel): Boolean
-        => m.ModelSize <= m.CoordinateExtent * 2.0 * 3.0.Sqrt + ResolutionAt(m.ModelSize);
+        => m.ModelSize <= m.CoordinateExtent * 2.0 * 3.0.Sqrt + ResolutionAt(m.ModelSize).Value;
 
     // A rigid motion carries every vertex to motion.PointInFrame of it and
     // keeps every topology row, so every coedge's composed sense, and with it
@@ -459,7 +459,7 @@ library BrepTopologyLaws
     Law_ScalingScalesExtent(m: BrepModel, factor: Number): Boolean
         => (factor > 0.0 && factor.IsFinite)
             ? (m.ScaledBy(factor).CoordinateExtent - m.CoordinateExtent * factor).Abs
-                <= ResolutionAt(m.CoordinateExtent * factor)
+                <= ResolutionAt(m.CoordinateExtent * factor).Value
             : true;
 
     //==

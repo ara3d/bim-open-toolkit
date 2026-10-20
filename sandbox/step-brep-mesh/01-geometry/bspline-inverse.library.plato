@@ -186,7 +186,7 @@ library BsplineInverse
     // smaller parameter.
     BestCandidate(eval: Function1<Number, Point3D>, p: Point3D, candidates: Array<Number>): Number
         => candidates.Reduce(candidates[0], (best, t) =>
-            eval(t).Distance(p) < eval(best).Distance(p) - ResolutionAt(eval(best).PositionVector.Length + p.PositionVector.Length) ? t : best);
+            eval(t).Distance(p) < eval(best).Distance(p) - ResolutionAt(eval(best).PositionVector.Length + p.PositionVector.Length).Value ? t : best);
 
     // A global minimizer of |X(t) - p| over the cuts' window: every sampled
     // local minimum polished, then the best, ties to the smaller parameter.
@@ -205,7 +205,7 @@ library BsplineInverse
     {
         var t = MinimizeOverCuts(eval, deriv, p, d.SearchWindow(eval, p).WindowCuts(breaks));
         var wrapped = d.HasSeam ? d.Wrap(t) : t;
-        return d.HasSeam && eval(d.Range.Start).Distance(p) <= eval(wrapped).Distance(p) + ResolutionAt(eval(wrapped).PositionVector.Length + p.PositionVector.Length)
+        return d.HasSeam && eval(d.Range.Start).Distance(p) <= eval(wrapped).Distance(p) + ResolutionAt(eval(wrapped).PositionVector.Length + p.PositionVector.Length).Value
             ? d.Range.Start
             : wrapped;
     }
@@ -260,7 +260,7 @@ library BsplineInverse
         var fu = r.Dot(su);
         var fv = r.Dot(sv);
         var det = a * c - b * b;
-        return det > ResolutionAt(a * c)
+        return det > ResolutionAt(a * c).Value
             ? Vector2D((b * fv - c * fu) / det, (b * fu - a * fv) / det)
             : Vector2D(a > 0.0 ? -fu / a : 0.0, c > 0.0 ? -fv / c : 0.0);
     }
@@ -300,7 +300,7 @@ library BsplineInverse
         while (moving && n < Integer.PolishIterations)
         {
             var here = surface.Eval(g, uv).Distance(p);
-            var slack = ResolutionAt(surface.Eval(g, uv).PositionVector.Length + p.PositionVector.Length);
+            var slack = ResolutionAt(surface.Eval(g, uv).PositionVector.Length + p.PositionVector.Length).Value;
             var step = surface.GaussNewtonStep(g, p, uv).Limited(radius);
             var next = surface.ProjectedStep(g, p, uv, step, w);
             var halvings = 0;
@@ -311,8 +311,8 @@ library BsplineInverse
                 halvings = halvings + 1;
             }
             moving = surface.Eval(g, next).Distance(p) <= here + slack
-                && ((next.U - uv.U).Abs > ResolutionAt(uv.U.Abs + w.U.End.Abs.Min(w.U.Start.Abs))
-                    || (next.V - uv.V).Abs > ResolutionAt(uv.V.Abs + w.V.End.Abs.Min(w.V.Start.Abs)));
+                && ((next.U - uv.U).Abs > ResolutionAt(uv.U.Abs + w.U.End.Abs.Min(w.U.Start.Abs)).Value
+                    || (next.V - uv.V).Abs > ResolutionAt(uv.V.Abs + w.V.End.Abs.Min(w.V.Start.Abs)).Value);
             uv = surface.Eval(g, next).Distance(p) <= here + slack ? next : uv;
             n = n + 1;
         }
@@ -355,7 +355,7 @@ library BsplineInverse
     StartWhereFree(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, d: SurfaceDomain): UvCoordinate
     {
         var here = surface.Eval(g, uv);
-        var slack = ResolutionAt(here.PositionVector.Length);
+        var slack = ResolutionAt(here.PositionVector.Length).Value;
         return UvCoordinate(
             surface.Eval(g, UvCoordinate(d.U.Range.Start, uv.V)).Distance(here) <= slack ? d.U.Range.Start : uv.U,
             surface.Eval(g, UvCoordinate(uv.U, d.V.Range.Start)).Distance(here) <= slack ? d.V.Range.Start : uv.V);
@@ -387,7 +387,7 @@ library BsplineInverse
             ? [surface.PolishProjection(g, p, GridPoint(us, vs, k), w, radius)]
             : [UvCoordinate(0.0, 0.0)].Take(0));
         var best = candidates.Reduce(candidates[0], (b, uv) =>
-            surface.Eval(g, uv).Distance(p) < surface.Eval(g, b).Distance(p) - ResolutionAt(surface.Eval(g, b).PositionVector.Length + p.PositionVector.Length) ? uv : b);
+            surface.Eval(g, uv).Distance(p) < surface.Eval(g, b).Distance(p) - ResolutionAt(surface.Eval(g, b).PositionVector.Length + p.PositionVector.Length).Value ? uv : b);
         return surface.StartWhereFree(g, best, d).WrapSeams(d);
     }
 
@@ -403,7 +403,7 @@ library BsplineInverse
         var radius = Vector2D(d.U.NearStep(w.U), d.V.NearStep(w.V));
         var uv = surface.PolishProjection(g, p, seed, w, radius);
         var here = surface.Eval(g, uv);
-        var slack = ResolutionAt(here.PositionVector.Length);
+        var slack = ResolutionAt(here.PositionVector.Length).Value;
         return UvCoordinate(
             surface.Eval(g, UvCoordinate(seed.U, uv.V)).Distance(here) <= slack ? seed.U : uv.U,
             surface.Eval(g, UvCoordinate(uv.U, seed.V)).Distance(here) <= slack ? seed.V : uv.V);

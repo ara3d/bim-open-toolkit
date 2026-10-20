@@ -55,7 +55,7 @@ library StepToMeshLaws
             && a.Report.Identical(b.Report);
 
     // 2 to the power k, by k exact doublings or halvings.
-    PowerOfTwo(k: Integer): Number
+    PowerOfTwoValue(k: Integer): Number
     {
         var x = 1.0;
         var i = 0;
@@ -467,7 +467,7 @@ library StepToMeshLaws
     // lie between 1e-200 and 1e200 normal in 64 bits. Library, exact.
     Law_PowerOfTwoScalingKeepsConnectivity(m: BrepModel, o: MeshingOptions, k: Integer): Boolean
         => (m.IsRunnable(o) && k.Abs <= 64)
-            ? m.MeshModel(o).Mesh.SameConnectivity(m.ScaledBy(PowerOfTwo(k)).MeshModel(o.ScaledBy(PowerOfTwo(k))).Mesh)
+            ? m.MeshModel(o).Mesh.SameConnectivity(m.ScaledBy(PowerOfTwoValue(k)).MeshModel(o.ScaledBy(PowerOfTwoValue(k))).Mesh)
             : true;
 
     // Scaling the model and every length criterion by 2^k scales vertex v's
@@ -481,7 +481,7 @@ library StepToMeshLaws
         {
             return true;
         }
-        var factor = PowerOfTwo(k);
+        var factor = PowerOfTwoValue(k);
         var before = m.MeshModel(o).Mesh;
         var after = m.ScaledBy(factor).MeshModel(o.ScaledBy(factor)).Mesh;
         return (before.SameConnectivity(after) && before.Positions.IsValidIndex(v) && after.Positions.IsValidIndex(v))

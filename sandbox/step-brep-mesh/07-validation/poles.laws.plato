@@ -53,8 +53,8 @@ library PolesLaws
     {
         var g = BrepModel.Witness_Sphere.Geometry;
         return 8.Range.All(k =>
-            g.LimitNormal(SurfaceIndex(0), UvCoordinate(k.ToNumber * 0.8, Number.HalfPi)).Vector.Z >= 1.0 - 4.0 * ResolutionAt(1.0)
-            && g.LimitNormal(SurfaceIndex(0), UvCoordinate(k.ToNumber * 0.8, 0.0 - Number.HalfPi)).Vector.Z <= 4.0 * ResolutionAt(1.0) - 1.0);
+            g.LimitNormal(SurfaceIndex(0), UvCoordinate(k.ToNumber * 0.8, Number.HalfPi)).Vector.Z >= 1.0 - 4.0 * ResolutionAt(1.0).Value
+            && g.LimitNormal(SurfaceIndex(0), UvCoordinate(k.ToNumber * 0.8, 0.0 - Number.HalfPi)).Vector.Z <= 4.0 * ResolutionAt(1.0).Value - 1.0);
     }
 
     // At the apex of the unit cone the limit normal for parameter u is the normal of the ruling

@@ -46,7 +46,7 @@ library ModelMeshMeasures
     // total: each side errs by at most about 2u times it, nested sums add 2u per level, and the
     // bound leaves a factor of more than 4 for up to 1e14 terms.
     TotalsAgree(a: Number, b: Number): Boolean
-        => (a - b).Abs <= ResolutionAt(a.Abs.Max(b.Abs));
+        => (a - b).Abs <= ResolutionAt(a.Abs.Max(b.Abs)).Value;
 
     // The area of element e: a triangle's, or the sum of the two triangles of a quad's A-C split
     // (bitwise the stdlib's Area(Quad3D), which adds the same two triangle areas in the same order).
@@ -168,7 +168,7 @@ library ModelMeshMeasures
     // u times |u| |v|, and the angle's error is their combination divided by |u| |v|), so four
     // corners and their sum stay below 60u.
     AngleSumResolution(_: Angle): Number
-        => ResolutionAt(Number.Tau);
+        => ResolutionAt(Number.Tau).Value;
 
     // The rounding resolution of the angle defect sum of a component with v vertices, q quads, and
     // k element corners: ResolutionAt(2 pi (v + q) + pi k). The corner angles err by about 13u each
@@ -176,7 +176,7 @@ library ModelMeshMeasures
     // subtraction by a few u times 2 pi v, and each quad defect by about 60u: about a quarter of
     // the bound in all.
     DefectSumResolution(v: Integer, q: Integer, k: Integer): Number
-        => ResolutionAt(Number.Tau * (v + q).ToNumber + Number.Pi * k.ToNumber);
+        => ResolutionAt(Number.Tau * (v + q).ToNumber + Number.Pi * k.ToNumber).Value;
 
     // The angle at p between the rays to a and to b, in [0, pi]. 0 when either ray has zero length.
     AngleAt(p: Point3D, a: Point3D, b: Point3D): Angle

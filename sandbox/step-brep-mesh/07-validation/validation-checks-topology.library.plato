@@ -58,7 +58,7 @@ library BrepCheckingTopology
     // rounding noise).
     Check_LengthToleranceResolvable(m: BrepModel): Check
         => CheckWithin("Law_LengthToleranceResolvable",
-            m.CoordinateExtent.IsFinite ? ResolutionAt(m.CoordinateExtent) : 0.0,
+            m.CoordinateExtent.IsFinite ? ResolutionAt(m.CoordinateExtent).Value : 0.0,
             m.Tolerances.Length.Value,
             Provenance.WholeInput);
 

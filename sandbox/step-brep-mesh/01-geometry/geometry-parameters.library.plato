@@ -1,0 +1,14 @@
+//==
+// # BrepGeometryParameters
+//
+// Layer 1 of the STEP B-rep to mesh design (README.md beside this file): layer
+// 0's KnotParameter read against a spline basis.
+
+library BrepGeometryParameters
+{
+    // True when t is a knot of b at which a derivative of order at most
+    // `order` may jump (layer 1's SplineBreaks). Exact by construction: the
+    // breaks are copied knots.
+    IsBreakKnot(t: KnotParameter, b: SplineBasis, order: Integer): Boolean
+        => b.SplineBreaks(order).Any(k => k == t.Value);
+}

@@ -16,6 +16,7 @@ eleven algorithms bodies; the genus track (TKT-328) gave the last, `SharesCurveP
 | `topology-elements.types.plato` | `EdgeOrientation`, `Coedge`, `BrepVertex`, `BrepEdge`, `BrepLoop`, `FaceBound`, `BrepFace`, `BrepShell`, `BrepBody` |
 | `topology-model.types.plato` | `LengthUnit`, `BrepModel`, `ShellCounts`, `CoedgeSite`, `EdgeEnd` |
 | `topology.library.plato` | library `BrepTopology`: predicates, traversal, sense, edge and pcurve domains, vertex links, counts, connectivity, orientability, coupling measures, size and extent, model transforms; eleven given bodies (ten in chunk A, `SharesCurveParameter` by the genus track); eight declarations marked `belongs-in` layers 0 and 1 |
+| `topology-parameters.library.plato` | library `BrepTopologyParameters`: `ToCurveParameter(m, e, EdgeParameter): CurveParameter`, a wrap into the curve's domain (catalog merge, 2026-10-20) |
 | `topology.laws.plato` | library `BrepTopologyLaws`: 41 laws |
 | `topology.spec.plato` | invariants of `BrepModel` and `ShellCounts`, 13 function contracts, 4 theorems |
 

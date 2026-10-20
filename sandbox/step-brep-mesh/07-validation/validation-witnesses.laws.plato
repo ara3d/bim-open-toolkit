@@ -260,6 +260,6 @@ library BrepWitnessesLaws
                 <= BrepModel.WitnessAt(k).MaxEdgeSagitta(
                     BrepModel.WitnessAt(k).DiscretizeAll(DefaultCriteria(chordal), SegmentFloors.NoFloors),
                     SamplePlan.CheckPlan)
-                    + ResolutionAt(BrepModel.WitnessAt(k).CoordinateExtent)
+                    + ResolutionAt(BrepModel.WitnessAt(k).CoordinateExtent).Value
             : true;
 }

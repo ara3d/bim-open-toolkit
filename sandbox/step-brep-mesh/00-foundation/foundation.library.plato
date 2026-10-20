@@ -72,20 +72,20 @@ library BrepFoundation
     // roundoffs (README, "Arithmetic resolution"), so a difference this large
     // is never rounding noise. At magnitude 1e5 it is 3.6e-10 for a 64-bit
     // Number and 0.19 for a 32-bit one.
-    ResolutionAt(magnitude: Number): Number
-        => (magnitude.Abs * Number.RoundingUnit * 32.0).Max(Number.SmallestNormal);
+    ResolutionAt(magnitude: Number): Resolution
+        => Resolution((magnitude.Abs * Number.RoundingUnit * 32.0).Max(Number.SmallestNormal));
 
     // True when the length tolerance is no smaller than the arithmetic
     // resolution at the magnitude: a model whose coordinates reach 1e5 mm can
     // honour a 1e-6 mm tolerance with a 64-bit Number and cannot with a 32-bit
     // one.
     IsResolvable(t: LengthTolerance, magnitude: Number): Boolean
-        => t.Value >= ResolutionAt(magnitude);
+        => t.Value >= ResolutionAt(magnitude).Value;
 
     // True when the parameter tolerance is no smaller than the arithmetic
     // resolution at the parameter magnitude.
     IsResolvable(t: ParameterTolerance, magnitude: Number): Boolean
-        => t.Value >= ResolutionAt(magnitude);
+        => t.Value >= ResolutionAt(magnitude).Value;
 
     // The Number that marks a measure that was not, or could not be, taken:
     // NaN. Every comparison with it is false, so a check built on it fails, and
@@ -102,15 +102,15 @@ library BrepFoundation
 
     // True when the length tolerance is a positive finite length.
     IsWellFormed(t: LengthTolerance): Boolean
-        => t.Value.IsFinite && t.Value >= ResolutionAt(0.0);
+        => t.Value.IsFinite && t.Value >= ResolutionAt(0.0).Value;
 
     // True when the angle tolerance is a positive finite angle.
     IsWellFormed(t: AngleTolerance): Boolean
-        => t.Value.Radians.IsFinite && t.Value.Radians >= ResolutionAt(0.0);
+        => t.Value.Radians.IsFinite && t.Value.Radians >= ResolutionAt(0.0).Value;
 
     // True when the parameter tolerance is a positive finite number.
     IsWellFormed(t: ParameterTolerance): Boolean
-        => t.Value.IsFinite && t.Value >= ResolutionAt(0.0);
+        => t.Value.IsFinite && t.Value >= ResolutionAt(0.0).Value;
 
     // True when both directions' parameter tolerances are well formed.
     IsWellFormed(t: UvTolerance): Boolean
@@ -130,7 +130,7 @@ library BrepFoundation
     // file's tolerance is finer than the Numbers can resolve there. Both
     // parameter floors divide it by a speed.
     ResolvableLength(length: LengthTolerance, extent: Number): Number
-        => length.Value.Max(ResolutionAt(extent));
+        => length.Value.Max(ResolutionAt(extent).Value);
 
     // The parameter floor of a length parameter (a line's, a cylinder's
     // height, an extrusion's depth), Tolerances.LengthParameter: the
@@ -154,7 +154,7 @@ library BrepFoundation
     AngleParameterFloor(length: LengthTolerance, modelSize: Number, extent: Number): ParameterTolerance
     {
         var r = length.ResolvableLength(extent);
-        return ParameterTolerance((r / modelSize.Max(r)).Max(ResolutionAt(Number.Tau * 2.0)));
+        return ParameterTolerance((r / modelSize.Max(r)).Max(ResolutionAt(Number.Tau * 2.0).Value));
     }
 
     // The tolerances of a model scaled by factor: the length tolerance and the
@@ -354,7 +354,7 @@ library BrepFoundation
     // which keeps t / period far inside the range where Floor is exact. Wrap's
     // precondition.
     CanWrap(t: Number, period: Number): Boolean
-        => t.IsFinite && period.IsFinite && period > ResolutionAt(t);
+        => t.IsFinite && period.IsFinite && period > ResolutionAt(t).Value;
 
     // t reduced into [0, period) by removing whole periods: the canonical
     // representative of t on the circle of circumference period. The two
@@ -633,7 +633,7 @@ library BrepFoundation
             ? range.Start.IsFinite
                 && range.End.IsFinite
                 && (range.End - range.Start).IsFinite
-                && (range.End - range.Start) / (count - 1).ToNumber > ResolutionAt(range.Start.Abs.Max(range.End.Abs))
+                && (range.End - range.Start) / (count - 1).ToNumber > ResolutionAt(range.Start.Abs.Max(range.End.Abs)).Value
             : false;
 
     // plan.Count samples of the domain's range, ends included. On a full

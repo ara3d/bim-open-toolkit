@@ -154,7 +154,7 @@ library BrepCheckingLaws
                     <= m.Tolerances.Angle.Value.Radians
                         * (m.RestrictedToShell(mesh, s).ReferencedVertexCount + m.RestrictedToShell(mesh, s).Quads.Count).ToNumber
                         + ResolutionAt(Number.Tau
-                            * (m.RestrictedToShell(mesh, s).ReferencedVertexCount + m.RestrictedToShell(mesh, s).Quads.Count).ToNumber)
+                            * (m.RestrictedToShell(mesh, s).ReferencedVertexCount + m.RestrictedToShell(mesh, s).Quads.Count).ToNumber).Value
                 : true)
             : true;
 
@@ -292,14 +292,14 @@ library BrepCheckingLaws
     Law_PlanarOracleEqualsDiskArea(r: Number): Boolean
         => (r > 0.0 && r.IsFinite)
             ? (BrepModel.Witness_Cone(r, 1.0).Oracle_PlanarFaceArea(BrepFaceIndex(1)) - Number.Pi * r * r).Abs
-                <= ResolutionAt(Number.Pi * r * r * 64.0)
+                <= ResolutionAt(Number.Pi * r * r * 64.0).Value
             : true;
 
     // The Green area of the cone's base disk is within ArcResidual of pi r^2.
     Law_GreenDiskAreaWithinArcResidual(r: Number): Boolean
         => (r > 0.0 && r.IsFinite)
             ? (BrepModel.Witness_Cone(r, 1.0).Oracle_FaceAreaByGreen(BrepFaceIndex(1)) - Number.Pi * r * r).Abs
-                <= ArcResidual(r, Number.Tau, Integer.GreenChords) + ResolutionAt(Number.Pi * r * r * 256.0)
+                <= ArcResidual(r, Number.Tau, Integer.GreenChords) + ResolutionAt(Number.Pi * r * r * 256.0).Value
             : true;
 
     //==

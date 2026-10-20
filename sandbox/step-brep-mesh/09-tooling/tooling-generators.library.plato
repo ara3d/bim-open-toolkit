@@ -315,7 +315,7 @@ library ToolingGenerators
     Perturbed(m: BrepModel, p: Perturbation): BrepModel
         => match (p) {
             RigidMotion(frame) => m.RigidlyMoved(frame);
-            Scale(k) => m.ScaledBy(PowerOfTwo(k));
+            Scale(k) => m.ScaledBy(PowerOfTwoValue(k));
             Jitter(seed, fraction) => m.Jittered(seed, fraction);
             FaceReversal(f) => m.WithFacesReversed([f]);
             EdgeReversal(e) => m.WithEdgeReversed(e);
@@ -404,7 +404,7 @@ library ToolingGenerators
     VolumeFactorOr(p: Perturbation, fallback: Number): Number
         => match (p) {
             RigidMotion(frame) => 1.0;
-            Scale(k) => PowerOfTwo(3 * k);
+            Scale(k) => PowerOfTwoValue(3 * k);
             Jitter(seed, fraction) => fallback;
             FaceReversal(f) => fallback;
             EdgeReversal(e) => 1.0;

@@ -37,7 +37,7 @@ library ModelMeshMeasuresLaws
     // rounding of both, which VolumeRoundingMagnitude bounds: within ResolutionAt of it.
     Law_ReversalNegatesSignedVolume(mesh: ModelMesh): Boolean
         => mesh.HasAllValidCorners
-            ? (mesh.Reversed.SignedVolume + mesh.SignedVolume).Abs <= ResolutionAt(mesh.VolumeRoundingMagnitude)
+            ? (mesh.Reversed.SignedVolume + mesh.SignedVolume).Abs <= ResolutionAt(mesh.VolumeRoundingMagnitude).Value
             : true;
 
     // Library law: the vector area of a closed, consistently oriented component vanishes
@@ -47,7 +47,7 @@ library ModelMeshMeasuresLaws
     Law_VectorAreaVanishes(mesh: ModelMesh, c: MeshComponentIndex): Boolean
         => (mesh.HasAllValidCorners && mesh.CountsOf(c).IsClosed && mesh.CountsOf(c).IsConsistentlyOriented)
             ? mesh.ComponentVectorArea(mesh.ComponentsOf, c).Length
-                <= ResolutionAt(mesh.VectorAreaRoundingMagnitude(mesh.ComponentsOf, c))
+                <= ResolutionAt(mesh.VectorAreaRoundingMagnitude(mesh.ComponentsOf, c)).Value
             : true;
 
     // The outward-wound unit tetrahedron has positive signed volume (1/6): the sign convention, on

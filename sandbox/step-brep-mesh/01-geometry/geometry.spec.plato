@@ -450,7 +450,7 @@ spec ProjectNear(g: GeometrySet, s: SurfaceIndex, p: Point3D, seed: UvCoordinate
     requires g.CanEvaluate(s);
     ensures forall (which: SurfaceParameter) : (result.Coordinate(which) - seed.Coordinate(which)).Abs
         <= g.Domain(s).DomainAlong(which).Periodicity.PeriodOr(Number.MaxValue) * 0.5
-            + ResolutionAt(seed.Coordinate(which).Abs + g.Domain(s).DomainAlong(which).Periodicity.PeriodOr(0.0));
+            + ResolutionAt(seed.Coordinate(which).Abs + g.Domain(s).DomainAlong(which).Periodicity.PeriodOr(0.0)).Value;
     ensures forall (tol: Tolerances) : g.Eval(s, seed).Coincident(p, tol.Length)
         ? g.Domain(s).SameParameter(result, seed, g.UvToleranceAt(s, seed, tol))
         : true;

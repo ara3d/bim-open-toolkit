@@ -457,7 +457,11 @@ library BrepTopology
     // With sigma(x) = +1 for true and -1 for false, a coedge runs along its curve
     // with sign sigma(SameSense) * sigma(Orientation) * sigma(bound.Orientation)
     // (research/STEP-BREP-MODEL.md 4.2). The Boolean form below is the same
-    // product: XNOR is multiplication of signs.
+    // product: XNOR is multiplication of signs. The layer 0 form,
+    // Compose(Compose(ToSense(SameSense), ToSense(IsForward)), ToSense(Orientation)) == Sense.Same,
+    // is equal and was tried at the catalog merge (2026-10-20): in the interpreter it
+    // took Law_PowerOfTwoScalingScalesPositions from 51 s to over 400 s, so the
+    // Booleans stay until laws run compiled (TKT-354).
 
     // Whether the face that owns the bound traverses the coedge in the direction
     // of increasing curve parameter: the product of the edge's SameSense, the
@@ -514,8 +518,8 @@ library BrepTopology
         var dv = m.Geometry.PartialV(s, uv);
         var cross = du.Cross(dv);
         var product = m.Geometry.NormalOr(s, uv, Direction3D(Vector3D.UnitZ)).Vector.Dot(cross);
-        var scale = ResolutionAt(m.Geometry.EvaluationMagnitude(s, uv));
-        var noise = du.Length <= scale || dv.Length <= scale || cross.Length <= ResolutionAt(du.Length * dv.Length);
+        var scale = ResolutionAt(m.Geometry.EvaluationMagnitude(s, uv)).Value;
+        var noise = du.Length <= scale || dv.Length <= scale || cross.Length <= ResolutionAt(du.Length * dv.Length).Value;
         return noise ? 0 : (product > 0.0 ? 1 : -1);
     }
 
@@ -1527,7 +1531,7 @@ library BrepTopology
         var p = m.PcurveOfEdge(e, k);
         var curveTangent = m.CurveTangentAt(e, t);
         var pcurveTangent = m.Geometry.Derivative(p, m.Geometry.ClosestParameter(p, m.CurvePointAt(e, t)));
-        return curveTangent.Dot(pcurveTangent) >= 0.0 - ResolutionAt(curveTangent.Length * pcurveTangent.Length);
+        return curveTangent.Dot(pcurveTangent) >= 0.0 - ResolutionAt(curveTangent.Length * pcurveTangent.Length).Value;
     }
 
     // Whether the k-th pcurve of edge e lies on the surface of a face whose

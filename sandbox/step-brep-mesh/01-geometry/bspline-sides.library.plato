@@ -80,7 +80,7 @@ library BsplineSides
     {
         var low = d.BoundaryRow(which, d.BasisAlong(which).SplineDomain.Start);
         var high = d.BoundaryRow(which, d.BasisAlong(which).SplineDomain.End);
-        return low.Count.Range.All(j => (low[j].W - high[j].W).Abs <= ResolutionAt(low[j].W.Abs + high[j].W.Abs)
+        return low.Count.Range.All(j => (low[j].W - high[j].W).Abs <= ResolutionAt(low[j].W.Abs + high[j].W.Abs).Value
             && low[j].Projected.Distance(high[j].Projected) <= tol.Value);
     }
 }

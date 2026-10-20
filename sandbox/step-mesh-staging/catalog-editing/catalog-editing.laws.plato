@@ -57,7 +57,7 @@ library CatalogEditingLaws
             : r == 3 ? ModelEdit.Geometric(GeometricEdit.Transform(
                 whole ? Selection.Everything : Selection.Faces([BrepFaceIndex(i)]), PoseAt(i)))
             : r == 4 ? ModelEdit.Geometric(GeometricEdit.Scale(
-                whole ? Selection.Everything : Selection.Vertices([BrepVertexIndex(i)]), PowerOfTwoFactor(i)))
+                whole ? Selection.Everything : Selection.Vertices([BrepVertexIndex(i)]), PowerOfTwo(i)))
             : r == 5 ? ModelEdit.Tolerance(ToleranceEdit.SetTolerances(m.Tolerances.ScaledTolerances(i.ToNumber)))
             : r == 6 ? ModelEdit.Tolerance(ToleranceEdit.ScaleTolerances(i.ToNumber * 0.5))
             : r == 7 ? ModelEdit.Topological(TopologicalEdit.ReverseFace(BrepFaceIndex(i)))

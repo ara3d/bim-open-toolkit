@@ -23,7 +23,7 @@ type GeometricEdit
     | ReplaceCurve(Curve: CurveIndex, With: BrepCurve)
     | ReplaceSurface(Surface: SurfaceIndex, With: BrepSurface)
     | Transform(Target: Selection, By: Pose3D)
-    | Scale(Target: Selection, By: PowerOfTwoFactor);
+    | Scale(Target: Selection, By: PowerOfTwo);
 
 // One shell's citation of a face: the shell and the face's position in that
 // shell's Faces. What RestoreFace needs to put a removed face back in place.

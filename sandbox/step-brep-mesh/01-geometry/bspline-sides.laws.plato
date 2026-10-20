@@ -87,7 +87,7 @@ library BsplineSidesLaws
         var tol = Tolerances.Witness_Tolerances.Length;
         return d.BSplineSideCollapses(s, tol)
             ? d.BSplinePoint(dom.SidePoint(s, r.Start + (r.End - r.Start) * a.UnitFraction)).Distance(d.BSplinePoint(dom.SidePoint(s, r.Start)))
-                <= tol.Value + tol.Value + ResolutionAt(4.0)
+                <= tol.Value + tol.Value + ResolutionAt(4.0).Value
             : true;
     }
 
@@ -104,7 +104,7 @@ library BsplineSidesLaws
         return d.BSplineSidesCoincide(p, tol)
             ? d.BSplinePoint(UvCoordinate(0.0, 0.0).WithCoordinate(p, d.BasisAlong(p).SplineDomain.Start).WithCoordinate(q, x))
                 .Distance(d.BSplinePoint(UvCoordinate(0.0, 0.0).WithCoordinate(p, d.BasisAlong(p).SplineDomain.End).WithCoordinate(q, x)))
-                <= tol.Value + ResolutionAt(4.0)
+                <= tol.Value + ResolutionAt(4.0).Value
             : true;
     }
 }

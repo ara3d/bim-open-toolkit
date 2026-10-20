@@ -1,0 +1,183 @@
+//==
+// # Invariants and constructors of the foundation types
+//
+// SPEC-DSL.md section 3.1. Not compiled. Each invariant is also a Law_
+// in the matching laws file, cited where one exists. A type with no spec
+// block here is plain data with no invariant beyond its field types.
+//
+// Sections, in order:
+//  - Quantities
+//  - Counts
+//  - Parameters and angles
+//  - Ranges
+//  - Boxes
+
+//==
+// # Quantities
+
+spec SquaredLength
+{
+    invariant self.Value >= 0.0;
+    constructor Squared;
+    constructor SquaredDistance;
+    constructor ScaledBy;
+}
+
+spec Fraction
+{
+    invariant self.Value >= 0.0 && self.Value <= 1.0;   // Law_FractionOfIsInUnitInterval
+    constructor FractionOf;
+}
+
+spec Resolution
+{
+    invariant self.Value >= 0.0;                       // Law_ResolutionIsPositive
+    constructor ResolutionAt;
+    constructor Exact;
+}
+
+spec Sign
+{
+    constructor SignWithin;                            // the only constructor from a Number
+    constructor Negative;
+    constructor Multiply;
+    constructor ToSign;
+}
+
+spec ToModel(m: Metres, unit: LengthUnit): ModelLength
+{
+    requires unit.ScaleToMetres > 0.0;
+    ensures CatalogAgreesToRounding(result.ToMetres(unit).Value, m.Value);   // Law_UnitRoundTrips, other direction
+}
+
+//==
+// # Counts
+
+spec Count
+{
+    invariant self.Value >= 0;                         // Law_CountOfIsNonNegative
+    constructor CountOf;
+    constructor ToCount;
+}
+
+spec NonZeroCount
+{
+    invariant self.Value >= 1;                         // Law_NonZeroCountOfIsPositive
+    constructor NonZeroCountOf;
+}
+
+spec SegmentCount
+{
+    invariant self.Value >= 1;                         // Law_SegmentCountIsAtLeastOne
+    constructor SegmentCountOf;
+    constructor ClosedEdgeMinimum;
+    constructor SegmentsOf;
+}
+
+spec SampleCount
+{
+    invariant self.Value >= 2;                         // Law_SampleCountIsAtLeastTwo
+    constructor SamplesOf;
+}
+
+spec SegmentsOf(c: SampleCount): SegmentCount
+{
+    requires c.Value >= 2;
+    ensures SamplesOf(result) == c;                    // Law_SamplesOfSegmentsOfIsIdentity
+}
+
+spec Round
+{
+    invariant self.Value >= 0;
+    constructor First;
+    constructor NextRound;                             // Law_NextRoundIsLater
+}
+
+spec Depth
+{
+    invariant self.Value >= 0;
+    constructor Root;
+    constructor Deeper;                                // Law_DeeperIsDeeper
+}
+
+//==
+// # Parameters and angles
+
+spec WrappedAngle
+{
+    invariant self.Value.Radians >= 0.0 && self.Value.Radians < Number.Tau;   // Law_WrapIsInOneTurn
+    constructor Wrap;                                  // the only conversion from an UnwrappedAngle
+}
+
+spec UnwrappedAngle
+{
+    constructor NearestUnwrapped;                      // the only conversion from a WrappedAngle
+}
+
+spec NearestUnwrapped(a: WrappedAngle, reference: UnwrappedAngle): UnwrappedAngle
+{
+    requires (a.Value.Radians - reference.Value.Radians).CanWrap(Number.Tau);
+    ensures (result.Value.Radians - reference.Value.Radians).Abs <= Number.Pi + ResolutionAt(reference.Value.Radians.Abs + Number.Tau).Value;   // Law_NearestUnwrappedIsWithinHalfTurn
+    ensures result.Wrap == a;                          // up to rounding: Law_WrapThenUnwrapNearReferenceIsIdentity
+}
+
+spec NormalizedParameter
+{
+    invariant self.Value.Value >= 0.0 && self.Value.Value <= 1.0;   // through Fraction's invariant
+    constructor NormalizedIn;
+}
+
+//==
+// # Ranges
+
+spec ParameterRange
+{
+    invariant self.Start <= self.End;                  // Law_RangeOfIsOrdered
+    constructor RangeOf;
+    constructor ToParameterRange;
+}
+
+spec PeriodicRange
+{
+    invariant self.Period > 0.0;
+    invariant self.Length >= 0.0 && self.Length <= self.Period;   // Law_PeriodicRangeLengthIsWithinPeriod
+    constructor PeriodicRangeOf;
+    constructor FullPeriod;
+}
+
+spec PeriodicRangeOf(start: Number, end: Number, period: Number): PeriodicRange
+{
+    requires (end - start).CanWrap(period);
+    ensures result.ContainsParameter(start);           // Law_PeriodicRangeContainsStart
+    ensures result.ContainsParameter(end);             // Law_PeriodicRangeContainsEnd
+}
+
+//==
+// # Boxes
+
+spec UvBox
+{
+    invariant self.Min.U <= self.Max.U && self.Min.V <= self.Max.V;
+    constructor UvBoxOf;                               // Law_UvBoxOfContainsBothPoints
+    constructor ToUvBox;
+}
+
+spec ChartBox
+{
+    invariant self.Min.X <= self.Max.X && self.Min.Y <= self.Max.Y;
+    constructor ChartBoxOf;                            // Law_ChartBoxOfContainsBothPoints
+}
+
+spec ToUnitSquare(d: SurfaceDomain, p: UvPoint): UvCoordinate
+{
+    requires d.U.Range.End > d.U.Range.Start;
+    requires d.V.Range.End > d.V.Range.Start;
+    ensures FromUnitSquare(d, result) == p;            // up to rounding: Law_UnitSquareRoundTrips
+}
+
+spec FromChart(chart: FaceChart, p: ChartPoint): UvPoint
+{
+    requires chart.ScaleU > 0.0;
+    requires chart.ScaleV > 0.0;
+    ensures chart.ToChart(result) == p;                // up to rounding: Law_ChartRoundTrips
+}

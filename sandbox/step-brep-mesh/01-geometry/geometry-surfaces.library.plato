@@ -291,8 +291,8 @@ library BrepGeometrySurfaces
     // surfaces have no Closed direction).
     KeepSeedWhereFree(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, seed: UvCoordinate): UvCoordinate
         => UvCoordinate(
-            g.Eval(s, UvCoordinate(seed.U, uv.V)).Distance(g.Eval(s, uv)) <= ResolutionAt(g.EvaluationMagnitude(s, uv)) ? seed.U : uv.U,
-            g.Eval(s, UvCoordinate(uv.U, seed.V)).Distance(g.Eval(s, uv)) <= ResolutionAt(g.EvaluationMagnitude(s, uv)) ? seed.V : uv.V);
+            g.Eval(s, UvCoordinate(seed.U, uv.V)).Distance(g.Eval(s, uv)) <= ResolutionAt(g.EvaluationMagnitude(s, uv)).Value ? seed.U : uv.U,
+            g.Eval(s, UvCoordinate(uv.U, seed.V)).Distance(g.Eval(s, uv)) <= ResolutionAt(g.EvaluationMagnitude(s, uv)).Value ? seed.V : uv.V);
 
     // deferred: global minimization of |Eval(uv) - p|^2 over the domain: seed
     // from a grid over each smooth patch (Breakpoints in u and v) sized by the

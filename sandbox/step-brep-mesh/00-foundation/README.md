@@ -16,6 +16,13 @@ body, because every body here is its own specification; nothing is deferred.
 | `foundation.library.plato` | `library BrepFoundation`: 90 functions, all with bodies |
 | `foundation.laws.plato` | `library BrepFoundationLaws`: 46 laws, 5 witnesses, 1 helper |
 | `foundation.spec.plato` | 11 type invariant blocks, 31 function contracts, 8 theorems |
+| `foundation-quantities.{types,library,laws}.plato` | TYPE-CATALOG.md section 1: `ModelLength`, `Metres`, `SquaredLength`, `AreaMeasure`, `VolumeMeasure`, `Ratio`, `Fraction`, `PowerOfTwo`, `Resolution`, `MeasureKind`, `Measure`; blocks `BrepFoundationQuantities`, `BrepFoundationQuantitiesLaws` (13 laws) |
+| `foundation-signs.{types,library,laws}.plato` | `Sign`, `Sense`, `Parity`, `Winding` and their algebra; blocks `BrepFoundationSigns`, `BrepFoundationSignsLaws` (12 laws) |
+| `foundation-counts.{types,library,laws}.plato` | `Count`, `NonZeroCount`, `SegmentCount`, `SampleCount`, `Round`, `Depth`; blocks `BrepFoundationCounts`, `BrepFoundationCountsLaws` (10 laws) |
+| `foundation-parameters.{types,library,laws}.plato` | section 2: the parameter kinds, angles, `ParameterRange`, `DirectedRange`, `PeriodicRange`, `IsoLine`; blocks `BrepFoundationParameters`, `BrepFoundationParametersLaws` (13 laws) |
+| `foundation-points.{types,library,laws}.plato` | `UvPoint`, `UvDelta`, `ChartPoint`, `ModelPoint`, `LocalPoint`, `UvBox`, `ChartBox`, `DomainCorner`; blocks `BrepFoundationPoints`, `BrepFoundationPointsLaws` (9 laws) |
+| `foundation.concepts.plato` | `IScaled`, `IMoved`, `IReversible`, `IHasDomain<TDomain>` (no implementer yet) |
+| `foundation-values.spec.plato` | invariants and constructors of the catalog types above |
 
 The type files carry a `foundation-` prefix because the CLI gate of PLATO-PRIMER.md E.2 copies
 every layer's files into one flat folder, where a second `domains.types.plato` would overwrite

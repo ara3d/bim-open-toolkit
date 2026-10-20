@@ -1,0 +1,43 @@
+//==
+// # Concepts over the foundation types
+//
+// TYPE-CATALOG.md section 15, the concepts that need only section 1 and 2
+// types and the stdlib. One concept states a law once over every type that
+// implements it.
+//
+// Sections, in order:
+//  - Transformations
+//  - Domains
+
+//==
+// # Transformations
+
+// A value the metamorphic laws scale by a power of two. Law: scaling by f
+// then by f's inverse is the identity (ScaledThenUnscaledIsIdentity).
+interface IScaled
+{
+    ScaledBy(x: Self, factor: PowerOfTwo): Self;
+}
+
+// A value the metamorphic laws move rigidly.
+interface IMoved
+{
+    Moved(x: Self, motion: Pose3D): Self;
+}
+
+// A value with a reverse traversal. Law: reversing twice is the identity
+// (ReversedTwiceIsIdentity).
+interface IReversible
+{
+    Reversed(x: Self): Self;
+}
+
+//==
+// # Domains
+
+// A value defined over a parameter domain: TDomain is CurveDomain or
+// SurfaceDomain.
+interface IHasDomain<TDomain>
+{
+    Domain(x: Self): TDomain;
+}

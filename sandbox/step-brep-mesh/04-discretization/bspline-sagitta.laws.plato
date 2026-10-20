@@ -31,7 +31,7 @@ library BsplineSagittaLaws
         var t1 = d.Basis.DomainAt(a.Max(b));
         var x = t0 + (t1 - t0) * f.UnitFraction;
         return DistanceToSegment(m.PointOnEdge(e, t0), m.PointOnEdge(e, t1), m.PointOnEdge(e, x))
-            <= m.Sagitta(e, t0, t1) + m.Tolerances.Length.Value + ResolutionAt(m.SagittaMagnitude(k));
+            <= m.Sagitta(e, t0, t1) + m.Tolerances.Length.Value + ResolutionAt(m.SagittaMagnitude(k)).Value;
     }
 
     // Sagitta is attained: it is within the length tolerance and rounding of
@@ -43,7 +43,7 @@ library BsplineSagittaLaws
         var t0 = d.Basis.DomainAt(a.Min(b));
         var t1 = d.Basis.DomainAt(a.Max(b));
         return (m.Sagitta(BrepEdgeIndex(0), t0, t1) - m.EstimatedSagitta(BrepEdgeIndex(0), t0, t1)).Abs
-            <= m.Tolerances.Length.Value + ResolutionAt(m.SagittaMagnitude(k));
+            <= m.Tolerances.Length.Value + ResolutionAt(m.SagittaMagnitude(k)).Value;
     }
 
     // The magnitude the rounding of a sagitta on fixture k scales with: its
@@ -63,7 +63,7 @@ library BsplineSagittaLaws
     {
         var bezier = 2.CurveEdgeModel;
         var circle = 1.CurveEdgeModel;
-        return (bezier.Sagitta(BrepEdgeIndex(0), 0.0, 1.0) - 0.5).Abs <= bezier.Tolerances.Length.Value + ResolutionAt(4.0)
-            && (circle.Sagitta(BrepEdgeIndex(0), 0.0, 1.0) - (1.0 - (0.5).Sqrt)).Abs <= circle.Tolerances.Length.Value + ResolutionAt(4.0);
+        return (bezier.Sagitta(BrepEdgeIndex(0), 0.0, 1.0) - 0.5).Abs <= bezier.Tolerances.Length.Value + ResolutionAt(4.0).Value
+            && (circle.Sagitta(BrepEdgeIndex(0), 0.0, 1.0) - (1.0 - (0.5).Sqrt)).Abs <= circle.Tolerances.Length.Value + ResolutionAt(4.0).Value;
     }
 }
