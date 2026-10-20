@@ -1,0 +1,396 @@
+//==
+// # Catalog editing: applying edits
+//
+// TYPE-CATALOG.md section 12. Apply evaluates one edit or a script against a
+// model and returns the new model, the remap, and the inverse, or refuses
+// with the precondition that failed. Every precondition is checked before any
+// index is read, so Apply is total. Geometric and tolerance edits, and
+// ReverseFace, ReverseLoop, RemoveFace and RestoreFace, have bodies; the other
+// topological edits are deferred, their contracts in the spec file.
+//
+// Sections, in order:
+//  - Remaps
+//  - Model rows replaced
+//  - Faces removed and restored
+//  - Applying one edit
+//  - Reading an outcome
+//  - Scripts and previews
+
+library CatalogEditingOutcome
+{
+    //==
+    // # Remaps
+
+    // The remap that keeps every row of m where it is.
+    IdentityRemap(m: BrepModel): KernelRemap
+        => KernelRemap(
+            m.RowCount(TableName.VerticesTable).IdentityNewOf.ToBrepVertexRemap,
+            m.RowCount(TableName.EdgesTable).IdentityNewOf.ToEdgeRemap,
+            m.RowCount(TableName.LoopsTable).IdentityNewOf.ToLoopRemap,
+            m.RowCount(TableName.FacesTable).IdentityNewOf.ToFaceRemap,
+            m.RowCount(TableName.ShellsTable).IdentityNewOf.ToShellRemap,
+            m.RowCount(TableName.BodiesTable).IdentityNewOf.ToBodyRemap,
+            m.RowCount(TableName.CurvesTable).IdentityNewOf.ToCurveRemap,
+            m.RowCount(TableName.Curves2DTable).IdentityNewOf.ToCurve2DRemap,
+            m.RowCount(TableName.PcurvesTable).IdentityNewOf.ToPcurveRemap,
+            m.RowCount(TableName.SurfacesTable).IdentityNewOf.ToSurfaceRemap);
+
+    // The identity remap of m with the face table's Integer form replaced by
+    // faces.
+    WithFaceRemap(m: BrepModel, faces: Array<Integer>): KernelRemap
+    {
+        var r = m.IdentityRemap;
+        return KernelRemap(r.Vertices, r.Edges, r.Loops, faces.ToFaceRemap, r.Shells, r.Bodies,
+            r.Curves, r.Curves2D, r.Pcurves, r.Surfaces);
+    }
+
+    // The Integer form of first then second: an old row's index after both,
+    // none when either removes it.
+    ComposeNewOf(first: Array<Integer>, second: Array<Integer>): Array<Integer>
+        => first.Map(x => second.IsValidIndex(x) ? second[x] : -1);
+
+    // The remap of applying first's edit, then second's, table by table.
+    Compose(first: KernelRemap, second: KernelRemap): KernelRemap
+        => KernelRemap(
+            first.NewOfValues(TableName.VerticesTable).ComposeNewOf(second.NewOfValues(TableName.VerticesTable)).ToBrepVertexRemap,
+            first.NewOfValues(TableName.EdgesTable).ComposeNewOf(second.NewOfValues(TableName.EdgesTable)).ToEdgeRemap,
+            first.NewOfValues(TableName.LoopsTable).ComposeNewOf(second.NewOfValues(TableName.LoopsTable)).ToLoopRemap,
+            first.NewOfValues(TableName.FacesTable).ComposeNewOf(second.NewOfValues(TableName.FacesTable)).ToFaceRemap,
+            first.NewOfValues(TableName.ShellsTable).ComposeNewOf(second.NewOfValues(TableName.ShellsTable)).ToShellRemap,
+            first.NewOfValues(TableName.BodiesTable).ComposeNewOf(second.NewOfValues(TableName.BodiesTable)).ToBodyRemap,
+            first.NewOfValues(TableName.CurvesTable).ComposeNewOf(second.NewOfValues(TableName.CurvesTable)).ToCurveRemap,
+            first.NewOfValues(TableName.Curves2DTable).ComposeNewOf(second.NewOfValues(TableName.Curves2DTable)).ToCurve2DRemap,
+            first.NewOfValues(TableName.PcurvesTable).ComposeNewOf(second.NewOfValues(TableName.PcurvesTable)).ToPcurveRemap,
+            first.NewOfValues(TableName.SurfacesTable).ComposeNewOf(second.NewOfValues(TableName.SurfacesTable)).ToSurfaceRemap);
+
+    //==
+    // # Model rows replaced
+    //
+    // Each returns m with one row or field replaced and every other value
+    // carried over; a row index out of range changes nothing.
+
+    // m with vertex v at p.
+    WithVertexPoint(m: BrepModel, v: BrepVertexIndex, p: Point3D): BrepModel
+        => BrepModel(m.Geometry,
+            m.Vertices.Count.MapRange(i => i == v.Value ? BrepVertex(p) : m.Vertices[i]),
+            m.Edges, m.Loops, m.Faces, m.Shells, m.Bodies, m.Tolerances, m.Unit);
+
+    // m with curve c replaced by curve.
+    WithCurve(m: BrepModel, c: CurveIndex, curve: BrepCurve): BrepModel
+        => BrepModel(
+            GeometrySet(
+                m.Geometry.Curves.Count.MapRange(i => i == c.Value ? curve : m.Geometry.Curves[i]),
+                m.Geometry.Curves2D, m.Geometry.Pcurves, m.Geometry.Surfaces, m.Geometry.Closures),
+            m.Vertices, m.Edges, m.Loops, m.Faces, m.Shells, m.Bodies, m.Tolerances, m.Unit);
+
+    // m with surface s replaced by surface.
+    WithSurface(m: BrepModel, s: SurfaceIndex, surface: BrepSurface): BrepModel
+        => BrepModel(
+            GeometrySet(m.Geometry.Curves, m.Geometry.Curves2D, m.Geometry.Pcurves,
+                m.Geometry.Surfaces.Count.MapRange(i => i == s.Value ? surface : m.Geometry.Surfaces[i]),
+                m.Geometry.Closures),
+            m.Vertices, m.Edges, m.Loops, m.Faces, m.Shells, m.Bodies, m.Tolerances, m.Unit);
+
+    // m with tolerances t.
+    WithTolerances(m: BrepModel, t: Tolerances): BrepModel
+        => BrepModel(m.Geometry, m.Vertices, m.Edges, m.Loops, m.Faces, m.Shells, m.Bodies, t, m.Unit);
+
+    // The loop traversed the other way: an edge loop's coedges in reverse
+    // order, each flipped, a poly loop's points in reverse order, a vertex
+    // loop as it is. Reversing twice gives the loop back exactly.
+    Reversed(loop: BrepLoop): BrepLoop
+        => match (loop) {
+            EdgeLoop(coedges) => BrepLoop.EdgeLoop(coedges.Count.MapRange(i =>
+                Coedge(coedges[coedges.Count - 1 - i].Edge, coedges[coedges.Count - 1 - i].Orientation.Opposite)));
+            VertexLoop(vertex) => loop;
+            PolyLoop(points) => BrepLoop.PolyLoop(points.Count.MapRange(i => points[points.Count - 1 - i]));
+        };
+
+    // m with loop l reversed.
+    WithLoopReversed(m: BrepModel, l: BrepLoopIndex): BrepModel
+        => BrepModel(m.Geometry, m.Vertices, m.Edges,
+            m.Loops.Count.MapRange(i => i == l.Value ? m.Loops[i].Reversed : m.Loops[i]),
+            m.Faces, m.Shells, m.Bodies, m.Tolerances, m.Unit);
+
+    //==
+    // # Faces removed and restored
+
+    // Every place a shell of m cites face f, shell by shell, slot by slot.
+    FaceUsesOf(m: BrepModel, f: BrepFaceIndex): Array<FaceUse>
+        => m.Shells.Count.Range.FlatMap(s => m.Shells[s].Faces.Count.Range.FlatMap(j =>
+            m.Shells[s].Faces[j] == f ? [FaceUse(ShellIndex(s), j)] : 0.MapRange(k => FaceUse(ShellIndex(k), k))));
+
+    // A shell's face list without f, later faces moved down one.
+    WithoutFace(faces: Array<BrepFaceIndex>, f: BrepFaceIndex): Array<BrepFaceIndex>
+        => faces.FlatMap(x => x == f
+            ? 0.MapRange(k => BrepFaceIndex(k))
+            : [x.Value > f.Value ? BrepFaceIndex(x.Value - 1) : x]);
+
+    // m without face f: the face row dropped, every shell's citation of it
+    // dropped and later faces renumbered down one. Loops, edges and vertices
+    // stay, so restoring the face needs only its row and its uses.
+    // Precondition: m.IsFaceInRange(f).
+    WithoutFace(m: BrepModel, f: BrepFaceIndex): BrepModel
+        => BrepModel(m.Geometry, m.Vertices, m.Edges, m.Loops,
+            (m.Faces.Count - 1).MapRange(i => i < f.Value ? m.Faces[i] : m.Faces[i + 1]),
+            m.Shells.Map(s => BrepShell(s.Faces.WithoutFace(f), s.DeclaredClosed)),
+            m.Bodies, m.Tolerances, m.Unit);
+
+    // The slots in shell s that uses name.
+    SlotsIn(uses: Array<FaceUse>, s: ShellIndex): Array<Integer>
+        => uses.FlatMap(u => u.Shell == s ? [u.Slot] : 0.MapRange(k => k));
+
+    // A shell's face list with at inserted at every slot of slots and every
+    // face at or after at moved up one. Total for any slots: a position with
+    // no face to copy gets at.
+    WithFaceAt(faces: Array<BrepFaceIndex>, at: BrepFaceIndex, slots: Array<Integer>): Array<BrepFaceIndex>
+    {
+        var moved = faces.Map(x => x.Value >= at.Value ? BrepFaceIndex(x.Value + 1) : x);
+        return (moved.Count + slots.Count).MapRange(j =>
+            slots.Any(q => q == j)
+                ? at
+                : (moved.IsValidIndex(j - slots.FlatMap(q => q < j ? [q] : slots.Take(0)).Count)
+                    ? moved[j - slots.FlatMap(q => q < j ? [q] : slots.Take(0)).Count]
+                    : at));
+    }
+
+    // Whether uses can be restored into m: each shell in range, each slot a
+    // position of the shell's list after insertion, and no use twice.
+    AreUsesRestorable(m: BrepModel, uses: Array<FaceUse>): Boolean
+        => uses.Count.Range.All(i =>
+            m.IsShellInRange(uses[i].Shell)
+                ? (uses[i].Slot >= 0
+                    && uses[i].Slot < m.Shells[uses[i].Shell].Faces.Count + uses.SlotsIn(uses[i].Shell).Count
+                    && i.Range.All(j => uses[j] != uses[i]))
+                : false);
+
+    // m with face inserted at index at and cited at every use. Precondition:
+    // at.Value in [0, m.Faces.Count] and m.AreUsesRestorable(uses).
+    WithFaceRestored(m: BrepModel, at: BrepFaceIndex, face: BrepFace, uses: Array<FaceUse>): BrepModel
+        => BrepModel(m.Geometry, m.Vertices, m.Edges, m.Loops,
+            (m.Faces.Count + 1).MapRange(i => i < at.Value ? m.Faces[i] : (i == at.Value ? face : m.Faces[i - 1])),
+            m.Shells.Count.MapRange(s => BrepShell(
+                m.Shells[s].Faces.WithFaceAt(at, uses.SlotsIn(ShellIndex(s))), m.Shells[s].DeclaredClosed)),
+            m.Bodies, m.Tolerances, m.Unit);
+
+    // The Integer form of inserting a row at index at into a table of count
+    // rows: rows before it keep their index, rows from it on move up one.
+    InsertionNewOf(count: Integer, at: Integer): Array<Integer>
+        => count.MapRange(i => i < at ? i : i + 1);
+
+    //==
+    // # Applying one edit
+
+    // An applied outcome that renumbers nothing.
+    AppliedInPlace(before: BrepModel, after: BrepModel, inverse: ModelEdit): EditOutcome
+        => EditOutcome.Applied(after, before.IdentityRemap, inverse);
+
+    // A geometric edit applied to m. Transform and Scale are refused unless
+    // they select Everything; the inverse of a whole-model transform is the
+    // inverse pose, of a scale the inverse factor.
+    ApplyGeometric(m: BrepModel, g: GeometricEdit): EditOutcome
+        => match (g) {
+            MoveVertex(v, to) => m.IsVertexInRange(v)
+                ? m.AppliedInPlace(m.WithVertexPoint(v, to.Point),
+                    ModelEdit.Geometric(GeometricEdit.MoveVertex(v, ModelPoint(m.Vertices[v].Point))))
+                : EditOutcome.Refused(EditPrecondition.VertexInRange, Provenance.KernelVertex(v));
+            ReplaceCurve(c, with) => m.IsCurveInRange(c)
+                ? m.AppliedInPlace(m.WithCurve(c, with),
+                    ModelEdit.Geometric(GeometricEdit.ReplaceCurve(c, m.Geometry.Curves[c])))
+                : EditOutcome.Refused(EditPrecondition.CurveInRange, Provenance.KernelCurve(c));
+            ReplaceSurface(s, with) => m.IsSurfaceInRange(s)
+                ? m.AppliedInPlace(m.WithSurface(s, with),
+                    ModelEdit.Geometric(GeometricEdit.ReplaceSurface(s, m.Geometry.Surfaces[s])))
+                : EditOutcome.Refused(EditPrecondition.SurfaceInRange, Provenance.KernelSurface(s));
+            Transform(target, by) => target.IsEverything
+                ? m.AppliedInPlace(m.RigidlyMoved(Frame3D(by)),
+                    ModelEdit.Geometric(GeometricEdit.Transform(target, by.Inverse)))
+                : EditOutcome.Refused(EditPrecondition.SelectionIsWholeModel, Provenance.WholeInput);
+            Scale(target, by) => target.IsEverything
+                ? m.AppliedInPlace(m.ScaledBy(by.Factor),
+                    ModelEdit.Geometric(GeometricEdit.Scale(target, by.Inverse)))
+                : EditOutcome.Refused(EditPrecondition.SelectionIsWholeModel, Provenance.WholeInput);
+        };
+
+    // A tolerance edit applied to m; the inverse sets the old tolerances.
+    ApplyTolerance(m: BrepModel, t: ToleranceEdit): EditOutcome
+        => match (t) {
+            SetTolerances(tolerances) => tolerances.Length.Value > 0.0
+                ? m.AppliedInPlace(m.WithTolerances(tolerances),
+                    ModelEdit.Tolerance(ToleranceEdit.SetTolerances(m.Tolerances)))
+                : EditOutcome.Refused(EditPrecondition.ToleranceIsPositive, Provenance.WholeInput);
+            ScaleTolerances(factor) => factor > 0.0
+                ? m.AppliedInPlace(m.WithTolerances(m.Tolerances.ScaledTolerances(factor)),
+                    ModelEdit.Tolerance(ToleranceEdit.SetTolerances(m.Tolerances)))
+                : EditOutcome.Refused(EditPrecondition.FactorIsPositive, Provenance.WholeInput);
+        };
+
+    // A topological edit applied to m. ReverseFace and ReverseLoop are their
+    // own inverses and renumber nothing; RemoveFace and RestoreFace undo each
+    // other and renumber the faces.
+    ApplyTopological(m: BrepModel, t: TopologicalEdit): EditOutcome
+        => match (t) {
+            SplitEdge(e, at) => m.ApplySplitEdge(e, at);
+            MergeEdges(a, b) => m.ApplyMergeEdges(a, b);
+            SplitFace(f, along) => m.ApplySplitFace(f, along);
+            RemoveFace(f) => m.IsFaceInRange(f)
+                ? EditOutcome.Applied(m.WithoutFace(f),
+                    m.WithFaceRemap(m.Faces.Count.RemovalNewOf(f.Value)),
+                    ModelEdit.Topological(TopologicalEdit.RestoreFace(f, m.Faces[f], m.FaceUsesOf(f))))
+                : EditOutcome.Refused(EditPrecondition.FaceInRange, Provenance.KernelFace(f));
+            AddFace(face) => m.ApplyAddFace(face);
+            RestoreFace(at, face, uses) => at.Value >= 0 && at.Value <= m.Faces.Count
+                ? (m.AreUsesRestorable(uses)
+                    ? EditOutcome.Applied(m.WithFaceRestored(at, face, uses),
+                        m.WithFaceRemap(m.Faces.Count.InsertionNewOf(at.Value)),
+                        ModelEdit.Topological(TopologicalEdit.RemoveFace(at)))
+                    : EditOutcome.Refused(EditPrecondition.ShellInRange, Provenance.KernelFace(at)))
+                : EditOutcome.Refused(EditPrecondition.FaceSlotInRange, Provenance.KernelFace(at));
+            ReverseFace(f) => m.IsFaceInRange(f)
+                ? m.AppliedInPlace(m.WithFacesReversed([f]), ModelEdit.Topological(TopologicalEdit.ReverseFace(f)))
+                : EditOutcome.Refused(EditPrecondition.FaceInRange, Provenance.KernelFace(f));
+            ReverseLoop(l) => m.IsLoopInRange(l)
+                ? m.AppliedInPlace(m.WithLoopReversed(l), ModelEdit.Topological(TopologicalEdit.ReverseLoop(l)))
+                : EditOutcome.Refused(EditPrecondition.LoopInRange, Provenance.KernelLoop(l));
+            RetrimFace(f, bounds) => m.ApplyRetrimFace(f, bounds);
+        };
+
+    // deferred: split edge e at a parameter strictly inside its domain into
+    // two edges meeting at a new vertex, every coedge citing e replaced by two
+    // (MakeVertexEdge); contract in the spec file.
+    ApplySplitEdge(m: BrepModel, e: BrepEdgeIndex, at: EdgeParameter): EditOutcome;
+
+    // deferred: merge two edges on one curve that share a vertex used by no
+    // other edge into one edge (KillEdgeVertex); contract in the spec file.
+    ApplyMergeEdges(m: BrepModel, a: BrepEdgeIndex, b: BrepEdgeIndex): EditOutcome;
+
+    // deferred: cut face f along new edges between points of its boundary,
+    // one new face per cut (MakeEdgeFace); contract in the spec file.
+    ApplySplitFace(m: BrepModel, f: BrepFaceIndex, along: Array<EdgeParameter>): EditOutcome;
+
+    // deferred: append a face whose bounds cite existing loops, in no shell;
+    // contract in the spec file.
+    ApplyAddFace(m: BrepModel, face: BrepFace): EditOutcome;
+
+    // deferred: replace face f's bounds, dropping loops no other face cites;
+    // contract in the spec file.
+    ApplyRetrimFace(m: BrepModel, f: BrepFaceIndex, bounds: Array<FaceBound>): EditOutcome;
+
+    // One edit applied to m: the new model, its remap and its inverse, or the
+    // precondition that failed and where.
+    Apply(m: BrepModel, edit: ModelEdit): EditOutcome
+        => match (edit) {
+            Geometric(g) => m.ApplyGeometric(g);
+            Topological(t) => m.ApplyTopological(t);
+            Tolerance(t) => m.ApplyTolerance(t);
+        };
+
+    //==
+    // # Reading an outcome
+
+    // Whether the edit was applied.
+    IsApplied(o: EditOutcome): Boolean
+        => match (o) {
+            Applied(model, remap, inverse) => true;
+            Refused(precondition, where) => false;
+        };
+
+    // The model after the outcome: the new one when applied, before when
+    // refused, so a refusal leaves the model as it was.
+    ResultModel(before: BrepModel, o: EditOutcome): BrepModel
+        => match (o) {
+            Applied(model, remap, inverse) => model;
+            Refused(precondition, where) => before;
+        };
+
+    // The outcome's remap; the identity of before when refused.
+    ResultRemap(before: BrepModel, o: EditOutcome): KernelRemap
+        => match (o) {
+            Applied(model, remap, inverse) => remap;
+            Refused(precondition, where) => before.IdentityRemap;
+        };
+
+    // The outcome's inverse; fallback when refused.
+    InverseOr(o: EditOutcome, fallback: ModelEdit): ModelEdit
+        => match (o) {
+            Applied(model, remap, inverse) => inverse;
+            Refused(precondition, where) => fallback;
+        };
+
+    // The failed precondition; fallback when applied.
+    PreconditionOr(o: EditOutcome, fallback: EditPrecondition): EditPrecondition
+        => match (o) {
+            Applied(model, remap, inverse) => fallback;
+            Refused(precondition, where) => precondition;
+        };
+
+    // Where the precondition failed; fallback when applied.
+    WhereOr(o: EditOutcome, fallback: Provenance): Provenance
+        => match (o) {
+            Applied(model, remap, inverse) => fallback;
+            Refused(precondition, where) => where;
+        };
+
+    //==
+    // # Scripts and previews
+
+    // A script applied to m edit by edit; the first refusal stops it and m is
+    // returned untouched in effect (ScriptRefused holds no model). The inverse
+    // script lists the inverses last edit first.
+    Apply(m: BrepModel, script: EditScript): ScriptOutcome
+    {
+        var model = m;
+        var remap = m.IdentityRemap;
+        var inverses = new List<ModelEdit>();
+        var failed = -1;
+        var reason = EditPrecondition.NotYetImplemented;
+        var where = Provenance.Nowhere;
+        var step = 0;
+        while (step < script.Edits.Count)
+        {
+            if (failed < 0)
+            {
+                var o = model.Apply(script.Edits[step]);
+                if (o.IsApplied)
+                {
+                    remap = remap.Compose(model.ResultRemap(o));
+                    inverses = inverses.Add(o.InverseOr(script.Edits[step]));
+                    model = model.ResultModel(o);
+                }
+                else
+                {
+                    failed = step;
+                    reason = o.PreconditionOr(reason);
+                    where = o.WhereOr(where);
+                }
+            }
+            step = step + 1;
+        }
+        var undo = inverses.Freeze();
+        return failed < 0
+            ? ScriptOutcome.ScriptApplied(model, remap, EditScript(undo.Count.MapRange(i => undo[undo.Count - 1 - i])))
+            : ScriptOutcome.ScriptRefused(failed, reason, where);
+    }
+
+    // The model a script gives, m itself when it is refused.
+    ResultModel(m: BrepModel, o: ScriptOutcome): BrepModel
+        => match (o) {
+            ScriptApplied(model, remap, inverse) => model;
+            ScriptRefused(step, precondition, where) => m;
+        };
+
+    // The script that undoes o; no edit when refused.
+    InverseScript(o: ScriptOutcome): EditScript
+        => match (o) {
+            ScriptApplied(model, remap, inverse) => inverse;
+            ScriptRefused(step, precondition, where) => EditScript(0.MapRange(k => ModelEdit.Tolerance(ToleranceEdit.ScaleTolerances(1.0))));
+        };
+
+    // The edit evaluated for display: the model it would give, validated.
+    // Nothing is written.
+    Preview(m: BrepModel, edit: ModelEdit): EditPreview
+    {
+        var after = m.ResultModel(m.Apply(edit));
+        return EditPreview(after, after.ValidateBrep);
+    }
+}

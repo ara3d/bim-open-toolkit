@@ -1,0 +1,149 @@
+//==
+// # Catalog editing: selection closures
+//
+// TYPE-CATALOG.md section 12. ClosureOf grows a selection by what it touches,
+// through layer 2's traversals (FacesOfEdge, LoopCoedges, ShellFaces). Every
+// function is total: an index out of range is skipped, never read.
+//
+// Sections, in order:
+//  - Index sets
+//  - Incidence
+//  - Closures
+
+library CatalogEditingClosure
+{
+    //==
+    // # Index sets
+    //
+    // An index set is an array in increasing order, each index once and in
+    // range of its table. Each function below makes one from any array, so the
+    // order and the range never depend on the caller.
+
+    // The vertices of m named in xs, each once, in increasing order.
+    VertexSet(m: BrepModel, xs: Array<BrepVertexIndex>): Array<BrepVertexIndex>
+        => m.Vertices.Count.MapRange(i => BrepVertexIndex(i)).FlatMap(v =>
+            xs.Any(x => x == v) ? [v] : 0.MapRange(k => BrepVertexIndex(k)));
+
+    // The edges of m named in xs, each once, in increasing order.
+    EdgeSet(m: BrepModel, xs: Array<BrepEdgeIndex>): Array<BrepEdgeIndex>
+        => m.Edges.Count.MapRange(i => BrepEdgeIndex(i)).FlatMap(e =>
+            xs.Any(x => x == e) ? [e] : 0.MapRange(k => BrepEdgeIndex(k)));
+
+    // The faces of m named in xs, each once, in increasing order.
+    FaceSet(m: BrepModel, xs: Array<BrepFaceIndex>): Array<BrepFaceIndex>
+        => m.Faces.Count.MapRange(i => BrepFaceIndex(i)).FlatMap(f =>
+            xs.Any(x => x == f) ? [f] : 0.MapRange(k => BrepFaceIndex(k)));
+
+    // Whether xs holds f.
+    HoldsFace(xs: Array<BrepFaceIndex>, f: BrepFaceIndex): Boolean
+        => xs.Any(x => x == f);
+
+    // Whether xs holds e.
+    HoldsEdge(xs: Array<BrepEdgeIndex>, e: BrepEdgeIndex): Boolean
+        => xs.Any(x => x == e);
+
+    // Whether xs holds v.
+    HoldsVertex(xs: Array<BrepVertexIndex>, v: BrepVertexIndex): Boolean
+        => xs.Any(x => x == v);
+
+    //==
+    // # Incidence
+
+    // The edges with v as an end, in increasing order.
+    EdgesAtVertex(m: BrepModel, v: BrepVertexIndex): Array<BrepEdgeIndex>
+        => m.Edges.Count.MapRange(i => BrepEdgeIndex(i)).FlatMap(e =>
+            m.Edges[e].Start == v || m.Edges[e].End == v ? [e] : 0.MapRange(k => BrepEdgeIndex(k)));
+
+    // The two end vertices of e; none when e is out of range.
+    EndsOfEdge(m: BrepModel, e: BrepEdgeIndex): Array<BrepVertexIndex>
+        => m.IsEdgeInRange(e) ? [m.Edges[e].Start, m.Edges[e].End] : 0.MapRange(k => BrepVertexIndex(k));
+
+    // The edges whose curve is c, in increasing order.
+    EdgesOnCurve(m: BrepModel, c: CurveIndex): Array<BrepEdgeIndex>
+        => m.Edges.Count.MapRange(i => BrepEdgeIndex(i)).FlatMap(e =>
+            m.Edges[e].Curve == c ? [e] : 0.MapRange(k => BrepEdgeIndex(k)));
+
+    // The faces whose surface is s, in increasing order.
+    FacesOnSurface(m: BrepModel, s: SurfaceIndex): Array<BrepFaceIndex>
+        => m.Faces.Count.MapRange(i => BrepFaceIndex(i)).FlatMap(f =>
+            m.Faces[f].Surface == s ? [f] : 0.MapRange(k => BrepFaceIndex(k)));
+
+    // The faces with a bound on loop l, in increasing order.
+    FacesOfLoop(m: BrepModel, l: BrepLoopIndex): Array<BrepFaceIndex>
+        => m.Faces.Count.MapRange(i => BrepFaceIndex(i)).FlatMap(f =>
+            m.Faces[f].Bounds.Any(b => b.Loop == l) ? [f] : 0.MapRange(k => BrepFaceIndex(k)));
+
+    // The vertices of the vertex loops that bound face f.
+    VertexLoopVerticesOfFace(m: BrepModel, f: BrepFaceIndex): Array<BrepVertexIndex>
+        => m.LoopsOfFace(f).FlatMap(l => m.IsLoopInRange(l) ? m.Loops[l].VertexLoopVertexOf : 0.MapRange(k => BrepVertexIndex(k)));
+
+    // The faces bounded by a vertex loop at v, in increasing order: a pole or
+    // apex puncture there moves with v.
+    FacesWithVertexLoopAt(m: BrepModel, v: BrepVertexIndex): Array<BrepFaceIndex>
+        => m.Faces.Count.MapRange(i => BrepFaceIndex(i)).FlatMap(f =>
+            m.VertexLoopVerticesOfFace(f).Any(x => x == v) ? [f] : 0.MapRange(k => BrepFaceIndex(k)));
+
+    // The edges the coedges of face f cite, possibly out of range, in loop order.
+    EdgesCitedByFace(m: BrepModel, f: BrepFaceIndex): Array<BrepEdgeIndex>
+        => m.CoedgeSitesOfFace(f).Map(site => m.CoedgeAt(site).Edge);
+
+    //==
+    // # Closures
+
+    // The closure of a set of edges: their end vertices, the edges, and the
+    // faces whose bounds cite them (FacesOfEdge).
+    ClosureOfEdges(m: BrepModel, es: Array<BrepEdgeIndex>): SelectionClosure
+        => SelectionClosure(
+            m.VertexSet(es.FlatMap(e => m.EndsOfEdge(e))),
+            m.EdgeSet(es),
+            m.FaceSet(es.FlatMap(e => m.FacesOfEdge(e))));
+
+    // The closure of a set of faces: the edges their loops cite (LoopCoedges
+    // through CoedgeSitesOfFace), those edges' end vertices and the faces'
+    // vertex-loop vertices, and the faces.
+    ClosureOfFaces(m: BrepModel, fs: Array<BrepFaceIndex>): SelectionClosure
+        => SelectionClosure(
+            m.VertexSet(fs.FlatMap(f => m.EdgesCitedByFace(f).FlatMap(e => m.EndsOfEdge(e)))
+                .Concatenate(fs.FlatMap(f => m.VertexLoopVerticesOfFace(f)))),
+            m.EdgeSet(fs.FlatMap(f => m.EdgesCitedByFace(f))),
+            m.FaceSet(fs));
+
+    // The closure of a set of vertices: the vertices, the edges at them, and
+    // the faces of those edges and of vertex loops at them.
+    ClosureOfVertices(m: BrepModel, vs: Array<BrepVertexIndex>): SelectionClosure
+        => SelectionClosure(
+            m.VertexSet(vs),
+            m.EdgeSet(vs.FlatMap(v => m.EdgesAtVertex(v))),
+            m.FaceSet(vs.FlatMap(v => m.EdgesAtVertex(v)).FlatMap(e => m.FacesOfEdge(e))
+                .Concatenate(vs.FlatMap(v => m.FacesWithVertexLoopAt(v)))));
+
+    // The closure of the whole model: every vertex, edge and face.
+    ClosureOfEverything(m: BrepModel): SelectionClosure
+        => SelectionClosure(
+            m.Vertices.Count.MapRange(i => BrepVertexIndex(i)),
+            m.Edges.Count.MapRange(i => BrepEdgeIndex(i)),
+            m.Faces.Count.MapRange(i => BrepFaceIndex(i)));
+
+    // The selection with everything it touches. Shells close over their
+    // faces (ShellFaces), bodies over their shells' faces.
+    ClosureOf(m: BrepModel, s: Selection): SelectionClosure
+        => match (s) {
+            Vertices(vs) => m.ClosureOfVertices(vs);
+            Edges(es) => m.ClosureOfEdges(es);
+            Faces(fs) => m.ClosureOfFaces(fs);
+            Shells(ss) => m.ClosureOfFaces(ss.FlatMap(x => m.ShellFaces(x)));
+            Bodies(bs) => m.ClosureOfFaces(bs.FlatMap(b => m.IsBodyInRange(b) ? m.Bodies[b].ShellsOfBody : 0.MapRange(k => ShellIndex(k))).FlatMap(x => m.ShellFaces(x)));
+            Everything => m.ClosureOfEverything;
+        };
+
+    // Whether s is the whole model.
+    IsEverything(s: Selection): Boolean
+        => match (s) {
+            Vertices(vs) => false;
+            Edges(es) => false;
+            Faces(fs) => false;
+            Shells(ss) => false;
+            Bodies(bs) => false;
+            Everything => true;
+        };
+}

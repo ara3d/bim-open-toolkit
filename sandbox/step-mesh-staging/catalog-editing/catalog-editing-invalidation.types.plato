@@ -1,0 +1,54 @@
+//==
+// # Catalog editing: invalidation and incremental meshing
+//
+// TYPE-CATALOG.md section 12. What an edit stales downstream, the incremental
+// re-mesh result, and an edit shown before it is written.
+//
+// Sections, in order:
+//  - Invalidation
+//  - Incremental results
+
+//==
+// # Invalidation
+
+// What an edit invalidates downstream, computed from the edit, not from a
+// diff (InvalidationOf). Edges and Faces are indices of the model the edit is
+// applied to, in increasing order; WholeModel means every mesh is stale (a
+// tolerance edit, a whole-model transform). Removes: a stale face mesh after
+// a vertex move.
+type Invalidation
+{
+    Edges: Array<BrepEdgeIndex>;
+    Faces: Array<BrepFaceIndex>;
+    WholeModel: Boolean;
+}
+
+//==
+// # Incremental results
+
+// The incremental result of re-meshing invalidated faces: the mesh elements
+// to drop, the new face meshes, and the vertex numbering after the patch.
+// Removes: a re-mesh of the whole model after a one-vertex edit.
+type MeshPatch
+{
+    RemovedElements: Array<ElementIndex>;
+    AddedFaceMeshes: Array<FaceMesh>;
+    Renumbering: MeshVertexNumbering;
+}
+
+// An edit evaluated for display and never written: the model it would give
+// and the validation report of that model (the toolkit's "nothing writes
+// until Run"). Removes: a preview that writes.
+type EditPreview
+{
+    Model: BrepModel;
+    Report: Report;
+}
+
+// What has not been re-meshed since a transaction. Removes: a mesh shown as
+// current after an edit.
+type Dirty
+{
+    Since: Transaction;
+    Invalidation: Invalidation;
+}

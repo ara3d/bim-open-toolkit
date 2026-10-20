@@ -1,0 +1,194 @@
+//==
+// # Catalog editing: invariants, constructors and contracts
+//
+// TYPE-CATALOG.md section 12, in the constructs of SPEC-DSL.md section 3. Not
+// compiled. Each invariant cites the law that states it, or is short enough
+// that its law would be a one-line wrapper.
+//
+// Sections, in order:
+//  - Selections
+//  - Outcomes
+//  - Scripts, transactions, invalidation
+//  - Apply and the deferred edits
+//  - Euler operators
+
+//==
+// # Selections
+
+spec SelectionClosure
+{
+    invariant forall (v: BrepVertexIndex) in self.Vertices : v.Value >= 0;
+    invariant forall (k: Integer) in (self.Vertices.Count - 1).Range : self.Vertices[k] < self.Vertices[k + 1];
+    invariant forall (k: Integer) in (self.Edges.Count - 1).Range : self.Edges[k] < self.Edges[k + 1];
+    invariant forall (k: Integer) in (self.Faces.Count - 1).Range : self.Faces[k] < self.Faces[k + 1];
+    constructor ClosureOf;
+    constructor ClosureOfVertices;
+    constructor ClosureOfEdges;
+    constructor ClosureOfFaces;
+    constructor ClosureOfEverything;
+}
+
+spec ClosureOf(m: BrepModel, s: Selection): SelectionClosure
+{
+    ensures Law_Catalog_ClosureIsInRange;
+    ensures Law_Catalog_ClosureContainsSelection;
+    ensures Law_Catalog_ClosureHoldsFacesOfEdge;
+    ensures Law_Catalog_ClosureHoldsEdgesOfFace;
+    measure m.Faces.Count * (m.Edges.Count + m.Vertices.Count);
+}
+
+//==
+// # Outcomes
+
+spec EditOutcome
+{
+    // Applied: the inverse restores the model it was applied to.
+    invariant Law_Catalog_InverseUndoes;
+    // Applied: the remap has one entry per row of every table before the edit.
+    invariant Law_Catalog_RemapIsIdentityForGeometricEdits;
+    // Refused: nothing changed.
+    invariant Law_Catalog_RefusedLeavesModelUnchanged;
+    constructor Apply;
+    constructor AppliedInPlace;
+}
+
+//==
+// # Scripts, transactions, invalidation
+
+spec ScriptOutcome
+{
+    invariant Law_Catalog_ScriptInverseUndoes;
+    // ScriptRefused: Step is the position of the first refused edit.
+    invariant match (self) { ScriptApplied(model, remap, inverse) => true; ScriptRefused(step, p, w) => step >= 0; };
+    constructor Apply;
+}
+
+spec Transaction
+{
+    invariant ResultModel(self.Before, Apply(self.Before, self.Script)).SameModel(self.After);
+}
+
+spec Invalidation
+{
+    invariant Law_Catalog_InvalidationIsInRange;
+    invariant forall (k: Integer) in (self.Faces.Count - 1).Range : self.Faces[k] < self.Faces[k + 1];
+    constructor InvalidationOf;
+    constructor ToInvalidation;
+    constructor WholeModelInvalidation;
+    constructor FacesInvalidation;
+    constructor NoInvalidation;
+}
+
+spec InvalidationOf(m: BrepModel, edit: ModelEdit): Invalidation
+{
+    ensures Law_Catalog_InvalidationCoversChangedFaces;
+    ensures Law_Catalog_InvalidationIsInRange;
+}
+
+spec Dirty
+{
+    invariant forall (e: ModelEdit) in self.Since.Script.Edits :
+        forall (f: BrepFaceIndex) in self.Since.Before.InvalidationOf(e).Faces : self.Invalidation.Covers(f);
+    constructor DirtyAfter;
+}
+
+spec EditPreview
+{
+    invariant self.Report.Identical(self.Model.ValidateBrep);
+    constructor Preview;
+}
+
+spec MeshPatch
+{
+    // Every added face mesh is of a face the invalidation named or a face the edit added.
+    invariant forall (fm: FaceMesh) in self.AddedFaceMeshes : self.Renumbering.FaceInteriorStart.IsValidIndex(fm.Face.Value);
+}
+
+spec RemeshInvalidated(m: BrepModel, mesh: ModelMesh, inv: Invalidation, o: MeshingOptions): MeshPatch
+{
+    requires inv is InvalidationOf(before, edit) for the edit that made m;
+    ensures applying result to mesh gives MeshModel(m, o).Mesh up to element order;
+    deferred "re-mesh the invalidated faces against the kept edge discretizations, renumber";
+}
+
+//==
+// # Apply and the deferred edits
+//
+// Every Apply refuses with the precondition named below before reading an
+// index, and an applied edit's Inverse, applied to its Model, gives m back
+// (Law_Catalog_InverseUndoes; within tolerance for Transform,
+// Law_Catalog_TransformInverseRestoresVertices).
+
+spec Apply(m: BrepModel, edit: ModelEdit): EditOutcome
+{
+    ensures Law_Catalog_OutOfRangeEditIsRefused;
+    ensures Law_Catalog_InRangeEditIsApplied;
+    ensures Law_Catalog_InverseUndoes;
+    ensures Law_Catalog_RefusedLeavesModelUnchanged;
+}
+
+spec ApplySplitEdge(m: BrepModel, e: BrepEdgeIndex, at: EdgeParameter): EditOutcome
+{
+    requires m.IsEdgeInRange(e);                                   // else Refused(EdgeInRange)
+    requires m.EdgeDomain(e).Range strictly contains at;           // else Refused(ParameterInDomain)
+    ensures result is Applied with one more vertex and one more edge (CountDelta(MakeVertexEdge));
+    ensures every coedge citing e is replaced by two in sequence, the new vertex between;
+    ensures result.Inverse is MergeEdges of the two halves;
+    deferred "MakeVertexEdge at the curve point of at, then rewrite every citing loop";
+}
+
+spec ApplyMergeEdges(m: BrepModel, a: BrepEdgeIndex, b: BrepEdgeIndex): EditOutcome
+{
+    requires m.IsEdgeInRange(a);                                   // else Refused(EdgeInRange)
+    requires m.IsEdgeInRange(b);                                   // else Refused(EdgeInRange)
+    requires m.Edges[a].Curve == m.Edges[b].Curve;                 // else Refused(EdgesShareVertex)
+    requires a and b share a vertex no other edge uses;            // else Refused(EdgesShareVertex)
+    ensures result is Applied with one vertex and one edge fewer (CountDelta(KillEdgeVertex));
+    ensures result.Inverse is SplitEdge at the removed vertex's parameter;
+    deferred "KillEdgeVertex, then rewrite every citing loop";
+}
+
+spec ApplySplitFace(m: BrepModel, f: BrepFaceIndex, along: Array<EdgeParameter>): EditOutcome
+{
+    requires m.IsFaceInRange(f);                                   // else Refused(FaceInRange)
+    requires m.Faces[f].Bounds.Count > 0;                          // else Refused(FaceHasBound)
+    requires every loop of f chains end to start;                  // else Refused(LoopIsChained)
+    requires along.Count >= 2 and every parameter in its edge's domain;   // else Refused(ParameterInDomain)
+    ensures result is Applied with one more face per cut (CountDelta(MakeEdgeFace));
+    deferred "MakeVertexEdge at each cut point, MakeEdgeFace across the face";
+}
+
+spec ApplyAddFace(m: BrepModel, face: BrepFace): EditOutcome
+{
+    requires m.IsSurfaceInRange(face.Surface);                     // else Refused(SurfaceInRange)
+    requires face.Bounds.Count > 0;                                // else Refused(FaceHasBound)
+    requires every bound's loop is in range;                       // else Refused(LoopInRange)
+    ensures result is Applied with the face at index m.Faces.Count, in no shell;
+    ensures result.Inverse is RemoveFace of that index;
+    deferred "append the row; the face joins a shell by a later edit";
+}
+
+spec ApplyRetrimFace(m: BrepModel, f: BrepFaceIndex, bounds: Array<FaceBound>): EditOutcome
+{
+    requires m.IsFaceInRange(f);                                   // else Refused(FaceInRange)
+    requires bounds.Count > 0;                                     // else Refused(FaceHasBound)
+    requires every bound's loop is in range and chains end to start;   // else Refused(LoopInRange, LoopIsChained)
+    ensures result is Applied with f's Bounds equal to bounds;
+    ensures result.Inverse is RetrimFace(f, m.Faces[f].Bounds);
+    deferred "replace the bounds; drop loops no face cites and remap the loops";
+}
+
+//==
+// # Euler operators
+
+spec CountDelta(op: EulerOperator): ShellCounts
+{
+    ensures Law_Catalog_EulerOperatorKeepsCharacteristic;
+}
+
+spec ApplyEuler(m: BrepModel, op: EulerOperator): EditOutcome
+{
+    requires every index op names is in range;                     // else Refused with that table's precondition
+    ensures result is Applied ? RawCounts change by CountDelta(op) in the shell op touches : true;
+    deferred "table rewrites per operator (Mantyla, An Introduction to Solid Modeling, ch. 9)";
+}

@@ -1,0 +1,456 @@
+//==
+// # Catalog editing: laws
+//
+// TYPE-CATALOG.md section 12. BrepModel holds arrays, so the runner cannot
+// make one; every law takes Integer selectors (drawn in [-8, 8]) and builds
+// its model from layer 7's witnesses (EditWitnessAt) and its edit from a
+// selector (EditAt), so an index is in range for some draws and out of range
+// for others. Model comparisons are layer 7's SameModel, exact; the one
+// approximate law names the model's length tolerance.
+//
+// Sections, in order:
+//  - Witnesses and edits
+//  - Face inputs
+//  - Inverses and refusals
+//  - Remaps
+//  - Invalidation
+//  - Closures
+//  - Euler operators
+
+library CatalogEditingLaws
+{
+    //==
+    // # Witnesses and edits
+
+    // k reduced into 0 to n - 1. Precondition: n > 0.
+    Wrapped(k: Integer, n: Integer): Integer
+        => ((k % n) + n) % n;
+
+    // The unit box for even w, the unit solid cylinder for odd w.
+    EditWitnessAt(w: Integer): BrepModel
+        => Wrapped(w, 2) == 0 ? BrepModel.Witness_UnitBox : BrepModel.Witness_Cylinder;
+
+    // A unit-quaternion pose: a turn of 0.3 i radians about Z and a shift.
+    PoseAt(i: Integer): Pose3D
+        => Pose3D(Point3D(i.ToNumber, 0.5, -1.0),
+            Quaternion(0.0, 0.0, (i.ToNumber * 0.15).Sin, (i.ToNumber * 0.15).Cos));
+
+    // The number of edit kinds EditAt draws from.
+    EditKindCount(_: ModelEdit): Integer
+        => 10;
+
+    // Edit kind k (taken modulo 10) at index i of m: 0 a vertex move, 1 a
+    // curve and 2 a surface replacement, 3 a transform and 4 a scale (of
+    // Everything for even i, else of one element, which is refused), 5 and 6
+    // the two tolerance edits (refused for i <= 0), 7 a face reversal, 8 a
+    // loop reversal, 9 a face removal.
+    EditAt(m: BrepModel, k: Integer, i: Integer): ModelEdit
+    {
+        var r = Wrapped(k, ModelEdit.EditKindCount);
+        var whole = Wrapped(i, 2) == 0;
+        return r == 0 ? ModelEdit.Geometric(GeometricEdit.MoveVertex(BrepVertexIndex(i), ModelPoint(
+                m.Vertices.IsValidIndex(i) ? m.Vertices[i].Point + Vector3D(0.5, 0.25, 1.0) : Point3D(1.0, 2.0, 3.0))))
+            : r == 1 ? ModelEdit.Geometric(GeometricEdit.ReplaceCurve(CurveIndex(i),
+                BrepCurve.Line(Point3D(0.0, 0.0, 0.0), Vector3D(1.0, 1.0, 1.0))))
+            : r == 2 ? ModelEdit.Geometric(GeometricEdit.ReplaceSurface(SurfaceIndex(i),
+                BrepSurface.Plane(WorldFrameAt(Point3D(0.0, 0.0, 2.0)))))
+            : r == 3 ? ModelEdit.Geometric(GeometricEdit.Transform(
+                whole ? Selection.Everything : Selection.Faces([BrepFaceIndex(i)]), PoseAt(i)))
+            : r == 4 ? ModelEdit.Geometric(GeometricEdit.Scale(
+                whole ? Selection.Everything : Selection.Vertices([BrepVertexIndex(i)]), PowerOfTwoFactor(i)))
+            : r == 5 ? ModelEdit.Tolerance(ToleranceEdit.SetTolerances(m.Tolerances.ScaledTolerances(i.ToNumber)))
+            : r == 6 ? ModelEdit.Tolerance(ToleranceEdit.ScaleTolerances(i.ToNumber * 0.5))
+            : r == 7 ? ModelEdit.Topological(TopologicalEdit.ReverseFace(BrepFaceIndex(i)))
+            : r == 8 ? ModelEdit.Topological(TopologicalEdit.ReverseLoop(BrepLoopIndex(i)))
+            : ModelEdit.Topological(TopologicalEdit.RemoveFace(BrepFaceIndex(i)));
+    }
+
+    // Whether kind k's inverse restores the model exactly: every kind but the
+    // transform, whose inverse pose rounds.
+    IsExactlyInvertible(k: Integer): Boolean
+        => Wrapped(k, ModelEdit.EditKindCount) != 3;
+
+    // Whether kind k changes no table size: the geometric and tolerance kinds
+    // and the two reversals.
+    KeepsTableSizes(k: Integer): Boolean
+        => Wrapped(k, ModelEdit.EditKindCount) != 9;
+
+    // Whether kind k is a geometric or tolerance edit.
+    IsGeometricOrTolerance(k: Integer): Boolean
+        => Wrapped(k, ModelEdit.EditKindCount) <= 6;
+
+    // Whether the index kind k reads is in range of its table, for the kinds
+    // that read one: 0 vertices, 1 curves, 2 surfaces, 7 and 9 faces, 8 loops.
+    // True for the other kinds.
+    IsEditIndexInRange(m: BrepModel, k: Integer, i: Integer): Boolean
+    {
+        var r = Wrapped(k, ModelEdit.EditKindCount);
+        return r == 0 ? m.Vertices.IsValidIndex(i)
+            : r == 1 ? m.Geometry.Curves.IsValidIndex(i)
+            : r == 2 ? m.Geometry.Surfaces.IsValidIndex(i)
+            : r == 7 ? m.Faces.IsValidIndex(i)
+            : r == 8 ? m.Loops.IsValidIndex(i)
+            : r == 9 ? m.Faces.IsValidIndex(i)
+            : true;
+    }
+
+    // Whether kind k reads a table index at all.
+    ReadsAnIndex(k: Integer): Boolean
+    {
+        var r = Wrapped(k, ModelEdit.EditKindCount);
+        return r <= 2 ? true : r >= 7;
+    }
+
+    // Euler operator k (taken modulo 6) with placeholder indices: the count
+    // deltas read only the case.
+    EulerOperatorAt(k: Integer): EulerOperator
+    {
+        var r = Wrapped(k, 6);
+        return r == 0 ? EulerOperator.MakeVertexEdge(BrepLoopIndex(0), BrepVertexIndex(0), ModelPoint(Point3D(0.0, 0.0, 0.0)), CurveIndex(0))
+            : r == 1 ? EulerOperator.MakeEdgeFace(BrepLoopIndex(0), BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0))
+            : r == 2 ? EulerOperator.KillEdgeMakeRing(BrepEdgeIndex(0))
+            : r == 3 ? EulerOperator.MakeEdgeKillRing(BrepLoopIndex(0), BrepLoopIndex(1), BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0))
+            : r == 4 ? EulerOperator.KillEdgeVertex(BrepEdgeIndex(0), BrepVertexIndex(1))
+            : EulerOperator.KillFaceMakeRingHole(BrepFaceIndex(0), BrepFaceIndex(1));
+    }
+
+    // Selection kind k (taken modulo 6) of element i: vertices, edges,
+    // faces, shells, bodies, everything.
+    SelectionAt(k: Integer, i: Integer): Selection
+    {
+        var r = Wrapped(k, 6);
+        return r == 0 ? Selection.Vertices([BrepVertexIndex(i)])
+            : r == 1 ? Selection.Edges([BrepEdgeIndex(i)])
+            : r == 2 ? Selection.Faces([BrepFaceIndex(i)])
+            : r == 3 ? Selection.Shells([ShellIndex(i)])
+            : r == 4 ? Selection.Bodies([BodyIndex(i)])
+            : Selection.Everything;
+    }
+
+    //==
+    // # Face inputs
+    //
+    // What a face's mesh is made from: its record, its surface, its loops,
+    // the edges they cite with their curves and end points, and its
+    // vertex-loop vertices. Compared exactly between a model and the model an
+    // edit made, row by row at the same index; a row out of range in both is
+    // the same, in one only is not.
+
+    // Whether vertex v is the same in a and b.
+    VertexSame(a: BrepModel, b: BrepModel, v: BrepVertexIndex): Boolean
+        => a.IsVertexInRange(v)
+            ? (b.IsVertexInRange(v) ? a.Vertices[v] == b.Vertices[v] : false)
+            : b.IsVertexInRange(v).Not;
+
+    // Whether curve c is the same in a and b, its defining points included.
+    CurveSame(a: BrepModel, b: BrepModel, c: CurveIndex): Boolean
+        => a.IsCurveInRange(c)
+            ? (b.IsCurveInRange(c)
+                ? (a.Geometry.Curves[c] == b.Geometry.Curves[c]
+                    && a.Geometry.Curves[c].DefiningPoints.Corresponds(b.Geometry.Curves[c].DefiningPoints, (p, q) => p == q))
+                : false)
+            : b.IsCurveInRange(c).Not;
+
+    // Whether surface s is the same in a and b, its defining points included.
+    SurfaceSame(a: BrepModel, b: BrepModel, s: SurfaceIndex): Boolean
+        => a.IsSurfaceInRange(s)
+            ? (b.IsSurfaceInRange(s)
+                ? (a.Geometry.Surfaces[s] == b.Geometry.Surfaces[s]
+                    && a.Geometry.Surfaces[s].DefiningPoints.Corresponds(b.Geometry.Surfaces[s].DefiningPoints, (p, q) => p == q))
+                : false)
+            : b.IsSurfaceInRange(s).Not;
+
+    // Whether edge e, its curve and its end vertices are the same in a and b.
+    EdgeInputsSame(a: BrepModel, b: BrepModel, e: BrepEdgeIndex): Boolean
+        => a.IsEdgeInRange(e)
+            ? (b.IsEdgeInRange(e)
+                ? (a.Edges[e] == b.Edges[e]
+                    && a.VertexSame(b, a.Edges[e].Start)
+                    && a.VertexSame(b, a.Edges[e].End)
+                    && a.CurveSame(b, a.Edges[e].Curve))
+                : false)
+            : b.IsEdgeInRange(e).Not;
+
+    // Whether loop l is the same in a and b.
+    LoopSame(a: BrepModel, b: BrepModel, l: BrepLoopIndex): Boolean
+        => a.IsLoopInRange(l)
+            ? (b.IsLoopInRange(l)
+                ? (a.Loops[l].LoopCaseRank == b.Loops[l].LoopCaseRank
+                    && a.Loops[l].CoedgesOf.Corresponds(b.Loops[l].CoedgesOf, (p, q) => p == q)
+                    && a.Loops[l].VertexLoopVertexOf.Corresponds(b.Loops[l].VertexLoopVertexOf, (p, q) => p == q)
+                    && a.Loops[l].PolyLoopPointsOf.Corresponds(b.Loops[l].PolyLoopPointsOf, (p, q) => p == q))
+                : false)
+            : b.IsLoopInRange(l).Not;
+
+    // Whether two face records are the same.
+    FaceRecordSame(x: BrepFace, y: BrepFace): Boolean
+        => x.Surface == y.Surface
+            && x.SameSense == y.SameSense
+            && x.Bounds.Corresponds(y.Bounds, (p, q) => p == q);
+
+    // Whether everything face f's mesh is made from is the same in a and b.
+    FaceInputsSame(a: BrepModel, b: BrepModel, f: BrepFaceIndex): Boolean
+        => a.IsFaceInRange(f)
+            ? (b.IsFaceInRange(f)
+                ? (FaceRecordSame(a.Faces[f], b.Faces[f])
+                    ? (a.SurfaceSame(b, a.Faces[f].Surface)
+                        && a.Faces[f].Bounds.All(bd => a.LoopSame(b, bd.Loop))
+                        && a.EdgesCitedByFace(f).All(e => a.EdgeInputsSame(b, e))
+                        && a.VertexLoopVerticesOfFace(f).All(v => a.VertexSame(b, v)))
+                    : false)
+                : false)
+            : b.IsFaceInRange(f).Not;
+
+    //==
+    // # Inverses and refusals
+
+    // Applying an edit, then the inverse it returned, gives the model back
+    // exactly, for every kind but the transform.
+    InverseUndoesAt(w: Integer, k: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var e = m.EditAt(k, i);
+        var o = m.Apply(e);
+        var after = m.ResultModel(o);
+        return k.IsExactlyInvertible
+            ? (o.IsApplied ? after.ResultModel(after.Apply(o.InverseOr(e))).SameModel(m) : true)
+            : true;
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_InverseUndoes(k: Integer, i: Integer): Boolean
+        => 2.Range.All(w => InverseUndoesAt(w, k, i));
+
+    // A whole-model transform, then its inverse, puts every vertex back
+    // within the model's length tolerance.
+    TransformInverseRestoresVerticesAt(w: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var e = ModelEdit.Geometric(GeometricEdit.Transform(Selection.Everything, PoseAt(i)));
+        var o = m.Apply(e);
+        var back = m.ResultModel(o).ResultModel(m.ResultModel(o).Apply(o.InverseOr(e)));
+        return o.IsApplied
+            ? m.Vertices.Corresponds(back.Vertices, (p, q) => p.Point.Distance(q.Point) <= m.Tolerances.Length.Value)
+            : true;
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_TransformInverseRestoresVertices(i: Integer): Boolean
+        => 2.Range.All(w => TransformInverseRestoresVerticesAt(w, i));
+
+    // A loop that chains end to start still does once reversed: its coedges
+    // are flipped as well as reordered.
+    ReversedLoopStillChainsAt(w: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        return m.Loops.IsValidIndex(i)
+            ? (m.ChainsEndToStart(m.Loops[i]) ? m.ChainsEndToStart(m.Loops[i].Reversed) : true)
+            : true;
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_ReversedLoopStillChains(i: Integer): Boolean
+        => 2.Range.All(w => ReversedLoopStillChainsAt(w, i));
+
+    // A refused edit leaves the model as it was.
+    RefusedLeavesModelUnchangedAt(w: Integer, k: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var o = m.Apply(m.EditAt(k, i));
+        return o.IsApplied ? true : m.ResultModel(o).SameModel(m);
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_RefusedLeavesModelUnchanged(k: Integer, i: Integer): Boolean
+        => 2.Range.All(w => RefusedLeavesModelUnchangedAt(w, k, i));
+
+    // An edit whose index is out of range of its table is refused, never
+    // applied (and never reads the row).
+    OutOfRangeEditIsRefusedAt(w: Integer, k: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        return k.ReadsAnIndex
+            ? (m.IsEditIndexInRange(k, i) ? true : m.Apply(m.EditAt(k, i)).IsApplied.Not)
+            : true;
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_OutOfRangeEditIsRefused(k: Integer, i: Integer): Boolean
+        => 2.Range.All(w => OutOfRangeEditIsRefusedAt(w, k, i));
+
+    // An edit whose index is in range is applied: the edits with bodies
+    // refuse only on a failed precondition.
+    InRangeEditIsAppliedAt(w: Integer, k: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        return k.ReadsAnIndex
+            ? (m.IsEditIndexInRange(k, i) ? m.Apply(m.EditAt(k, i)).IsApplied : true)
+            : true;
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_InRangeEditIsApplied(k: Integer, i: Integer): Boolean
+        => 2.Range.All(w => InRangeEditIsAppliedAt(w, k, i));
+
+    // A two-edit script, then the script it returned, gives the model back
+    // exactly.
+    ScriptInverseUndoesAt(w: Integer, k1: Integer, i1: Integer, k2: Integer, i2: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var o = m.Apply(EditScript([m.EditAt(k1, i1), m.EditAt(k2, i2)]));
+        var after = m.ResultModel(o);
+        return k1.IsExactlyInvertible && k2.IsExactlyInvertible
+            ? after.ResultModel(after.Apply(o.InverseScript)).SameModel(m)
+            : true;
+    }
+
+    // The statement above, over both witnesses, with each edit at every index
+    // from -1 to 9.
+    Law_Catalog_ScriptInverseUndoes(k1: Integer, k2: Integer): Boolean
+        => 2.Range.All(w => 11.Range.All(i => 11.Range.All(j => ScriptInverseUndoesAt(w, k1, i - 1, k2, j - 1))));
+
+    //==
+    // # Remaps
+
+    // A geometric or tolerance edit renumbers no table: its remap is the
+    // identity of every table's row count.
+    RemapIsIdentityForGeometricEditsAt(w: Integer, k: Integer, i: Integer, t: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var o = m.Apply(m.EditAt(k, i));
+        var table = TableNameAt(t);
+        return k.IsGeometricOrTolerance
+            ? m.ResultRemap(o).NewOfValues(table).Corresponds(m.RowCount(table).IdentityNewOf, (p, q) => p == q)
+            : true;
+    }
+
+    // The statement above, over both witnesses and every table.
+    Law_Catalog_RemapIsIdentityForGeometricEdits(k: Integer, i: Integer): Boolean
+        => 2.Range.All(w => 10.Range.All(t => RemapIsIdentityForGeometricEditsAt(w, k, i, t)));
+
+    // Composing the identity remap before any remap gives that remap.
+    ComposeWithIdentityIsIdentityAt(w: Integer, k: Integer, i: Integer, t: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var r = m.ResultRemap(m.Apply(m.EditAt(k, i)));
+        var table = TableNameAt(t);
+        return m.IdentityRemap.Compose(r).NewOfValues(table).Corresponds(r.NewOfValues(table), (p, q) => p == q);
+    }
+
+    // The statement above, over both witnesses and every table.
+    Law_Catalog_ComposeWithIdentityIsIdentity(k: Integer, i: Integer): Boolean
+        => 2.Range.All(w => 10.Range.All(t => ComposeWithIdentityIsIdentityAt(w, k, i, t)));
+
+    // A face removal's remap sends the removed face to none and keeps the
+    // others in order.
+    RemoveFaceRemapDropsTheFaceAt(w: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var faces = m.ResultRemap(m.Apply(ModelEdit.Topological(TopologicalEdit.RemoveFace(BrepFaceIndex(i))))).NewOfValues(TableName.FacesTable);
+        return m.Faces.IsValidIndex(i)
+            ? faces.Corresponds(m.Faces.Count.RemovalNewOf(i), (p, q) => p == q)
+            : true;
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_RemoveFaceRemapDropsTheFace(i: Integer): Boolean
+        => 2.Range.All(w => RemoveFaceRemapDropsTheFaceAt(w, i));
+
+    //==
+    // # Invalidation
+
+    // Every face whose mesh inputs an edit changed is in the edit's
+    // invalidation, for every edit that keeps the face table's size.
+    InvalidationCoversChangedFacesAt(w: Integer, k: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var e = m.EditAt(k, i);
+        var after = m.ResultModel(m.Apply(e));
+        var inv = m.InvalidationOf(e);
+        return k.KeepsTableSizes
+            ? m.Faces.Count.Range.All(f =>
+                m.FaceInputsSame(after, BrepFaceIndex(f)) ? true : inv.Covers(BrepFaceIndex(f)))
+            : true;
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_InvalidationCoversChangedFaces(k: Integer, i: Integer): Boolean
+        => 2.Range.All(w => InvalidationCoversChangedFacesAt(w, k, i));
+
+    // Every index an invalidation names is in range of the model.
+    InvalidationIsInRangeAt(w: Integer, k: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var inv = m.InvalidationOf(m.EditAt(k, i));
+        return inv.Edges.All(e => m.IsEdgeInRange(e)) && inv.Faces.All(f => m.IsFaceInRange(f));
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_InvalidationIsInRange(k: Integer, i: Integer): Boolean
+        => 2.Range.All(w => InvalidationIsInRangeAt(w, k, i));
+
+    //==
+    // # Closures
+
+    // A closure holds the vertex, edge or face selected, when it is in range.
+    ClosureContainsSelectionAt(w: Integer, k: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var c = m.ClosureOf(SelectionAt(k, i));
+        var r = Wrapped(k, 6);
+        return r == 0 ? (m.Vertices.IsValidIndex(i) ? c.Vertices.HoldsVertex(BrepVertexIndex(i)) : true)
+            : r == 1 ? (m.Edges.IsValidIndex(i) ? c.Edges.HoldsEdge(BrepEdgeIndex(i)) : true)
+            : r == 2 ? (m.Faces.IsValidIndex(i) ? c.Faces.HoldsFace(BrepFaceIndex(i)) : true)
+            : true;
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_ClosureContainsSelection(k: Integer, i: Integer): Boolean
+        => 2.Range.All(w => ClosureContainsSelectionAt(w, k, i));
+
+    // Every index a closure names is in range.
+    ClosureIsInRangeAt(w: Integer, k: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var c = m.ClosureOf(SelectionAt(k, i));
+        return c.Vertices.All(v => m.IsVertexInRange(v))
+            && c.Edges.All(e => m.IsEdgeInRange(e))
+            && c.Faces.All(f => m.IsFaceInRange(f));
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_ClosureIsInRange(k: Integer, i: Integer): Boolean
+        => 2.Range.All(w => ClosureIsInRangeAt(w, k, i));
+
+    // The closure of an edge holds every face that uses it.
+    ClosureHoldsFacesOfEdgeAt(w: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var c = m.ClosureOf(Selection.Edges([BrepEdgeIndex(i)]));
+        return m.FacesOfEdge(BrepEdgeIndex(i)).All(f => c.Faces.HoldsFace(f));
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_ClosureHoldsFacesOfEdge(i: Integer): Boolean
+        => 2.Range.All(w => ClosureHoldsFacesOfEdgeAt(w, i));
+
+    // The closure of a face holds every edge its loops cite.
+    ClosureHoldsEdgesOfFaceAt(w: Integer, i: Integer): Boolean
+    {
+        var m = EditWitnessAt(w);
+        var c = m.ClosureOf(Selection.Faces([BrepFaceIndex(i)]));
+        return m.EdgesCitedByFace(BrepFaceIndex(i)).All(e => m.IsEdgeInRange(e) ? c.Edges.HoldsEdge(e) : true);
+    }
+
+    // The statement above, over both witnesses.
+    Law_Catalog_ClosureHoldsEdgesOfFace(i: Integer): Boolean
+        => 2.Range.All(w => ClosureHoldsEdgesOfFaceAt(w, i));
+
+    //==
+    // # Euler operators
+
+    // Every Euler operator keeps Euler-Poincare: the change to V - E + 2F - L
+    // is -2 times the change to the number of through holes.
+    Law_Catalog_EulerOperatorKeepsCharacteristic(k: Integer): Boolean
+        => EulerOperatorAt(k).CountDelta.CharacteristicDelta == 0 - 2 * EulerOperatorAt(k).HoleDelta;
+}

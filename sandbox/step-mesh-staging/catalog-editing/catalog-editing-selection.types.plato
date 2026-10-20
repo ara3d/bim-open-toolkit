@@ -1,0 +1,49 @@
+//==
+// # Catalog editing: selections and anchors
+//
+// TYPE-CATALOG.md section 12 (a new layer, 10-editing). What an edit applies
+// to, what that touches, and a reference to a kernel element that outlives a
+// renumbering. Editing is out of the current design's scope; these types keep
+// the door open by never baking read-only into a type.
+//
+// Sections, in order:
+//  - Selections
+//  - Anchors
+
+//==
+// # Selections
+
+// What an edit applies to: indices of one kernel table, or the whole model.
+// Removes: an edit that takes a bare index array and leaves the reader to
+// guess which table it indexes.
+type Selection
+    = Vertices(Vertices: Array<BrepVertexIndex>)
+    | Edges(Edges: Array<BrepEdgeIndex>)
+    | Faces(Faces: Array<BrepFaceIndex>)
+    | Shells(Shells: Array<ShellIndex>)
+    | Bodies(Bodies: Array<BodyIndex>)
+    | Everything;
+
+// A selection with everything it touches (ClosureOf): the edges at a selected
+// vertex and their faces, the end vertices and faces of a selected edge, the
+// edges and vertices of a selected face. Each array is in increasing index
+// order, each index once and in range. Removes: an edit that moves a vertex
+// and forgets the faces whose meshes it stales.
+type SelectionClosure
+{
+    Vertices: Array<BrepVertexIndex>;
+    Edges: Array<BrepEdgeIndex>;
+    Faces: Array<BrepFaceIndex>;
+}
+
+//==
+// # Anchors
+
+// A reference to a kernel element that survives renumbering: by the STEP
+// instance it was decoded from, by its provenance, or by its index at a named
+// commit of an edit history. Removes: an edit script that breaks after a
+// repair removes one vertex.
+type Anchor
+    = BySource(Source: StepSource)
+    | ByProvenance(Where: Provenance)
+    | ByIndexAt(Commit: String, Index: KernelElement);
