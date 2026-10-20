@@ -20,6 +20,7 @@ of scope for now; the design keeps the door open by never baking "read-only" int
 | [PLATO-SPEC-EXTENSIONS.md](PLATO-SPEC-EXTENSIONS.md) | The language extension proposal distilled from SPEC-EXECUTION.md: each construct (invariants, sealing, contracts, laws, theorems, witnesses, generators, the new expression forms) with what it is, why it exists, and how the library uses it |
 | [TARGET-LANGUAGE.md](TARGET-LANGUAGE.md) | Which Plato backend to implement on first (C#, C++, TypeScript, Rust), with the state of each backend measured, and what `Number`'s width should be |
 | [VOCABULARY.md](VOCABULARY.md) | The shared contract between layers: layer order, the names each layer exports, the stdlib names reused, and the naming rules |
+| [TYPE-CATALOG.md](TYPE-CATALOG.md) | The types and concepts still to declare so that meshing, validation, editing, and repair are hard to get wrong: one type per space and unit, proofs as types, decisions as sums, edits and repairs as data; what each one removes |
 | [PLATO-PRIMER.md](PLATO-PRIMER.md) | Plato as the design needs it: declaration forms, the law convention, the stdlib vocabulary to reuse, and the language limits that shape the design |
 | `research/` | Distilled source material: the STEP entity model, meshing requirements, validation mathematics, lessons from the existing IFC mesher |
 | `NN-<layer>/` | One folder per layer, bottom up. Each has a `README.md` stating the layer's mathematics and decisions, then `.plato` files |

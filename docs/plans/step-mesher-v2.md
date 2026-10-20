@@ -45,7 +45,7 @@ Written 2026-10-19 after the owner asked for significantly finer work. Wave 1's 
 - **One chunk per brief.** A session that owns a staging folder is told its first chunk and the rule "then take the next chunk with your owner name, in table order". The supervisor compares each session's last commit time with the chunk's expected duration; past it with no commit is a stall to check.
 - **Additions never wait.** A new type, function, law or witness goes in a new file in the staging folder at once (design item 3). Only a change to an existing type or signature is a contract request, and such a chunk is merged alone by the supervisor.
 - **Merge check under ten minutes.** Until the compiled runner (TKT-354) and the affected-law filter (chunk I6) exist, a chunk merge runs only the laws its row names plus the laws of its layer's files, with `plato_laws.py` on the warm server; the full sweep against `verdicts-cpu64.tsv` runs once a day, or after every fifth merge, whichever comes first, and any verdict that changed is traced to the chunk that changed it.
-- **The ledger counts chunks.** New columns: chunks merged, mean chunk wall time, and types added. A chunk that adds no type says in its `TRACK.md` entry what values it passes around and why none deserved one.
+- **The ledger counts chunks.** New columns: chunks merged, mean chunk wall time, and types added. A chunk that adds no type says in its `TRACK.md` entry what values it passes around and why none deserved one. `sandbox/step-brep-mesh/TYPE-CATALOG.md` (2026-10-19) lists the types and concepts a builder reaches for first: points by space, decided results, proof-carrying types, allowances with derivations, edits and repairs as data.
 
 ### Chunk table
 
