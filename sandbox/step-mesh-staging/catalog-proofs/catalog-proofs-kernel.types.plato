@@ -1,0 +1,88 @@
+//==
+// # Catalog: proofs about the kernel model, its loops, and its shells
+//
+// TYPE-CATALOG.md section 4, layers 2 and 3. Each type holds the checked
+// value (or its index) and the facts its check produced, and only its
+// Check* constructor (catalog-proofs-kernel.library.plato) builds it, as
+// catalog-proofs.spec.plato states. A function that needs the property asks
+// for the type, so nobody re-checks it or forgets to.
+//
+// Sections, in order:
+//  - The whole model
+//  - Loops
+//  - Shells
+
+//==
+// # The whole model
+
+// A model every stored index of which is in range (IsEveryIndexInRange,
+// Law_IndicesInRange). Every layer 2 traversal can take it. Removes: the
+// index guard forgotten in one of forty functions.
+type InRangeModel
+{
+    Model: BrepModel;
+}
+
+// A model that PrepareModel finished: tolerances floored, folds applied,
+// closures marked. Model is Decoded.Model, kept as the field layers 4 to 8
+// read. Removes: a raw model meshed with the default tolerances.
+type PreparedModel
+    implements IToleranced
+{
+    Model: BrepModel;
+    Decoded: DecodedModel;
+}
+
+// A model whose length tolerance is no smaller than the rounding floor at
+// its coordinate extent (layer 0's IsResolvable), with the extent the check
+// read. Removes: a 32-bit model at coordinate 1e6 meshed with chordal 1e-4.
+type ResolvableModel
+    implements IToleranced
+{
+    Model: BrepModel;
+    Extent: ModelLength;
+}
+
+//==
+// # Loops
+
+// A loop whose coedges chain end to start, the last wrapping to the first
+// (ChainsEndToStart). Removes: a loop traversed as closed that is not.
+type ChainedLoop
+    implements IHasProvenance
+{
+    Loop: BrepLoopIndex;
+}
+
+//==
+// # Shells
+
+// A shell every counted edge of which has zero or two uses (the claim of
+// Law_EveryEdgeUsedTwiceInClosedShell, made a fact and not a flag), with its
+// reduced cell counts. Removes: DeclaredClosed (a claim) read as closedness
+// (a fact); the hollow-box laws re-checking closure three times (F-53).
+type ClosedShell
+    implements IHasProvenance
+{
+    Shell: ShellIndex;
+    Counts: ShellCounts;
+}
+
+// A closed shell whose every two-use edge runs opposite ways
+// (HasCoherentOrientation), with the closed shell's counts. Removes: a
+// shell meshed inside out because the orientation was assumed.
+type OrientedShell
+    implements IHasProvenance
+{
+    Shell: ShellIndex;
+    Counts: ShellCounts;
+}
+
+// A shell whose faces form at most one class under touching
+// (ShellComponentCount, Law_ShellIsConnected). Removes: two tori in one
+// shell passing every Euler law as one torus.
+type ConnectedShell
+    implements IHasProvenance
+{
+    Shell: ShellIndex;
+}

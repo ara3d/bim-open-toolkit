@@ -1,0 +1,168 @@
+//==
+// # Catalog: types borrowed from the catalog-decided track (section 5)
+//
+// Declared here so section 4's constructors compile before section 5
+// merges. UndecidedReason has the catalog's shape exactly, as
+// catalog-decided declares it; the supervisor deletes this copy at merge.
+// The Decided* sums are the monomorphic results of section 4's Check*
+// constructors, one per proof type, in the catalog-decided pattern
+// (Decided(Value) | Undecided(Reason)); section 5's owner may keep them
+// here or move them beside its own.
+//
+// Sections, in order:
+//  - Reasons
+//  - Decided proofs of the kernel and its regions
+//  - Decided proofs of discretizations
+//  - Decided proofs of meshes and reports
+//  - Decided proofs of geometry
+
+//==
+// # Reasons
+
+// Why a computation gave no value: the vocabulary every Decided* shares.
+// Removes: seven different sentinel conventions.
+type UndecidedReason
+    = OutOfDomain
+    | DegenerateAt(Side: DomainSide)
+    | NoConvergence(Iterations: Integer)
+    | Unbounded
+    | NotApplicable(Kind: String)
+    | BelowResolution
+    | ToleranceExceeded(By: Measure);
+
+//==
+// # Decided proofs of the kernel and its regions
+
+// An InRangeModel, or why the model has an index out of range.
+type DecidedInRangeModel
+    = Decided(Value: InRangeModel)
+    | Undecided(Reason: UndecidedReason);
+
+// A ChainedLoop, or why the loop does not chain.
+type DecidedChainedLoop
+    = Decided(Value: ChainedLoop)
+    | Undecided(Reason: UndecidedReason);
+
+// A SimpleUvLoop, or why the loop is not simple.
+type DecidedSimpleUvLoop
+    = Decided(Value: SimpleUvLoop)
+    | Undecided(Reason: UndecidedReason);
+
+// A ClosedUvLoop, or why the loop does not close in the plane.
+type DecidedClosedUvLoop
+    = Decided(Value: ClosedUvLoop)
+    | Undecided(Reason: UndecidedReason);
+
+// An OrientedUvRegion, or why the region is not oriented.
+type DecidedOrientedUvRegion
+    = Decided(Value: OrientedUvRegion)
+    | Undecided(Reason: UndecidedReason);
+
+// A ClosedShell, or why the shell is not closed.
+type DecidedClosedShell
+    = Decided(Value: ClosedShell)
+    | Undecided(Reason: UndecidedReason);
+
+// An OrientedShell, or why the closed shell is not coherently oriented.
+type DecidedOrientedShell
+    = Decided(Value: OrientedShell)
+    | Undecided(Reason: UndecidedReason);
+
+// A ConnectedShell, or why the shell is not connected.
+type DecidedConnectedShell
+    = Decided(Value: ConnectedShell)
+    | Undecided(Reason: UndecidedReason);
+
+// A PreparedModel, or why preparation gave unusable tolerances.
+type DecidedPreparedModel
+    = Decided(Value: PreparedModel)
+    | Undecided(Reason: UndecidedReason);
+
+// A ResolvableModel, or why the tolerance is below the rounding floor.
+type DecidedResolvableModel
+    = Decided(Value: ResolvableModel)
+    | Undecided(Reason: UndecidedReason);
+
+//==
+// # Decided proofs of discretizations
+
+// A CompleteDiscretization, or why some edge is missing.
+type DecidedCompleteDiscretization
+    = Decided(Value: CompleteDiscretization)
+    | Undecided(Reason: UndecidedReason);
+
+// A PartialDiscretization, or why the table is not partial.
+type DecidedPartialDiscretization
+    = Decided(Value: PartialDiscretization)
+    | Undecided(Reason: UndecidedReason);
+
+// A CanonicalDiscretization, or why the polyline is not canonical.
+type DecidedCanonicalDiscretization
+    = Decided(Value: CanonicalDiscretization)
+    | Undecided(Reason: UndecidedReason);
+
+// A MeetsCriteriaProof, or why the discretization misses its criteria.
+type DecidedMeetsCriteriaProof
+    = Decided(Value: MeetsCriteriaProof)
+    | Undecided(Reason: UndecidedReason);
+
+//==
+// # Decided proofs of meshes and reports
+
+// A MeshedFaceSet, or why some face is not meshed.
+type DecidedMeshedFaceSet
+    = Decided(Value: MeshedFaceSet)
+    | Undecided(Reason: UndecidedReason);
+
+// A FullyMeshedModel, or why some face of the model is not meshed.
+type DecidedFullyMeshedModel
+    = Decided(Value: FullyMeshedModel)
+    | Undecided(Reason: UndecidedReason);
+
+// A WatertightMesh, or why the mesh has a boundary edge.
+type DecidedWatertightMesh
+    = Decided(Value: WatertightMesh)
+    | Undecided(Reason: UndecidedReason);
+
+// A CheckedMesh, or why the mesh failed its topology checks.
+type DecidedCheckedMesh
+    = Decided(Value: CheckedMesh)
+    | Undecided(Reason: UndecidedReason);
+
+// A QualityGradedMesh, or why the mesh could not be measured.
+type DecidedQualityGradedMesh
+    = Decided(Value: QualityGradedMesh)
+    | Undecided(Reason: UndecidedReason);
+
+// A PlanarQuad, or why the quad is not planar.
+type DecidedPlanarQuad
+    = Decided(Value: PlanarQuad)
+    | Undecided(Reason: UndecidedReason);
+
+// A ConvexQuad, or why the quad is not strictly convex.
+type DecidedConvexQuad
+    = Decided(Value: ConvexQuad)
+    | Undecided(Reason: UndecidedReason);
+
+// A ValidatedReport, or why the validation found an error.
+type DecidedValidatedReport
+    = Decided(Value: ValidatedReport)
+    | Undecided(Reason: UndecidedReason);
+
+//==
+// # Decided proofs of geometry
+
+// A WellFormedBSpline, or why the record breaks a shape rule.
+type DecidedWellFormedBSpline
+    = Decided(Value: WellFormedBSpline)
+    | Undecided(Reason: UndecidedReason);
+
+// A ClampedBSpline, or why the well-formed curve is not clamped.
+type DecidedClampedBSpline
+    = Decided(Value: ClampedBSpline)
+    | Undecided(Reason: UndecidedReason);
+
+// An OrthonormalFrame, or by how much the frame misses orthonormality.
+type DecidedOrthonormalFrame
+    = Decided(Value: OrthonormalFrame)
+    | Undecided(Reason: UndecidedReason);

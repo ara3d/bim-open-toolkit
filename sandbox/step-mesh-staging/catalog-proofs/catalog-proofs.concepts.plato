@@ -1,0 +1,26 @@
+//==
+// # Catalog: concepts for values that carry a tolerance or a location
+//
+// TYPE-CATALOG.md section 15, the two concepts the catalog-proofs track
+// owns.
+//
+// Sections, in order:
+//  - Concepts
+
+//==
+// # Concepts
+
+// A value that carries the tolerances it was made under (a PreparedModel,
+// a ResolvableModel). Removes: a mesh validated under a different tolerance
+// from the one it was built with.
+interface IToleranced
+{
+    Tolerance(x: Self): Tolerances;
+}
+
+// A value a diagnostic can point at: the kernel element it is about.
+// Removes: a diagnostic about a checked loop or shell located Nowhere.
+interface IHasProvenance
+{
+    Where(x: Self): Provenance;
+}

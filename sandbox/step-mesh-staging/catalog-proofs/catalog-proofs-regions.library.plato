@@ -1,0 +1,67 @@
+//==
+// # Catalog: the constructors of the parameter-space proofs
+//
+// One Check* function per proof type of catalog-proofs-regions.types.plato,
+// each over layer 5's own predicates.
+//
+// Sections, in order:
+//  - Loops and regions
+//  - Verdicts
+
+library CatalogProofsRegions
+{
+    //==
+    // # Loops and regions
+
+    // The loop as a region with no holes, the form IsSimpleRegion reads.
+    AsRegion(l: UvLoop): UvRegion
+        => UvRegion(l, [l].Take(0));
+
+    // The loop as a SimpleUvLoop when, as a region with no holes, it is
+    // simple under tol.
+    CheckSimpleUvLoop(l: UvLoop, tol: UvTolerance): DecidedSimpleUvLoop
+        => l.AsRegion.IsSimpleRegion(tol)
+            ? DecidedSimpleUvLoop.Decided(SimpleUvLoop(l, tol))
+            : DecidedSimpleUvLoop.Undecided(UndecidedReason.NotApplicable("loop is not simple"));
+
+    // The loop as a ClosedUvLoop of face f when it winds zero times in u
+    // and in v; OutOfDomain when f is not intact.
+    CheckClosedUvLoop(m: BrepModel, f: BrepFaceIndex, l: UvLoop): DecidedClosedUvLoop
+        => m.IsFaceIntact(f)
+            ? ((m.UWinding(f, l) == 0 && m.VWinding(f, l) == 0)
+                ? DecidedClosedUvLoop.Decided(ClosedUvLoop(f, l))
+                : DecidedClosedUvLoop.Undecided(UndecidedReason.NotApplicable("loop winds around a period")))
+            : DecidedClosedUvLoop.Undecided(UndecidedReason.OutOfDomain);
+
+    // True when the region's outer loop is positive in face f's chart and
+    // every hole of three points or more negative: the claims of
+    // UvRegionWindingPositive and Law_UvHoleWindingNegative together.
+    // Precondition: m.IsFaceIntact(f).
+    IsOrientedIn(m: BrepModel, f: BrepFaceIndex, r: UvRegion): Boolean
+        => m.UvRegionWindingPositive(f, r)
+            && r.Holes.Count.Range.All(h => Law_UvHoleWindingNegative(m, f, r, h));
+
+    // The region as an OrientedUvRegion of face f when it is oriented in
+    // the face's chart; OutOfDomain when f is not intact.
+    CheckOrientedUvRegion(m: BrepModel, f: BrepFaceIndex, r: UvRegion): DecidedOrientedUvRegion
+        => m.IsFaceIntact(f)
+            ? (m.IsOrientedIn(f, r)
+                ? DecidedOrientedUvRegion.Decided(OrientedUvRegion(f, r))
+                : DecidedOrientedUvRegion.Undecided(UndecidedReason.NotApplicable("region is not oriented")))
+            : DecidedOrientedUvRegion.Undecided(UndecidedReason.OutOfDomain);
+
+    //==
+    // # Verdicts
+
+    // True when the check built its proof.
+    IsDecided(d: DecidedSimpleUvLoop): Boolean
+        => match (d) { Decided(v) => true; Undecided(r) => false; };
+
+    // True when the check built its proof.
+    IsDecided(d: DecidedClosedUvLoop): Boolean
+        => match (d) { Decided(v) => true; Undecided(r) => false; };
+
+    // True when the check built its proof.
+    IsDecided(d: DecidedOrientedUvRegion): Boolean
+        => match (d) { Decided(v) => true; Undecided(r) => false; };
+}

@@ -1,0 +1,41 @@
+//==
+// # Catalog: proofs about a face's loops and region in parameter space
+//
+// TYPE-CATALOG.md section 4, layer 5. Built only by the Check* constructors
+// of catalog-proofs-regions.library.plato.
+//
+// Sections, in order:
+//  - Loops and regions
+
+//==
+// # Loops and regions
+
+// A parameter-space loop with no self-intersection under Tolerance: as a
+// region with no holes it is simple (IsSimpleRegion). Decided once.
+// Removes: a triangulation attempted on a loop that was never checked
+// simple (LoopSelfIntersects is a blocking request today).
+type SimpleUvLoop
+{
+    Loop: UvLoop;
+    Tolerance: UvTolerance;
+}
+
+// A loop of face Face that closes in the plane: it winds zero times in u and
+// in v (UWinding, VWinding, Law_RegionLoopClosesInPlane), as every loop does
+// after AddMissingSeamsAndPoles. Removes: a loop that still wraps a period
+// handed to the triangulator.
+type ClosedUvLoop
+{
+    Face: BrepFaceIndex;
+    Loop: UvLoop;
+}
+
+// A region of face Face whose outer loop runs counter-clockwise and whose
+// holes run clockwise in the face's chart (UvRegionWindingPositive,
+// Law_UvHoleWindingNegative). Removes: the orientation re-decided inside the
+// triangulator with a different tolerance.
+type OrientedUvRegion
+{
+    Face: BrepFaceIndex;
+    Region: UvRegion;
+}

@@ -1,0 +1,66 @@
+//==
+// # Catalog: the constructors of the geometry proofs
+//
+// One Check* function per proof type of catalog-proofs-geometry.types.plato.
+// HasClampedEnds is the one new predicate: layer 1 has no test for a
+// clamped knot vector.
+//
+// Sections, in order:
+//  - B-splines
+//  - Frames
+//  - Verdicts
+
+library CatalogProofsGeometry
+{
+    //==
+    // # B-splines
+
+    // The record as a WellFormedBSpline when it keeps every shape rule.
+    CheckWellFormedBSpline(d: BSplineCurveData): DecidedWellFormedBSpline
+        => d.IsWellShaped
+            ? DecidedWellFormedBSpline.Decided(WellFormedBSpline(d))
+            : DecidedWellFormedBSpline.Undecided(UndecidedReason.NotApplicable("record breaks a shape rule"));
+
+    // True when the first Degree + 1 knots are equal and the last Degree + 1
+    // are equal: the knot vector is clamped at both ends. Knots are copied
+    // from the file, so the comparison is exact by construction.
+    // Precondition: the basis is well shaped for some control count, so it
+    // has at least 2 (Degree + 1) knots.
+    HasClampedEnds(b: SplineBasis): Boolean
+        => (b.Degree + 1).Range.All(i => b.Knots.KnotAt(i) == b.Knots.KnotAt(0))
+            && (b.Degree + 1).Range.All(i => b.Knots.KnotAt(b.Knots.Count - 1 - i) == b.Knots.KnotAt(b.Knots.Count - 1));
+
+    // The well-formed curve as a ClampedBSpline when its knot vector is
+    // clamped at both ends.
+    CheckClampedBSpline(w: WellFormedBSpline): DecidedClampedBSpline
+        => w.Data.Basis.HasClampedEnds
+            ? DecidedClampedBSpline.Decided(ClampedBSpline(w.Data))
+            : DecidedClampedBSpline.Undecided(UndecidedReason.NotApplicable("knot vector is not clamped"));
+
+    //==
+    // # Frames
+
+    // The frame as an OrthonormalFrame, with the sign of its handedness,
+    // when it is orthonormal within tol (OrthonormalityDeviation, either
+    // handedness); ToleranceExceeded by the excess angle otherwise.
+    CheckOrthonormalFrame(f: Frame3D, tol: AngleTolerance): DecidedOrthonormalFrame
+        => f.OrthonormalityDeviation <= tol.Value.Radians
+            ? DecidedOrthonormalFrame.Decided(OrthonormalFrame(f, SignWithin(f.Handedness, Resolution.Exact)))
+            : DecidedOrthonormalFrame.Undecided(UndecidedReason.ToleranceExceeded(
+                Angle(f.OrthonormalityDeviation - tol.Value.Radians).ToMeasure));
+
+    //==
+    // # Verdicts
+
+    // True when the check built its proof.
+    IsDecided(d: DecidedWellFormedBSpline): Boolean
+        => match (d) { Decided(v) => true; Undecided(r) => false; };
+
+    // True when the check built its proof.
+    IsDecided(d: DecidedClampedBSpline): Boolean
+        => match (d) { Decided(v) => true; Undecided(r) => false; };
+
+    // True when the check built its proof.
+    IsDecided(d: DecidedOrthonormalFrame): Boolean
+        => match (d) { Decided(v) => true; Undecided(r) => false; };
+}
