@@ -1,0 +1,43 @@
+//==
+// # Catalog: the arena views at typed parameters
+//
+// The finer concepts' obligations for layer 1's arena views (ArenaCurve,
+// ArenaCurve2D, ArenaSurface) at the foundation's typed parameters. The
+// views cannot gain an implements clause from here; at merge they implement
+// IEvaluableCurve3D, IDifferentiable1, IDifferentiable2, IEvaluableCurve2D,
+// IEvaluableSurface, IHasCurveDomain and IHasSurfaceDomain through these
+// (TRACK.md, merge instructions).
+//
+// Sections, in order:
+//  - Curves
+//  - Surfaces
+//==
+
+library CatalogGeometryViews
+{
+    //==
+    // # Curves
+
+    // The space curve's point at its typed parameter.
+    Eval(x: ArenaCurve, t: CurveParameter): Point3D
+        => x.Geometry.Eval(x.Curve, t.Value);
+
+    // The space curve's first derivative at its typed parameter.
+    Derivative(x: ArenaCurve, t: CurveParameter): Vector3D
+        => x.Geometry.Derivative(x.Curve, t.Value);
+
+    // The space curve's second derivative at its typed parameter.
+    SecondDerivative(x: ArenaCurve, t: CurveParameter): Vector3D
+        => x.Geometry.SecondDerivative(x.Curve, t.Value);
+
+    // The parameter-plane curve's point at its typed parameter.
+    Eval(x: ArenaCurve2D, t: Curve2DParameter): UvPoint
+        => x.Geometry.Eval(x.Curve, t.Value).ToUvPoint;
+
+    //==
+    // # Surfaces
+
+    // The surface's point at a point of its natural parameters.
+    Eval(x: ArenaSurface, uv: UvPoint): Point3D
+        => x.Geometry.Eval(x.Surface, uv.ToUvCoordinate);
+}

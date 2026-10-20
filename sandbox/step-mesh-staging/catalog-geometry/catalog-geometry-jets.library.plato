@@ -1,0 +1,244 @@
+//==
+// # Catalog: jets, curvature, speed, and sagitta
+//
+// Constructors for catalog-geometry-jets.types.plato. A surface jet's point
+// and first partials are layer 1's Eval, PartialU and PartialV; its second
+// partials are written here in closed form for every case but Offset, whose
+// normal derivatives are deferred.
+//
+// Sections, in order:
+//  - Curve jets
+//  - Surface jets
+//  - Second partials by case
+//  - Curvature
+//  - Curvature bounds
+//  - Speed
+//  - Sagitta
+//==
+
+library CatalogGeometryJets
+{
+    //==
+    // # Curve jets
+
+    // Curve c's point, first and second derivatives at t.
+    JetAt(g: GeometrySet, c: CurveIndex, t: CurveParameter): BrepCurveJet
+        => BrepCurveJet(t, g.Eval(c, t.Value), g.Derivative(c, t.Value), g.SecondDerivative(c, t.Value));
+
+    //==
+    // # Surface jets
+
+    // Surface s's point, first and second partials at uv.
+    JetAt(g: GeometrySet, s: SurfaceIndex, uv: UvPoint): SurfaceJet3D
+        => g.SurfaceAt(s).JetAt(g, uv);
+
+    // JetAt for one record of the arena g, which holds the entries it references.
+    JetAt(surface: BrepSurface, g: GeometrySet, uv: UvPoint): SurfaceJet3D
+    {
+        var c = uv.ToUvCoordinate;
+        return surface.JetWith(g, c, surface.Eval(g, c), surface.PartialU(g, c), surface.PartialV(g, c));
+    }
+
+    // The jet with the given point and first partials and the second partials
+    // of the case.
+    JetWith(surface: BrepSurface, g: GeometrySet, uv: UvCoordinate, p: Point3D, du: Vector3D, dv: Vector3D): SurfaceJet3D
+        => match (surface)
+        {
+            Plane(placement) => SurfaceJet3D(uv, p, du, dv, Vector3D.ZeroVector, Vector3D.ZeroVector, Vector3D.ZeroVector);
+            Cylinder(placement, radius) => SurfaceJet3D(uv, p, du, dv,
+                placement.Radial(uv.U) * -radius, Vector3D.ZeroVector, Vector3D.ZeroVector);
+            Cone(placement, radius, semiAngle) => SurfaceJet3D(uv, p, du, dv,
+                placement.Radial(uv.U) * -(radius + uv.V * semiAngle.Tan),
+                placement.RadialTurn(uv.U) * semiAngle.Tan,
+                Vector3D.ZeroVector);
+            Sphere(placement, radius) => SurfaceJet3D(uv, p, du, dv,
+                placement.Radial(uv.U) * (-radius * uv.V.Cos),
+                placement.RadialTurn(uv.U) * (-radius * uv.V.Sin),
+                placement.Radial(uv.U) * (-radius * uv.V.Cos) + placement.ZAxis.Vector * (-radius * uv.V.Sin));
+            Torus(placement, major, minor, part) => SurfaceJet3D(uv, p, du, dv,
+                placement.Radial(uv.U) * -(major + minor * uv.V.Cos),
+                placement.RadialTurn(uv.U) * (-minor * uv.V.Sin),
+                placement.Radial(uv.U) * (-minor * uv.V.Cos) + placement.ZAxis.Vector * (-minor * uv.V.Sin));
+            Revolution(profile, axis) => SurfaceJet3D(uv, p, du, dv,
+                axis.Direction.Vector.Cross(du),
+                axis.Direction.Vector.Cross(dv),
+                RodriguesRotation(axis.Direction.Vector, g.SecondDerivative(profile, uv.V), uv.U));
+            LinearExtrusion(profile, extrusion) => SurfaceJet3D(uv, p, du, dv,
+                g.SecondDerivative(profile, uv.U), Vector3D.ZeroVector, Vector3D.ZeroVector);
+            BSpline(data) => SurfaceJet3D(uv, p, du, dv,
+                data.BSplinePartial(uv, 2, 0), data.BSplinePartial(uv, 1, 1), data.BSplinePartial(uv, 0, 2));
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.TrimmedJet(basis,
+                g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv), uSense, vSense, uv, p, du, dv);
+            Offset(basis, distance) => g.OffsetJet(basis, distance, uv, p, du, dv);
+        };
+
+    //==
+    // # Second partials by case
+
+    // The zero vector, for the second partials a case does not have.
+    ZeroVector(_: Vector3D): Vector3D
+        => Vector3D(0.0, 0.0, 0.0);
+
+    // e_r(u) = cos u x + sin u y in the frame's axes.
+    Radial(f: Frame3D, u: Number): Vector3D
+        => f.FrameVector(u.Cos, u.Sin, 0.0);
+
+    // The derivative of e_r: -sin u x + cos u y.
+    RadialTurn(f: Frame3D, u: Number): Vector3D
+        => f.FrameVector(-u.Sin, u.Cos, 0.0);
+
+    // A rectangular trimmed surface's jet: the basis's second partials at the
+    // basis point; a reversed direction negates a first partial once and a
+    // second partial in that direction twice, so only S_uv takes the product
+    // of the two senses.
+    TrimmedJet(g: GeometrySet, basis: SurfaceIndex, basisUv: UvCoordinate, uSense: Boolean, vSense: Boolean, uv: UvCoordinate, p: Point3D, du: Vector3D, dv: Vector3D): SurfaceJet3D
+    {
+        var b = g.JetAt(basis, basisUv.ToUvPoint);
+        return SurfaceJet3D(uv, p, du, dv, b.DerivativeUU, b.DerivativeUV * (uSense.SenseSign * vSense.SenseSign), b.DerivativeVV);
+    }
+
+    // deferred: an offset surface's second partials, from the basis's third
+    // partials and the derivatives of its unit normal (Weingarten equations).
+    OffsetJet(g: GeometrySet, basis: SurfaceIndex, distance: Number, uv: UvCoordinate, p: Point3D, du: Vector3D, dv: Vector3D): SurfaceJet3D;
+
+    //==
+    // # Curvature
+
+    // True when the jet's partials span a plane, so curvature is defined.
+    IsRegular(j: SurfaceJet3D): Boolean
+        => j.DerivativeU.Cross(j.DerivativeV).Length > 0.0;
+
+    // The unit parameterization normal <S_u x S_v>, or the zero vector where
+    // the partials are parallel.
+    ParameterizationNormal(j: SurfaceJet3D): Vector3D
+        => j.IsRegular
+            ? j.DerivativeU.Cross(j.DerivativeV) * (1.0 / j.DerivativeU.Cross(j.DerivativeV).Length)
+            : Vector3D.ZeroVector;
+
+    // The curvature at the jet's point, with the normal curvature along the
+    // parameter-plane direction `along`. The second fundamental form (L, M,
+    // N against <S_u x S_v>) is read in the orthonormal tangent basis e1 =
+    // <S_u>, e2 = n x e1 as the symmetric matrix [[a, b], [b, c]], so K = ac -
+    // b^2, H = (a + c) / 2 and k = H -+ sqrt(((a - c) / 2)^2 + b^2) lose no
+    // digits near an umbilic; Normal = II(along) / I(along). Unmeasured where
+    // the point is not regular, and Normal also where `along` is zero.
+    CurvatureAlong(j: SurfaceJet3D, along: UvDelta): CurvatureAt
+    {
+        var n = j.ParameterizationNormal;
+        var e = j.DerivativeU.Dot(j.DerivativeU);
+        var f = j.DerivativeU.Dot(j.DerivativeV);
+        var gg = j.DerivativeV.Dot(j.DerivativeV);
+        var l = j.DerivativeUU.Dot(n);
+        var m = j.DerivativeUV.Dot(n);
+        var nn = j.DerivativeVV.Dot(n);
+        var e1 = j.DerivativeU.UnitOrX.Vector;
+        var e2 = n.Cross(e1);
+        var c1 = j.TangentCoordinates(e1, e, f, gg);
+        var c2 = j.TangentCoordinates(e2, e, f, gg);
+        var a = SecondForm(c1, c1, l, m, nn);
+        var b = SecondForm(c1, c2, l, m, nn);
+        var c = SecondForm(c2, c2, l, m, nn);
+        var h = j.IsRegular ? 0.5 * (a + c) : Number.Unmeasured;
+        var root = (0.25 * (a - c) * (a - c) + b * b).Sqrt;
+        var kMin = h - root;
+        var first = e * along.U * along.U + 2.0 * f * along.U * along.V + gg * along.V * along.V;
+        var minDir = PrincipalDirection(e1, e2, kMin, a, b, c);
+        return CurvatureAt(
+            j.IsRegular ? (first > 0.0 ? SecondForm(Vector2D(along.U, along.V), Vector2D(along.U, along.V), l, m, nn) / first : Number.Unmeasured) : Number.Unmeasured,
+            j.IsRegular ? a * c - b * b : Number.Unmeasured,
+            h,
+            PrincipalCurvatures(kMin, h + root, minDir, Direction3D(n.Cross(minDir.Vector))));
+    }
+
+    // The parameter-plane coordinates (alpha, beta) of a tangent vector t =
+    // alpha S_u + beta S_v, by the dual basis of the first fundamental form.
+    TangentCoordinates(j: SurfaceJet3D, t: Vector3D, e: Number, f: Number, gg: Number): Vector2D
+    {
+        var w = e * gg - f * f;
+        var tu = t.Dot(j.DerivativeU);
+        var tv = t.Dot(j.DerivativeV);
+        return w > 0.0 ? Vector2D((tu * gg - tv * f) / w, (tv * e - tu * f) / w) : Vector2D(0.0, 0.0);
+    }
+
+    // The second fundamental form II(x, y) = x^T [[L, M], [M, N]] y on
+    // parameter-plane coordinates.
+    SecondForm(x: Vector2D, y: Vector2D, l: Number, m: Number, nn: Number): Number
+        => x.X * (l * y.X + m * y.Y) + x.Y * (m * y.X + nn * y.Y);
+
+    // The unit tangent of the principal direction of curvature k: the null
+    // vector of [[a - k, b], [b, c - k]] from whichever row is larger, in the
+    // basis (e1, e2); e1 at an umbilic, where every direction is principal.
+    PrincipalDirection(e1: Vector3D, e2: Vector3D, k: Number, a: Number, b: Number, c: Number): Direction3D
+    {
+        var rowA = Vector2D(b, k - a);
+        var rowB = Vector2D(k - c, b);
+        var xy = rowA.Length >= rowB.Length ? rowA : rowB;
+        var t = e1 * xy.X + e2 * xy.Y;
+        return t.Length > 0.0 ? Direction3D(t * (1.0 / t.Length)) : e1.UnitOrX;
+    }
+
+    // v's direction, or the x axis for the zero vector.
+    UnitOrX(v: Vector3D): Direction3D
+        => v.Length > 0.0 ? Direction3D(v * (1.0 / v.Length)) : Direction3D(Vector3D(1.0, 0.0, 0.0));
+
+    // The larger of the two absolute principal curvatures.
+    MaxAbsCurvature(c: CurvatureAt): Number
+        => c.Principal.Minimum.Abs.Max(c.Principal.Maximum.Abs);
+
+    //==
+    // # Curvature bounds
+
+    // The bound for the whole surface in closed form where one exists:
+    // 0 for a plane, 1/R for a cylinder or sphere, max(1/r, 1/(R - r)) for a
+    // ring torus, unbounded (Number.MaxValue) for a cone, which holds its
+    // apex, and for a spindle torus; the swept, spline and offset cases are
+    // deferred.
+    CurvatureBoundOf(surface: BrepSurface, g: GeometrySet): CurvatureBound
+        => match (surface)
+        {
+            Plane(placement) => CurvatureBound(0.0);
+            Cylinder(placement, radius) => CurvatureBound(1.0 / radius.Abs);
+            Cone(placement, radius, semiAngle) => CurvatureBound(Number.MaxValue);
+            Sphere(placement, radius) => CurvatureBound(1.0 / radius.Abs);
+            Torus(placement, major, minor, part) => major > minor.Abs
+                ? CurvatureBound((1.0 / minor.Abs).Max(1.0 / (major - minor.Abs)))
+                : CurvatureBound(Number.MaxValue);
+            Revolution(profile, axis) => surface.CurvatureBoundBySubdivision(g);
+            LinearExtrusion(profile, extrusion) => surface.CurvatureBoundBySubdivision(g);
+            BSpline(data) => surface.CurvatureBoundBySubdivision(g);
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.CurvatureBoundOf(basis);
+            Offset(basis, distance) => surface.CurvatureBoundBySubdivision(g);
+        };
+
+    // CurvatureBoundOf for surface s of the arena.
+    CurvatureBoundOf(g: GeometrySet, s: SurfaceIndex): CurvatureBound
+        => g.SurfaceAt(s).CurvatureBoundOf(g);
+
+    // deferred: a curvature bound by interval subdivision of the domain
+    // (swept, spline and offset surfaces), from bounds on the second partials
+    // over each cell and a lower bound on the area element.
+    CurvatureBoundBySubdivision(surface: BrepSurface, g: GeometrySet): CurvatureBound;
+
+    //==
+    // # Speed
+
+    // |C'(t)| of a curve jet.
+    SpeedOf(j: BrepCurveJet): ParameterSpeed
+        => ParameterSpeed(j.D1.Length);
+
+    // |S_u| or |S_v| of a surface jet.
+    SpeedAlong(j: SurfaceJet3D, which: SurfaceParameter): ParameterSpeed
+        => ParameterSpeed(which.Along(j.DerivativeU, j.DerivativeV).Length);
+
+    //==
+    // # Sagitta
+
+    // The sagitta of a circular arc of the given radius and angle,
+    // R (1 - cos(angle / 2)): attained, at the arc's middle.
+    ArcSagitta(radius: ModelLength, angle: Angle): Sagitta
+        => Sagitta(ModelLength(radius.Value.Abs * (1.0 - (angle.Radians * 0.5).Cos)), true);
+
+    // A hull bound as a sagitta: a bound, not attained.
+    ToSagitta(b: ConvexHullBound): Sagitta
+        => Sagitta(b.Bound, false);
+}

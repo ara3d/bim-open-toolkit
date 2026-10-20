@@ -1,0 +1,252 @@
+//==
+// # Catalog: laws of jets, curvature, speed, and sagitta
+//
+// Run on the witness arena (catalog-geometry-arena.library.plato). The jet
+// agrees with layer 1's separate evaluations; its second partials agree with
+// central differences of layer 1's first partials within Richardson's
+// estimate (layer 1's WithinRichardson); curvature agrees with the closed
+// forms of the sphere and cylinder and with the closed-form bound. Surface 9
+// (offset) and curve 9 (offset) are left out: their second derivatives are
+// deferred.
+//
+// Sections, in order:
+//  - Surface jets
+//  - Curve jets
+//  - Curvature
+//  - Speed and sagitta
+//==
+
+library CatalogGeometryJetsLaws
+{
+    //==
+    // # Surface jets
+
+    // The number of arena surfaces whose jet is not deferred.
+    CatalogJetSurfaceCount(_: Integer): Integer
+        => 9;
+
+    // The jet's point is Eval's, to rounding at the evaluation's magnitude.
+    Law_Catalog_JetPointIsEval(k: Integer, u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
+        var uv = g.CatalogInsideUv(s, u, v, 0.0);
+        return g.JetAt(s, uv).Position.Distance(g.Eval(s, uv.ToUvCoordinate)) <= ResolutionAt(g.EvaluationMagnitude(s, uv.ToUvCoordinate));
+    }
+
+    // The jet's u partial is PartialU's.
+    Law_Catalog_JetPartialUIsPartialU(k: Integer, u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
+        var uv = g.CatalogInsideUv(s, u, v, 0.0);
+        var p = g.PartialU(s, uv.ToUvCoordinate);
+        return (g.JetAt(s, uv).DerivativeU - p).Length <= ResolutionAt(p.Length);
+    }
+
+    // The jet's v partial is PartialV's.
+    Law_Catalog_JetPartialVIsPartialV(k: Integer, u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
+        var uv = g.CatalogInsideUv(s, u, v, 0.0);
+        var p = g.PartialV(s, uv.ToUvCoordinate);
+        return (g.JetAt(s, uv).DerivativeV - p).Length <= ResolutionAt(p.Length);
+    }
+
+    // The difference step of the second-partial laws.
+    CatalogStep(_: Number): Number
+        => 1.0 / 256.0;
+
+    // The central difference along `along`, with step h, of the partial in
+    // direction `of` at uv.
+    CatalogPartialDifference(g: GeometrySet, s: SurfaceIndex, uv: UvPoint, of: SurfaceParameter, along: SurfaceParameter, h: Number): Vector3D
+    {
+        var c = uv.ToUvCoordinate;
+        return (g.Partial(s, c.WithCoordinate(along, c.Coordinate(along) + h), of)
+            - g.Partial(s, c.WithCoordinate(along, c.Coordinate(along) - h), of)) * (0.5 / h);
+    }
+
+    // The rounding allowance of a difference quotient with step h at uv.
+    CatalogDifferenceRounding(g: GeometrySet, s: SurfaceIndex, uv: UvPoint, h: Number): Number
+        => ResolutionAt(64.0 * g.EvaluationMagnitude(s, uv.ToUvCoordinate)) / h;
+
+    // S_uu agrees with the u-difference of S_u.
+    Law_Catalog_JetSecondPartialUUMatchesDifference(k: Integer, u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
+        var h = Number.CatalogStep;
+        var uv = g.CatalogInsideUv(s, u, v, 2.0 * h);
+        return WithinRichardson(
+            g.CatalogPartialDifference(s, uv, SurfaceParameter.ParameterU, SurfaceParameter.ParameterU, h),
+            g.CatalogPartialDifference(s, uv, SurfaceParameter.ParameterU, SurfaceParameter.ParameterU, h * 0.5),
+            g.JetAt(s, uv).DerivativeUU, g.CatalogDifferenceRounding(s, uv, h));
+    }
+
+    // S_uv agrees with the u-difference of S_v.
+    Law_Catalog_JetSecondPartialUVMatchesDifference(k: Integer, u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
+        var h = Number.CatalogStep;
+        var uv = g.CatalogInsideUv(s, u, v, 2.0 * h);
+        return WithinRichardson(
+            g.CatalogPartialDifference(s, uv, SurfaceParameter.ParameterV, SurfaceParameter.ParameterU, h),
+            g.CatalogPartialDifference(s, uv, SurfaceParameter.ParameterV, SurfaceParameter.ParameterU, h * 0.5),
+            g.JetAt(s, uv).DerivativeUV, g.CatalogDifferenceRounding(s, uv, h));
+    }
+
+    // S_vv agrees with the v-difference of S_v.
+    Law_Catalog_JetSecondPartialVVMatchesDifference(k: Integer, u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var s = k.CatalogSurfaceOf(Integer.CatalogJetSurfaceCount);
+        var h = Number.CatalogStep;
+        var uv = g.CatalogInsideUv(s, u, v, 2.0 * h);
+        return WithinRichardson(
+            g.CatalogPartialDifference(s, uv, SurfaceParameter.ParameterV, SurfaceParameter.ParameterV, h),
+            g.CatalogPartialDifference(s, uv, SurfaceParameter.ParameterV, SurfaceParameter.ParameterV, h * 0.5),
+            g.JetAt(s, uv).DerivativeVV, g.CatalogDifferenceRounding(s, uv, h));
+    }
+
+    //==
+    // # Curve jets
+
+    // The number of arena curves whose jet is not deferred (curves 0 to 8).
+    CatalogJetCurveCount(_: Integer): Integer
+        => 9;
+
+    // The curve jet's point is Eval's.
+    Law_Catalog_CurveJetPointIsEval(k: Integer, x: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var c = k.CatalogCurveOf(Integer.CatalogJetCurveCount);
+        var t = g.Domain(c).CatalogInside(x, 0.0);
+        return g.JetAt(c, CurveParameter(t)).Point.Distance(g.Eval(c, t)) <= ResolutionAt(g.EvaluationMagnitude(c, t));
+    }
+
+    // The curve jet's first derivative is Derivative's.
+    Law_Catalog_CurveJetD1IsDerivative(k: Integer, x: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var c = k.CatalogCurveOf(Integer.CatalogJetCurveCount);
+        var t = g.Domain(c).CatalogInside(x, 0.0);
+        var d = g.Derivative(c, t);
+        return (g.JetAt(c, CurveParameter(t)).D1 - d).Length <= ResolutionAt(d.Length);
+    }
+
+    // The curve jet's second derivative is SecondDerivative's.
+    Law_Catalog_CurveJetD2IsSecondDerivative(k: Integer, x: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var c = k.CatalogCurveOf(Integer.CatalogJetCurveCount);
+        var t = g.Domain(c).CatalogInside(x, 0.0);
+        var d = g.SecondDerivative(c, t);
+        return (g.JetAt(c, CurveParameter(t)).D2 - d).Length <= ResolutionAt(d.Length);
+    }
+
+    //==
+    // # Curvature
+
+    // The curvature of arena surface s at a middle point, along (a, b).
+    CatalogCurvature(g: GeometrySet, s: SurfaceIndex, u: Number, v: Number, a: Number, b: Number): CurvatureAt
+        => g.JetAt(s, g.CatalogMiddleUv(s, u, v)).CurvatureAlong(UvDelta(a, b));
+
+    // The sphere of radius 3 has Gaussian curvature 1/9 everywhere.
+    Law_Catalog_SphereGaussianIsInverseSquareRadius(u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        return (g.CatalogCurvature(SurfaceIndex(3), u, v, 1.0, 0.0).Gaussian - 1.0 / 9.0).Abs <= ResolutionAt(64.0 / 9.0);
+    }
+
+    // The sphere of radius 3 has mean curvature of magnitude 1/3.
+    Law_Catalog_SphereMeanIsInverseRadius(u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        return (g.CatalogCurvature(SurfaceIndex(3), u, v, 1.0, 0.0).Mean.Abs - 1.0 / 3.0).Abs <= ResolutionAt(64.0 / 3.0);
+    }
+
+    // The cylinder has zero Gaussian curvature.
+    Law_Catalog_CylinderGaussianIsZero(u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        return g.CatalogCurvature(SurfaceIndex(1), u, v, 1.0, 0.0).Gaussian.Abs <= ResolutionAt(64.0 / 4.0);
+    }
+
+    // The Gaussian curvature is the product of the principal curvatures, on
+    // the analytic surfaces (0 to 4) and the swept and spline ones (5 to 7).
+    Law_Catalog_GaussianIsProductOfPrincipal(k: Integer, u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var c = g.CatalogCurvature(k.CatalogSurfaceOf(8), u, v, 1.0, 0.0);
+        return (c.Gaussian - c.Principal.Minimum * c.Principal.Maximum).Abs
+            <= ResolutionAt(64.0 * c.MaxAbsCurvature * c.MaxAbsCurvature);
+    }
+
+    // The normal curvature along any direction lies between the principal
+    // curvatures (Euler's theorem).
+    Law_Catalog_NormalCurvatureWithinPrincipal(k: Integer, u: Number, v: Number, a: Number, b: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var c = g.CatalogCurvature(k.CatalogSurfaceOf(8), u, v, a, b);
+        var slack = ResolutionAt(64.0 * c.MaxAbsCurvature);
+        return a == 0.0 && b == 0.0
+            ? true
+            : c.Principal.Minimum - slack <= c.Normal && c.Normal <= c.Principal.Maximum + slack;
+    }
+
+    // The closed-form bound holds at every middle point of the analytic
+    // surfaces 0 to 4.
+    Law_Catalog_CurvatureWithinBound(k: Integer, u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var s = k.CatalogSurfaceOf(5);
+        var bound = g.CurvatureBoundOf(s).Max;
+        return g.CatalogCurvature(s, u, v, 1.0, 0.0).MaxAbsCurvature <= bound + ResolutionAt(64.0 * bound.Min(1.0));
+    }
+
+    // The principal directions are orthogonal.
+    Law_Catalog_PrincipalDirectionsAreOrthogonal(k: Integer, u: Number, v: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var c = g.CatalogCurvature(k.CatalogSurfaceOf(8), u, v, 1.0, 0.0);
+        return c.Principal.MinimumDirection.Vector.Dot(c.Principal.MaximumDirection.Vector).Abs <= ResolutionAt(64.0);
+    }
+
+    //==
+    // # Speed and sagitta
+
+    // The circle of radius 2 has speed 2.
+    Law_Catalog_CircleSpeedIsRadius(x: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        return CatalogAgreesToRounding(g.JetAt(CurveIndex(1), CurveParameter(x)).SpeedOf.Value, 2.0);
+    }
+
+    // A speed is never negative.
+    Law_Catalog_SpeedIsNonNegative(k: Integer, x: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var c = k.CatalogCurveOf(Integer.CatalogJetCurveCount);
+        return g.JetAt(c, CurveParameter(g.Domain(c).CatalogInside(x, 0.0))).SpeedOf.Value >= 0.0;
+    }
+
+    // An arc's sagitta is attained: the distance from the chord's midpoint
+    // to the arc's middle point on the circle of radius 2.
+    Law_Catalog_ArcSagittaIsAttained(t0: Number, a: Number): Boolean
+    {
+        var g = GeometrySet.Witness_CatalogArena;
+        var angle = 2.0 * Number.Pi * a.UnitFraction;
+        var p0 = g.Eval(CurveIndex(1), t0);
+        var p1 = g.Eval(CurveIndex(1), t0 + angle);
+        var mid = g.Eval(CurveIndex(1), t0 + 0.5 * angle);
+        var chordMid = p0 + (p1 - p0) * 0.5;
+        var s = ArcSagitta(ModelLength(2.0), Angle(angle));
+        return s.Attained ? (mid.Distance(chordMid) - s.Value.Value).Abs <= ResolutionAt(64.0 * (2.0 + t0.Abs)) : false;
+    }
+
+    // A sagitta is never negative.
+    Law_Catalog_ArcSagittaIsNonNegative(r: Number, a: Number): Boolean
+        => ArcSagitta(ModelLength(r), Angle(a)).Value.Value >= 0.0;
+}

@@ -1,0 +1,79 @@
+//==
+// # Catalog: jets, curvature, speed, and sagitta
+//
+// TYPE-CATALOG.md section 6 (layer 1). One evaluation that returns everything
+// a step needs, and the differential quantities read from it. The surface jet
+// is the stdlib's SurfaceJet3D, reused; the curve jet is declared here.
+//
+// Sections, in order:
+//  - Jets
+//  - Curvature
+//  - Speed and sagitta
+//==
+
+//==
+// # Jets
+
+// A space curve's point and first two derivatives at one parameter, from one
+// call (JetAt). The stdlib's CurveJet3D also holds a third derivative, which
+// layer 1 does not compute; filling it with zero would be a fabricated value.
+// Removes: three evaluations of one B-spline at one point.
+type BrepCurveJet
+    implements IValue
+{
+    Parameter: CurveParameter;
+    Point: Point3D;
+    D1: Vector3D;
+    D2: Vector3D;
+}
+
+//==
+// # Curvature
+
+// The curvature of a surface at one point: the normal curvature along one
+// parameter-plane direction, the Gaussian and mean curvatures, and the
+// principal curvatures with their directions (the stdlib's
+// PrincipalCurvatures), signed against the parameterization normal
+// S_u x S_v. Every field is Unmeasured where S_u x S_v vanishes. Removes:
+// curvature recomputed from three evaluations per use.
+type CurvatureAt
+    implements IValue
+{
+    Normal: Number;
+    Gaussian: Number;
+    Mean: Number;
+    Principal: PrincipalCurvatures;
+}
+
+// An upper bound on the absolute principal curvature over a whole surface:
+// what the chordal criterion needs to size elements. Number.MaxValue where the
+// curvature is unbounded (a cone's apex, a spindle torus's axis points).
+// Removes: sagitta estimated from samples where a bound is in closed form.
+type CurvatureBound
+    implements IValue
+{
+    Max: Number;
+}
+
+//==
+// # Speed and sagitta
+
+// |dC/dt| or |dS/du|: the length moved per unit parameter, what a per-point
+// parameter tolerance divides by. Named ParameterSpeed because the stdlib's
+// Speed is metres per second. Removes: a parameter tolerance computed from a
+// length tolerance without the speed. Invariant: Value >= 0.
+type ParameterSpeed
+    implements IValue
+{
+    Value: Number;
+}
+
+// The chord-to-arc deviation of one segment, and whether the value is
+// attained (closed form) or only a bound (hull estimate). Removes: an
+// estimate reported as the deviation.
+type Sagitta
+    implements IValue
+{
+    Value: ModelLength;
+    Attained: Boolean;
+}

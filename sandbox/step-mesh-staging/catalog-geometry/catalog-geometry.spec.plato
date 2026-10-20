@@ -1,0 +1,145 @@
+//==
+// # Catalog: specs of the geometry concepts' types
+//
+// Invariants and constructors of the section 6 types (SPEC-DSL.md section
+// 3). Each invariant names the law that checks it. Not compiled.
+//==
+
+spec CurveKind
+{
+    constructor KindOf;   // total: an exhaustive match on BrepCurve and BrepCurve2D
+    invariant Law_Catalog_ConicKindIsInhabited(0);   // and one law per kind
+}
+
+spec SurfaceKind
+{
+    constructor KindOf;   // total: an exhaustive match on BrepSurface
+    invariant Law_Catalog_QuadricKindIsInhabited(0);   // and one law per kind
+}
+
+spec Degeneracy
+{
+    invariant self.SidesOf.Count <= 4;
+    constructor DegeneracyOf;
+}
+
+spec DegeneracyOf(g: GeometrySet, s: SurfaceIndex, tol: Tolerances): Degeneracy
+{
+    requires g.CanEvaluate(s);
+    ensures result.SidesOf.Count == g.DegenerateSides(s, tol).Count;
+    ensures forall (i: Integer) in result.SidesOf.Count.Range : result.SidesOf[i] == g.DegenerateSides(s, tol)[i];   // Law_Catalog_DegeneracyAgreesWithDegenerateSides
+}
+
+spec Seams
+{
+    invariant Law_Catalog_SeamIsAtRangeStart;   // U names ParameterU, V ParameterV, each at its range's start
+    constructor SeamsOf;
+}
+
+spec SeamsOf(d: SurfaceDomain): Seams
+{
+    ensures result.U.IsSeam == d.U.HasSeam;   // Law_Catalog_SeamsAgreeWithHasSeam
+    ensures result.V.IsSeam == d.V.HasSeam;
+}
+
+spec Pole
+{
+    invariant Law_Catalog_PolePointIsSideImage;   // every point of the side evaluates to Point
+    constructor PoleAt;
+}
+
+spec PoleAt(g: GeometrySet, s: SurfaceIndex, side: DomainSide): Pole
+{
+    requires g.IsSideCollapsed(s, side, g.Tolerances);
+    ensures result.Side == side;
+}
+
+spec PoleSegment
+{
+    invariant Law_Catalog_PoleSegmentLiesOnSide;   // every point's coordinate across the side is the side's value
+    constructor PoleSegmentOf;
+}
+
+spec BrepCurveJet
+{
+    constructor JetAt;
+}
+
+spec JetAt(g: GeometrySet, c: CurveIndex, t: CurveParameter): BrepCurveJet
+{
+    requires g.CanEvaluate(c);
+    ensures result.Point == g.Eval(c, t.Value);                 // Law_Catalog_CurveJetPointIsEval
+    ensures result.D1 == g.Derivative(c, t.Value);              // Law_Catalog_CurveJetD1IsDerivative
+    ensures result.D2 == g.SecondDerivative(c, t.Value);        // Law_Catalog_CurveJetD2IsSecondDerivative
+}
+
+spec JetAt(g: GeometrySet, s: SurfaceIndex, uv: UvPoint): SurfaceJet3D
+{
+    requires g.CanEvaluate(s);
+    ensures result.Position == g.Eval(s, uv.ToUvCoordinate);     // Law_Catalog_JetPointIsEval
+    ensures result.DerivativeU == g.PartialU(s, uv.ToUvCoordinate);   // Law_Catalog_JetPartialUIsPartialU
+    ensures result.DerivativeV == g.PartialV(s, uv.ToUvCoordinate);   // Law_Catalog_JetPartialVIsPartialV
+    ensures Law_Catalog_JetSecondPartialUUMatchesDifference;      // and UV, VV
+}
+
+spec CurvatureAt
+{
+    invariant self.Principal.Minimum <= self.Principal.Maximum;
+    invariant self.Gaussian == self.Principal.Minimum * self.Principal.Maximum;   // to rounding: Law_Catalog_GaussianIsProductOfPrincipal
+    invariant self.Principal.Minimum <= self.Normal && self.Normal <= self.Principal.Maximum;   // Law_Catalog_NormalCurvatureWithinPrincipal
+    constructor CurvatureAlong;
+}
+
+spec CurvatureBound
+{
+    invariant self.Max >= 0.0;
+    invariant Law_Catalog_CurvatureWithinBound;
+    constructor CurvatureBoundOf;
+}
+
+spec ParameterSpeed
+{
+    invariant self.Value >= 0.0;   // Law_Catalog_SpeedIsNonNegative
+    constructor SpeedOf;
+    constructor SpeedAlong;
+}
+
+spec Sagitta
+{
+    invariant self.Value.Value >= 0.0;   // Law_Catalog_ArcSagittaIsNonNegative
+    constructor ArcSagitta;   // Attained: Law_Catalog_ArcSagittaIsAttained
+    constructor ToSagitta;    // not attained: Law_Catalog_HullSagittaIsBound
+}
+
+spec BSplineSpan
+{
+    invariant self.Range.Start < self.Range.End;   // Law_Catalog_SpansAreNonEmpty
+    constructor SpansOf;
+}
+
+spec SpansOf(b: SplineBasis): Array<BSplineSpan>
+{
+    requires b.KnotsNonDecreasing;
+    ensures Law_Catalog_SpansAreContiguous;   // strictly increasing, each ends where the next starts
+    ensures result.First.Range.Start == b.SplineDomain.Start;   // exact by construction: Law_Catalog_SpansCoverDomain
+    ensures result.Last.Range.End == b.SplineDomain.End;        // exact by construction
+}
+
+spec ControlPolygon
+{
+    invariant self.Points.Count >= 1;   // Degree + 1 from ControlPolygonOf: Law_Catalog_ControlPolygonHasDegreePlusOnePoints
+    constructor ControlPolygonOf;
+}
+
+spec ConvexHullBound
+{
+    invariant self.Bound.Value >= 0.0;
+    invariant Law_Catalog_SpanLiesWithinHullBound;
+    constructor HullBoundOf;
+}
+
+spec Placement
+{
+    invariant self.Handedness == self.Frame.Handedness;   // Law_Catalog_PlacementCopiesHandedness
+    constructor ToPlacement;
+}

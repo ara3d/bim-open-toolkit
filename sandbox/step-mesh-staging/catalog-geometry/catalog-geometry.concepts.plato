@@ -1,0 +1,112 @@
+//==
+// # Catalog: geometry concepts
+//
+// TYPE-CATALOG.md section 6 (layer 1) and three section 15 concepts. Finer
+// than layer 1's INaturalCurve3D and INaturalSurface, so a function states
+// the least it needs: a polyline has a first derivative and no second, an
+// analytic surface has a closed-form area and a B-spline does not. The
+// parameters are the foundation's typed ones (CurveParameter, UvPoint), not
+// bare Numbers.
+//
+// Sections, in order:
+//  - Domains
+//  - Evaluation
+//  - Derivatives
+//  - Inversion
+//  - Areas
+//  - Seams and poles
+//==
+
+//==
+// # Domains
+
+// A value defined over a curve domain. Removes: a function that needs only
+// the domain demanding a whole evaluable curve.
+interface IHasCurveDomain
+{
+    Domain(x: Self): CurveDomain;
+}
+
+// A value defined over a surface domain.
+interface IHasSurfaceDomain
+{
+    Domain(x: Self): SurfaceDomain;
+}
+
+//==
+// # Evaluation
+
+// A space curve evaluated at its own typed parameter. Removes: a 3D curve
+// evaluated at a pcurve's parameter.
+interface IEvaluableCurve3D
+{
+    Eval(x: Self, t: CurveParameter): Point3D;
+}
+
+// A parameter-plane curve evaluated at its own typed parameter, giving a
+// point in the surface's natural parameters.
+interface IEvaluableCurve2D
+{
+    Eval(x: Self, t: Curve2DParameter): UvPoint;
+}
+
+// A surface evaluated at a point of its natural parameters. Removes: a
+// unit-square UvCoordinate fed to a cylinder.
+interface IEvaluableSurface
+{
+    Eval(x: Self, uv: UvPoint): Point3D;
+}
+
+//==
+// # Derivatives
+
+// A space curve with a first derivative. Separate from IDifferentiable2
+// because a polyline has the first and not the second.
+interface IDifferentiable1
+{
+    Derivative(x: Self, t: CurveParameter): Vector3D;
+}
+
+// A space curve with a second derivative.
+interface IDifferentiable2
+{
+    SecondDerivative(x: Self, t: CurveParameter): Vector3D;
+}
+
+//==
+// # Inversion
+
+// A geometry that projects a model point onto itself with a decided result.
+// Removes: a projection outside the domain used as if inside.
+interface IProjectable3D
+{
+    Project(x: Self, p: Point3D): Projection;
+}
+
+//==
+// # Areas
+
+// A surface whose area over a parameter box has a closed form: the analytic
+// surfaces only; the area oracles are its implementations. Removes: an
+// oracle written for a B-spline.
+interface IHasClosedFormArea
+{
+    Area(x: Self, window: UvBox): AreaMeasure;
+}
+
+//==
+// # Seams and poles
+
+// A surface that names its seams once, with their positions. Removes: "has a
+// seam" as a Boolean with the position recomputed elsewhere.
+interface IHasSeams
+{
+    SeamsOf(x: Self): Seams;
+}
+
+// A surface that names its collapsed sides and apexes as one value.
+// Removes: a sphere's two poles handled by two code paths.
+interface IHasPoles
+{
+    DegeneracyOf(x: Self, tol: Tolerances): Degeneracy;
+}

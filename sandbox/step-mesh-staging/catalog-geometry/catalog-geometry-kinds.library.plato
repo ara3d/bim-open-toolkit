@@ -1,0 +1,164 @@
+//==
+// # Catalog: kinds, degeneracies, seams, and poles
+//
+// Constructors for catalog-geometry-kinds.types.plato, built on layer 1's
+// DegenerateSides, CollapsedAt, Domain and LimitNormal, and layer 0's
+// HasSeam.
+//
+// Sections, in order:
+//  - Kinds
+//  - Degeneracies
+//  - Seams
+//  - Poles
+//==
+
+library CatalogGeometryKinds
+{
+    //==
+    // # Kinds
+
+    // The coarse class of a space curve.
+    KindOf(curve: BrepCurve): CurveKind
+        => match (curve)
+        {
+            Line(origin, velocity) => CurveKind.LineKind;
+            Circle(placement, radius) => CurveKind.ConicKind;
+            Ellipse(placement, semiAxis1, semiAxis2) => CurveKind.ConicKind;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => CurveKind.ConicKind;
+            Parabola(placement, focalDistance) => CurveKind.ConicKind;
+            Polyline(points) => CurveKind.PolylineKind;
+            BSpline(data) => CurveKind.SplineKind;
+            Trimmed(basis, range, sameSense) => CurveKind.DerivedKind;
+            Composite(segments) => CurveKind.DerivedKind;
+            Offset(basis, distance, reference) => CurveKind.DerivedKind;
+            OnSurface(spaceCurve, supports, master) => CurveKind.DerivedKind;
+        };
+
+    // The coarse class of a parameter-plane curve, as for space curves.
+    KindOf(curve: BrepCurve2D): CurveKind
+        => match (curve)
+        {
+            Line(origin, velocity) => CurveKind.LineKind;
+            Circle(placement, radius) => CurveKind.ConicKind;
+            Ellipse(placement, semiAxis1, semiAxis2) => CurveKind.ConicKind;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => CurveKind.ConicKind;
+            Parabola(placement, focalDistance) => CurveKind.ConicKind;
+            Polyline(points) => CurveKind.PolylineKind;
+            BSpline(data) => CurveKind.SplineKind;
+            Trimmed(basis, range, sameSense) => CurveKind.DerivedKind;
+            Composite(segments) => CurveKind.DerivedKind;
+            Offset(basis, distance) => CurveKind.DerivedKind;
+        };
+
+    // The coarse class of a surface.
+    KindOf(surface: BrepSurface): SurfaceKind
+        => match (surface)
+        {
+            Plane(placement) => SurfaceKind.PlaneKind;
+            Cylinder(placement, radius) => SurfaceKind.QuadricKind;
+            Cone(placement, radius, semiAngle) => SurfaceKind.QuadricKind;
+            Sphere(placement, radius) => SurfaceKind.QuadricKind;
+            Torus(placement, major, minor, part) => SurfaceKind.ToroidalKind;
+            Revolution(profile, axis) => SurfaceKind.SweptKind;
+            LinearExtrusion(profile, extrusion) => SurfaceKind.SweptKind;
+            BSpline(data) => SurfaceKind.SplineKind;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => SurfaceKind.DerivedKind;
+            Offset(basis, distance) => SurfaceKind.DerivedKind;
+        };
+
+    //==
+    // # Degeneracies
+
+    // Surface s's degeneracy: its DegenerateSides as one value, or, with no
+    // degenerate side, the first collapsed line inside the domain (V first)
+    // as an Apex at the start of the other parameter's range.
+    DegeneracyOf(g: GeometrySet, s: SurfaceIndex, tol: Tolerances): Degeneracy
+    {
+        var sides = g.DegenerateSides(s, tol);
+        return sides.Count == 0
+            ? g.InteriorDegeneracy(s, tol)
+            : (sides.Count == 1
+                ? Degeneracy.CollapsedSide(sides[0])
+                : (sides.Count == 2 ? Degeneracy.CollapsedTwoSides(sides[0], sides[1]) : Degeneracy.CollapsedSides(sides)));
+    }
+
+    // DegeneracyOf for the arena view (IHasPoles).
+    DegeneracyOf(x: ArenaSurface, tol: Tolerances): Degeneracy
+        => x.Geometry.DegeneracyOf(x.Surface, tol);
+
+    // The apex of a surface with no degenerate side, or NoDegeneracy.
+    InteriorDegeneracy(g: GeometrySet, s: SurfaceIndex, tol: Tolerances): Degeneracy
+    {
+        var d = g.Domain(s);
+        var vs = g.CollapsedAt(s, SurfaceParameter.ParameterV, tol);
+        var us = g.CollapsedAt(s, SurfaceParameter.ParameterU, tol);
+        return vs.Count > 0
+            ? Degeneracy.Apex(UvPoint(d.U.Range.Start, vs[0]))
+            : (us.Count > 0 ? Degeneracy.Apex(UvPoint(us[0], d.V.Range.Start)) : Degeneracy.NoDegeneracy);
+    }
+
+    // The collapsed sides a degeneracy names, in DegenerateSides's order; none
+    // for an apex, which is inside the domain.
+    SidesOf(d: Degeneracy): Array<DomainSide>
+        => match (d)
+        {
+            NoDegeneracy => DomainSide.NoSides;
+            CollapsedSide(side) => [side];
+            CollapsedTwoSides(a, b) => [a, b];
+            CollapsedSides(sides) => sides;
+            Apex(at) => DomainSide.NoSides;
+        };
+
+    //==
+    // # Seams
+
+    // The seam of one direction: at the range's start when the domain has a
+    // seam (HasSeam: Periodic or Closed), else none.
+    SeamAlong(d: CurveDomain, which: SurfaceParameter): Seam
+        => d.HasSeam ? Seam.SeamAt(which, d.Range.Start) : Seam.NoSeam;
+
+    // The seams of a surface domain.
+    SeamsOf(d: SurfaceDomain): Seams
+        => Seams(d.U.SeamAlong(SurfaceParameter.ParameterU), d.V.SeamAlong(SurfaceParameter.ParameterV));
+
+    // The seams of surface s.
+    SeamsOf(g: GeometrySet, s: SurfaceIndex): Seams
+        => g.Domain(s).SeamsOf;
+
+    // SeamsOf for the arena view (IHasSeams).
+    SeamsOf(x: ArenaSurface): Seams
+        => x.Geometry.SeamsOf(x.Surface);
+
+    // The seam of the given direction.
+    SeamIn(s: Seams, which: SurfaceParameter): Seam
+        => which.Along(s.U, s.V);
+
+    // True for SeamAt.
+    IsSeam(s: Seam): Boolean
+        => match (s)
+        {
+            NoSeam => false;
+            SeamAt(direction, at) => true;
+        };
+
+    //==
+    // # Poles
+
+    // The parameter point on side `side` of d at fraction f (clamped to
+    // [0, 1]) of the side's range.
+    SidePointAt(d: SurfaceDomain, side: DomainSide, f: Number): UvPoint
+        => d.SidePoint(side, d.SideRange(side).Start + (d.SideRange(side).End - d.SideRange(side).Start) * f.Max(0.0).Min(1.0)).ToUvPoint;
+
+    // The pole on a collapsed side of surface s: the side's image (taken at
+    // the side's middle) and the limit normal there.
+    PoleAt(g: GeometrySet, s: SurfaceIndex, side: DomainSide): Pole
+    {
+        var uv = g.Domain(s).SidePointAt(side, 0.5).ToUvCoordinate;
+        return Pole(side, g.Eval(s, uv), SurfaceNormal.Limit(g.LimitNormal(s, uv)));
+    }
+
+    // The pole segment of a pole of surface s with `count` equally spaced
+    // points along its side, ends included.
+    PoleSegmentOf(g: GeometrySet, s: SurfaceIndex, pole: Pole, count: SampleCount): PoleSegment
+        => PoleSegment(pole, count.Value.Fractions.Map(f => g.Domain(s).SidePointAt(pole.Side, f)));
+}
