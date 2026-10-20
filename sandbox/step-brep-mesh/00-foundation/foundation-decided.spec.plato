@@ -1,0 +1,64 @@
+//==
+// # Decided values, kept segments and termination: specification
+//
+// Invariants and constructors of TYPE-CATALOG.md section 5 (SPEC-DSL.md
+// section 3), moved here at the catalog merge (2026-10-20). Not compiled.
+// Each ensures that names a law is checked by that Law_ in this layer's
+// *-decided.laws.plato.
+
+spec UndecidedReason
+{
+    invariant match (self) { NoConvergence(n) => n >= 0; ToleranceExceeded(by) => by.Value > 0.0; _ => true; };
+    ensures self.CaseNumber >= 0 && self.CaseNumber < 8;   // Law_UndecidedReasonRoundTrips
+}
+
+// One entry stands for all twelve: DecidedNumber, DecidedAngle,
+// DecidedLength, DecidedParameter, DecidedSign, DecidedUv, DecidedPoint,
+// DecidedDirection, DecidedFaceIndex, DecidedEdgeIndex, DecidedRange,
+// DecidedRound, each with payload T.
+spec DecidedNumber
+{
+    constructor Decided;
+    constructor Undecided;
+    ensures forall (fallback: Number) : self.IsDecided ? true : self.ValueOr(fallback) == fallback;   // Law_DecidedNumberRoundTrips
+    ensures forall (v: Number, fallback: Number) : DecidedNumber.Decided(v).ValueOr(fallback) == v;
+}
+
+spec DecidedFaceIndex
+{
+    invariant match (self) { Decided(f) => !f.IsNone; Undecided(r) => true; };   // a decided index is never the none index
+}
+
+spec DecidedEdgeIndex
+{
+    invariant match (self) { Decided(e) => !e.IsNone; Undecided(r) => true; };
+}
+
+spec DecidedRange
+{
+    invariant match (self) { Decided(r) => r.Start <= r.End; Undecided(reason) => true; };   // RangeOf's invariant
+}
+
+spec DecidedRound
+{
+    invariant match (self) { Decided(r) => r.Value >= 0; Undecided(reason) => true; };
+}
+
+spec KeepReason { ensures self.CaseNumber >= 0 && self.CaseNumber < 4; }   // Law_KeepReasonRoundTrips
+
+spec WorkBudget { invariant self.WorkTotal >= 0; }
+
+spec TerminationCertificate
+{
+    constructor CertifyRound;
+    invariant self.Decreased ? true : self.IsTerminal;   // Law_WorkStrictlyDecreasesOrTerminal
+}
+
+spec CertifyRound(before: WorkBudget, after: WorkBudget): TerminationCertificate
+{
+    ensures result.Work == after;
+    ensures result.Decreased == (after.WorkTotal < before.WorkTotal);
+    // A loop that stops at the first terminal certificate runs at most
+    // before.WorkTotal + 1 rounds: each non-terminal round lowers a
+    // non-negative Integer.
+}

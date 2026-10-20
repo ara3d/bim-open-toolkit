@@ -1,0 +1,19 @@
+//==
+// # Meshing a model as a sum: specification
+//
+// Invariants and constructors of TYPE-CATALOG.md section 5 (SPEC-DSL.md
+// section 3), moved here at the catalog merge (2026-10-20). Not compiled.
+// Each ensures that names a law is checked by that Law_ in this layer's
+// *-decided.laws.plato.
+
+spec MeshResult
+{
+    constructor ToMeshResult;
+    invariant match (self) { Succeeded(m, r, n) => r.IsClean; Incomplete(m, pending, r) => pending.Count > 0; Failed(r) => true; };
+}
+
+spec ToMeshResult(m: BrepModel, x: MeshOutcome): MeshResult
+{
+    ensures result.IsSucceeded == (x.Ok && m.CheckCheckedMesh(x.Mesh).IsDecided);   // Law_MeshOutcomeCleanMapsToSucceeded
+    ensures result.CaseNumber != 1;       // Incomplete needs pending requests the record does not hold
+}

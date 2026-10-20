@@ -1,0 +1,22 @@
+//==
+// # Meshing a model as a sum
+//
+// TYPE-CATALOG.md section 5 (catalog merge, 2026-10-20): the sum form of MeshOutcome.
+// MeshModel still returns the record; ToMeshResult (pipeline-decided.library.plato)
+// gives this sum.
+//
+// Sections, in order:
+//  - Meshing a model
+
+//==
+// # Meshing a model
+
+// The sum form of MeshOutcome.
+//   Succeeded: a checked mesh, a clean report, and the rounds taken.
+//   Incomplete: a mesh with requests still pending when the loop stopped.
+//   Failed: the report says why there is no usable mesh.
+// Removes: an Ok flag beside a mesh read whatever the flag says.
+type MeshResult
+    = Succeeded(Mesh: CheckedMesh, Report: Report, Rounds: Count)
+    | Incomplete(Mesh: ModelMesh, Pending: Array<EdgeRefinementRequest>, Report: Report)
+    | Failed(Report: Report);

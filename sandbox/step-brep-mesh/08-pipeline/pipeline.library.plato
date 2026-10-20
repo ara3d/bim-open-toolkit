@@ -219,11 +219,6 @@ library StepToMesh
                 ? (meshed[k] ? outcomes[k].Requests : EdgeRefinementRequest.NoRequests)
                 : EdgeRefinementRequest.NoRequests);
 
-    // True when the outcome withholds its mesh for a request (layer 5's
-    // IsBlocking: a loop that is not simple in parameter space).
-    HasBlockingRequest(x: FaceMeshOutcome): Boolean
-        => x.Requests.Any(q => q.Reason.IsBlocking);
-
     // True when the outcome holds an error located at face f.
     HasErrorAt(x: FaceMeshOutcome, f: BrepFaceIndex): Boolean
         => x.Diagnostics.Any(d => d.Severity.IsError && d.Where == Provenance.KernelFace(f));

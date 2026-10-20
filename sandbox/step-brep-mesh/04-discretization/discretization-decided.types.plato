@@ -1,0 +1,19 @@
+//==
+// # Decided splits
+//
+// TYPE-CATALOG.md section 5 (catalog merge, 2026-10-20): what one discretization or
+// refinement step decided for one segment. KeepReason is layer 0's.
+//
+// Sections, in order:
+//  - Splits
+
+//==
+// # Splits
+
+// What one discretization or refinement step decided for one segment.
+// Removes: the refinement that "tried nothing else" when the midpoint was too
+// close (F-57 item 2): the caller matches BelowMinLength and chooses another
+// site.
+type SplitDecision
+    = Split(At: EdgeParameter)
+    | KeepBecause(Reason: KeepReason);

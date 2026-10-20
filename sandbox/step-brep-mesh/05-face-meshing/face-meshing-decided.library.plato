@@ -1,0 +1,75 @@
+//==
+// # Decided triangulation steps and face meshing as a sum (functions)
+//
+// Predicates and case numbers over face-meshing-decided.types.plato, and the
+// conversion from FaceMeshOutcome to FaceMeshResult with its blocking test.
+//
+// Sections, in order:
+//  - Insertions
+//  - Flips
+//  - Face meshing
+
+library FaceMeshingDecided
+{
+    //==
+    // # Insertions
+
+    // The position of r's case in InsertionRejection, from 0.
+    CaseNumber(r: InsertionRejection): Integer
+        => match (r) {
+            TooCloseTo(point, distance) => 0;
+            OnConstraint(side) => 1;
+            OutsideRegion => 2;
+            WouldCollapse(element) => 3;
+        };
+
+    // True when the point was inserted.
+    IsInserted(a: InsertionAttempt): Boolean
+        => match (a) {
+            Inserted(point, flips) => true;
+            Rejected(reason) => false;
+        };
+
+    //==
+    // # Flips
+
+    // The position of r's case in FlipRejection, from 0.
+    CaseNumber(r: FlipRejection): Integer
+        => match (r) {
+            Constrained => 0;
+            NotConvex => 1;
+            AlreadyDelaunay => 2;
+            Boundary => 3;
+        };
+
+    // True when the side was flipped.
+    IsFlipped(a: FlipAttempt): Boolean
+        => match (a) {
+            Flipped(before, after) => true;
+            NotFlippable(reason) => false;
+        };
+
+    //==
+    // # Face meshing
+
+    // True when the outcome withholds its mesh for a request (IsBlocking: a
+    // loop that is not simple in parameter space). Moved from layer 8 at the
+    // catalog merge, since it names only this layer's types.
+    HasBlockingRequest(x: FaceMeshOutcome): Boolean
+        => x.Requests.Any(q => q.Reason.IsBlocking);
+
+    // FaceMeshOutcome as a sum: Blocked exactly when a request is blocking,
+    // Meshed otherwise with the requests as advisories and the outcome's
+    // diagnostics (the warnings that came with them).
+    ToFaceMeshResult(x: FaceMeshOutcome): FaceMeshResult
+        => x.HasBlockingRequest
+            ? FaceMeshResult.Blocked(x.Requests, x.Diagnostics)
+            : FaceMeshResult.Meshed(x.Mesh, x.Requests, x.Diagnostics);
+
+    // True when the face has no mesh.
+    IsBlocked(r: FaceMeshResult): Boolean
+        => match (r) {
+            Meshed(mesh, advisory, diagnostics) => false;
+            Blocked(requests, diagnostics) => true;
+        };
+}

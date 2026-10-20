@@ -1,0 +1,107 @@
+//==
+// # Decided geometric results (functions)
+//
+// Predicates and case numbers over geometry-decided.types.plato.
+//
+// Sections, in order:
+//  - Normals
+//  - Projections and closest points
+//  - Closure
+
+library BrepGeometryDecided
+{
+    //==
+    // # Normals
+
+    // True when n holds a direction: a regular, limit, or apex normal.
+    IsDecided(n: SurfaceNormal): Boolean
+        => match (n) {
+            Regular(normal) => true;
+            Limit(normal) => true;
+            Apex(normal) => true;
+            NoNormal(reason) => false;
+        };
+
+    // The direction n holds, or fallback when there is none.
+    ValueOr(n: SurfaceNormal, fallback: Direction3D): Direction3D
+        => match (n) {
+            Regular(normal) => normal;
+            Limit(normal) => normal;
+            Apex(normal) => normal;
+            NoNormal(reason) => fallback;
+        };
+
+    // The position of n's case in SurfaceNormal, from 0.
+    CaseNumber(n: SurfaceNormal): Integer
+        => match (n) {
+            Regular(normal) => 0;
+            Limit(normal) => 1;
+            Apex(normal) => 2;
+            NoNormal(reason) => 3;
+        };
+
+    //==
+    // # Projections and closest points
+
+    // True when the projection is a perpendicular foot inside the domain.
+    IsOnSurface(p: Projection): Boolean
+        => match (p) {
+            OnSurface(uv, distance) => true;
+            OffDomain(nearest, distance) => false;
+            Failed(reason) => false;
+        };
+
+    // The position of p's case in Projection, from 0.
+    CaseNumber(p: Projection): Integer
+        => match (p) {
+            OnSurface(uv, distance) => 0;
+            OffDomain(nearest, distance) => 1;
+            Failed(reason) => 2;
+        };
+
+    // True when the search found exactly one closest parameter.
+    IsFound(r: ClosestParameterResult): Boolean
+        => match (r) {
+            Found(t, distance) => true;
+            Ambiguous(candidates) => false;
+            Failed(reason) => false;
+        };
+
+    // The position of r's case in ClosestParameterResult, from 0.
+    CaseNumber(r: ClosestParameterResult): Integer
+        => match (r) {
+            Found(t, distance) => 0;
+            Ambiguous(candidates) => 1;
+            Failed(reason) => 2;
+        };
+
+    //==
+    // # Closure
+
+    // True when the decision says the curve closes, by its ends or its period.
+    ClosesCurve(c: ClosureDecision): Boolean
+        => match (c) {
+            ClosedByEnds(gap) => true;
+            OpenByEnds(gap) => false;
+            ClosedByPeriod => true;
+            UndecidableWithoutEvaluation => false;
+        };
+
+    // True unless closure needs an evaluation to decide.
+    IsDecided(c: ClosureDecision): Boolean
+        => match (c) {
+            ClosedByEnds(gap) => true;
+            OpenByEnds(gap) => true;
+            ClosedByPeriod => true;
+            UndecidableWithoutEvaluation => false;
+        };
+
+    // The position of c's case in ClosureDecision, from 0.
+    CaseNumber(c: ClosureDecision): Integer
+        => match (c) {
+            ClosedByEnds(gap) => 0;
+            OpenByEnds(gap) => 1;
+            ClosedByPeriod => 2;
+            UndecidableWithoutEvaluation => 3;
+        };
+}

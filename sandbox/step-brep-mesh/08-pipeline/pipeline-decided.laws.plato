@@ -1,0 +1,29 @@
+//==
+// # Meshing a model as a sum (laws)
+//
+// ToMeshResult on the mesh witnesses, with a clean or failing report.
+//
+// Sections, in order:
+//  - Meshing a model
+
+library StepToMeshDecidedLaws
+{
+    //==
+    // # Meshing a model
+
+    // A clean report for an even k, one error otherwise.
+    CatalogReportAt(k: Integer): Report
+        => CatalogPicksDecided(k)
+            ? Report.Empty
+            : Report([], [Diagnostic(Severity.Error, "CATALOG-WITNESS", "A witness error.", Provenance.WholeInput, 0.0)]);
+
+    // A clean outcome maps to Succeeded, any other to Failed.
+    Law_MeshOutcomeCleanMapsToSucceeded(k: Integer, rounds: Integer): Boolean
+    {
+        var m = BrepModel.CatalogBox;
+        var o = MeshOutcomeOf(ModelMesh.MeshWitnessAt(k / 2), CatalogReportAt(k), rounds);
+        var r = m.ToMeshResult(o);
+        var succeeds = CatalogPicksDecided(k) && m.CheckCheckedMesh(o.Mesh).IsDecided;
+        return r.IsSucceeded == succeeds && r.CaseNumber == (succeeds ? 0 : 2);
+    }
+}

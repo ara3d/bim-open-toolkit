@@ -1,0 +1,21 @@
+//==
+// # Decided splits (laws)
+//
+// SplitDecision through an Integer selector (layer 0's CatalogPicksDecided).
+//
+// Sections, in order:
+//  - Splits
+
+library DiscretizationDecidedLaws
+{
+    //==
+    // # Splits
+
+    // Split for an even k, KeepBecause with every reason otherwise.
+    CatalogSplitDecisionAt(k: Integer, at: EdgeParameter): SplitDecision
+        => CatalogPicksDecided(k) ? SplitDecision.Split(at) : SplitDecision.KeepBecause(CatalogKeepReasonAt(k / 2));
+
+    // IsSplit holds exactly for Split.
+    Law_SplitDecisionRoundTrips(k: Integer, at: EdgeParameter): Boolean
+        => CatalogSplitDecisionAt(k, at).IsSplit == CatalogPicksDecided(k);
+}

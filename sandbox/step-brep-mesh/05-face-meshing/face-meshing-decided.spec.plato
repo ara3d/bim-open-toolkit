@@ -1,0 +1,34 @@
+//==
+// # Decided triangulation steps and face meshing as a sum: specification
+//
+// Invariants and constructors of TYPE-CATALOG.md section 5 (SPEC-DSL.md
+// section 3), moved here at the catalog merge (2026-10-20). Not compiled.
+// Each ensures that names a law is checked by that Law_ in this layer's
+// *-decided.laws.plato.
+
+spec InsertionAttempt
+{
+    invariant match (self) { Inserted(p, flips) => !p.IsNone && flips >= 0; Rejected(r) => true; };
+}
+
+spec InsertionRejection
+{
+    invariant match (self) { TooCloseTo(p, d) => d.Kind == MeasureKind.ParameterKind && d.Value >= 0.0; _ => true; };
+}
+
+spec FlipAttempt
+{
+    invariant match (self) { Flipped(before, after) => before != after; NotFlippable(r) => true; };   // Law_FlipAttemptRoundTrips
+}
+
+spec FaceMeshResult
+{
+    constructor ToFaceMeshResult;
+    invariant match (self) { Meshed(m, advisory, ds) => advisory.All(q => !q.Reason.IsBlocking); Blocked(qs, ds) => qs.Any(q => q.Reason.IsBlocking); };
+}
+
+spec ToFaceMeshResult(x: FaceMeshOutcome): FaceMeshResult
+{
+    ensures result.IsBlocked == x.HasBlockingRequest;   // Law_FaceMeshOutcomeBlockedMapsToBlocked
+    ensures match (result) { Meshed(m, a, ds) => ds == x.Diagnostics; Blocked(qs, ds) => ds == x.Diagnostics; };   // Law_FaceMeshResultKeepsDiagnostics
+}

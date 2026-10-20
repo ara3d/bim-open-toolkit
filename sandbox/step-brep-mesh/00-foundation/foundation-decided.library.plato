@@ -1,17 +1,38 @@
 //==
-// # Catalog: decided values (functions)
+// # Decided values (functions)
 //
-// IsDecided and ValueOr for every Decided* of catalog-decided-values.types.plato.
+// IsDecided and ValueOr for every Decided* of foundation-decided.types.plato.
 // Each sum is its own monomorphic type, so each has its own pair; a caller
-// that needs the reason matches.
+// that needs the reason matches. CaseNumber gives each case of a multi-case
+// sum its position in declaration order, from zero, so a law can check that
+// every case round-trips. The termination certificate's constructor is here too.
 //
 // Sections, in order:
+//  - Reasons
 //  - Scalars and quantities
 //  - Points and directions
 //  - Indices, ranges, and rounds
+//  - Kept segments
+//  - Termination
 
-library CatalogDecidedValues
+library BrepFoundationDecided
 {
+    //==
+    // # Reasons
+
+    // The position of r's case in UndecidedReason, from 0.
+    CaseNumber(r: UndecidedReason): Integer
+        => match (r) {
+            OutOfDomain => 0;
+            DegenerateAt(side) => 1;
+            NoConvergence(iterations) => 2;
+            Unbounded => 3;
+            NotApplicable(kind) => 4;
+            BelowResolution => 5;
+            ToleranceExceeded(by) => 6;
+            Fails(property) => 7;
+        };
+
     //==
     // # Scalars and quantities
 
@@ -188,4 +209,35 @@ library CatalogDecidedValues
             Decided(value) => value;
             Undecided(reason) => fallback;
         };
+
+    //==
+    // # Kept segments
+
+    // The position of r's case in KeepReason, from 0.
+    CaseNumber(r: KeepReason): Integer
+        => match (r) {
+            MeetsCriteria => 0;
+            BelowMinLength => 1;
+            AtMinSegments => 2;
+            AtRoundLimit => 3;
+        };
+
+    //==
+    // # Termination
+
+    // The work a budget counts: the sum of its four counts, a negative count
+    // read as zero.
+    WorkTotal(w: WorkBudget): Integer
+        => w.Evaluations.Max(0) + w.Insertions.Max(0) + w.Flips.Max(0) + w.Projections.Max(0);
+
+    // The certificate of a round that started with the work before and ended
+    // with the work after: Decreased exactly when the total fell strictly.
+    // The one constructor a refinement round uses.
+    CertifyRound(before: WorkBudget, after: WorkBudget): TerminationCertificate
+        => TerminationCertificate(after, after.WorkTotal < before.WorkTotal);
+
+    // True when the loop must stop after this round: the work did not
+    // decrease, or none is left.
+    IsTerminal(c: TerminationCertificate): Boolean
+        => c.Decreased ? c.Work.WorkTotal <= 0 : true;
 }

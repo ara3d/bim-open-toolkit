@@ -1,0 +1,23 @@
+//==
+// # Decoding as a sum: specification
+//
+// Invariants and constructors of TYPE-CATALOG.md section 5 (SPEC-DSL.md
+// section 3), moved here at the catalog merge (2026-10-20). Not compiled.
+// Each ensures that names a law is checked by that Law_ in this layer's
+// *-decided.laws.plato.
+
+spec DecodeResult
+{
+    constructor ToDecodeResult;
+    invariant match (self) { Decoded(d) => d.Model.Faces.Count > 0; NoShape(r) => true; Unreadable(ds) => ds.Any(d => d.Severity.IsError); };
+}
+
+spec ToDecodeResult(x: DecodedModel): DecodeResult
+{
+    ensures result.CaseNumber == (x.Model.Faces.Count > 0 ? 0 : (x.Diagnostics.Any(d => d.Severity.IsError) ? 2 : 1));   // Law_DecodedModelMapsByFacesAndErrors
+}
+
+spec DecodeBrepResult(file: Part21File): DecodeResult
+{
+    ensures result == file.DecodeBrep.ToDecodeResult;
+}

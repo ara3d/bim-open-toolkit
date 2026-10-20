@@ -1,0 +1,48 @@
+//==
+// # Meshing a model as a sum (functions)
+//
+// The conversion from MeshOutcome to MeshResult through the CheckedMesh proof,
+// its predicate, and its case numbers.
+//
+// Sections, in order:
+//  - Meshing a model
+
+library StepToMeshDecided
+{
+    //==
+    // # Meshing a model
+
+    // MeshOutcome as a sum: Succeeded when Ok and the proofs track's
+    // CheckCheckedMesh builds the CheckedMesh for the model, Failed
+    // otherwise. Incomplete is not reachable from the record, which holds no
+    // pending requests; the refinement loop builds it.
+    ToMeshResult(m: BrepModel, x: MeshOutcome): MeshResult
+    {
+        var checked = m.CheckCheckedMesh(x.Mesh);
+        return x.Ok ? MeshResultOfChecked(checked, x) : MeshResult.Failed(x.Report);
+    }
+
+    // Succeeded when the proof was built, Failed when CheckCheckedMesh refused
+    // the mesh (then the outcome's Ok was not the mesh's verdict).
+    MeshResultOfChecked(checked: DecidedCheckedMesh, x: MeshOutcome): MeshResult
+        => match (checked) {
+            Decided(value) => MeshResult.Succeeded(value, x.Report, CountOf(x.Rounds));
+            Undecided(reason) => MeshResult.Failed(x.Report);
+        };
+
+    // True when the run produced a checked mesh.
+    IsSucceeded(r: MeshResult): Boolean
+        => match (r) {
+            Succeeded(mesh, report, rounds) => true;
+            Incomplete(mesh, pending, report) => false;
+            Failed(report) => false;
+        };
+
+    // The position of r's case in MeshResult, from 0.
+    CaseNumber(r: MeshResult): Integer
+        => match (r) {
+            Succeeded(mesh, report, rounds) => 0;
+            Incomplete(mesh, pending, report) => 1;
+            Failed(report) => 2;
+        };
+}

@@ -177,6 +177,16 @@ layer's own and may change inside the layer.
   `NewOfValues`, `KernelRemapChanging`, `RemovalNewOf`, `IdentityNewOf`, `IsInjectiveOnKept`).
 - Concepts (`foundation.concepts.plato`): `IScaled`, `IMoved`, `IReversible`, `IHasDomain<TDomain>`,
   `IIndexedTable<TIndex, TRow>` (`RowCountOf`, `RowAt`, `IsRowIndex`) (no implementer yet).
+- Decided values (`BrepFoundationDecided`, TYPE-CATALOG.md section 5): `UndecidedReason = OutOfDomain |
+  DegenerateAt(Side) | NoConvergence(Iterations) | Unbounded | NotApplicable(Kind) | BelowResolution |
+  ToleranceExceeded(By: Measure) | Fails(Property: String)`; one sum `Decided(Value: T) |
+  Undecided(Reason: UndecidedReason)` per payload: `DecidedNumber`, `DecidedAngle`, `DecidedLength`,
+  `DecidedParameter`, `DecidedSign`, `DecidedUv`, `DecidedPoint`, `DecidedDirection`,
+  `DecidedFaceIndex`, `DecidedEdgeIndex`, `DecidedRange`, `DecidedRound`, each with `IsDecided` and
+  `ValueOr(fallback)`; `KeepReason = MeetsCriteria | BelowMinLength | AtMinSegments | AtRoundLimit`;
+  `TerminationCertificate { Work: WorkBudget; Decreased }`, built only by `CertifyRound(before, after)`,
+  with `WorkTotal(WorkBudget)` and `IsTerminal`; `CaseNumber` per multi-case sum. `WorkBudget` is
+  still staged in catalog-validation.
 
 ### 1. `01-geometry`
 
@@ -224,6 +234,12 @@ layer's own and may change inside the layer.
 - Rigid motion (`BrepGeometryMotion`): `MovedVector`, `MovedDirection`, `MovedFrame`,
   `Moved(curve, motion)`, `Moved(surface, motion)`, `MovedGeometry(g, motion)`.
 - `DefiningPoints(curve)`, `DefiningPoints(surface)`: the points a record stores.
+- Decided results (`BrepGeometryDecided`, section 5): `SurfaceNormal = Regular | Limit | Apex (Normal:
+  Direction3D) | NoNormal(Reason)` (`IsDecided`, `ValueOr`), `Projection = OnSurface(Uv, Distance) |
+  OffDomain(Nearest, Distance) | Failed(Reason)` (`IsOnSurface`), `ClosestParameterResult =
+  Found(T, Distance) | Ambiguous(Candidates) | Failed(Reason)` (`IsFound`), `ClosureDecision =
+  ClosedByEnds(Gap) | OpenByEnds(Gap) | ClosedByPeriod | UndecidableWithoutEvaluation` (`ClosesCurve`,
+  `IsDecided`). `NormalOr` and `LimitNormal` still return a `Direction3D` (FINDINGS F-58).
 
 ### 2. `02-topology`
 
@@ -311,6 +327,9 @@ layer's own and may change inside the layer.
 - `Part21File` witnesses (`step-witnesses.laws.plato`, generated with the adapter fixtures):
   `Witness_Part21UnitBox`, `Witness_Part21UnitBoxNoShape`, `Witness_Part21UnitBoxDangling`,
   `Witness_Part21UnitBoxTruncatedPrefix`, `Witness_Part21TwoCubes`.
+- `DecodeResult = Decoded(Model: DecodedModel) | NoShape(Reason) | Unreadable(Diagnostics)`
+  (`StepDecided`), built by `ToDecodeResult(DecodedModel)` and `DecodeBrepResult(file)`; `DecodeBrep`
+  still returns the record (FINDINGS F-58).
 
 ### 4. `04-discretization`
 
@@ -334,6 +353,8 @@ layer's own and may change inside the layer.
   `IsClosedRegularEdge(m, e)`, `MeetsCriteria(m, d, c)`.
 - Measures: `Sagitta(m, e, t0, t1)` (exact, deferred), `SampledSagitta(m, d, plan, i)`,
   `TurningAngle(d, i): Angle`, `TangentDeviation(m, d, plan, i): Angle`.
+- `SplitDecision = Split(At: EdgeParameter) | KeepBecause(Reason: KeepReason)`, `IsSplit`
+  (`DiscretizationDecided`).
 
 ### 5. `05-face-meshing`
 
@@ -362,6 +383,13 @@ layer's own and may change inside the layer.
   `Law_MeshFaceReadsOnlyFaceEdges`; and `Law_SeamUsesOnOppositeCopies`,
   `Law_BoundarySegmentIsElementSide`, `Law_InteriorSideIsShared`,
   `Law_ElementLiftsFacingFaceNormal`.
+- Decided steps (`FaceMeshingDecided`, section 5): `InsertionRejection = TooCloseTo(Point, Distance:
+  Measure) | OnConstraint(Side) | OutsideRegion | WouldCollapse(Element)`, `InsertionAttempt =
+  Inserted(Point, Flips) | Rejected(Reason)` (`IsInserted`), `FlipRejection = Constrained | NotConvex |
+  AlreadyDelaunay | Boundary`, `FlipAttempt = Flipped(Before, After) | NotFlippable(Reason)`
+  (`IsFlipped`); `FaceMeshResult = Meshed(Mesh, Advisory, Diagnostics) | Blocked(Requests,
+  Diagnostics)` (`IsBlocked`), built by `ToFaceMeshResult(FaceMeshOutcome)`;
+  `HasBlockingRequest(FaceMeshOutcome)`. `MeshFace` still returns `FaceMeshOutcome` (FINDINGS F-58).
 
 ### 6. `06-mesh`
 
@@ -443,6 +471,10 @@ layer's own and may change inside the layer.
 - Laws, among them: `Law_FailedFaceLeavesOthersUnchanged`, `Law_ValidationIsIdempotent`,
   `Law_PendingRequestsAreRefinable`, `Law_PowerOfTwoScalingKeepsConnectivity`,
   `Law_RigidMotionMovesPositions`.
+- `MeshResult = Succeeded(Mesh: CheckedMesh, Report, Rounds: Count) | Incomplete(Mesh, Pending, Report) |
+  Failed(Report)` (`StepToMeshDecided`), built by `ToMeshResult(m, MeshOutcome)` through the proofs
+  track's `CheckCheckedMesh`; `IsSucceeded`. `MeshModel` still returns `MeshOutcome`, so `Incomplete`
+  is not built yet (FINDINGS F-58).
 
 ## Naming rules
 
@@ -464,6 +496,9 @@ layer's own and may change inside the layer.
 
 Format: date, layer, old name, new name, reason.
 
+- 2026-10-20, 8 to 5, `HasBlockingRequest(FaceMeshOutcome)` moved from `pipeline.library.plato` to
+  `face-meshing-decided.library.plato`: it names only layer 5's types, and layer 5's
+  `ToFaceMeshResult` calls it (catalog merge, decided).
 - 2026-10-20, 2, `CoedgeSite { Bound: Integer; Slot: Integer }`, `CoedgeSite { Bound: BoundSlot; Slot: CoedgeSlot }`:
   the two positions can no longer be swapped at a call site (catalog merge, indices).
 - 2026-10-20, 6, `MeshVertexSite.EdgeInterior` and `FaceInterior` `Slot: Integer`, `Slot: InteriorSlot`:

@@ -1,18 +1,21 @@
 //==
-// # Catalog: decided values and the reasons a value is undecided
+// # Decided values, the reasons a value is undecided, and termination
 //
-// TYPE-CATALOG.md section 5 (layers 0 to 8). Plato has no Option<T>, so each
+// TYPE-CATALOG.md section 5 (catalog merge, 2026-10-20). Plato has no Option<T>, so each
 // payload type has its own monomorphic sum: Decided holding the value, and
 // Undecided with a reason. The value case is Decided in every sum, not named
 // after its payload (the catalog's Number(Value)): a case Point(ModelPoint)
 // joins ModelPoint's field accessor Point's overload group (CHK203). No -1, NaN, or empty array means
-// "could not"; match forces every caller to handle the reason.
+// "could not"; match forces every caller to handle the reason. Also here: why a
+// segment was kept, and the certificate each refinement round returns.
 //
 // Sections, in order:
 //  - Reasons
 //  - Scalars and quantities
 //  - Points and directions
 //  - Indices, ranges, and rounds
+//  - Kept segments
+//  - Termination
 
 //==
 // # Reasons
@@ -25,7 +28,9 @@
 //   NotApplicable: the question does not apply to this Kind of entity.
 //   BelowResolution: the quantity is smaller than the model can resolve.
 //   ToleranceExceeded: a candidate exists but misses its bound By this much.
-// Removes: seven different sentinel conventions.
+//   Fails: the Property was checked and does not hold (a proof constructor
+//     that refused its input).
+// Removes: eight different sentinel conventions.
 type UndecidedReason
     = OutOfDomain
     | DegenerateAt(Side: DomainSide)
@@ -33,7 +38,8 @@ type UndecidedReason
     | Unbounded
     | NotApplicable(Kind: String)
     | BelowResolution
-    | ToleranceExceeded(By: Measure);
+    | ToleranceExceeded(By: Measure)
+    | Fails(Property: String);
 
 //==
 // # Scalars and quantities
@@ -111,3 +117,32 @@ type DecidedRange
 type DecidedRound
     = Decided(Value: Round)
     | Undecided(Reason: UndecidedReason);
+
+//==
+// # Kept segments
+
+// Why a segment was kept unsplit.
+//   MeetsCriteria: it already meets every criterion.
+//   BelowMinLength: its midpoint would make a piece shorter than the minimum.
+//   AtMinSegments: splitting is not needed and the minimum count is met.
+//   AtRoundLimit: the round limit stopped refinement.
+type KeepReason
+    = MeetsCriteria
+    | BelowMinLength
+    | AtMinSegments
+    | AtRoundLimit;
+
+//==
+// # Termination
+
+// What each refinement round returns: the work left after the round, and
+// whether it fell strictly below the work before (CertifyRound). A round that
+// did not decrease the work is terminal (Law_WorkStrictlyDecreasesOrTerminal).
+// Removes: a refinement loop whose termination is a MaxRefinementRounds guard
+// and nothing else.
+type TerminationCertificate
+    implements IValue
+{
+    Work: WorkBudget;
+    Decreased: Boolean;
+}

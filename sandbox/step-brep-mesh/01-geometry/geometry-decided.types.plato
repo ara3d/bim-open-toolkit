@@ -1,8 +1,8 @@
 //==
-// # Catalog: decided geometric results
+// # Decided geometric results
 //
-// TYPE-CATALOG.md section 5: what a normal, a projection, a closest-point
-// search, and a closure test return when they can and cannot answer.
+// TYPE-CATALOG.md section 5 (catalog merge, 2026-10-20): what a normal, a projection, a
+// closest-point search, and a closure test return when they can and cannot answer.
 //
 // Sections, in order:
 //  - Normals

@@ -1,0 +1,9 @@
+//==
+// # Decided splits: specification
+//
+// Invariants and constructors of TYPE-CATALOG.md section 5 (SPEC-DSL.md
+// section 3), moved here at the catalog merge (2026-10-20). Not compiled.
+// Each ensures that names a law is checked by that Law_ in this layer's
+// *-decided.laws.plato.
+
+spec SplitDecision { ensures self.IsSplit == (self.CaseNumber == 0); }   // Law_SplitDecisionRoundTrips

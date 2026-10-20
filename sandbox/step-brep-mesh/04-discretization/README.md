@@ -17,6 +17,7 @@ and states the rules both faces of the edge rely on when they consume it. It own
 | `termination-discretize.library.plato` | the bounded `Discretize` and `RefineEdge` (`DiscretizeBounded`, `RefineEdgeBounded`, the searched raise, the image tests over a set of images, `IsOffSurface`) and `DiscretizationFindings` |
 | `termination.laws.plato` | 9 laws: the discretization returns on an edge off its face's surface, within `SegmentBound`, and reports it |
 | `discretization.spec.plato` | type invariants, contracts of the 6 functions the design pass deferred and 4 constructors, 6 theorems. Since chunk B, `SagittaByHullBound` (the non-closed-form half of `Sagitta`, chunk F) is the one still bodiless |
+| `discretization-decided.{types,library,laws,spec}.plato` | section 5: `SplitDecision = Split(At) \| KeepBecause(Reason: KeepReason)`, `IsSplit`; blocks `DiscretizationDecided`, `DiscretizationDecidedLaws` (1 law) (catalog merge, 2026-10-20). No discretization function returns it yet |
 
 ## The objects
 

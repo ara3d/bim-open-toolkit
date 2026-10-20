@@ -24,6 +24,7 @@ files present that day.
 | `geometry-motion.library.plato` | the arena carried by a rigid motion: `MovedVector`, `MovedDirection`, `MovedFrame`, `Moved` (curve, surface), `MovedGeometry` (from layer 2 in the name review) | `BrepGeometryMotion` |
 | `geometry-splines.library.plato` | spline domains, shape predicates, breakpoints; evaluation, side tests and inverse search bodies in `bspline-*.library.plato` | `BrepGeometrySplines` |
 | `limit-normal.library.plato` | `LimitNormal`: the surface normal, and its limit on a sphere's pole or a cone's apex (step C, TKT-325) | `PolesLimitNormal` |
+| `geometry-decided.{types,library,laws,spec}.plato` | section 5: `SurfaceNormal`, `Projection`, `ClosestParameterResult`, `ClosureDecision`, their predicates and case numbers; 4 laws (catalog merge, 2026-10-20). `NormalOr` and `LimitNormal` still return a `Direction3D` | `BrepGeometryDecided`, `BrepGeometryDecidedLaws` |
 | `geometry.laws.plato` | 95 laws, 3 oracles, their helpers and measures | `BrepGeometryLaws` |
 | `geometry.spec.plato` | invariants, contracts, theorems (SPEC-DSL.md section 3 only) | |
 

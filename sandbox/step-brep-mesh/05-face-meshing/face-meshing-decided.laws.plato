@@ -1,0 +1,106 @@
+//==
+// # Decided triangulation steps and face meshing as a sum (laws)
+//
+// Each sum through an Integer selector (layer 0's CatalogCaseOf and
+// CatalogPicksDecided); the conversion on literal face outcomes.
+//
+// Sections, in order:
+//  - Insertions
+//  - Flips
+//  - Face meshing
+
+library FaceMeshingDecidedLaws
+{
+    //==
+    // # Insertions
+
+    // The InsertionRejection whose CaseNumber is CatalogCaseOf(k, 4).
+    CatalogInsertionRejectionAt(k: Integer): InsertionRejection
+    {
+        var c = CatalogCaseOf(k, 4);
+        return c == 0 ? InsertionRejection.TooCloseTo(UvPointIndex(k), Measure(0.5, MeasureKind.ParameterKind))
+            : (c == 1 ? InsertionRejection.OnConstraint(ElementSide(ElementIndex(k), 0))
+            : (c == 2 ? InsertionRejection.OutsideRegion
+            : InsertionRejection.WouldCollapse(ElementIndex(k))));
+    }
+
+    // Every InsertionRejection case round-trips.
+    Law_InsertionRejectionRoundTrips(k: Integer): Boolean
+        => CatalogInsertionRejectionAt(k).CaseNumber == CatalogCaseOf(k, 4);
+
+    // Inserted for an even k, Rejected with every reason otherwise.
+    CatalogInsertionAttemptAt(k: Integer): InsertionAttempt
+        => CatalogPicksDecided(k) ? InsertionAttempt.Inserted(UvPointIndex(k), 0) : InsertionAttempt.Rejected(CatalogInsertionRejectionAt(k / 2));
+
+    // IsInserted holds exactly for Inserted.
+    Law_InsertionAttemptRoundTrips(k: Integer): Boolean
+        => CatalogInsertionAttemptAt(k).IsInserted == CatalogPicksDecided(k);
+
+    //==
+    // # Flips
+
+    // The FlipRejection whose CaseNumber is CatalogCaseOf(k, 4).
+    CatalogFlipRejectionAt(k: Integer): FlipRejection
+    {
+        var c = CatalogCaseOf(k, 4);
+        return c == 0 ? FlipRejection.Constrained
+            : (c == 1 ? FlipRejection.NotConvex
+            : (c == 2 ? FlipRejection.AlreadyDelaunay
+            : FlipRejection.Boundary));
+    }
+
+    // Every FlipRejection case round-trips.
+    Law_FlipRejectionRoundTrips(k: Integer): Boolean
+        => CatalogFlipRejectionAt(k).CaseNumber == CatalogCaseOf(k, 4);
+
+    // Flipped for an even k, NotFlippable with every reason otherwise.
+    CatalogFlipAttemptAt(k: Integer): FlipAttempt
+    {
+        var a = ElementSidePair(ElementSide(ElementIndex(0), 0), ElementSide(ElementIndex(1), 2));
+        var b = ElementSidePair(ElementSide(ElementIndex(0), 1), ElementSide(ElementIndex(1), 0));
+        return CatalogPicksDecided(k) ? FlipAttempt.Flipped(a, b) : FlipAttempt.NotFlippable(CatalogFlipRejectionAt(k / 2));
+    }
+
+    // IsFlipped holds exactly for Flipped.
+    Law_FlipAttemptRoundTrips(k: Integer): Boolean
+        => CatalogFlipAttemptAt(k).IsFlipped == CatalogPicksDecided(k);
+
+    //==
+    // # Face meshing
+
+    // A face outcome with no mesh points and, for CatalogCaseOf(k, 4) < 3, one
+    // request with the reason of that case; with none for case 3.
+    CatalogFaceMeshOutcomeAt(k: Integer): FaceMeshOutcome
+    {
+        var c = CatalogCaseOf(k, 4);
+        var reason = c == 0 ? RefinementReason.LoopSelfIntersects
+            : (c == 1 ? RefinementReason.TooCoarseInParameterSpace : RefinementReason.QuadCountMismatch);
+        var request = EdgeRefinementRequest(BrepEdgeIndex(0), reason, 1.0, 0);
+        var requests = c < 3 ? [request] : EdgeRefinementRequest.NoRequests;
+        return FaceMeshOutcome(EmptyFaceMesh(BrepFaceIndex(0)), requests, []);
+    }
+
+    // A blocking request maps to Blocked; an advisory one, or none, to Meshed.
+    Law_FaceMeshOutcomeBlockedMapsToBlocked(k: Integer): Boolean
+        => CatalogFaceMeshOutcomeAt(k).ToFaceMeshResult.IsBlocked == (CatalogCaseOf(k, 4) == 0);
+
+    // The diagnostics r carries, in either case.
+    CatalogDiagnosticsOf(r: FaceMeshResult): Array<Diagnostic>
+        => match (r) {
+            Meshed(mesh, advisory, diagnostics) => diagnostics;
+            Blocked(requests, diagnostics) => diagnostics;
+        };
+
+    // The outcome of CatalogFaceMeshOutcomeAt(k) with one warning.
+    CatalogWarnedOutcomeAt(k: Integer): FaceMeshOutcome
+    {
+        var o = CatalogFaceMeshOutcomeAt(k);
+        var warning = Diagnostic(Severity.Warning, "CATALOG-WITNESS", "A witness warning.", Provenance.WholeInput, 0.0);
+        return FaceMeshOutcome(o.Mesh, o.Requests, [warning]);
+    }
+
+    // The outcome's diagnostics survive the conversion in both cases: the
+    // warnings that come with advisory requests are not dropped.
+    Law_FaceMeshResultKeepsDiagnostics(k: Integer): Boolean
+        => CatalogDiagnosticsOf(CatalogWarnedOutcomeAt(k).ToFaceMeshResult).Count == 1;
+}

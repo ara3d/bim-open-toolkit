@@ -26,6 +26,7 @@ Algorithms were deferred by the design pass, every one with a contract in `face-
 | `triangulation.laws.plato` | library `TriangulationLaws` (TKT-343): 16 laws of the two functions over six sample models |
 | `face-meshing.laws.plato` | library `FaceMeshingLaws`: 46 laws and their guards |
 | `face-meshing.spec.plato` | invariants of 7 types, contracts of 15 functions (chunk B added `ExpandedPoles` and `CutWholePeriods`), 3 theorems |
+| `face-meshing-decided.{types,library,laws,spec}.plato` | section 5: `InsertionRejection`, `InsertionAttempt`, `FlipRejection`, `FlipAttempt`, `FaceMeshResult = Meshed(Mesh, Advisory, Diagnostics) \| Blocked(Requests, Diagnostics)`, `ToFaceMeshResult`, `HasBlockingRequest` (moved from layer 8); blocks `FaceMeshingDecided`, `FaceMeshingDecidedLaws` (6 laws) (catalog merge, 2026-10-20). `MeshFace` still returns `FaceMeshOutcome` |
 
 The contract names one library block, `FaceMeshing`, for this layer. The layer is large enough that
 the region half has its own block, `UvRegions`; `FaceMeshing` keeps the contract's name and the entry

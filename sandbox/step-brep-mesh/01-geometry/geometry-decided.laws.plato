@@ -1,0 +1,94 @@
+//==
+// # Decided geometric results (laws)
+//
+// Each sum is reached through an Integer selector (Catalog<Sum>At, with
+// layer 0's CatalogCaseOf and CatalogReasonAt), since the runner cannot build
+// a sum: every case round-trips through CaseNumber and its predicates.
+//
+// Sections, in order:
+//  - Normals
+//  - Projections and closest points
+//  - Closure
+
+library BrepGeometryDecidedLaws
+{
+    //==
+    // # Normals
+
+    // The SurfaceNormal whose CaseNumber is CatalogCaseOf(k, 4), holding n.
+    CatalogSurfaceNormalAt(k: Integer, n: Direction3D): SurfaceNormal
+    {
+        var c = CatalogCaseOf(k, 4);
+        return c == 0 ? SurfaceNormal.Regular(n)
+            : (c == 1 ? SurfaceNormal.Limit(n)
+            : (c == 2 ? SurfaceNormal.Apex(n)
+            : SurfaceNormal.NoNormal(CatalogReasonAt(k / 4))));
+    }
+
+    // Every case round-trips; the three normal cases are decided and give back
+    // their direction, NoNormal gives the fallback.
+    Law_SurfaceNormalRoundTrips(k: Integer, n: Direction3D, fallback: Direction3D): Boolean
+    {
+        var s = CatalogSurfaceNormalAt(k, n);
+        var c = CatalogCaseOf(k, 4);
+        var expected = c < 3 ? n : fallback;
+        return s.CaseNumber == c && s.IsDecided == (c < 3) && s.ValueOr(fallback) == expected;
+    }
+
+    //==
+    // # Projections and closest points
+
+    // The Projection whose CaseNumber is CatalogCaseOf(k, 3).
+    CatalogProjectionAt(k: Integer, uv: UvPoint, d: ModelLength): Projection
+    {
+        var c = CatalogCaseOf(k, 3);
+        return c == 0 ? Projection.OnSurface(uv, d)
+            : (c == 1 ? Projection.OffDomain(uv, d)
+            : Projection.Failed(CatalogReasonAt(k / 3)));
+    }
+
+    // Every case round-trips; only OnSurface is on the surface.
+    Law_ProjectionRoundTrips(k: Integer, uv: UvPoint, d: ModelLength): Boolean
+    {
+        var p = CatalogProjectionAt(k, uv, d);
+        return p.CaseNumber == CatalogCaseOf(k, 3) && p.IsOnSurface == (CatalogCaseOf(k, 3) == 0);
+    }
+
+    // The ClosestParameterResult whose CaseNumber is CatalogCaseOf(k, 3).
+    CatalogClosestParameterAt(k: Integer, t: CurveParameter, d: ModelLength): ClosestParameterResult
+    {
+        var c = CatalogCaseOf(k, 3);
+        return c == 0 ? ClosestParameterResult.Found(t, d)
+            : (c == 1 ? ClosestParameterResult.Ambiguous([t, t])
+            : ClosestParameterResult.Failed(CatalogReasonAt(k / 3)));
+    }
+
+    // Every case round-trips; only Found is found.
+    Law_ClosestParameterResultRoundTrips(k: Integer, t: CurveParameter, d: ModelLength): Boolean
+    {
+        var r = CatalogClosestParameterAt(k, t, d);
+        return r.CaseNumber == CatalogCaseOf(k, 3) && r.IsFound == (CatalogCaseOf(k, 3) == 0);
+    }
+
+    //==
+    // # Closure
+
+    // The ClosureDecision whose CaseNumber is CatalogCaseOf(k, 4).
+    CatalogClosureAt(k: Integer, gap: ModelLength): ClosureDecision
+    {
+        var c = CatalogCaseOf(k, 4);
+        return c == 0 ? ClosureDecision.ClosedByEnds(gap)
+            : (c == 1 ? ClosureDecision.OpenByEnds(gap)
+            : (c == 2 ? ClosureDecision.ClosedByPeriod
+            : ClosureDecision.UndecidableWithoutEvaluation));
+    }
+
+    // Every case round-trips; all but UndecidableWithoutEvaluation are
+    // decided, and ClosedByEnds and ClosedByPeriod close the curve.
+    Law_ClosureDecisionRoundTrips(k: Integer, gap: ModelLength): Boolean
+    {
+        var d = CatalogClosureAt(k, gap);
+        var c = CatalogCaseOf(k, 4);
+        return d.CaseNumber == c && d.IsDecided == (c != 3) && d.ClosesCurve == (c == 0 || c == 2);
+    }
+}

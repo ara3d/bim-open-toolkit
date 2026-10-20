@@ -25,6 +25,7 @@ body, because every body here is its own specification; nothing is deferred.
 | `foundation-keys.types.plato` | `ElementSide`, `ElementSidePair`, `HalfEdgeKey`, `EdgeKey`, `SampleKey`, `TableName` |
 | `foundation-remaps.types.plato` | one remap per kernel table (`BrepVertexRemap` to `SurfaceRemap`) and the bundle `KernelRemap` |
 | `foundation-indices.{library,laws,spec}.plato` | slots to samples, `TriangleCorner`, `QuadCorner`, edge keys, `TableName` ordinals, remaps; blocks `BrepFoundationIndices`, `BrepFoundationIndicesLaws` (15 laws) (catalog merge, 2026-10-20) |
+| `foundation-decided.{types,library,laws,spec}.plato` | TYPE-CATALOG.md section 5: `UndecidedReason` (with `Fails`), the twelve `Decided*` sums with `IsDecided` and `ValueOr`, `KeepReason`, `TerminationCertificate` (`CertifyRound`, `WorkTotal`, `IsTerminal`), and the laws' case selectors `CatalogCaseOf`, `CatalogReasonAt`, `CatalogPicksDecided`; blocks `BrepFoundationDecided`, `BrepFoundationDecidedLaws` (15 laws) (catalog merge, 2026-10-20) |
 | `foundation.concepts.plato` | `IScaled`, `IMoved`, `IReversible`, `IHasDomain<TDomain>`, `IIndexedTable<TIndex, TRow>` (no implementer yet) |
 | `foundation-values.spec.plato` | invariants and constructors of the catalog types above |
 

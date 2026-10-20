@@ -1,0 +1,64 @@
+//==
+// # Decided triangulation steps and face meshing as a sum
+//
+// TYPE-CATALOG.md section 5 (catalog merge, 2026-10-20): what one insertion or flip
+// decided, with the reason when it did nothing, and the sum form of
+// FaceMeshOutcome. MeshFace still returns the record; ToFaceMeshResult
+// (face-meshing-decided.library.plato) gives this sum.
+//
+// Sections, in order:
+//  - Insertions
+//  - Flips
+//  - Face meshing
+
+//==
+// # Insertions
+
+// Why a point was not inserted into a triangulation.
+//   TooCloseTo: an existing point lies within Distance (a parameter-space
+//     Measure: UV has no length type of its own).
+//   OnConstraint: the point lies on a constrained side.
+//   OutsideRegion: the point lies outside the region.
+//   WouldCollapse: inserting would collapse that element.
+type InsertionRejection
+    = TooCloseTo(Point: UvPointIndex, Distance: Measure)
+    | OnConstraint(Side: ElementSide)
+    | OutsideRegion
+    | WouldCollapse(Element: ElementIndex);
+
+// The result of one insertion: the new point and the flips that restored the
+// Delaunay property, or why there was none. Removes: a silent skip inside
+// SplitPass.
+type InsertionAttempt
+    = Inserted(Point: UvPointIndex, Flips: Integer)
+    | Rejected(Reason: InsertionRejection);
+
+//==
+// # Flips
+
+// Why a side was not flipped.
+type FlipRejection
+    = Constrained
+    | NotConvex
+    | AlreadyDelaunay
+    | Boundary;
+
+// The result of one edge flip: the side pair before and after, or why not.
+// Removes: a flip skipped with no record of why.
+type FlipAttempt
+    = Flipped(Before: ElementSidePair, After: ElementSidePair)
+    | NotFlippable(Reason: FlipRejection);
+
+//==
+// # Face meshing
+
+// The sum form of FaceMeshOutcome.
+//   Meshed: a valid mesh, with the advisory requests (too coarse in parameter
+//     space, a quad count mismatch) for the next round and the diagnostics
+//     (warnings) that came with them.
+//   Blocked: no mesh; the requests include a blocking one (a loop that is not
+//     simple in parameter space), each with its diagnostic.
+// Removes: the empty-mesh sentinel IsBlocking reads today.
+type FaceMeshResult
+    = Meshed(Mesh: FaceMesh, Advisory: Array<EdgeRefinementRequest>, Diagnostics: Array<Diagnostic>)
+    | Blocked(Requests: Array<EdgeRefinementRequest>, Diagnostics: Array<Diagnostic>);
