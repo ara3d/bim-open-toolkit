@@ -1,0 +1,46 @@
+//==
+// # Catalog: budgets and elapsed time
+//
+// TYPE-CATALOG.md section 10: the work and time budgets other tracks borrow
+// (the termination laws decrease a WorkBudget; the law runner's 2 s rule is a
+// TimeBudget). Declared first so the other tracks can switch to these at
+// merge.
+//
+// Sections, in order:
+//  - Time
+//  - Work
+
+//==
+// # Time
+
+// A wall-time limit in whole milliseconds: the 2 s rule as a value the runner
+// and the report both hold. Removes: a time limit written as a bare 2000 in
+// one place and 2.0 seconds in another. Invariant: Milliseconds >= 0.
+type TimeBudget
+    implements IValue, IOrderable
+{
+    Milliseconds: Integer;
+}
+
+// A measured wall time in whole milliseconds. Removes: an elapsed time
+// compared with a budget of another unit. Invariant: Milliseconds >= 0.
+type Elapsed
+    implements IValue, IOrderable
+{
+    Milliseconds: Integer;
+}
+
+//==
+// # Work
+
+// Counted work: curve or surface evaluations, point insertions, edge flips,
+// and projections. The measure the termination laws decrease. Removes:
+// "slower than the old code" with no number. Invariant: every field >= 0.
+type WorkBudget
+    implements IValue
+{
+    Evaluations: Integer;
+    Insertions: Integer;
+    Flips: Integer;
+    Projections: Integer;
+}
