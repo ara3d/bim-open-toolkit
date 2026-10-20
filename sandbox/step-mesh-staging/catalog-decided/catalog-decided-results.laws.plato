@@ -209,9 +209,11 @@ library CatalogDecidedResultsLaws
     // A clean outcome maps to Succeeded, any other to Failed.
     Law_Catalog_MeshOutcomeCleanMapsToSucceeded(k: Integer, rounds: Integer): Boolean
     {
+        var m = BrepModel.CatalogBox;
         var o = MeshOutcomeOf(ModelMesh.MeshWitnessAt(k / 2), CatalogReportAt(k), rounds);
-        var r = o.ToMeshResult;
-        return r.IsSucceeded == CatalogPicksDecided(k) && r.CaseNumber == (CatalogPicksDecided(k) ? 0 : 2);
+        var r = m.ToMeshResult(o);
+        var succeeds = CatalogPicksDecided(k) && m.CheckCheckedMesh(o.Mesh).IsDecided;
+        return r.IsSucceeded == succeeds && r.CaseNumber == (succeeds ? 0 : 2);
     }
 
     // The unit cube decoded (case 0), the same with no face and no error

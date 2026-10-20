@@ -83,12 +83,12 @@ library CatalogValidationPipeline
 
     // Two models compared table by table under the model's length tolerance:
     // BrepModel's IDiffable.
-    Diff(a: BrepModel, b: BrepModel, tol: Tolerances): DecidedDifference
+    Diff(a: BrepModel, b: BrepModel, tol: Tolerances): ModelDiff
     {
         var differences = ModelDifferences(a, b, tol.Length.Value);
         return differences.Count == 0
-            ? DecidedDifference.NoDifference
-            : DecidedDifference.Different(differences[0], differences.Count);
+            ? ModelDiff.Same
+            : ModelDiff.Differs(differences[0], differences.Count);
     }
 
     // The position of a table in ModelTable's case order.
@@ -116,7 +116,7 @@ library CatalogValidationPipeline
     // The summary of a non-empty list of differences: the first, the count,
     // and a count per table in ModelTable order.
     DiffSummaryOf(differences: Array<LocatedDifference<ModelTable>>): DiffSummary
-        => DiffSummary(differences[0], differences.Count,
+        => DiffSummary(ModelDiff.Differs(differences[0], differences.Count), differences.Count,
             ModelTable.ModelTableCount.MapRange(k =>
                 CountOf(differences.Map(d => d.Table.ModelTableOrdinal == k ? 1 : 0).Reduce(0, (a, x) => a + x))));
 }

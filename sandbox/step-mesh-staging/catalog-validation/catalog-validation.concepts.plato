@@ -15,7 +15,7 @@
 // difference from itself (SameModelHasNoDifference, over BrepModel).
 interface IDiffable
 {
-    Diff(a: Self, b: Self, tol: Tolerances): DecidedDifference;
+    Diff(a: Self, b: Self, tol: Tolerances): ModelDiff;
 }
 
 // A value with a validation at a conformance level.

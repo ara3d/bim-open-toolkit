@@ -217,14 +217,23 @@ library CatalogDecidedResults
             Blocked(requests, diagnostics) => true;
         };
 
-    // MeshOutcome as a sum: Succeeded when Ok (the report is clean, so the
-    // mesh passed validation and becomes a CheckedMesh here), Failed
+    // MeshOutcome as a sum: Succeeded when Ok and the proofs track's
+    // CheckCheckedMesh builds the CheckedMesh for the model, Failed
     // otherwise. Incomplete is not reachable from the record, which holds no
     // pending requests; the refinement loop builds it.
-    ToMeshResult(x: MeshOutcome): MeshResult
-        => x.Ok
-            ? MeshResult.Succeeded(CheckedMesh(x.Mesh), x.Report, CountOf(x.Rounds))
-            : MeshResult.Failed(x.Report);
+    ToMeshResult(m: BrepModel, x: MeshOutcome): MeshResult
+    {
+        var checked = m.CheckCheckedMesh(x.Mesh);
+        return x.Ok ? MeshResultOfChecked(checked, x) : MeshResult.Failed(x.Report);
+    }
+
+    // Succeeded when the proof was built, Failed when CheckCheckedMesh refused
+    // the mesh (then the outcome's Ok was not the mesh's verdict).
+    MeshResultOfChecked(checked: DecidedCheckedMesh, x: MeshOutcome): MeshResult
+        => match (checked) {
+            Decided(value) => MeshResult.Succeeded(value, x.Report, CountOf(x.Rounds));
+            Undecided(reason) => MeshResult.Failed(x.Report);
+        };
 
     // True when the run produced a checked mesh.
     IsSucceeded(r: MeshResult): Boolean

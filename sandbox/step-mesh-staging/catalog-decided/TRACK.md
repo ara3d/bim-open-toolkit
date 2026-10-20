@@ -39,8 +39,8 @@ Choices where the catalog sketches:
 - `MeshResult.Succeeded.Rounds` is a `Count`.
 - `DecodeResult` from `DecodedModel`: `Decoded` when the model has a face; with none, `Unreadable` when a
   diagnostic is an error, else `NoShape(NotApplicable("no shape representation"))`.
-- `MeshOutcome` to `MeshResult`: `Ok` gives `Succeeded` (the clean report is the validation verdict, so the
-  conversion builds the `CheckedMesh`), anything else `Failed(Report)`. `Incomplete` is unreachable from the
+- `MeshOutcome` to `MeshResult`: `Ok` and a `CheckedMesh` built by the proofs track's `CheckCheckedMesh(m, mesh)`
+  give `Succeeded`, anything else `Failed(Report)` (merge edit 2026-10-20: `ToMeshResult` now takes the model). `Incomplete` is unreachable from the
   record (no pending requests); the loop must build it.
 
 Laws (27, all pass, cpu64):

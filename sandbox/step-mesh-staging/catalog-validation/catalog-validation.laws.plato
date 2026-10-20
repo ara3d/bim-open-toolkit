@@ -265,8 +265,8 @@ library CatalogValidationLaws
     {
         var m = (k % 2 + 2) % 2 == 0 ? BrepModel.Witness_UnitBox : BrepModel.Witness_UnitBoxMillimetres;
         return match (Diff(m, m, m.Tolerances)) {
-            NoDifference => true;
-            Different(first, count) => false;
+            Same => true;
+            Differs(first, count) => false;
         };
     }
 }

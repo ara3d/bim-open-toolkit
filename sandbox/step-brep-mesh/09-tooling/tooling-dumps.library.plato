@@ -212,21 +212,39 @@ library ToolingDumps
                 CellValue.Text("Diagnostic"), CellValue.Text(d.Code), CellValue.Text(""), CellValue.Text(d.Severity.SeverityName),
                 CellValue.Real(d.Measure), CellValue.Text(""), CellValue.Place(d.Where), CellValue.Text(d.Message)])));
 
-    // Differences as a table, one row each, the table printed by name.
-    DifferencesTable(ds: Array<LocatedDifference<$T>>, name: Function1<$T, String>): ResultTable
-        => ResultTable("Differences",
-            ["Table", "Row", "Slot", "Field", "Left", "Right", "Tolerance"],
-            ds.Map(d => [
-                CellValue.Text(name(d.Table)), CellValue.Whole(d.Row), CellValue.Whole(d.Slot), CellValue.Text(d.What.Field),
-                d.What.Left, d.What.Right, CellValue.Real(d.What.Tolerance)]));
+    // One row of a differences table: the table printed by name, the row and
+    // slot, and the four fields of the difference.
+    DifferenceRow(table: String, row: Integer, slot: Integer, what: Difference): Array<CellValue>
+        => [CellValue.Text(table), CellValue.Whole(row), CellValue.Whole(slot), CellValue.Text(what.Field),
+            what.Left, what.Right, CellValue.Real(what.Tolerance)];
+
+    // The column names of a differences table.
+    DifferenceColumns(_: ResultTable): Array<String>
+        => ["Table", "Row", "Slot", "Field", "Left", "Right", "Tolerance"];
+
+    // Model differences as a table, one row each. Written per table type, not
+    // as one generic DifferencesTable(ds: Array<LocatedDifference<$T>>, name):
+    // once the catalog folders (sandbox/step-mesh-staging/catalog-*) compiled
+    // with the library, the compiler bound that function's $T to another
+    // generic's $Ret3 and rejected its lambda (CHK201, 2026-10-20), a
+    // type-variable collision that depends on the number of declarations in
+    // the program, not on any one of them.
+    ModelDifferencesRows(ds: Array<LocatedDifference<ModelTable>>): ResultTable
+        => ResultTable("Differences", ResultTable.DifferenceColumns,
+            ds.Map(d => DifferenceRow(d.Table.ModelTableName, d.Row, d.Slot, d.What)));
+
+    // Mesh differences as a table, one row each.
+    MeshDifferencesRows(ds: Array<LocatedDifference<MeshTable>>): ResultTable
+        => ResultTable("Differences", ResultTable.DifferenceColumns,
+            ds.Map(d => DifferenceRow(d.Table.MeshTableName, d.Row, d.Slot, d.What)));
 
     // Every difference between two models within tol, as a table.
     ModelDifferencesTable(a: BrepModel, b: BrepModel, tol: Number): ResultTable
-        => ModelDifferences(a, b, tol).DifferencesTable(t => t.ModelTableName);
+        => ModelDifferences(a, b, tol).ModelDifferencesRows;
 
     // Every difference between two model meshes within tol, as a table.
     MeshDifferencesTable(a: ModelMesh, b: ModelMesh, tol: Number): ResultTable
-        => ModelMeshDifferences(a, b, tol).DifferencesTable(t => t.MeshTableName);
+        => ModelMeshDifferences(a, b, tol).MeshDifferencesRows;
 
     // The name of a model table.
     ModelTableName(t: ModelTable): String

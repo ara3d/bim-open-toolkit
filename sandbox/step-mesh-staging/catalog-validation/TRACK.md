@@ -15,8 +15,10 @@ Types added (32 of this track, plus 4 borrowed):
   `WitnessSpec`, `PerturbationKind`, `Expectation`, `LawVerdictDetail`, `VerdictDelta`, `LevelProof`
   (`LawId` is a stand-in, see Contract requests).
 - Section 11 (6): `StageOutcome<T>`, `MeshingEvent`, `Trace`, `RunKey`, `Pending`, `Incremental`.
-- Section 15 and 16 (5): `DecidedDifference` (named by `IDiffable`, no shape in the catalog),
-  `RowDump`, `DiffSummary`, `CorpusRow`, `Benchmark`.
+- Section 15 and 16 (4): `RowDump`, `DiffSummary`, `CorpusRow`, `Benchmark`. `DecidedDifference` was
+  declared and then removed at merge (2026-10-20): it duplicated layer 9's `ModelDiff`; `IDiffable.Diff` returns `ModelDiff`.
+  (The merge also hit a compiler defect in the library's generic `DifferencesTable`, which depended on the
+  program's size, not on this type; the library function was made concrete, see `tooling-dumps.library.plato`.)
 - Borrowed (4): `CriterionName`, `RequestSet` (section 7), `Defect`, `DefectReport` (section 13).
 - Concepts (4): `IDiffable`, `ICheckable`, `ITraced`, `IWitnessed`. Their BrepModel functions
   exist (`Diff`, `Check`, `Witnesses`); no type declares `implements` yet (see Merge instructions),

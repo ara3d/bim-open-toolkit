@@ -126,6 +126,16 @@ Wave 1 in total: 8 merges, 0 types added, 402 to 556 passing laws, one sweep of 
 
 | Chunk | Expected | Actual | Laws run at merge | Regressions | Types added | Lesson |
 |---|---|---|---|---|---|---|
+| Catalog, foundation (sections 1, 2 of `TYPE-CATALOG.md`) | 2 h | 1.3 h | 57 pass | 0 | 41 (+4 concepts) | The server keeps a renamed declaration alive at a path; check a fresh copy. `PowerOfTwo` is a library function, so the type is `PowerOfTwoFactor` |
+| Catalog, indices (3) | 2 h | 0.6 h | 19 pass | 0 | 23 (+1) | `Array<T>` fields cannot implement a generic table concept; the law is stated over `TableName` instead |
+| Catalog, decided (5) | 2 h | 0.8 h | 27 pass | 0 | 27 | A sum case named like a field accessor (`Point`) breaks the field; every `Decided*` value case is `Decided(Value)` |
+| Catalog, proofs (4) | 2 h | 1.6 h | 57 pass | 0 | 52 (+2) | A `match` on a local whose initialiser is in a later-sorting file fails at run time with no type error |
+| Catalog, geometry (6) | 2 h | 1.3 h | 48 pass | 0 | 16 (+11) | The textbook H +/- sqrt(H^2 - K) loses half its digits at an umbilic; the curvature laws caught it |
+| Catalog, meshing (7, 8, 9) | 2 h | 1.2 h | 35 pass | 0 | 42 (+1) | Three catalog names (`Density`, `Angle` and `Round` as field names) collide with stdlib types or derive implicit conversions |
+| Catalog, validation (10, 11, 16) | 2 h | 1.3 h | 30 pass | 0 | 31 (+4) | A call chained on a payload-free qualified case makes the server skip the compile and report 0 errors |
+| Catalog, editing (12) | 2 h | 1.2 h | 17 pass | 0 | 18 (+1) | `Transform`'s inverse holds only within tolerance; `RemoveFace` needs a `RestoreFace` inverse with the index and shell uses |
+| Catalog, repair (13, 14) | 2 h | 1.5 h | 33 pass | 0 | 28 (+1) | A `Check` holds one address and two numbers, so only 7 of 26 defect families can be read from one |
+| Catalog, merge of all nine | 1 h | 2.5 h | 323 pass (12.7 s) | 0 | 0 (16 borrowed duplicates deleted) | A compiler defect in generic inference appears only at program size; bisecting it cost 41 min because the warm server slows with every fresh scratch path |
 
 ### Rule changes
 
@@ -148,6 +158,7 @@ Wave 1 in total: 8 merges, 0 types added, 402 to 556 passing laws, one sweep of 
 
 ## Log
 
+- 2026-10-20: the type catalog (`sandbox/step-brep-mesh/TYPE-CATALOG.md`) implemented in Plato by nine opus builders in two phases (foundation and indices first, seven tracks on top), each in its own `sandbox/step-mesh-staging/catalog-*` folder: 278 types, 25 concepts, 323 `Law_Catalog_` laws, a spec file per track; every folder green alone. Merge check of all nine together: two fixes (the decided track's `ToMeshResult` now goes through the proofs track's `CheckCheckedMesh`; the validation track's `DecidedDifference` dropped for layer 9's `ModelDiff`), the 16 borrowed duplicates deleted, and one compiler defect: the library's generic `DifferencesTable` lost its type variable to another generic's `$Ret3` once the program was large enough (removing any one of seven unrelated files cleared it), made concrete in `tooling-dumps.library.plato` (FINDINGS F-58). Full sweep: 323 laws, 323 pass, 12.7 s. The warm server reached 2.8 GB after the bisects and a check went from 15 s to 4.5 min: one check at a time, few scratch paths. Builder briefs: `sandbox/step-mesh-staging/CATALOG-BRIEF.md`.
 - 2026-10-18, 23:55: server on 8768 replaced by Plato f2b20722 and studio 60abd7fb (TKT-344), from clean exports, kept in `C:\Users\cdigg\.plato-cli\navmcp-f2b20722-60abd7fb`, default profile `gpu32`, `--law-programs=8`. Checked: a staging folder compiles once (2.7 s on a warm parse cache) and the library's own program stays warm alongside it.
 - 2026-10-19: track D2 merged alone. TKT-315 closed (toolkit dc8a784f; Plato 78be1798, 64-bit Integer exact within 2^53, 0 C# errors under cpu64; criterion 2 waived for 7 stdlib laws, stdlib-464). CLI pinned at `C:\Users\cdigg\.plato-cli\951a70ab` and the server on 8768 rebuilt from the same clean export (`navmcp-951a70ab`), default profile now `cpu64`; `plato_laws.py` and the staging rules default to `cpu64`. The topology track's last direct edit landed as 7e709372 (gpu32 and cpu64 verdicts identical: 133 laws, 112 pass, 1 fail fixed in staging, 4 torus budget errors, 10 obligations, 6 skipped). Tracks T (TKT-343) and G (TKT-328) are ready to merge.
 - 2026-10-19: baseline sweep under cpu64 on the library at f9c029a9 (pinned CLI 951a70ab, budget 120 s): 709 laws, 471 pass, 24 fail, 5 error, 122 obligation, 87 skipped, 12 min. Committed as `sandbox/step-brep-mesh/reviews/verdicts-cpu64.tsv`, the baseline for the wave 1 merges. Server on 8768 now runs from `C:\Users\cdigg\.plato-cli\navmcp-951a70ab-clean`.

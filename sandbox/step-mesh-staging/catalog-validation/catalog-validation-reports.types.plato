@@ -11,13 +11,9 @@
 //==
 // # Diffs
 
-// What IDiffable returns: Same, or the first difference with the number of
-// differences. The catalog names it without a shape; this is layer 9's
-// ModelDiff over any kernel table. Removes: a diff per type with its own
-// result shape.
-type DecidedDifference
-    = NoDifference
-    | Different(First: LocatedDifference<ModelTable>, Count: Integer);
+// What IDiffable returns is layer 9's ModelDiff (Same, or the first
+// difference with the count); the catalog's DecidedDifference named that
+// shape and was removed at merge (2026-10-20) as a duplicate.
 
 // One row of a kernel table as printable cells, so "the developer dumps the
 // row" is a function. Removes: a row printed field by field by hand.
@@ -34,7 +30,7 @@ type RowDump
 // units). Removes: "first only" hiding a renumbering that moved everything.
 type DiffSummary
 {
-    First: LocatedDifference<ModelTable>;
+    First: ModelDiff;
     Count: Integer;
     ByTable: Array<Count>;
 }
