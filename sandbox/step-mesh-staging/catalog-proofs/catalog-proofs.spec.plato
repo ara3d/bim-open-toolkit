@@ -1,0 +1,220 @@
+//==
+// # Catalog: specs of the proof-carrying types (TYPE-CATALOG.md section 4)
+//
+// One spec per proof type: the invariant its value keeps and the single
+// function permitted to build it. Every constructor but DirectedAlong is a
+// Check* returning a Decided* sum (catalog-borrowed.types.plato); the
+// compiler-derived record constructor is unavailable outside it. Each
+// invariant is the predicate the constructor tested, and the laws named
+// beside it check that the constructor succeeds exactly when it holds.
+// Not compiled; the runner skips this file.
+//
+// Sections, in order:
+//  - The kernel
+//  - Parameter space
+//  - Discretizations
+//  - Meshes and reports
+//  - Geometry
+
+//==
+// # The kernel
+
+spec InRangeModel
+{
+    invariant self.Model.IsEveryIndexInRange;   // Law_Catalog_InRangeModelIffIndicesInRange
+    constructor CheckInRangeModel;
+}
+
+spec PreparedModel
+{
+    invariant self.Model.Tolerances.IsWellFormed;   // Law_Catalog_PreparedModelIffTolerancesWellFormed
+    invariant self.Model.Faces.Count == self.Decoded.Model.Faces.Count;   // Law_Catalog_PreparedModelRecordsPreparation
+    constructor CheckPreparedModel;
+}
+
+spec ResolvableModel
+{
+    invariant self.Model.Tolerances.Length.IsResolvable(self.Model.CoordinateExtent);   // Law_Catalog_ResolvableModelIffResolvable
+    invariant self.Extent.Value == self.Model.CoordinateExtent;   // exact by construction; Law_Catalog_ResolvableModelRecordsExtent
+    constructor CheckResolvableModel;
+}
+
+spec ChainedLoop
+{
+    // m is the model the constructor was given.
+    invariant m.IsLoopIntact(self.Loop) && m.ChainsEndToStart(m.Loops[self.Loop]);   // Law_Catalog_ChainedLoopIffChains
+    constructor CheckChainedLoop;
+}
+
+spec ClosedShell
+{
+    invariant m.IsEveryIndexInRange && m.IsShellInRange(self.Shell);
+    invariant forall (e: BrepEdgeIndex) in m.EdgesOfShell(self.Shell) :
+        m.CountsAsEdge(e) ? m.UseCount(self.Shell, e).IsZeroOrTwo : true;   // Law_Catalog_ClosedShellIffEdgesUsedTwice
+    invariant self.Counts == m.ReducedCounts(self.Shell);   // Law_Catalog_ClosedShellRecordsCounts
+    constructor CheckClosedShell;
+}
+
+spec OrientedShell
+{
+    invariant CheckClosedShell(m, self.Shell).IsDecided;
+    invariant m.HasCoherentOrientation(self.Shell);   // Law_Catalog_OrientedShellIffCoherent
+    invariant self.Counts == m.ReducedCounts(self.Shell);   // Law_Catalog_OrientedShellKeepsCounts
+    constructor CheckOrientedShell;
+}
+
+spec ConnectedShell
+{
+    invariant m.ShellComponentCount(self.Shell) <= 1;   // Law_Catalog_ConnectedShellIffOneComponent
+    constructor CheckConnectedShell;
+}
+
+//==
+// # Parameter space
+
+spec SimpleUvLoop
+{
+    invariant self.Loop.AsRegion.IsSimpleRegion(self.Tolerance);   // Law_Catalog_SimpleUvLoopIffSimpleRegion
+    constructor CheckSimpleUvLoop;
+}
+
+spec ClosedUvLoop
+{
+    invariant m.IsFaceIntact(self.Face);
+    invariant m.UWinding(self.Face, self.Loop) == 0 && m.VWinding(self.Face, self.Loop) == 0;   // Law_Catalog_ClosedUvLoopIffUnwound
+    constructor CheckClosedUvLoop;
+}
+
+spec OrientedUvRegion
+{
+    invariant m.IsFaceIntact(self.Face);
+    invariant m.UvRegionWindingPositive(self.Face, self.Region);
+    invariant forall (h: Integer) in self.Region.Holes.Count.Range :
+        Law_UvHoleWindingNegative(m, self.Face, self.Region, h);   // Law_Catalog_OrientedUvRegionIffWindings
+    constructor CheckOrientedUvRegion;
+}
+
+//==
+// # Discretizations
+
+spec CompleteDiscretization
+{
+    invariant self.ByEdge.Count == m.Edges.Count;
+    invariant forall (i: Integer) in self.ByEdge.Count.Range : self.ByEdge[i].IsDiscretized;   // Law_Catalog_CompleteDiscretizationIffAllDiscretized
+    constructor CheckCompleteDiscretization;
+}
+
+spec PartialDiscretization
+{
+    invariant self.ByEdge.Count == m.Edges.Count;
+    invariant self.Failed.Count > 0;   // Law_Catalog_PartialDiscretizationIffSomeFailed
+    invariant forall (e: BrepEdgeIndex) in self.Failed : self.ByEdge[e.Value].IsDiscretized.Not;   // Law_Catalog_PartialDiscretizationListsFailures
+    constructor CheckPartialDiscretization;
+}
+
+spec CanonicalDiscretization
+{
+    invariant m.IsEvaluable(self.Discretization);
+    invariant m.IsCanonical(self.Discretization);   // Law_Catalog_CanonicalDiscretizationIffCanonical
+    constructor CheckCanonicalDiscretization;
+}
+
+spec DirectedDiscretization
+{
+    // c is the canonical polyline the constructor was given.
+    invariant self.Sense == Sense.Same
+        ? self.Discretization.SameDiscretization(c.Discretization)
+        : self.Discretization.SameDiscretization(c.Discretization.Reversed);   // Law_Catalog_DirectedAlongReversesOnlyWhenOpposite
+    constructor DirectedAlong;
+}
+
+spec MeetsCriteriaProof
+{
+    // d is the polyline the constructor was given.
+    invariant self.Edge == d.Edge && m.MeetsCriteria(d, self.Criteria);   // Law_Catalog_MeetsCriteriaProofIffMeetsCriteria
+    invariant self.Worst.Value == m.WorstSagitta(d);   // Law_Catalog_MeetsCriteriaProofRecordsWorst
+    constructor CheckMeetsCriteriaProof;
+}
+
+//==
+// # Meshes and reports
+
+spec MeshedFaceSet
+{
+    invariant IsMeshedFaceSet(self.Faces, self.Outcomes);   // Law_Catalog_MeshedFaceSetIffFacesMeshed, Law_Catalog_MeshedFaceSetPairsFaces
+    constructor CheckMeshedFaceSet;
+}
+
+spec FullyMeshedModel
+{
+    invariant IsMeshedFaceSet(self.Model.FacesInOrder, self.Outcomes);   // Law_Catalog_FullyMeshedModelIffEveryFaceMeshed
+    constructor CheckFullyMeshedModel;
+}
+
+spec WatertightMesh
+{
+    invariant self.Mesh.IsWellFormed && self.Mesh.IsClosed;   // Law_Catalog_WatertightMeshIffClosed
+    constructor CheckWatertightMesh;
+}
+
+spec CheckedMesh
+{
+    invariant self.Mesh.IsWellFormed;
+    invariant self.Mesh.IsManifold && self.Mesh.IsConsistentlyOriented;
+    invariant m.IsClosedWhereShellIs(self.Mesh);   // Law_Catalog_CheckedMeshIffMeshChecks
+    invariant self.Counts.Count == self.Mesh.ComponentsOf.ComponentCount;   // Law_Catalog_CheckedMeshRecordsCounts
+    constructor CheckCheckedMesh;
+}
+
+spec QualityGradedMesh
+{
+    invariant self.Mesh.IsWellFormed && self.Mesh.IsMeasurable;   // Law_Catalog_QualityGradedMeshIffMeasurable
+    invariant self.Triangles.Count == self.Mesh.Triangles.Count && self.Quads.Count == self.Mesh.Quads.Count;
+    invariant forall (k: Integer) in self.Triangles.Count.Range :
+        self.Triangles[k] == self.Mesh.TriangleQualityAt(ElementIndex(k));   // Law_Catalog_QualityGradedMeshRecordsQualities
+    constructor CheckQualityGradedMesh;
+}
+
+spec PlanarQuad
+{
+    // fm, q, c are the constructor's face mesh, quad, and criteria.
+    invariant self.Deviation.Value == fm.QuadWarp(q) && fm.QuadWarp(q) <= c.SurfaceChordal;   // Law_Catalog_PlanarQuadIffWarpWithinChordal
+    constructor CheckPlanarQuad;
+}
+
+spec ConvexQuad
+{
+    invariant fm.IsConvexQuad(q);   // Law_Catalog_ConvexQuadIffConvex
+    constructor CheckConvexQuad;
+}
+
+spec ValidatedReport
+{
+    invariant self.Report.IsClean;   // Law_Catalog_ValidatedReportIffClean
+    invariant self.Report.Checks.Count == m.ValidateBrep(self.Level).Checks.Count;   // Law_Catalog_ValidatedReportRecordsLevel
+    constructor CheckValidatedReport;
+}
+
+//==
+// # Geometry
+
+spec WellFormedBSpline
+{
+    invariant self.Data.IsWellShaped;   // Law_Catalog_WellFormedBSplineIffWellShaped
+    constructor CheckWellFormedBSpline;
+}
+
+spec ClampedBSpline
+{
+    invariant self.Data.IsWellShaped && self.Data.Basis.HasClampedEnds;   // Law_Catalog_ClampedBSplineIffFixtureClamped
+    invariant self.Data.BSplinePoint(self.Data.Basis.SplineDomain.Start) == self.Data.ControlPoints.First;   // within rounding; Law_Catalog_ClampedBSplineInterpolatesEnds
+    constructor CheckClampedBSpline;
+}
+
+spec OrthonormalFrame
+{
+    // tol is the constructor's AngleTolerance.
+    invariant self.Frame.OrthonormalityDeviation <= tol.Value.Radians;   // Law_Catalog_OrthonormalFrameIffWithinTolerance
+    invariant self.Handedness == (self.Frame.Handedness > 0.0 ? Sign.Positive : Sign.Negative);   // Law_Catalog_OrthonormalFrameRecordsHandedness
+    constructor CheckOrthonormalFrame;
+}

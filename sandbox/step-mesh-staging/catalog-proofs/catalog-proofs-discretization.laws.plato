@@ -1,0 +1,184 @@
+//==
+// # Catalog: laws of the discretization proofs
+//
+// Two laws per proof type, as in catalog-proofs-kernel.laws.plato, over
+// the witnesses' tables under layer 8's witness criteria (DiscretizeAll
+// with no floors), and over the same tables with one entry knocked out.
+//
+// Sections, in order:
+//  - Tables
+//  - Whole tables
+//  - One edge
+
+library CatalogProofsDiscretizationLaws
+{
+    //==
+    // # Tables
+
+    // The edge criteria the pipeline's witness laws mesh with.
+    CatalogEdgeCriteria(_: DiscretizationCriteria): DiscretizationCriteria
+        => MeshingOptions.WitnessOptions.Face.Discretization;
+
+    // The table DiscretizeAll makes for model m under the witness criteria.
+    CatalogTableOf(m: BrepModel): EdgeDiscretizations
+        => m.DiscretizeAll(DiscretizationCriteria.CatalogEdgeCriteria, SegmentFloors.NoFloors);
+
+    // The table with entry j, when there is one, replaced by Undiscretized.
+    CatalogWithUndiscretized(d: EdgeDiscretizations, j: Integer): EdgeDiscretizations
+        => EdgeDiscretizations(d.ByEdge.Count.MapRange(i => i == j ? Undiscretized(d.ByEdge[i].Edge) : d.ByEdge[i]));
+
+    // Witness k's table, with entry j knocked out when j is a valid entry.
+    CatalogTableAt(k: Integer, j: Integer): EdgeDiscretizations
+        => CatalogProofModelAt(k).CatalogTableOf.CatalogWithUndiscretized(j);
+
+    // Witness k's entry for edge e, reversed when r is odd. Precondition:
+    // e names an edge of witness k.
+    CatalogEntryAt(k: Integer, e: Integer, r: Integer): EdgeDiscretization
+        => ((r % 2) + 2) % 2 == 0
+            ? CatalogProofModelAt(k).CatalogTableOf.ByEdge[e]
+            : CatalogProofModelAt(k).CatalogTableOf.ByEdge[e].Reversed;
+
+    //==
+    // # Whole tables
+
+    // CheckCompleteDiscretization succeeds exactly when the table has one
+    // entry per edge and every entry is discretized.
+    Law_Catalog_CompleteDiscretizationIffAllDiscretized(k: Integer, j: Integer): Boolean
+        => CheckCompleteDiscretization(CatalogProofModelAt(k), CatalogTableAt(k, j)).IsDecided
+            == (CatalogTableAt(k, j).ByEdge.Count == CatalogProofModelAt(k).Edges.Count
+                ? CatalogTableAt(k, j).ByEdge.All(x => x.IsDiscretized)
+                : false);
+
+    // A CompleteDiscretization keeps every entry of the table.
+    Law_Catalog_CompleteDiscretizationKeepsTable(k: Integer, j: Integer): Boolean
+        => CatalogCompleteKeeps(CatalogTableAt(k, j), CheckCompleteDiscretization(CatalogProofModelAt(k), CatalogTableAt(k, j)));
+
+    // The claim of Law_Catalog_CompleteDiscretizationKeepsTable for the
+    // result c of checking table d.
+    CatalogCompleteKeeps(d: EdgeDiscretizations, c: DecidedCompleteDiscretization): Boolean
+        => match (c) {
+            Decided(p) => p.ByEdge.Count == d.ByEdge.Count
+                ? p.ByEdge.Count.Range.All(i => p.ByEdge[i].SameDiscretization(d.ByEdge[i]))
+                : false;
+            Undecided(r) => true;
+        };
+
+    // CheckPartialDiscretization succeeds exactly when the table has one
+    // entry per edge and some entry is undiscretized.
+    Law_Catalog_PartialDiscretizationIffSomeFailed(k: Integer, j: Integer): Boolean
+        => CheckPartialDiscretization(CatalogProofModelAt(k), CatalogTableAt(k, j)).IsDecided
+            == (CatalogTableAt(k, j).ByEdge.Count == CatalogProofModelAt(k).Edges.Count
+                ? CatalogTableAt(k, j).ByEdge.Any(x => x.IsDiscretized.Not)
+                : false);
+
+    // A PartialDiscretization lists exactly the undiscretized entries.
+    Law_Catalog_PartialDiscretizationListsFailures(k: Integer, j: Integer): Boolean
+        => CatalogPartialLists(CatalogTableAt(k, j), CheckPartialDiscretization(CatalogProofModelAt(k), CatalogTableAt(k, j)));
+
+    // The claim of Law_Catalog_PartialDiscretizationListsFailures for the
+    // result c of checking table d.
+    CatalogPartialLists(d: EdgeDiscretizations, c: DecidedPartialDiscretization): Boolean
+        => match (c) {
+            Decided(p) => p.Failed.Count == d.ByEdge.Reduce(0, (n, x) => x.IsDiscretized ? n : n + 1)
+                && p.Failed.All(e => d.ByEdge.IsValidIndex(e.Value) ? d.ByEdge[e.Value].IsDiscretized.Not : false);
+            Undecided(r) => true;
+        };
+
+    //==
+    // # One edge
+
+    // CheckCanonicalDiscretization succeeds exactly when the polyline is
+    // evaluable, runs along the curve with strictly increasing parameters,
+    // starts and ends at the domain's ends, and has the vertex points at
+    // its ends.
+    Law_Catalog_CanonicalDiscretizationIffCanonical(k: Integer, e: Integer, r: Integer): Boolean
+    {
+        var m = CatalogProofModelAt(k);
+        return m.IsEdgeInRange(BrepEdgeIndex(e))
+            ? CheckCanonicalDiscretization(m, CatalogEntryAt(k, e, r)).IsDecided
+                == (m.IsEvaluable(CatalogEntryAt(k, e, r))
+                    ? (CatalogEntryAt(k, e, r).RunsAlongCurve
+                        && CatalogEntryAt(k, e, r).Parameters.Count.Range.All(i => CatalogEntryAt(k, e, r).ParametersStrictlyIncreasing(i))
+                        && m.LowestParameterIsDomainStart(CatalogEntryAt(k, e, r))
+                        && m.HighestParameterIsDomainEnd(CatalogEntryAt(k, e, r))
+                        && Law_DomainStartPointIsVertex(m, CatalogEntryAt(k, e, r))
+                        && Law_DomainEndPointIsVertex(m, CatalogEntryAt(k, e, r)))
+                    : false)
+            : true;
+    }
+
+    // DiscretizeAll's entry for an edge it discretized is canonical, and its
+    // reversal is not: the two directions are told apart by type.
+    Law_Catalog_DiscretizedEntryIsCanonicalReversedIsNot(k: Integer, e: Integer, r: Integer): Boolean
+    {
+        var m = CatalogProofModelAt(k);
+        return m.IsEdgeInRange(BrepEdgeIndex(e))
+            ? (m.IsEvaluable(CatalogEntryAt(k, e, r))
+                ? CheckCanonicalDiscretization(m, CatalogEntryAt(k, e, r)).IsDecided == (((r % 2) + 2) % 2 == 0)
+                : true)
+            : true;
+    }
+
+    // A CanonicalDiscretization keeps its polyline and points at its edge.
+    Law_Catalog_CanonicalDiscretizationKeepsPolyline(k: Integer, e: Integer): Boolean
+        => CatalogProofModelAt(k).IsEdgeInRange(BrepEdgeIndex(e))
+            ? CatalogCanonicalKeeps(CatalogEntryAt(k, e, 0), CheckCanonicalDiscretization(CatalogProofModelAt(k), CatalogEntryAt(k, e, 0)))
+            : true;
+
+    // The claim of Law_Catalog_CanonicalDiscretizationKeepsPolyline for the
+    // result c of checking polyline d.
+    CatalogCanonicalKeeps(d: EdgeDiscretization, c: DecidedCanonicalDiscretization): Boolean
+        => match (c) {
+            Decided(p) => p.Discretization.SameDiscretization(d) && p.Where == Provenance.KernelEdge(d.Edge);
+            Undecided(r) => true;
+        };
+
+    // A canonical polyline directed Same is itself, and directed Opposite
+    // is its reversal, and the direction is recorded.
+    Law_Catalog_DirectedAlongReversesOnlyWhenOpposite(k: Integer, e: Integer, s: Integer): Boolean
+        => CatalogProofModelAt(k).IsEdgeInRange(BrepEdgeIndex(e))
+            ? CatalogDirectedAlong(CatalogSenseOf(s), CheckCanonicalDiscretization(CatalogProofModelAt(k), CatalogEntryAt(k, e, 0)))
+            : true;
+
+    // Same for an even s, Opposite for an odd one.
+    CatalogSenseOf(s: Integer): Sense
+        => ((s % 2) + 2) % 2 == 0 ? Sense.Same : Sense.Opposite;
+
+    // The claim of Law_Catalog_DirectedAlongReversesOnlyWhenOpposite for
+    // the result c of a canonical check.
+    CatalogDirectedAlong(s: Sense, c: DecidedCanonicalDiscretization): Boolean
+        => match (c) {
+            Decided(p) => DirectedAlong(p, s).Sense == s
+                && DirectedAlong(p, s).Discretization.SameDiscretization(
+                    s == Sense.Same ? p.Discretization : p.Discretization.Reversed);
+            Undecided(r) => true;
+        };
+
+    // CheckMeetsCriteriaProof succeeds exactly when the polyline meets the
+    // criteria.
+    Law_Catalog_MeetsCriteriaProofIffMeetsCriteria(k: Integer, e: Integer): Boolean
+        => CatalogProofModelAt(k).IsEdgeInRange(BrepEdgeIndex(e))
+            ? CheckMeetsCriteriaProof(CatalogProofModelAt(k), CatalogEntryAt(k, e, 0), DiscretizationCriteria.CatalogEdgeCriteria).IsDecided
+                == CatalogProofModelAt(k).MeetsCriteria(CatalogEntryAt(k, e, 0), DiscretizationCriteria.CatalogEdgeCriteria)
+            : true;
+
+    // A MeetsCriteriaProof names its edge and criteria, and its Worst is
+    // the largest Sagitta of the polyline's segments.
+    Law_Catalog_MeetsCriteriaProofRecordsWorst(k: Integer, e: Integer): Boolean
+        => CatalogProofModelAt(k).IsEdgeInRange(BrepEdgeIndex(e))
+            ? CatalogMeetsRecords(CatalogProofModelAt(k), CatalogEntryAt(k, e, 0),
+                CheckMeetsCriteriaProof(CatalogProofModelAt(k), CatalogEntryAt(k, e, 0), DiscretizationCriteria.CatalogEdgeCriteria))
+            : true;
+
+    // The claim of Law_Catalog_MeetsCriteriaProofRecordsWorst for the
+    // result c of checking polyline d of model m. Exact by construction:
+    // the same Sagitta calls on the same parameters.
+    CatalogMeetsRecords(m: BrepModel, d: EdgeDiscretization, c: DecidedMeetsCriteriaProof): Boolean
+        => match (c) {
+            Decided(p) => p.Edge == d.Edge
+                && p.Criteria == DiscretizationCriteria.CatalogEdgeCriteria
+                && p.Worst.Value == d.SegmentCount.Range.Reduce(0.0, (w, i) => w.Max(m.Sagitta(d.Edge, d.Parameters[i], d.Parameters[i + 1])))
+                && p.Where == Provenance.KernelEdge(d.Edge);
+            Undecided(r) => true;
+        };
+}
