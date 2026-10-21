@@ -1,0 +1,110 @@
+//==
+// # Edge domain once per edge: laws (complexity sweep, chunk E2)
+//
+// The count witness for DiscretizeAllRangedCounted (edge domains computed, as Projections), the
+// exact law that it computes one per evaluable edge, and the laws that every ranged form
+// returns what its reference returns, bit for bit: the table, the refinement, the findings and
+// MeetsCriteria. Layer 8: the laws use layer 7's witnesses, layer 8's CatalogEdgeCriteria and
+// chunk G1's and E1's helpers (SameTables, GuardsUnindexedBox, TablesDigonBox, SameFindings,
+// Coarsened).
+//
+// Sections, in order:
+//  - Witness
+//  - Agreement
+
+library EdgeRangedLaws
+{
+    //==
+    // # Witness
+
+    // The model with n edges: the unit solid cylinder (3 edges: two circles, whose domains need
+    // the inverse evaluation, and the seam line) up to 3, the unit box (12 lines) above.
+    RangedModelOfSize(_: BrepModel, n: Integer): BrepModel
+        => n <= 3 ? BrepModel.Witness_Cylinder : BrepModel.Witness_UnitBox;
+
+    // The edge domains DiscretizeAllRangedCounted computes on the model with n edges, as
+    // Projections; its other work is chunk E1's witness's.
+    DiscretizeAllRangedWork(n: Integer): WorkBudget
+        => Projections(BrepModel.RangedModelOfSize(n).DiscretizeAllRangedCounted(DiscretizationCriteria.CatalogEdgeCriteria, SegmentFloors.NoFloors).Work.Projections);
+
+    // DiscretizeAll computes each edge's domain (EdgeDomain, two ClosestParameter inversions) at
+    // most once per edge, counted as Projections, at 3 and 12 edges. The reference computed it
+    // about 12 + 3I + n times per edge (I images, n parameters).
+    Witness_DiscretizeAllRangedWork(_: WorkClaim): WorkClaim
+        => WorkClaim("DiscretizeAll: edge domains computed per edge", Projections(1), [3, 12], n => DiscretizeAllRangedWork(n));
+
+    // Exactly one edge domain per edge on the cylinder and the box, whose edges are all
+    // evaluable, and none on the box whose indices are out of range; the witness sizes are the
+    // models' edge counts.
+    Law_Perf_EdgeDomainOncePerEdge(_: Integer): Boolean
+        => [3, 12].All(n => BrepModel.RangedModelOfSize(n).Edges.Count == n
+                && DiscretizeAllRangedWork(n).Projections == n)
+            && BrepModel.GuardsUnindexedBox.DiscretizeAllRangedCounted(DiscretizationCriteria.CatalogEdgeCriteria, SegmentFloors.NoFloors).Work.Projections == 0;
+
+    //==
+    // # Agreement
+
+    // On m under the catalog criteria: DiscretizeAllRanged is DiscretizeAll, its counted work
+    // past the Projections is DiscretizeAllTabledCounted's, and RefineRanged is Refine for one
+    // request that tightens the chordal bound and one that raises the count, where Refine's
+    // precondition IsRefinable holds.
+    RangedAgreesOn(m: BrepModel): Boolean
+    {
+        var c = DiscretizationCriteria.CatalogEdgeCriteria;
+        var d = m.DiscretizeAll(c, SegmentFloors.NoFloors);
+        var ranged = m.DiscretizeAllRangedCounted(c, SegmentFloors.NoFloors);
+        var tabled = m.DiscretizeAllTabledCounted(c, SegmentFloors.NoFloors).Work;
+        var requests = [
+            EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.TooCoarseInParameterSpace, c.Chordal * 0.25, 0),
+            EdgeRefinementRequest(BrepEdgeIndex(2), RefinementReason.QuadCountMismatch, c.Chordal, 5)];
+        return SameTables(ranged.Value, d)
+            && ranged.Work.Insertions == tabled.Insertions
+            && ranged.Work.Flips == tabled.Flips
+            && (m.IsRefinable(d, requests, c) ? SameTables(m.RefineRanged(d, requests, c), m.Refine(d, requests, c)) : true);
+    }
+
+    // RangedAgreesOn holds on the box, the block with a through hole, the cylinder and the
+    // off-surface cube.
+    Law_Perf_DiscretizeAllRangedAgrees(_: Integer): Boolean
+        => [BrepModel.Witness_UnitBox, BrepModel.Witness_BlockWithThroughHole, BrepModel.Witness_Cylinder,
+            BrepModel.TermOffSurfaceCube(1)].All(m => RangedAgreesOn(m));
+
+    // RangedAgreesOn holds on the odd models: the box with an index out of range (every entry
+    // Undiscretized), the box with a two-edge loop, and the sphere, whose seam ends at the poles.
+    Law_Perf_DiscretizeAllRangedAgreesOnOddModels(_: Integer): Boolean
+        => [BrepModel.GuardsUnindexedBox, BrepModel.TablesDigonBox, BrepModel.Witness_Sphere].All(m => RangedAgreesOn(m));
+
+    // RangedAgreesOn holds on the B-spline patch solid, whose spline edges take the seeded,
+    // bisected path (EdgeSeeds, SampledTurning) and a searched inversion in EdgeDomain.
+    Law_Perf_DiscretizeAllRangedAgreesOnSplines(_: Integer): Boolean
+        => RangedAgreesOn(BrepModel.Witness_BSplinePatchSolid);
+
+    // The findings of the cube k (0 to 3) under the findings criteria: DiscretizationFindingsRanged
+    // is DiscretizationFindings, field for field; the cube 0 has findings.
+    Law_Perf_DiscretizationFindingsRangedAgrees(k: Integer): Boolean
+    {
+        if (k < 0 || k > 3)
+        {
+            return true;
+        }
+        var m = BrepModel.TermOffSurfaceCube(k);
+        var c = DiscretizationCriteria.TermFindingCriteria;
+        var ds = m.DiscretizeAll(c, SegmentFloors.NoFloors);
+        var ranged = m.DiscretizationFindingsRanged(ds, c);
+        return SameFindings(ranged, m.DiscretizationFindings(ds, c)) && (k == 0 ? ranged.Count > 0 : true);
+    }
+
+    // MeetsCriteriaRanged is MeetsCriteria for every entry of the catalog table of the box, the
+    // cylinder and the off-surface cube, and for each entry coarsened to one segment, which fails
+    // a criterion on the cylinder's circles; and the coarsened circles do fail.
+    Law_Perf_MeetsCriteriaRangedAgrees(_: Integer): Boolean
+    {
+        var c = DiscretizationCriteria.CatalogEdgeCriteria;
+        var cylinder = BrepModel.Witness_Cylinder;
+        return [BrepModel.Witness_UnitBox, cylinder, BrepModel.TermOffSurfaceCube(1)].All(m =>
+                m.DiscretizeAll(c, SegmentFloors.NoFloors).ByEdge.All(d =>
+                    m.MeetsCriteriaRanged(d, c) == m.MeetsCriteria(d, c)
+                    && m.MeetsCriteriaRanged(Coarsened(m, d), c) == m.MeetsCriteria(Coarsened(m, d), c)))
+            && cylinder.MeetsCriteriaRanged(Coarsened(cylinder, cylinder.DiscretizeAll(c, SegmentFloors.NoFloors).ByEdge[0]), c).Not;
+    }
+}
