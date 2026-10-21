@@ -107,9 +107,67 @@ Numbered from 19, recorded as they come up during the evaluation.
 
 Each run pastes its section here: method, numbers, verdict (yes, no, maybe), effort estimate, payoff estimate, what would change the verdict.
 
-### Step 0: baseline on the regenerated library
+### Step 0: baseline on the regenerated library (run A, 50 min of a 3 h box after a restart)
 
-(pending)
+Regeneration: header `Plato 2847ef71 and bim-open-toolkit 7678b40b`, 1,407 generated files, 13 runtime files, 128 s; `Intrinsics/Integer.cs` now materialises `MapRange`; one function the compiler could not translate is a throwing stub, `BisectionCached.SagittaByHullBoundGiven`, not reached by any file below. The regenerated folders are left uncommitted in `deps/bim-open-data` (the C# wiring track, TKT-313, owns that commit). A first attempt failed because a layer 08 law called layer 09's `ReasonName`; fixed by moving it to layer 04 (toolkit `7678b40b`) and making `regen-step-brep.ps1` print the compiler log under PowerShell 5.1 (bim-open-data `69df899`).
+
+Harness: `deps/bim-open-data/tools/step-corpus-harness/` (bim-open-data `0f5090f`, `109f78c`; not in `BimOpenData.sln`, which another session has open). Modes `one`, `all`, `time`; flags `--path hoisted|host|meshfile`, `--parallel`, `--warmup`. `hoisted` builds the sweep's once-per-model tables then meshes each row; `host` is `StepPlatoMesher.MeshFile` as committed. Host, hoisted, parallel and `MeshFile` give identical meshes (vertex count, triangle count, position hash) on every file. Two problems met: the generated `Any` and `All` collide with LINQ's in a consumer with implicit usings (CS0121; the harness names `Enumerable.Any`), and small files are JIT-dominated cold (EMMY-W1 1.5 to 2.7 s cold, 0.58 s warm), so baselines use `--warmup`.
+
+**Baseline, hoisted path, sequential, warm, 600 s limit; every file finished, no edge or face threw, every face meshed:**
+
+| File | Edges | Faces | Total ms | Edges ms | Faces ms | Parse, decode, prepare ms | October |
+|---|---|---|---|---|---|---|---|
+| SHO/EMMY-W1 | 873 | 399 | 577 | 29 | 454 | 84 | 10,578 |
+| SHO/NINA-B400 | 1,864 | 913 | 690 | 38 | 529 | 129 | 7,432 |
+| ODIN-W160 | 7,767 | 3,552 | 2,751 | 197 | 1,939 | 570 | not finished at 120 s; 358,318 at 600 s |
+| LILY-W131 | 2,090 | 960 | 1,344 | 156 | 1,035 | 118 | not finished |
+
+Per edge (median / p95, ms): line 0.016 to 0.024 / 0.030 to 0.054; circle 0.034 to 0.047 / 0.05 to 0.18; ellipse (ODIN, 4 edges) 0.12 / 0.25. **The 0.1 ms edge target is met at the p95.** Per face (median / p95, ms): plane 0.14 to 0.23 / 0.43 to 0.78; cylinder 0.9 to 6.2 / 9 to 84; sphere (ODIN) 5.6 / 6.5; torus 0.36 to 0.96 / 0.5 to 1.4; cone (ODIN, 1 face) 4.8. **The 0.4 ms analytic face target is met at the plane median, not at the p95 and not on cylinders; no face is over 1 s** (the slowest is 113 ms). The ten slowest faces per file are four-edge single-loop cylinder faces at 31 to 113 ms, then the 80-edge planes of ODIN (2068, 2109) at 76 to 80 ms, down from 86 s each in October, and LILY's 13-loop 102-edge plane at 60 ms.
+
+**Host path against hoisted (warm):** EMMY-W1 818 against 577 ms, NINA-B400 2,333 against 690, LILY-W131 3,133 against 1,344, ODIN-W160 30,499 against 2,751 (11x; the host's median edge is 2.9 ms against 0.017). `CanDiscretize` is 69 to 73% of the host's edge time and `IsDiscretizedFace` 11 to 62% of its face time. This is TKT-402 (idea 22): `DiscretizeAllRanged`'s tables, `DiscretizeEdgeRangedCounted` per edge, `IsDiscretizedFaceIn` per face; `MeshPath.Hoisted` in the harness shows the calls.
+
+**Stage split (share of face time):**
+
+| File | Region | Chart | Simple | Triangulate | Refine | Lift | Advisory |
+|---|---|---|---|---|---|---|---|
+| EMMY-W1 | 5% | 2% | 2% | 4% | 81% | 2% | 3% |
+| NINA-B400 | 8% | 4% | 5% | 7% | 68% | 3% | 4% |
+| ODIN-W160 | 7% | 4% | 3% | 6% | 73% | 3% | 5% |
+| LILY-W131 | 4% | 2% | 2% | 4% | 82% | 2% | 3% |
+
+Every face takes the triangulate-and-refine branch: the host's criteria set `PreferQuads` false, so the quad-grid branch never runs. Every family's largest stage is refine, except torus (region).
+
+**Face families over the four files (5,824 faces, 3,952 ms, 21 families; the top five hold 82% of face time):**
+
+| Surface | Loops | All lines | Edges | Faces | ms | Share | Median ms |
+|---|---|---|---|---|---|---|---|
+| cylinder | 1 | no | 4 | 239 | 1,821 | 46.1% | 3.9 |
+| plane | 1 | yes | 4 | 4,771 | 854 | 21.6% | 0.153 |
+| cylinder | 1 | no | 9 to 16 | 36 | 247 | 6.3% | 6.4 |
+| cylinder | 2 | no | 2 | 42 | 179 | 4.5% | 3.3 |
+| plane | 1 | no | 65 and over | 2 | 156 | 4.0% | 80.2 |
+| plane | 1 | no | 5 to 8 | 140 | 131 | 3.3% | 0.71 |
+| plane | 1 | no | 1 | 70 | 95 | 2.4% | 1.2 |
+| plane | 1 | no | 4 | 230 | 89 | 2.2% | 0.16 |
+| plane | 2 | no | 9 to 16 | 9 | 74 | 1.9% | 3.4 |
+| plane | 13 | no | 65 and over | 1 | 60 | 1.5% | 60.3 |
+
+The four-line rectangle (idea 2) averages 0.179 ms: refine 0.055, region 0.033, triangulate 0.021, chart 0.020; 4,729 of 4,771 come out as exactly two triangles. The four-edge cylinder face (idea 3) averages 7.6 ms, 7.24 of it refine.
+
+**Edge families (414 ms over 11,700 edges; edges are about 10% of meshing time):** line on plane+plane 11,112 edges, 85.1% of edge time, median 0.018 ms, 1 segment; circle on cylinder+plane 744, 9.7%, 0.042 ms, 7 segments; line on cylinder+plane 694, 3.8%, 0.019 ms; circle on cylinder+torus 24, 0.8%, 0.170 ms; six other kinds, 20 edges, 0.5%. Idea 1's four kind pairs hold about 99% of edge time.
+
+**Parallel against sequential (warm, 22 logical processors, identical meshes):**
+
+| File | Seq total ms | Par total ms | Seq faces ms | Par faces ms | Face speed-up |
+|---|---|---|---|---|---|
+| EMMY-W1 | 577 | 347 | 454 | 218 | 2.1x |
+| NINA-B400 | 690 | 416 | 529 | 242 | 2.2x |
+| ODIN-W160 | 2,751 | 1,197 | 1,939 | 362 | 5.4x |
+| LILY-W131 | 1,344 | 492 | 1,035 | 306 | 3.4x |
+
+Whole-file speed-up stays under 4x because parse, decode and prepare run in series (84 to 570 ms) and on the small files one 50 to 110 ms cylinder face is a floor.
+
+Outputs: `scratchpad/baseline/<file>.{seq,par,host}.{edges,faces}.csv`, the summaries, `seq.md`, and `scratchpad/analyse.py`.
 
 ### Run F: idea 14, geometry repeats (spike, 2 h box, throwaway program over the decoder)
 
