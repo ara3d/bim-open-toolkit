@@ -58,7 +58,7 @@ library BrepTopologyProofs
     // claim of Law_EveryEdgeUsedTwiceInClosedShell without its
     // DeclaredClosed guard. Precondition: IsCheckableShell.
     UsesEveryEdgeTwice(m: BrepModel, s: ShellIndex): Boolean
-        => m.EdgesOfShell(s).All(e => m.CountsAsEdge(e) ? m.UseCount(s, e).IsZeroOrTwo : true);
+        => m.UsesEveryEdgeTwiceIndexed(m.EdgeUseTable(s));
 
     // Shell s as a ClosedShell, with its reduced counts, when it uses every
     // counted edge twice; Fails when an edge is free or overused,

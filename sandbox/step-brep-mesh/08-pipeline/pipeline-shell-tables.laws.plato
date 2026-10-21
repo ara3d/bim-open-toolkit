@@ -32,7 +32,7 @@ library ShellTablesLaws
         => WorkClaim("EdgeUseTable: coedge visits per coedge of the shell", Insertions(3), [24, 48], n => EdgeUseTableWork(n));
 
     // The witness's sizes are the coedge counts of its models' shell 0.
-    Law_Perf_ShellTablesWitnessSizes(_: Integer): Boolean
+    Law_ShellTablesWitnessSizes(_: Integer): Boolean
         => [24, 48].All(n => BrepModel.ShellTablesModelOfSize(n).CoedgeSitesOfShell(ShellIndex(0)).Count == n);
 
     //==
@@ -77,13 +77,13 @@ library ShellTablesLaws
     }
 
     // The tables agree with their references on every shell of every witness model. Exact.
-    Law_Perf_ShellTablesAgree(m: BrepModel): Boolean
+    Law_ShellTablesAgree(m: BrepModel): Boolean
         => m.Shells.Count.Range.All(s => m.ShellTablesAgreeOn(ShellIndex(s)));
 
     // The tables agree on E1's digon box and stray box, and the cases they skip or merge occur:
     // the stray box's edge 4, cited twice by face 1 and once by its neighbour, has three uses, an
     // edge out of range has no uses.
-    Law_Perf_ShellTablesAgreeOnOddModels(_: Integer): Boolean
+    Law_ShellTablesAgreeOnOddModels(_: Integer): Boolean
     {
         var digon = BrepModel.TablesDigonBox;
         var stray = BrepModel.TablesStrayBox;
@@ -96,7 +96,7 @@ library ShellTablesLaws
 
     // A vertex loop marks its vertex: on the sphere, whose poles are vertex loops, the vertices
     // by mark are the reference's and include both poles.
-    Law_Perf_VertexLoopsAreMarked(_: Integer): Boolean
+    Law_VertexLoopsAreMarked(_: Integer): Boolean
     {
         var m = BrepModel.Witness_Sphere;
         var s = ShellIndex(0);

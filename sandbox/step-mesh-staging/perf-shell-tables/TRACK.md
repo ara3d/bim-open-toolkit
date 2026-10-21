@@ -1,7 +1,7 @@
 # perf-shell-tables: the uses of every edge and the corners at every vertex built once per shell
 
 Ticket: TKT-372
-Status: ready: V4
+Status: merged: V4 (2026-10-21, into 02-topology/topology-shell-tables.{types,library}.plato and 08-pipeline/pipeline-shell-tables.laws.plato)
 
 ## Files
 

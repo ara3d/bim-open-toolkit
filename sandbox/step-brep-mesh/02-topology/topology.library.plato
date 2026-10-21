@@ -334,8 +334,7 @@ library BrepTopology
     // The distinct edges the shell's coedges cite, in increasing index order.
     // Poly loops' implicit edges are not indexed and not listed.
     EdgesOfShell(m: BrepModel, s: ShellIndex): Array<BrepEdgeIndex>
-        => m.Edges.Count.MapRange(i => BrepEdgeIndex(i)).FlatMap(e =>
-            m.UseCount(s, e) > 0 ? [e] : 0.MapRange(k => BrepEdgeIndex(k)));
+        => m.EdgeUseTable(s).EdgesOfShellByUse;
 
     // Whether a coedge's edge has v as either end. False when the edge is out of
     // range.
@@ -362,8 +361,7 @@ library BrepTopology
     // The distinct vertices the shell's bounds reference, in increasing index
     // order. Poly loop points are not indexed and not listed.
     VerticesOfShell(m: BrepModel, s: ShellIndex): Array<BrepVertexIndex>
-        => m.Vertices.Count.MapRange(i => BrepVertexIndex(i)).FlatMap(v =>
-            m.ShellTouchesVertex(s, v) ? [v] : 0.MapRange(k => BrepVertexIndex(k)));
+        => m.VerticesOfShellByMark(s, m.EdgeUseTable(s));
 
     // Whether some bound of a face of the shell is a poly loop.
     ShellHasPolyLoop(m: BrepModel, s: ShellIndex): Boolean
@@ -938,21 +936,7 @@ library BrepTopology
     // within the length tolerance, with their implicit edges counted once per
     // unordered pair of distinct classes.
     ReducedCounts(m: BrepModel, s: ShellIndex): ShellCounts
-    {
-        var shellEdges = m.EdgesOfShell(s);
-        var degenerate = shellEdges.FlatMap(e => m.IsDegenerateEdge(e) ? [e] : shellEdges.Take(0));
-        var roots = ClassRoots(m.Vertices.Count,
-            degenerate.Map(e => m.Edges[e].Start.Value), degenerate.Map(e => m.Edges[e].End.Value));
-        var vertexClasses = m.VerticesOfShell(s).Map(v => roots[v.Value]);
-        var kept = m.ShellFaces(s).Reduce(0, (n, f) => n + m.KeptReducedBoundCount(f, roots));
-        var poly = m.ShellPolyBounds(s);
-        var pointRoots = m.ShellPolyPointRoots(s);
-        return ShellCounts(
-            vertexClasses.DistinctCount + pointRoots.ClassCount,
-            shellEdges.Count - degenerate.Count + m.ImplicitEdgeKeys(poly, pointRoots).DistinctCount,
-            m.ShellFaces(s).Count,
-            kept);
-    }
+        => m.ReducedCountsIndexed(s, m.EdgeUseTable(s));
 
     // The number of distinct values of an integer array.
     DistinctCount(xs: Array<Integer>): Integer
@@ -1086,7 +1070,7 @@ library BrepTopology
     // pole edge of a sphere written [seam+, degN, seam-, degS], is contracted
     // by the reduction and is not free.
     FreeEdgeCount(m: BrepModel, s: ShellIndex): Integer
-        => m.EdgesOfShell(s).Reduce(0, (n, e) => (m.UseCount(s, e) == 1 ? m.CountsAsEdge(e) : false) ? n + 1 : n);
+        => m.FreeEdgeCountIndexed(m.EdgeUseTable(s));
 
     // Whether edge e is a cell of the reduced complex, so that the use-count
     // laws apply to it: true unless it is degenerate, which the reduction
@@ -1116,17 +1100,7 @@ library BrepTopology
     // edges contracted as in ReducedCounts), form disjoint cycles: the number
     // of classes of free edges is the number of boundary cycles.
     IndexedBoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer
-    {
-        var shellEdges = m.EdgesOfShell(s);
-        var degenerate = shellEdges.FlatMap(e => m.IsDegenerateEdge(e) ? [e] : shellEdges.Take(0));
-        var roots = ClassRoots(m.Vertices.Count,
-            degenerate.Map(e => m.Edges[e].Start.Value), degenerate.Map(e => m.Edges[e].End.Value));
-        var free = shellEdges.FlatMap(e => (m.UseCount(s, e) == 1 ? m.CountsAsEdge(e) : false) ? [e] : shellEdges.Take(0));
-        var n = free.Count;
-        var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
-            (i < j ? m.EdgesShareClass(free[i], free[j], roots) : false) ? [i * n + j] : n.Range.Take(0)));
-        return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n)).ClassCount;
-    }
+        => m.IndexedBoundaryCycleCountIndexed(m.EdgeUseTable(s));
 
     // The boundary cycles of shell s's implicit free edges: the components
     // of the graph on the poly-loop point classes whose links are the free
@@ -1352,7 +1326,7 @@ library BrepTopology
     // Whether every edge of shell s with two uses has them running opposite.
     // Precondition: m.IsEveryIndexInRange.
     HasCoherentOrientation(m: BrepModel, s: ShellIndex): Boolean
-        => m.EdgesOfShell(s).All(e => m.UsesRunOpposite(m.CoedgeSitesOfEdge(s, e)));
+        => m.HasCoherentOrientationIndexed(m.EdgeUseTable(s));
 
     // The faces of shell s whose reversal makes its orientation coherent: the
     // faces the parity search colours "flip". Empty when the shell is already
