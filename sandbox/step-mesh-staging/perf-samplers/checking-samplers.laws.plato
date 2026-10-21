@@ -1,0 +1,279 @@
+//==
+// # Arena samplers with well-formedness checked once: laws (complexity sweep, chunk V1)
+//
+// The count witness for CheckCurveSamplesCounted (read by layer 00's
+// Law_WorkIsWithinSlope), the exact count, and the agreement of every staged
+// form with the library form it replaces, Check by Check (layer 0's
+// Identical: law, hold, worst, bound and provenance), on the ArenaCase
+// witnesses: curved arenas, a pcurve, the catalog arena of every case, and an
+// arena that is not well formed.
+//
+// Sections, in order:
+//  - Arena cases
+//  - Count witness
+//  - Guards agree
+//  - Samplers agree
+//  - Checks agree
+
+library BrepCheckingSamplersLaws
+{
+    //==
+    // # Arena cases
+
+    // Model m with its geometry arena replaced by g: the same topology,
+    // tolerances and unit.
+    WithGeometry(m: BrepModel, g: GeometrySet): BrepModel
+        => BrepModel(g, m.Vertices, m.Edges, m.Loops, m.Faces, m.Shells, m.Bodies, m.Tolerances, m.Unit);
+
+    // The unit box's arena with one more curve, trimmed from curve 99, which
+    // does not exist: IsWellFormed fails, every index the topology cites
+    // stays in range.
+    NotWellFormedArena(_: GeometrySet): GeometrySet
+    {
+        var g = BrepModel.Witness_UnitBox.Geometry;
+        return GeometrySet(
+            g.Curves.Concatenate([BrepCurve.Trimmed(CurveIndex(99), NumberInterval(0.0, 1.0), true)]),
+            g.Curves2D, g.Pcurves, g.Surfaces, g.Closures);
+    }
+
+    Witness_UnitBoxArena(_: ArenaCase): ArenaCase
+        => ArenaCase("UnitBox", BrepModel.Witness_UnitBox);
+
+    Witness_CylinderArena(_: ArenaCase): ArenaCase
+        => ArenaCase("Cylinder", BrepModel.Witness_Cylinder);
+
+    Witness_SphereArena(_: ArenaCase): ArenaCase
+        => ArenaCase("Sphere", BrepModel.Witness_Sphere);
+
+    Witness_TorusArena(_: ArenaCase): ArenaCase
+        => ArenaCase("Torus", BrepModel.Witness_Torus);
+
+    Witness_ConeArena(_: ArenaCase): ArenaCase
+        => ArenaCase("Cone", BrepModel.Witness_Cone);
+
+    Witness_BSplinePatchSolidArena(_: ArenaCase): ArenaCase
+        => ArenaCase("BSplinePatchSolid", BrepModel.Witness_BSplinePatchSolid);
+
+    // A surface curve with a pcurve whose parameter runs at twice the curve's.
+    Witness_PcurveBoxArena(_: ArenaCase): ArenaCase
+        => ArenaCase("UnitBoxWithBottomPcurve2", BrepModel.Witness_UnitBoxWithBottomPcurve(2.0));
+
+    // Every curve and surface case of layer 1, on the unit box's topology.
+    Witness_CatalogArenaCase(_: ArenaCase): ArenaCase
+        => ArenaCase("CatalogArena", BrepModel.Witness_UnitBox.WithGeometry(GeometrySet.Witness_CatalogArena));
+
+    // The arena that is not well formed: every guard false.
+    Witness_NotWellFormedArena(_: ArenaCase): ArenaCase
+        => ArenaCase("NotWellFormed", BrepModel.Witness_UnitBox.WithGeometry(GeometrySet.NotWellFormedArena));
+
+    //==
+    // # Count witness
+
+    // The box family by curve count: the unit box (12 curves) up to 12, the
+    // hollow box (24 curves) above.
+    SamplerBoxWithCurves(n: Integer): BrepModel
+        => n <= 12 ? BrepModel.Witness_UnitBox : BrepModel.Witness_HollowBox;
+
+    // The IsWellFormed runs of the curve sampler over the box with n curves,
+    // sampling the derivative law at the check plan.
+    CheckCurveSamplesWork(n: Integer): WorkBudget
+    {
+        var m = n.SamplerBoxWithCurves;
+        return m.CheckCurveSamplesCounted(SamplePlan.CheckPlan, "Law_DerivativeMatchesCentralDifference",
+            (c, t) => Law_DerivativeMatchesCentralDifference(m.Geometry, c, t)).Work;
+    }
+
+    // The curve sampler runs IsWellFormed (counted as Flips) at most once per
+    // curve, at 12 and 24 curves; it in fact runs it once per check
+    // (Law_Perf_CheckCurveSamplesRunsIsWellFormedOnce), where the library's
+    // sampler ran it once per sample: 60 runs at 12 curves, 120 at 24. The
+    // law the sampler folds may still run it itself (FINDINGS in TRACK.md).
+    Witness_CheckCurveSamplesWork(_: WorkClaim): WorkClaim
+        => WorkClaim("CheckCurveSamples: IsWellFormed runs per curve", Flips(1), [12, 24], n => CheckCurveSamplesWork(n));
+
+    // The sampler runs IsWellFormed exactly once on every arena case.
+    Law_Perf_CheckCurveSamplesRunsIsWellFormedOnce(a: ArenaCase): Boolean
+        => a.Model.CheckCurveSamplesCounted(SamplePlan.CheckPlan, "Law_Synthetic", (c, t) => t < 0.5).Work.Flips == 1;
+
+    //==
+    // # Guards agree
+
+    // CanEvaluateGiven with IsWellFormed's answer is CanEvaluate, for every
+    // index kind, in range or not.
+    Law_Perf_CanEvaluateGivenAgrees(a: ArenaCase, i: Integer): Boolean
+    {
+        var g = a.Model.Geometry;
+        var ok = g.IsWellFormed;
+        return g.CanEvaluateGiven(ok, CurveIndex(i)) == g.CanEvaluate(CurveIndex(i))
+            && g.CanEvaluateGiven(ok, Curve2DIndex(i)) == g.CanEvaluate(Curve2DIndex(i))
+            && g.CanEvaluateGiven(ok, PcurveIndex(i)) == g.CanEvaluate(PcurveIndex(i))
+            && g.CanEvaluateGiven(ok, SurfaceIndex(i)) == g.CanEvaluate(SurfaceIndex(i));
+    }
+
+    //==
+    // # Samplers agree
+    //
+    // Each sampler on a synthetic law that fails at some samples (so the
+    // fold's choice of provenance is compared) and on a library law.
+
+    Law_Perf_CheckCurveSamplesAgrees(a: ArenaCase): Boolean
+    {
+        var m = a.Model;
+        var p = SamplePlan.CheckPlan;
+        return m.CheckCurveSamplesHoisted(p, "Law_Synthetic", (c, t) => t < 0.5 || c.Value % 3 == 0)
+                .Identical(m.CheckCurveSamples(p, "Law_Synthetic", (c, t) => t < 0.5 || c.Value % 3 == 0))
+            && m.CheckCurveSamplesHoisted(p, "Law_ScaledCurvePointIsScaled", (c, t) => Law_ScaledCurvePointIsScaled(m.Geometry, c, t, 2.0))
+                .Identical(m.Check_ScaledCurvePointIsScaled(p));
+    }
+
+    Law_Perf_CheckCurve2DSamplesAgrees(a: ArenaCase): Boolean
+    {
+        var m = a.Model;
+        var p = SamplePlan.CheckPlan;
+        return m.CheckCurve2DSamplesHoisted(p, "Law_Synthetic", (c, t) => t < 0.5)
+                .Identical(m.CheckCurve2DSamples(p, "Law_Synthetic", (c, t) => t < 0.5))
+            && m.CheckCurve2DSamplesHoisted(p, "Law_Curve2DRepeatsWithPeriod", (c, t) => Law_Curve2DRepeatsWithPeriod(m.Geometry, c, t))
+                .Identical(m.Check_Curve2DRepeatsWithPeriod(p));
+    }
+
+    Law_Perf_CheckPcurveSamplesAgrees(a: ArenaCase): Boolean
+    {
+        var m = a.Model;
+        var p = SamplePlan.CheckPlan;
+        return m.CheckPcurveSamplesHoisted(p, "Law_Synthetic", (q, t) => t < 0.5)
+                .Identical(m.CheckPcurveSamples(p, "Law_Synthetic", (q, t) => t < 0.5))
+            && m.CheckPcurveSamplesHoisted(p, "Law_ScaledPcurvePointIsScaled", (q, t) => Law_ScaledPcurvePointIsScaled(m.Geometry, q, t, 2.0))
+                .Identical(m.Check_ScaledPcurvePointIsScaled(p));
+    }
+
+    Law_Perf_CheckCurveSupportSamplesAgrees(a: ArenaCase): Boolean
+    {
+        var m = a.Model;
+        var p = SamplePlan.CheckPlan;
+        return m.CheckCurveSupportSamplesHoisted(p, "Law_Synthetic", (c, t, k) => k == 0 || t < 0.5)
+                .Identical(m.CheckCurveSupportSamples(p, "Law_Synthetic", (c, t, k) => k == 0 || t < 0.5))
+            && m.CheckCurveSupportSamplesHoisted(p, "Law_SurfaceCurvePcurveSameSense", (c, t, k) => Law_SurfaceCurvePcurveSameSense(m.Geometry, c, t, k))
+                .Identical(m.Check_SurfaceCurvePcurveSameSense(p));
+    }
+
+    Law_Perf_CheckSurfaceSamplesAgrees(a: ArenaCase): Boolean
+    {
+        var m = a.Model;
+        var p = SamplePlan.CheckPlan;
+        return m.CheckSurfaceSamplesHoisted(p, "Law_Synthetic", (s, uv) => uv.U < 0.5 || s.Value % 3 == 0)
+                .Identical(m.CheckSurfaceSamples(p, "Law_Synthetic", (s, uv) => uv.U < 0.5 || s.Value % 3 == 0))
+            && m.CheckSurfaceSamplesHoisted(p, "Law_NormalIsUnit", (s, uv) => Law_NormalIsUnit(m.Geometry, s, uv))
+                .Identical(m.Check_NormalIsUnit(p));
+    }
+
+    Law_Perf_CheckSurfaceParameterSamplesAgrees(a: ArenaCase): Boolean
+    {
+        var m = a.Model;
+        var p = SamplePlan.CheckPlan;
+        return m.CheckSurfaceParameterSamplesHoisted(p, "Law_Synthetic", (s, uv, which) => uv.V < 0.5)
+                .Identical(m.CheckSurfaceParameterSamples(p, "Law_Synthetic", (s, uv, which) => uv.V < 0.5))
+            && m.CheckSurfaceParameterSamplesHoisted(p, "Law_NormalOrthogonalToPartial", (s, uv, which) => Law_NormalOrthogonalToPartial(m.Geometry, s, uv, which))
+                .Identical(m.Check_NormalOrthogonalToPartial(p));
+    }
+
+    //==
+    // # Checks agree
+
+    Law_Perf_TrimmedRangeInsideBasisAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_TrimmedRangeInsideBasisHoisted.Identical(a.Model.Check_TrimmedRangeInsideBasis);
+
+    Law_Perf_RectangularTrimmedInsideBasisAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_RectangularTrimmedInsideBasisHoisted.Identical(a.Model.Check_RectangularTrimmedInsideBasis);
+
+    Law_Perf_CompositeSegmentsChainAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_CompositeSegmentsChainHoisted.Identical(a.Model.Check_CompositeSegmentsChain);
+
+    Law_Perf_SurfaceCurveLiesOnSupportAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_SurfaceCurveLiesOnSupportHoisted(SamplePlan.CheckPlan).Identical(a.Model.Check_SurfaceCurveLiesOnSupport(SamplePlan.CheckPlan));
+
+    Law_Perf_SurfaceCurvePcurveLiesOnCurveAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_SurfaceCurvePcurveLiesOnCurveHoisted(SamplePlan.CheckPlan).Identical(a.Model.Check_SurfaceCurvePcurveLiesOnCurve(SamplePlan.CheckPlan));
+
+    Law_Perf_SurfaceCurveLiesOnPcurveAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_SurfaceCurveLiesOnPcurveHoisted(SamplePlan.CheckPlan).Identical(a.Model.Check_SurfaceCurveLiesOnPcurve(SamplePlan.CheckPlan));
+
+    Law_Perf_PcurveWithinSurfaceDomainAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_PcurveWithinSurfaceDomainHoisted(SamplePlan.CheckPlan).Identical(a.Model.Check_PcurveWithinSurfaceDomain(SamplePlan.CheckPlan));
+
+    Law_Perf_CollapsedLineIsOnePointAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_CollapsedLineIsOnePointHoisted(SamplePlan.CheckPlan).Identical(a.Model.Check_CollapsedLineIsOnePoint(SamplePlan.CheckPlan));
+
+    Law_Perf_TangentialPartialVanishesOnDegenerateSideAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_TangentialPartialVanishesOnDegenerateSideHoisted(SamplePlan.CheckPlan)
+            .Identical(a.Model.Check_TangentialPartialVanishesOnDegenerateSide(SamplePlan.CheckPlan));
+
+    Law_Perf_DerivativeMatchesCentralDifferenceAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_DerivativeMatchesCentralDifferenceHoisted(SamplePlan.CheckPlan)
+            .Identical(a.Model.Check_DerivativeMatchesCentralDifference(SamplePlan.CheckPlan));
+
+    Law_Perf_SecondDerivativeMatchesCentralDifferenceAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_SecondDerivativeMatchesCentralDifferenceHoisted(SamplePlan.CheckPlan)
+            .Identical(a.Model.Check_SecondDerivativeMatchesCentralDifference(SamplePlan.CheckPlan));
+
+    Law_Perf_Curve2DDerivativeMatchesCentralDifferenceAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_Curve2DDerivativeMatchesCentralDifferenceHoisted(SamplePlan.CheckPlan)
+            .Identical(a.Model.Check_Curve2DDerivativeMatchesCentralDifference(SamplePlan.CheckPlan));
+
+    Law_Perf_Curve2DSecondDerivativeMatchesCentralDifferenceAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_Curve2DSecondDerivativeMatchesCentralDifferenceHoisted(SamplePlan.CheckPlan)
+            .Identical(a.Model.Check_Curve2DSecondDerivativeMatchesCentralDifference(SamplePlan.CheckPlan));
+
+    Law_Perf_PcurveDerivativeMatchesCentralDifferenceAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_PcurveDerivativeMatchesCentralDifferenceHoisted(SamplePlan.CheckPlan)
+            .Identical(a.Model.Check_PcurveDerivativeMatchesCentralDifference(SamplePlan.CheckPlan));
+
+    Law_Perf_PcurveSecondDerivativeMatchesCentralDifferenceAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_PcurveSecondDerivativeMatchesCentralDifferenceHoisted(SamplePlan.CheckPlan)
+            .Identical(a.Model.Check_PcurveSecondDerivativeMatchesCentralDifference(SamplePlan.CheckPlan));
+
+    Law_Perf_ClosestParameterNoWorseThanSampleAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_ClosestParameterNoWorseThanSampleHoisted(SamplePlan.CheckPlan)
+            .Identical(a.Model.Check_ClosestParameterNoWorseThanSample(SamplePlan.CheckPlan));
+
+    Law_Perf_ClosestParameterIsStationaryAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_ClosestParameterIsStationaryHoisted(SamplePlan.CheckPlan)
+            .Identical(a.Model.Check_ClosestParameterIsStationary(SamplePlan.CheckPlan));
+
+    // The plan of the three projection agreement laws: three samples per
+    // parameter (both ends and the middle), not the check plan's five. Each
+    // sample runs Project or ProjectNear once in the staged check and once in
+    // the library's, and at five samples the B-spline solid alone costs about
+    // 7 s compiled (k^4 = 625 pairs per surface in ProjectNoWorseThanSample),
+    // over the 2 s budget for every arena case together. The staged checks
+    // index the same tables the same way at every plan.
+    ProjectionAgreementPlan(_: SamplePlan): SamplePlan
+        => SamplePlan(3);
+
+    // True when arena g holds a B-spline surface: HoldsForBSpline with a rule
+    // that never holds is false exactly on that case.
+    HasBSplineSurface(g: GeometrySet): Boolean
+        => g.Surfaces.Any(surface => !surface.HoldsForBSpline(d => false));
+
+    // ProjectNoWorseThanSample's staged and library checks agree, at the
+    // projection plan.
+    ProjectNoWorseThanSampleAgrees(m: BrepModel): Boolean
+        => m.Check_ProjectNoWorseThanSampleHoisted(SamplePlan.ProjectionAgreementPlan)
+            .Identical(m.Check_ProjectNoWorseThanSample(SamplePlan.ProjectionAgreementPlan));
+
+    // The family split in two for the 2 s budget: Project on a B-spline
+    // surface costs most, so the arenas without one are one law and the
+    // arenas with one (the B-spline solid, the catalog) the other.
+    Law_Perf_ProjectNoWorseThanSampleAgrees(a: ArenaCase): Boolean
+        => a.Model.Geometry.HasBSplineSurface ? true : a.Model.ProjectNoWorseThanSampleAgrees;
+
+    Law_Perf_ProjectNoWorseThanSampleAgreesOnBSpline(a: ArenaCase): Boolean
+        => a.Model.Geometry.HasBSplineSurface ? a.Model.ProjectNoWorseThanSampleAgrees : true;
+
+    Law_Perf_ProjectIsStationaryAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_ProjectIsStationaryHoisted(SamplePlan.ProjectionAgreementPlan)
+            .Identical(a.Model.Check_ProjectIsStationary(SamplePlan.ProjectionAgreementPlan));
+
+    Law_Perf_ProjectNearRecoversFromNearbySeedAgrees(a: ArenaCase): Boolean
+        => a.Model.Check_ProjectNearRecoversFromNearbySeedHoisted(SamplePlan.ProjectionAgreementPlan)
+            .Identical(a.Model.Check_ProjectNearRecoversFromNearbySeed(SamplePlan.ProjectionAgreementPlan));
+}

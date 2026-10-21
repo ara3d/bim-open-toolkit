@@ -1,0 +1,15 @@
+//==
+// # Arena cases for the sampler agreement laws (complexity sweep, chunk V1)
+
+// A model whose geometry arena the agreement laws of
+// checking-samplers.laws.plato check the hoisted samplers and checks on,
+// named for the report. Its witnesses are the curved witnesses, the unit box
+// with a pcurve, the catalog arena (every curve and surface case) on the
+// unit box's topology, and an arena that is not well formed.
+// Removes: agreement laws run on every BrepModel witness, or on none of the
+// arenas that reach the sampler's other branch.
+type ArenaCase
+{
+    Name: String;
+    Model: BrepModel;
+}

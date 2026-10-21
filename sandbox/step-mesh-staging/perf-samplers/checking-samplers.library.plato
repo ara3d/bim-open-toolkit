@@ -1,0 +1,163 @@
+//==
+// # Arena samplers with well-formedness checked once (complexity sweep, chunk V1)
+//
+// BrepCheckingCommon's arena samplers ask CanEvaluate, and so the whole-arena
+// IsWellFormed, once per sample, and rebuild an entry's sample array once
+// per sample: O(samples x arena) per check. The forms here take
+// IsWellFormed's answer as ok (CanEvaluateGiven), build each entry's samples
+// once into a table, and read the table per sample: O(arena + samples) for
+// the sampler's own work. Each Check*SamplesGiven folds the same samples in
+// the same order as the library's Check*Samples, so its Check is identical.
+// CheckCurveSamplesCounted counts its IsWellFormed runs as Flips, for the
+// count witness in checking-samplers.laws.plato.
+//
+// Sections, in order:
+//  - One entry's samples
+//  - Sample tables
+//  - Samplers given ok
+//  - Samplers that check once
+
+library BrepCheckingSamplers
+{
+    //==
+    // # One entry's samples
+
+    // CurveSamples with ok standing for m.Geometry.IsWellFormed.
+    CurveSamplesGiven(m: BrepModel, ok: Boolean, c: CurveIndex, plan: SamplePlan): Array<Number>
+        => m.Geometry.CanEvaluateGiven(ok, c)
+            ? m.Geometry.Domain(c).BoundedSampleRange.Samples(plan.Count)
+            : plan.Count.MapRange(i => 0.0);
+
+    // Curve2DSamples with ok given.
+    Curve2DSamplesGiven(m: BrepModel, ok: Boolean, c: Curve2DIndex, plan: SamplePlan): Array<Number>
+        => m.Geometry.CanEvaluateGiven(ok, c)
+            ? m.Geometry.Domain(c).BoundedSampleRange.Samples(plan.Count)
+            : plan.Count.MapRange(i => 0.0);
+
+    // PcurveSamples with ok given.
+    PcurveSamplesGiven(m: BrepModel, ok: Boolean, p: PcurveIndex, plan: SamplePlan): Array<Number>
+        => m.Geometry.CanEvaluateGiven(ok, p)
+            ? m.Geometry.Domain(p).BoundedSampleRange.Samples(plan.Count)
+            : plan.Count.MapRange(i => 0.0);
+
+    // SurfaceSamples with ok given: plan.Count squared points, u fastest.
+    SurfaceSamplesGiven(m: BrepModel, ok: Boolean, s: SurfaceIndex, plan: SamplePlan): Array<UvCoordinate>
+        => m.Geometry.CanEvaluateGiven(ok, s)
+            ? m.Geometry.Domain(s).BoundedSampleDomain.Samples(plan)
+            : (plan.Count * plan.Count).MapRange(i => UvCoordinate(0.0, 0.0));
+
+    //==
+    // # Sample tables
+
+    // Every curve's samples, by curve position.
+    CurveSampleTable(m: BrepModel, ok: Boolean, plan: SamplePlan): Array<Array<Number>>
+        => m.Geometry.Curves.Count.MapRange(c => m.CurveSamplesGiven(ok, CurveIndex(c), plan));
+
+    // Every parameter-plane curve's samples.
+    Curve2DSampleTable(m: BrepModel, ok: Boolean, plan: SamplePlan): Array<Array<Number>>
+        => m.Geometry.Curves2D.Count.MapRange(c => m.Curve2DSamplesGiven(ok, Curve2DIndex(c), plan));
+
+    // Every pcurve's samples.
+    PcurveSampleTable(m: BrepModel, ok: Boolean, plan: SamplePlan): Array<Array<Number>>
+        => m.Geometry.Pcurves.Count.MapRange(p => m.PcurveSamplesGiven(ok, PcurveIndex(p), plan));
+
+    // Every surface's grid of samples.
+    SurfaceSampleTable(m: BrepModel, ok: Boolean, plan: SamplePlan): Array<Array<UvCoordinate>>
+        => m.Geometry.Surfaces.Count.MapRange(s => m.SurfaceSamplesGiven(ok, SurfaceIndex(s), plan));
+
+    //==
+    // # Samplers given ok
+
+    // CheckCurveSamples with ok standing for m.Geometry.IsWellFormed.
+    CheckCurveSamplesGiven(m: BrepModel, ok: Boolean, plan: SamplePlan, law: String, holds: Function2<CurveIndex, Number, Boolean>): Check
+    {
+        var samples = m.CurveSampleTable(ok, plan);
+        return CheckGrid(law, m.Geometry.Curves.Count, plan.Count,
+            (c, j) => holds(CurveIndex(c), samples[c][j]),
+            (c, j) => m.CurveSite(CurveIndex(c)));
+    }
+
+    // CheckCurve2DSamples with ok given.
+    CheckCurve2DSamplesGiven(m: BrepModel, ok: Boolean, plan: SamplePlan, law: String, holds: Function2<Curve2DIndex, Number, Boolean>): Check
+    {
+        var samples = m.Curve2DSampleTable(ok, plan);
+        return CheckGrid(law, m.Geometry.Curves2D.Count, plan.Count,
+            (c, j) => holds(Curve2DIndex(c), samples[c][j]),
+            (c, j) => m.Curve2DSite(Curve2DIndex(c)));
+    }
+
+    // CheckPcurveSamples with ok given.
+    CheckPcurveSamplesGiven(m: BrepModel, ok: Boolean, plan: SamplePlan, law: String, holds: Function2<PcurveIndex, Number, Boolean>): Check
+    {
+        var samples = m.PcurveSampleTable(ok, plan);
+        return CheckGrid(law, m.Geometry.Pcurves.Count, plan.Count,
+            (p, j) => holds(PcurveIndex(p), samples[p][j]),
+            (p, j) => m.PcurveSite(PcurveIndex(p)));
+    }
+
+    // CheckCurveSupportSamples with ok given.
+    CheckCurveSupportSamplesGiven(m: BrepModel, ok: Boolean, plan: SamplePlan, law: String, holds: Function3<CurveIndex, Number, Integer, Boolean>): Check
+    {
+        var samples = m.CurveSampleTable(ok, plan);
+        return CheckGrid(law, m.Geometry.Curves.Count, 2 * plan.Count,
+            (c, j) => holds(CurveIndex(c), samples[c][j % plan.Count], j / plan.Count),
+            (c, j) => m.CurveSite(CurveIndex(c)));
+    }
+
+    // CheckSurfaceSamples with ok given.
+    CheckSurfaceSamplesGiven(m: BrepModel, ok: Boolean, plan: SamplePlan, law: String, holds: Function2<SurfaceIndex, UvCoordinate, Boolean>): Check
+    {
+        var samples = m.SurfaceSampleTable(ok, plan);
+        return CheckGrid(law, m.Geometry.Surfaces.Count, plan.Count * plan.Count,
+            (s, j) => holds(SurfaceIndex(s), samples[s][j]),
+            (s, j) => m.SurfaceSite(SurfaceIndex(s)));
+    }
+
+    // CheckSurfaceParameterSamples with ok given.
+    CheckSurfaceParameterSamplesGiven(m: BrepModel, ok: Boolean, plan: SamplePlan, law: String, holds: Function3<SurfaceIndex, UvCoordinate, SurfaceParameter, Boolean>): Check
+    {
+        var samples = m.SurfaceSampleTable(ok, plan);
+        return CheckGrid(law, m.Geometry.Surfaces.Count, 2 * plan.Count * plan.Count,
+            (s, j) => holds(SurfaceIndex(s), samples[s][j % (plan.Count * plan.Count)],
+                j < plan.Count * plan.Count ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV),
+            (s, j) => m.SurfaceSite(SurfaceIndex(s)));
+    }
+
+    //==
+    // # Samplers that check once
+    //
+    // The library's Check*Samples after the merge: IsWellFormed once per
+    // check, each entry's samples once.
+
+    // CheckCurveSamples with IsWellFormed run once.
+    CheckCurveSamplesHoisted(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<CurveIndex, Number, Boolean>): Check
+        => m.CheckCurveSamplesCounted(plan, law, holds).Value;
+
+    // CheckCurveSamplesHoisted with its IsWellFormed runs counted as Flips:
+    // one, whatever the arena's size.
+    CheckCurveSamplesCounted(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<CurveIndex, Number, Boolean>): Counted<Check>
+    {
+        var ok = m.Geometry.IsWellFormed;
+        return Counted(m.CheckCurveSamplesGiven(ok, plan, law, holds), Flips(1));
+    }
+
+    // CheckCurve2DSamples with IsWellFormed run once.
+    CheckCurve2DSamplesHoisted(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<Curve2DIndex, Number, Boolean>): Check
+        => m.CheckCurve2DSamplesGiven(m.Geometry.IsWellFormed, plan, law, holds);
+
+    // CheckPcurveSamples with IsWellFormed run once.
+    CheckPcurveSamplesHoisted(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<PcurveIndex, Number, Boolean>): Check
+        => m.CheckPcurveSamplesGiven(m.Geometry.IsWellFormed, plan, law, holds);
+
+    // CheckCurveSupportSamples with IsWellFormed run once.
+    CheckCurveSupportSamplesHoisted(m: BrepModel, plan: SamplePlan, law: String, holds: Function3<CurveIndex, Number, Integer, Boolean>): Check
+        => m.CheckCurveSupportSamplesGiven(m.Geometry.IsWellFormed, plan, law, holds);
+
+    // CheckSurfaceSamples with IsWellFormed run once.
+    CheckSurfaceSamplesHoisted(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<SurfaceIndex, UvCoordinate, Boolean>): Check
+        => m.CheckSurfaceSamplesGiven(m.Geometry.IsWellFormed, plan, law, holds);
+
+    // CheckSurfaceParameterSamples with IsWellFormed run once.
+    CheckSurfaceParameterSamplesHoisted(m: BrepModel, plan: SamplePlan, law: String, holds: Function3<SurfaceIndex, UvCoordinate, SurfaceParameter, Boolean>): Check
+        => m.CheckSurfaceParameterSamplesGiven(m.Geometry.IsWellFormed, plan, law, holds);
+}

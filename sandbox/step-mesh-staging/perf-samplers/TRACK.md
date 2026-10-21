@@ -1,0 +1,46 @@
+# perf-samplers: IsWellFormed once per check, each arena entry's samples once
+
+Ticket: TKT-369
+Status: ready: V1
+
+## Done
+- V1, (this commit), about 0.9 h against 2 h expected: `CanEvaluateGiven(g, ok, x)` for curve, 2D curve, pcurve and surface indices (geometry-guards.library.plato, layer 01); `CurveSamplesGiven`, `Curve2DSamplesGiven`, `PcurveSamplesGiven`, `SurfaceSamplesGiven`, the four `*SampleTable`s, the six `Check*SamplesGiven`, `CheckCurveSamplesCounted` and six `Check*SamplesHoisted` (checking-samplers.library.plato, layer 07); 20 `Check_*Hoisted` checks with the helpers `GuardedSamplesVacuous`, `OffCurvePointGiven`, `OffSurfacePointGiven`, `AlongSamplesGiven`, `AlongSampleTable`, `DegenerateSideRow`, `SideSamplesOf` (checking-geometry-hoisted.library.plato, layer 07). Type added: `ArenaCase` (a named model for the agreement laws), so the laws run on nine chosen arenas (curved witnesses, the unit box with a pcurve, the catalog arena of every case, an arena that is not well formed) and not on every BrepModel witness. Laws: `BrepCheckingSamplersLaws` 29 laws plus `Law_WorkIsWithinSlope` over `Witness_CheckCurveSamplesWork`: 29 pass and 1 obligation on both backends (the obligation is the library's, see Findings). Verdicts kept against verdicts-cpu64.tsv, interpreted with this folder staged: `BrepWitnessesLaws` Law_WitnessIsStructurallyClean, Law_WitnessValidatesClean, Law_BoxValidatesClean, Law_CylinderValidatesClean, Law_CylinderBandIsStructurallyClean, Law_CylinderBandValidatesClean, Law_BoxWithBottomPcurveValidatesClean; `BrepCheckingProofsLaws` (2); `BrepCheckingDefectsLaws` (9); `BrepGeometryViewsLaws` (3): 21 of 21 pass, as before (nothing is wired yet).
+
+## Merge instructions
+- 01 geometry.library.plato, "Well-formedness": add the four `CanEvaluateGiven`; then each `CanEvaluate(g, x) => g.CanEvaluateGiven(g.IsWellFormed, x)` (four one-line bodies).
+- 07 validation-checks-common.library.plato, "Geometry arena samplers": move in the `*SamplesGiven`, the `*SampleTable`s, the six `Check*SamplesGiven` and `CheckCurveSamplesCounted`; then
+  - `CurveSamples(m, c, plan) => m.CurveSamplesGiven(m.Geometry.IsWellFormed, c, plan)`, and the same for `Curve2DSamples`, `PcurveSamples`, `SurfaceSamples`
+  - `CheckCurveSamples(m, plan, law, holds) => m.CheckCurveSamplesCounted(plan, law, holds).Value`
+  - `CheckCurve2DSamples`, `CheckPcurveSamples`, `CheckCurveSupportSamples`, `CheckSurfaceSamples`, `CheckSurfaceParameterSamples` => `m.Check<same>Given(m.Geometry.IsWellFormed, plan, law, holds)`
+  - delete the six `Check*SamplesHoisted`.
+- 07 validation-checks-geometry.library.plato: give each of these checks the body of its `*Hoisted` form, then delete the `*Hoisted` forms: `Check_TrimmedRangeInsideBasis`, `Check_RectangularTrimmedInsideBasis`, `Check_CompositeSegmentsChain`, `Check_SurfaceCurveLiesOnSupport`, `Check_SurfaceCurvePcurveLiesOnCurve`, `Check_SurfaceCurveLiesOnPcurve`, `Check_PcurveWithinSurfaceDomain`, `Check_CollapsedLineIsOnePoint`, `Check_TangentialPartialVanishesOnDegenerateSide`, `Check_DerivativeMatchesCentralDifference`, `Check_SecondDerivativeMatchesCentralDifference`, `Check_Curve2DDerivativeMatchesCentralDifference`, `Check_Curve2DSecondDerivativeMatchesCentralDifference`, `Check_PcurveDerivativeMatchesCentralDifference`, `Check_PcurveSecondDerivativeMatchesCentralDifference`, `Check_ClosestParameterNoWorseThanSample`, `Check_ClosestParameterIsStationary`, `Check_ProjectNoWorseThanSample`, `Check_ProjectIsStationary`, `Check_ProjectNearRecoversFromNearbySeed`.
+- 07 validation-checks-geometry.library.plato, "Helpers by case": move in `GuardedSamplesVacuous`, `OffCurvePointGiven`, `OffSurfacePointGiven`, `AlongSamplesGiven`, `AlongSampleTable`, `DegenerateSideRow`, `SideSamplesOf`; then `OffCurvePoint(m, c, t) => m.OffCurvePointGiven(m.Geometry.IsWellFormed, c, t)` and `OffSurfacePoint(m, s, uv) => m.OffSurfacePointGiven(m.Geometry.IsWellFormed, s, uv)`. `AlongSample` and `DegenerateSideSample` have no caller left (grep found none outside this file): delete them.
+- Laws: move `ArenaCase` into validation.types.plato (or a validation-samplers.types.plato) and the laws file into 07 as validation-samplers.laws.plato. Keep the arena-case witnesses, `SamplerBoxWithCurves`, `CheckCurveSamplesWork`, `Witness_CheckCurveSamplesWork`, `Law_Perf_CheckCurveSamplesRunsIsWellFormedOnce` (rename `Law_CheckCurveSamplesRunsIsWellFormedOnce`) and `Law_Perf_CanEvaluateGivenAgrees` (rename `Law_CanEvaluateGivenAgrees`, it still compares two functions). Every other `Law_Perf_*Agrees`, with `HasBSplineSurface`, `ProjectionAgreementPlan` and `ProjectNoWorseThanSampleAgrees`, compares a function with itself after wiring: delete them.
+
+## Contract requests
+- none: every new function is an addition; the old signatures stay and delegate.
+
+## Requests to other tracks
+- none.
+
+## Findings
+- The fix is to the check's own work only. About 34 of the sampled checks fold a layer 1 law that guards itself with `g.CanEvaluate(x) ? claim : true` (Law_ClosestParameterRecoversPoint, Law_NormalIsUnit, Law_ProjectNoWorseThanSample, ...), so after the merge each still runs IsWellFormed once per sample inside the law: O(samples x arena) remains for those checks. Only the six derivative laws have a guard-free claim (`DerivativeAgrees`, `SecondDerivativeAgrees`), and their hoisted checks use it. Removing the rest needs a guard-free claim beside each layer 1 law (a layer 1 change, `Law_X(g, x, ...) => g.CanEvaluate(x) ? g.XHolds(x, ...) : true`), and the checks then call `CanEvaluateGiven(ok, x) ? g.XHolds(...) : true`. Worth a chunk of its own; the dispatch said to leave the laws.
+- `PcurveSite` (validation-checks-common.library.plato line 196) scans every edge per sample of a pcurve check; untouched here, it is candidate 15 (chunk V3).
+- `SecondDerivative(g, p: PcurveIndex, t)` has no body (01-geometry/geometry-curves.library.plato line 757). Any model with a pcurve that reaches `Check_PcurveSecondDerivativeMatchesCentralDifference` (the self-tests, ConformanceLevel.Oracle) stops at a host obligation, in the library's form as in the staged one. So `Law_Perf_PcurveSecondDerivativeMatchesCentralDifferenceAgrees` reports an obligation on the pcurve box and passes on the other eight cases. The verdicts file's `Law_PcurveSecondDerivativeMatchesCentralDifference` passes only because its generated arenas never hold a well-formed pcurve.
+- An arena that is not well formed gives `NoSampleCheck` at once only where the check's own guard covers every sample and every such sample would hold: for a fixed bound (the length tolerance) that needs `0 <= bound`, since a negative or NaN tolerance fails even a 0 measure (`GuardedSamplesVacuous`). Without that condition the shortcut would turn a failing check into a holding one on a model with a broken arena and a negative tolerance.
+- The three projection agreement laws run at a three-sample plan (`ProjectionAgreementPlan`), not the check plan's five: at five, `Law_Perf_ProjectNoWorseThanSampleAgrees` took 5.2 s compiled (625 Project pairs per surface, done twice), `Law_Perf_ProjectIsStationaryAgrees` 2.4 s and `Law_Perf_ProjectNearRecoversFromNearbySeedAgrees` 2.1 s. At three, `ProjectNoWorseThanSample` still took 1.9 s, so its family is split into arenas with and without a B-spline surface (1.43 s and 0.76 s). The staged forms index the same tables the same way at any plan; the other 17 check agreements run at the check plan.
+- Results are bit-identical: the staged forms fold the same samples in the same order with the same measures, bounds and provenances; layer 0's `Identical` compares all five fields of every Check.
+
+## Durations
+| Step | Wall time | Runs |
+|---|---|---|
+| Reading (brief, plan, ticket, layer 01 guards, layer 07 samplers and checks, reports, witnesses, LawRunner.DomainOf) | 15 min | |
+| Writing | 15 min | 4 files, one fix after the budget run |
+| Staged laws, interpreted | 2 min | 2 runs, 29 pass and 1 obligation from the first run (compile 6-10 s, laws 2-4 s) |
+| Kept laws, interpreted | 1 min | 1 run, 21 of 21 pass (compile 8 s, laws 15 s) |
+| Compiled runs | 5 min | 5 runs of about 45 s plus one per-case timing probe: `dotnet C:/Users/cdigg/.plato-cli/e37c032f/Plato.CLI.dll run stdlib/foundation stdlib/geometry stdlib/graphics C:/Users/cdigg/git/bim-open-toolkit/sandbox/step-brep-mesh C:/Users/cdigg/git/bim-open-toolkit/sandbox/step-mesh-staging/perf-samplers --recursive --exclude=brep.types.plato --exclude=brep.library.plato --exclude=brep.concepts.plato --laws --backend=csharp --profile=cpu64 --budget=2 --filter=BrepCheckingSamplersLaws,Law_WorkIsWithinSlope`: 30 laws, 29 pass, 1 obligation; slowest Law_Perf_ProjectNoWorseThanSampleAgreesOnBSpline 1.43 s over 9 cases; 19 witnesses 0.2 s; total 40.8 s |
+| Waiting | 0 min | |
+
+## Lessons
+- A compiled law's time is measured while the other laws run beside it: a run with an interpreted job in the background read 2.94 s for a law that reads 1.94 s alone. Run the budget check with nothing else on the machine.
+- The cost of an agreement law is the library's cost, not the fix's: a check that projects k^4 point pairs per surface needs a smaller plan or a split family before it fits 2 s, whatever the staged form does.
