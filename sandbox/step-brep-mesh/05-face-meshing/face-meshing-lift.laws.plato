@@ -115,7 +115,7 @@ library FaceMeshingLiftIndexedLaws
 
     // True when two arrays of positions are identical.
     SamePositions(a: Array<Point3D>, b: Array<Point3D>): Boolean
-        => a.Count == b.Count && a.Count.Range.All(i => a[i].X == b[i].X && a[i].Y == b[i].Y && a[i].Z == b[i].Z);
+        => a.Count == b.Count ? a.Count.Range.All(i => a[i].X == b[i].X && a[i].Y == b[i].Y && a[i].Z == b[i].Z) : false;
 
     // True when two arrays of normals are identical.
     SameNormals(a: Array<Direction3D>, b: Array<Direction3D>): Boolean
