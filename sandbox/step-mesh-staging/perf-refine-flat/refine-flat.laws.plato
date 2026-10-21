@@ -1,0 +1,139 @@
+//==
+// # Refinement without quadratic empties: laws (TKT-363, chunk F4)
+//
+// The staged functions of triangulation-fast-flat.library.plato and face-meshing-flat.library.plato
+// against the library's originals on layer 5's triangulation samples (TriSampleModel,
+// EveryTriangulableFace) and on WitnessAt's models, and the count witness of the angle test.
+// Each agreement law binds the value it builds once in a block body.
+//
+// Sections, in order:
+//  - The count witness
+//  - Agreement
+//  - Equality
+
+library RefineFlatLaws
+{
+    //==
+    // # The count witness
+
+    // A strip of n triangles (n rounded up to even, at least 2) over parameters of the unit box's
+    // face 0, a plane: k = n / 2 columns between the rows v = 0 and v = 1, each column split
+    // into two triangles, counter-clockwise. Columns narrower than their height make every
+    // triangle below 30 degrees once k > 1, so the angle test keeps them all: its worst case.
+    PlaneStrip(n: Integer): UvTriangulation
+    {
+        var k = ((n + 1) / 2).Max(1);
+        var pts = (2 * (k + 1)).MapRange(i => i <= k
+            ? UvCoordinate(i.ToNumber / k.ToNumber, 0.0)
+            : UvCoordinate((i - k - 1).ToNumber / k.ToNumber, 1.0));
+        var tris = (2 * k).MapRange(j => j % 2 == 0
+            ? TriangleFace(VertexIndex(j / 2), VertexIndex(j / 2 + 1), VertexIndex(k + 1 + j / 2))
+            : TriangleFace(VertexIndex(j / 2 + 1), VertexIndex(k + 2 + j / 2), VertexIndex(k + 1 + j / 2)));
+        return UvTriangulation(pts, pts.Map(x => UvPointSource.Interior), tris,
+            [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
+    }
+
+    // The work of the angle test on the n-triangle plane strip with no triangle marked.
+    BelowAngleWork(n: Integer): WorkBudget
+        => BrepModel.Witness_UnitBox.BelowAngleCounted(BrepFaceIndex(0), PlaneStrip(n), [false].Take(0), [false].Take(0)).Work;
+
+    // The angle test lifts each triangle at most once (three surface evaluations, counted as
+    // Evaluations) and adds at most one index per triangle (Insertions), at 32 and 128 triangles.
+    // The library's BelowAngle allocated a T-element range per triangle, T^2 Insertions.
+    Witness_BelowAngleWork(_: WorkClaim): WorkClaim
+        => WorkClaim("BelowAngle: lifts and indices per triangle", Insertions(1).Add(Evaluations(3)), [32, 128], n => BelowAngleWork(n));
+
+    // The counted angle test lifts exactly the triangles no mark skips: all of them with no
+    // marks, none when every one is known good, half when every other one is; and it adds one
+    // index per triangle it keeps.
+    Law_Perf_BelowAngleCountsItsLifts(n: Integer): Boolean
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var f = BrepFaceIndex(0);
+        var t = PlaneStrip(2 * (((n % 16) + 16) % 16) + 2);
+        var count = t.Triangles.Count;
+        var plain = m.BelowAngleCounted(f, t, [false].Take(0), [false].Take(0));
+        var allGood = m.BelowAngleCounted(f, t, [false].Take(0), t.Triangles.Map(x => true));
+        var evenGood = m.BelowAngleCounted(f, t, [false].Take(0), count.MapRange(k => k % 2 == 0));
+        return plain.Work.Evaluations == 3 * count && plain.Work.Insertions == plain.Value.Count
+            && allGood.Work.Evaluations == 0 && allGood.Value.Count == 0
+            && evenGood.Work.Evaluations == 3 * (count / 2)
+            && evenGood.Value.All(k => k % 2 == 1);
+    }
+
+    //==
+    // # Agreement
+
+    // BelowAngleFlat and BelowAngleKnown with no marks give BelowAngle's list on the plane strip
+    // and on every face's constrained Delaunay triangulation of sample k.
+    Law_Perf_BelowAngleFlatAgrees(k: Integer): Boolean
+        => SameIntegers(BrepModel.Witness_UnitBox.BelowAngleFlat(BrepFaceIndex(0), PlaneStrip(8), [false].Take(0)),
+                BrepModel.Witness_UnitBox.BelowAngle(BrepFaceIndex(0), PlaneStrip(8), [false].Take(0)))
+            && EveryTriangulableFace(k, (m, f, r, chart) => m.BelowAngleFlatAgreesOn(f, r.TriangulateRegionCdt(chart)));
+
+    BelowAngleFlatAgreesOn(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation): Boolean
+        => SameIntegers(m.BelowAngleFlat(f, t, [false].Take(0)), m.BelowAngle(f, t, [false].Take(0)));
+
+    // SurfacePassLocalFlat gives SurfacePassLocal's triangulation from every face's constrained
+    // Delaunay triangulation of sample k, with the triangles NeedsRefinement finds.
+    Law_Perf_SurfacePassLocalFlatAgrees(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => m.SurfacePassAgreesOn(f, r, chart));
+
+    SurfacePassAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
+    {
+        var c = TriCriteria(0);
+        var t = r.TriangulateRegionCdt(chart);
+        var surface = m.NeedsRefinement(f, r, t, [false].Take(0), c);
+        return SameTriangulation(m.SurfacePassLocalFlat(f, r, chart, t, surface, c), m.SurfacePassLocal(f, r, chart, t, surface, c));
+    }
+
+    // RefineToSurfaceByInsertionKnown gives RefineToSurfaceByInsertion's triangulation, point for
+    // point and triangle for triangle, at every face of sample k.
+    Law_Perf_RefineKnownAgrees(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => m.RefineKnownAgreesOn(f, r, chart));
+
+    RefineKnownAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
+    {
+        var t = r.TriangulateRegionCdt(chart);
+        return SameTriangulation(m.RefineToSurfaceByInsertionKnown(f, r, chart, t, TriCriteria(0)), m.RefineToSurfaceByInsertion(f, r, chart, t, TriCriteria(0)));
+    }
+
+    // TriangulateRegionCdtFlat gives TriangulateRegionCdt's triangulation at every face of sample k.
+    Law_Perf_TriangulateRegionCdtFlatAgrees(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => SameTriangulation(r.TriangulateRegionCdtFlat(chart), r.TriangulateRegionCdt(chart)));
+
+    // The unwrapped loops of face f before seams and poles are added: the input of WithSeamCut
+    // and WithMissingPole.
+    UnwrappedLoopsOf(m: BrepModel, f: BrepFaceIndex): Array<UvLoop>
+        => m.MeshedBounds(f).Map(b => m.Unwrap(f, m.LoopToUv(f, b, m.TriDiscretizations)));
+
+    // WindingLoopsFlat and EnclosedPoleLineFlat (at every loop) agree with the originals at every
+    // face of WitnessAt(k), whose models include the sphere, torus and cone the poles come from.
+    Law_Perf_WindingAndPoleFlatAgree(k: Integer): Boolean
+    {
+        var m = BrepModel.WitnessAt(k);
+        return m.Faces.Count.Range.All(i => m.WindingAndPoleAgreeOn(BrepFaceIndex(i), m.UnwrappedLoopsOf(BrepFaceIndex(i))));
+    }
+
+    WindingAndPoleAgreeOn(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>): Boolean
+        => SameIntegers(m.WindingLoopsFlat(f, loops), m.WindingLoops(f, loops))
+            && loops.Count.Range.All(w => loops[w].Points.Count == 0 ? true : m.EnclosedPoleLineFlat(f, loops, w) == m.EnclosedPoleLine(f, loops, w));
+
+    //==
+    // # Equality
+
+    // Whether two integer arrays are equal element by element.
+    SameIntegers(a: Array<Integer>, b: Array<Integer>): Boolean
+        => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
+
+    // Whether two triangulations have the same points, sources, triangles and quads, in order.
+    // Conditional, not &&, which evaluates every operand and would index past a shorter array.
+    SameTriangulation(a: UvTriangulation, b: UvTriangulation): Boolean
+        => (a.Points.Count == b.Points.Count && a.Sources.Count == b.Sources.Count
+            && a.Triangles.Count == b.Triangles.Count && a.Quads.Count == b.Quads.Count)
+            ? a.Points.Count.Range.All(i => a.Points[i] == b.Points[i])
+            && a.Sources.Count.Range.All(i => a.Sources[i] == b.Sources[i])
+            && a.Triangles.Count.Range.All(i => a.Triangles[i] == b.Triangles[i])
+            && a.Quads.Count.Range.All(i => a.Quads[i] == b.Quads[i])
+            : false;
+}
