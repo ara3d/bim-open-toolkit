@@ -1,0 +1,188 @@
+//==
+// # UnwrapIndexed, CoarseSegmentRequestsByEdge, FacesTouchingByCoedges: laws (chunk F1, TKT-360)
+//
+// The staged replacements agree with the library's originals, bit for bit, on the positive
+// witness models (every face that can be regioned, every meshed bound, under the witness
+// options) and on the generated cases the originals' laws use; and UnwrapIndexed visits at most
+// two steps per loop point on a plane polygon of 32 and of 128 points, where Unwrap tried every
+// earlier step at every point. Law_WorkIsWithinSlope (layer 00) reads the claim.
+//
+// Sections, in order:
+//  - Witness models
+//  - Unwrap
+//  - Face edges
+//  - Coarse-segment requests
+//  - Faces touching
+//  - Count witness
+
+library UnwrapIndexedLaws
+{
+    //==
+    // # Witness models
+
+    // The face criteria the agreement laws use: the witness options' (layer 08).
+    PerfUnwrapCriteria(_: Integer): FaceMeshingCriteria
+        => MeshingOptions.WitnessOptions.Face;
+
+    // The positions of the positive witnesses (WitnessAt): all ten.
+    PerfUnwrapWitnesses(_: Integer): Array<Integer>
+        => BrepModel.WitnessCount.Range;
+
+    // Whether claim holds at every face of witness model k that can be regioned under the
+    // criteria, given the model, the face and the model's discretizations (bound once).
+    EveryRegionedFace(k: Integer, claim: Function4<BrepModel, BrepFaceIndex, EdgeDiscretizations, FaceMeshingCriteria, Boolean>): Boolean
+    {
+        var m = BrepModel.WitnessAt(k);
+        var c = PerfUnwrapCriteria(0);
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        return m.Faces.Count.Range.All(i => m.CanRegion(BrepFaceIndex(i), d, c) ? claim(m, BrepFaceIndex(i), d, c) : true);
+    }
+
+    //==
+    // # Unwrap
+
+    // Whether two loops are the same, bit for bit: equal sources and equal coordinates.
+    SameUvLoop(a: UvLoop, b: UvLoop): Boolean
+        => (a.Points.Count == b.Points.Count && a.Sources.Count == b.Sources.Count)
+            ? (a.Points.Count.Range.All(i => a.Points[i].U == b.Points[i].U && a.Points[i].V == b.Points[i].V)
+                && a.Sources.Count.Range.All(i => a.Sources[i] == b.Sources[i]))
+            : false;
+
+    // UnwrapIndexed gives Unwrap's loop for loop l of face f.
+    UnwrapAgreesOn(m: BrepModel, f: BrepFaceIndex, l: UvLoop): Boolean
+        => SameUvLoop(m.Unwrap(f, l), m.UnwrapIndexed(f, l));
+
+    // UnwrapIndexed gives Unwrap's loop for every meshed bound of every regioned face of every
+    // positive witness model: the loops RegionOf unwraps, seams, poles and two-seam tori among
+    // them.
+    Law_Perf_UnwrapIndexedAgrees(_: Boolean): Boolean
+        => PerfUnwrapWitnesses(0).All(k => EveryRegionedFace(k, (m, f, d, c) =>
+            m.MeshedBounds(f).All(b => m.UnwrapAgreesOn(f, m.LoopToUv(f, b, d)))));
+
+    // UnwrapIndexed gives Unwrap's loop on the generated cases of Law_UnwrapKeepsSources and its
+    // neighbours: any face of a witness model, any loop with a source per point.
+    Law_Perf_UnwrapIndexedAgreesOnLoop(m: BrepModel, f: BrepFaceIndex, l: UvLoop): Boolean
+        => (m.IsFaceIntact(f) && l.Points.Count == l.Sources.Count) ? m.UnwrapAgreesOn(f, l) : true;
+
+    // UnwrapIndexed gives Unwrap's loop on the plane polygon of the count witness at 32 points.
+    Law_Perf_UnwrapIndexedAgreesOnPolygon(_: Boolean): Boolean
+        => BrepModel.Witness_UnitBox.UnwrapAgreesOn(BrepFaceIndex(0), PlanePolygon(32));
+
+    // Some witness loop has a twin step, so the agreement laws reach the indexed twin lookup:
+    // the cylinder's side face, whose seam is used twice.
+    Law_Perf_UnwrapIndexedFindsTwins(_: Boolean): Boolean
+    {
+        var m = BrepModel.WitnessAt(1);
+        var c = PerfUnwrapCriteria(0);
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        return m.Faces.Count.Range.Any(i => m.CanRegion(BrepFaceIndex(i), d, c)
+            ? m.MeshedBounds(BrepFaceIndex(i)).Any(b => m.LoopHasTwinStep(BrepFaceIndex(i), m.LoopToUv(BrepFaceIndex(i), b, d)))
+            : false);
+    }
+
+    // Whether some step of loop l of face f has a placed twin, by the library's PlacedTwinStep.
+    LoopHasTwinStep(m: BrepModel, f: BrepFaceIndex, l: UvLoop): Boolean
+        => l.Points.Count.Range.Any(i => i == 0 ? false : m.PlacedTwinStep(f, l, i) >= 0);
+
+    //==
+    // # Face edges
+
+    // FaceEdgesOnce is FaceEdges, and SeamEdgesOnce is FaceEdges filtered by IsSeamEdgeOf, on
+    // every intact face of every positive witness model; the cylinder has a seam edge.
+    Law_Perf_FaceEdgesOnceAgrees(_: Boolean): Boolean
+        => PerfUnwrapWitnesses(0).All(k => FaceEdgesAgreeIn(BrepModel.WitnessAt(k)))
+            && BrepModel.WitnessAt(1).Faces.Count.Range.Any(i => BrepModel.WitnessAt(1).SeamEdgesOnce(BrepFaceIndex(i)).Count > 0);
+
+    // The claim of Law_Perf_FaceEdgesOnceAgrees on model m.
+    FaceEdgesAgreeIn(m: BrepModel): Boolean
+        => m.Faces.Count.Range.All(i => m.IsFaceIntact(BrepFaceIndex(i))
+            ? (SameEdges(m.FaceEdges(BrepFaceIndex(i)), m.FaceEdgesOnce(BrepFaceIndex(i)))
+                && SameEdges(m.FaceEdges(BrepFaceIndex(i)).FlatMap(e => m.IsSeamEdgeOf(BrepFaceIndex(i), e) ? [e] : BrepEdgeIndex.NoEdges),
+                    m.SeamEdgesOnce(BrepFaceIndex(i))))
+            : true);
+
+    // Whether two edge lists are equal, element by element.
+    SameEdges(a: Array<BrepEdgeIndex>, b: Array<BrepEdgeIndex>): Boolean
+        => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
+
+    //==
+    // # Coarse-segment requests
+
+    // The witness criteria with the edge chordal bound tightened to a micrometre, so curved
+    // edges' segments stray too far and ask for refinement.
+    TightCriteria(c: FaceMeshingCriteria): FaceMeshingCriteria
+        => FaceMeshingCriteria(DiscretizationCriteria(0.000001, c.Discretization.Angular, c.Discretization.MaxLength,
+            c.Discretization.MinLength, c.Discretization.MinSegments), c.SurfaceChordal, c.SurfaceAngular, c.PreferQuads);
+
+    // Whether two requests are the same, bit for bit.
+    SameRequestExactly(a: EdgeRefinementRequest, b: EdgeRefinementRequest): Boolean
+        => a.Edge == b.Edge && a.Reason == b.Reason && a.Chordal == b.Chordal && a.Segments == b.Segments;
+
+    // Whether two request lists are the same, element by element and bit for bit.
+    SameRequestsExactly(a: Array<EdgeRefinementRequest>, b: Array<EdgeRefinementRequest>): Boolean
+        => a.Count == b.Count ? a.Count.Range.All(i => SameRequestExactly(a[i], b[i])) : false;
+
+    // The claim of Law_Perf_CoarseRequestsByEdgeAgrees at face f, under criteria c and the
+    // tightened criteria.
+    CoarseRequestsAgreeAt(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+    {
+        var r = m.RegionOf(f, d, c);
+        return SameRequestsExactly(m.CoarseSegmentRequests(f, d, r, c), m.CoarseSegmentRequestsByEdge(f, d, r, c))
+            && SameRequestsExactly(m.CoarseSegmentRequests(f, d, r, TightCriteria(c)), m.CoarseSegmentRequestsByEdge(f, d, r, TightCriteria(c)));
+    }
+
+    // CoarseSegmentRequestsByEdge gives CoarseSegmentRequests' requests, in order, on every
+    // regioned face of every positive witness model, under the witness criteria and under them
+    // tightened.
+    Law_Perf_CoarseRequestsByEdgeAgrees(_: Boolean): Boolean
+        => PerfUnwrapWitnesses(0).All(k => EveryRegionedFace(k, (m, f, d, c) => m.CoarseRequestsAgreeAt(f, d, c)));
+
+    // Under the tightened criteria the cylinder's side face asks for refinement, so the
+    // agreement law compares requests that exist.
+    Law_Perf_CoarseRequestsByEdgeAsks(_: Boolean): Boolean
+    {
+        var m = BrepModel.WitnessAt(1);
+        var c = PerfUnwrapCriteria(0);
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        return m.Faces.Count.Range.Any(i => m.CanRegion(BrepFaceIndex(i), d, c)
+            ? m.CoarseSegmentRequestsByEdge(BrepFaceIndex(i), d, m.RegionOf(BrepFaceIndex(i), d, c), TightCriteria(c)).Count > 0
+            : false);
+    }
+
+    //==
+    // # Faces touching
+
+    // FacesTouchingByCoedges gives FacesTouching's marks, for witness model k, every face chosen
+    // but those whose position is a multiple of 3 when k is odd, and the edges whose position is
+    // congruent to k modulo 3 changed (with a changed list one short of the edges).
+    Law_Perf_FacesTouchingByCoedgesAgrees(k: Integer): Boolean
+    {
+        var m = BrepModel.WitnessAt(k);
+        var r = ((k % 3) + 3) % 3;
+        var chosen = m.Faces.Count.MapRange(i => (k % 2 == 0) || (i % 3 != 0));
+        var changed = (m.Edges.Count - 1).Max(0).MapRange(e => e % 3 == r);
+        var a = m.FacesTouching(chosen, changed);
+        var b = m.FacesTouchingByCoedges(chosen, changed);
+        return a.Count == b.Count && a.Count.Range.All(i => a[i] == b[i]);
+    }
+
+    //==
+    // # Count witness
+
+    // A regular polygon of n points inside the unit square, each point its own model vertex: a
+    // loop of the unit box's bottom face (a plane, no seam), as LoopToUv would give it.
+    PlanePolygon(n: Integer): UvLoop
+        => UvLoop(n.MapRange(k => UvCoordinate(0.5 + 0.4 * (Number.Tau * k.ToNumber / n.ToNumber).Cos,
+                0.5 + 0.4 * (Number.Tau * k.ToNumber / n.ToNumber).Sin)),
+            n.MapRange(k => UvPointSource.FromVertex(BrepVertexIndex(k))));
+
+    // The work of unwrapping the plane polygon of n points.
+    PlaneUnwrapWork(n: Integer): WorkBudget
+        => BrepModel.Witness_UnitBox.UnwrapCounted(BrepFaceIndex(0), PlanePolygon(n)).Work;
+
+    // UnwrapIndexed visits at most two steps per loop point (Insertions: the points, the sorted
+    // steps and the binary search probes; on a plane, the points alone), at 32 and 128 points.
+    // Unwrap tried every earlier step at every point: n (n - 1) / 2.
+    Witness_UnwrapIndexedWork(_: WorkClaim): WorkClaim
+        => WorkClaim("UnwrapIndexed: steps visited per point of a plane polygon", Insertions(2), [32, 128], n => PlaneUnwrapWork(n));
+}
