@@ -8,7 +8,7 @@
 // included, per face per case); the model-mesh laws over MeshedWitness, quantifying over layer 6's
 // three literal tetrahedra and the witness's pipeline mesh inside the body (the original meshed
 // the unit box with Oracle validation in every case k = 3 modulo 4, and once per element in the
-// quality law). At merge each Law_Perf_<X> replaces Law_<X> (TRACK.md). The quad laws are
+// quality law). At merge each Law_<X> replaces Law_<X> (TRACK.md). The quad laws are
 // unchanged: they mesh nothing.
 //
 // Sections, in order:
@@ -51,10 +51,10 @@ library StepToMeshProofsMeshWitnessLaws
 
     // CheckFullyMeshedModel succeeds exactly when there is one outcome per face, outcome i is of
     // face i, and each holds a non-empty mesh and no blocking request: on every knock-out.
-    Law_Perf_FullyMeshedModelIffEveryFaceMeshed(w: FaceOutcomesWitness): Boolean
+    Law_FullyMeshedModelIffEveryFaceMeshed(w: FaceOutcomesWitness): Boolean
         => w.OutcomeKnockOuts.All(o => w.Discretized.Model.FullyMeshedIffEveryFaceMeshed(o));
 
-    // The claim of Law_Perf_FullyMeshedModelIffEveryFaceMeshed on outcomes o of model m.
+    // The claim of Law_FullyMeshedModelIffEveryFaceMeshed on outcomes o of model m.
     FullyMeshedIffEveryFaceMeshed(m: BrepModel, o: Array<FaceMeshOutcome>): Boolean
         => CheckFullyMeshedModel(m, o).IsDecided
             == (o.Count == m.Faces.Count
@@ -65,18 +65,18 @@ library StepToMeshProofsMeshWitnessLaws
                 : false);
 
     // A FullyMeshedModel keeps every outcome, on every knock-out.
-    Law_Perf_FullyMeshedModelKeepsOutcomes(w: FaceOutcomesWitness): Boolean
+    Law_FullyMeshedModelKeepsOutcomes(w: FaceOutcomesWitness): Boolean
         => w.OutcomeKnockOuts.All(o => CatalogFullyMeshedKeeps(o, CheckFullyMeshedModel(w.Discretized.Model, o)));
 
     // CheckMeshedFaceSet over faces 0 to 2 succeeds exactly when their three outcomes are meshed,
     // on every knock-out.
-    Law_Perf_MeshedFaceSetIffFacesMeshed(w: FaceOutcomesWitness): Boolean
+    Law_MeshedFaceSetIffFacesMeshed(w: FaceOutcomesWitness): Boolean
         => w.OutcomeKnockOuts.All(o =>
             CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], o.Take(3)).IsDecided
                 == 3.Range.All(i => o[i].Mesh.IsEmptyFaceMesh.Not && o[i].HasBlockingRequest.Not));
 
     // A MeshedFaceSet pairs each face with its outcome, on every knock-out.
-    Law_Perf_MeshedFaceSetPairsFaces(w: FaceOutcomesWitness): Boolean
+    Law_MeshedFaceSetPairsFaces(w: FaceOutcomesWitness): Boolean
         => w.OutcomeKnockOuts.All(o =>
             CatalogMeshedFaceSetPairs(CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], o.Take(3))));
 
@@ -85,23 +85,23 @@ library StepToMeshProofsMeshWitnessLaws
 
     // CheckWatertightMesh succeeds exactly when the mesh is well formed and every edge has two
     // element sides, on every mesh of CatalogMeshesOf.
-    Law_Perf_WatertightMeshIffClosed(w: MeshedWitness): Boolean
+    Law_WatertightMeshIffClosed(w: MeshedWitness): Boolean
         => w.CatalogMeshesOf.All(mesh =>
             CheckWatertightMesh(mesh).IsDecided == (mesh.IsWellFormed ? mesh.IsClosed : false));
 
     // A WatertightMesh keeps its mesh, on every mesh of CatalogMeshesOf.
-    Law_Perf_WatertightMeshKeepsMesh(w: MeshedWitness): Boolean
+    Law_WatertightMeshKeepsMesh(w: MeshedWitness): Boolean
         => w.CatalogMeshesOf.All(mesh => CatalogWatertightKeeps(mesh, CheckWatertightMesh(mesh)));
 
     // CheckCheckedMesh succeeds exactly when the mesh is well formed, manifold, consistently
     // oriented, and closed on every shell of its model that uses each counted edge twice.
-    Law_Perf_CheckedMeshIffMeshChecks(w: MeshedWitness): Boolean
+    Law_CheckedMeshIffMeshChecks(w: MeshedWitness): Boolean
     {
         var meshes = w.CatalogMeshesOf;
         return 4.Range.All(i => w.CatalogMeshModelOf(i).CheckedMeshIffMeshChecks(meshes[i]));
     }
 
-    // The claim of Law_Perf_CheckedMeshIffMeshChecks on mesh of model m.
+    // The claim of Law_CheckedMeshIffMeshChecks on mesh of model m.
     CheckedMeshIffMeshChecks(m: BrepModel, mesh: ModelMesh): Boolean
         => CheckCheckedMesh(m, mesh).IsDecided
             == (mesh.IsWellFormed
@@ -114,14 +114,14 @@ library StepToMeshProofsMeshWitnessLaws
 
     // The closed tetrahedron, its reversal, and the witness's pipeline mesh are checked meshes;
     // the tetrahedron without a face is not.
-    Law_Perf_ClosedWitnessMeshesAreChecked(w: MeshedWitness): Boolean
+    Law_ClosedWitnessMeshesAreChecked(w: MeshedWitness): Boolean
     {
         var meshes = w.CatalogMeshesOf;
         return 4.Range.All(i => CheckCheckedMesh(w.CatalogMeshModelOf(i), meshes[i]).IsDecided == (i != 2));
     }
 
     // A CheckedMesh carries ComponentCountsOf of its mesh, one per component.
-    Law_Perf_CheckedMeshRecordsCounts(w: MeshedWitness): Boolean
+    Law_CheckedMeshRecordsCounts(w: MeshedWitness): Boolean
     {
         var meshes = w.CatalogMeshesOf;
         return 4.Range.All(i => CatalogCheckedMeshRecords(meshes[i], CheckCheckedMesh(w.CatalogMeshModelOf(i), meshes[i])));
@@ -129,7 +129,7 @@ library StepToMeshProofsMeshWitnessLaws
 
     // CheckQualityGradedMesh succeeds exactly when the mesh is well formed and every element's
     // corners name positions, on every mesh of CatalogMeshesOf.
-    Law_Perf_QualityGradedMeshIffMeasurable(w: MeshedWitness): Boolean
+    Law_QualityGradedMeshIffMeasurable(w: MeshedWitness): Boolean
         => w.CatalogMeshesOf.All(mesh =>
             CheckQualityGradedMesh(mesh).IsDecided
                 == (mesh.IsWellFormed
@@ -138,10 +138,10 @@ library StepToMeshProofsMeshWitnessLaws
 
     // A QualityGradedMesh holds TriangleQualityAt of each triangle and QuadQualityAt of each quad,
     // in element order, on every mesh of CatalogMeshesOf.
-    Law_Perf_QualityGradedMeshRecordsQualities(w: MeshedWitness): Boolean
+    Law_QualityGradedMeshRecordsQualities(w: MeshedWitness): Boolean
         => w.CatalogMeshesOf.All(mesh => QualityRecordsEvery(mesh, CheckQualityGradedMesh(mesh)));
 
-    // The claim of Law_Perf_QualityGradedMeshRecordsQualities for the result d of grading mesh:
+    // The claim of Law_QualityGradedMeshRecordsQualities for the result d of grading mesh:
     // CatalogQualityRecords at every triangle and quad. Exact by construction: the same metric of
     // the same corners.
     QualityRecordsEvery(mesh: ModelMesh, d: DecidedQualityGradedMesh): Boolean

@@ -43,18 +43,6 @@ library StepToMeshProofsDiscretizationLaws
     //==
     // # Whole tables
 
-    // CheckCompleteDiscretization succeeds exactly when the table has one
-    // entry per edge and every entry is discretized.
-    Law_CompleteDiscretizationIffAllDiscretized(k: Integer, j: Integer): Boolean
-        => CheckCompleteDiscretization(CatalogProofModelAt(k), CatalogTableAt(k, j)).IsDecided
-            == (CatalogTableAt(k, j).ByEdge.Count == CatalogProofModelAt(k).Edges.Count
-                ? CatalogTableAt(k, j).ByEdge.All(x => x.IsDiscretized)
-                : false);
-
-    // A CompleteDiscretization keeps every entry of the table.
-    Law_CompleteDiscretizationKeepsTable(k: Integer, j: Integer): Boolean
-        => CatalogCompleteKeeps(CatalogTableAt(k, j), CheckCompleteDiscretization(CatalogProofModelAt(k), CatalogTableAt(k, j)));
-
     // The claim of Law_CompleteDiscretizationKeepsTable for the
     // result c of checking table d.
     CatalogCompleteKeeps(d: EdgeDiscretizations, c: DecidedCompleteDiscretization): Boolean
@@ -64,18 +52,6 @@ library StepToMeshProofsDiscretizationLaws
                 : false;
             Undecided(r) => true;
         };
-
-    // CheckPartialDiscretization succeeds exactly when the table has one
-    // entry per edge and some entry is undiscretized.
-    Law_PartialDiscretizationIffSomeFailed(k: Integer, j: Integer): Boolean
-        => CheckPartialDiscretization(CatalogProofModelAt(k), CatalogTableAt(k, j)).IsDecided
-            == (CatalogTableAt(k, j).ByEdge.Count == CatalogProofModelAt(k).Edges.Count
-                ? CatalogTableAt(k, j).ByEdge.Any(x => x.IsDiscretized.Not)
-                : false);
-
-    // A PartialDiscretization lists exactly the undiscretized entries.
-    Law_PartialDiscretizationListsFailures(k: Integer, j: Integer): Boolean
-        => CatalogPartialLists(CatalogTableAt(k, j), CheckPartialDiscretization(CatalogProofModelAt(k), CatalogTableAt(k, j)));
 
     // The claim of Law_PartialDiscretizationListsFailures for the
     // result c of checking table d.
@@ -89,44 +65,6 @@ library StepToMeshProofsDiscretizationLaws
     //==
     // # One edge
 
-    // CheckCanonicalDiscretization succeeds exactly when the polyline is
-    // evaluable, runs along the curve with strictly increasing parameters,
-    // starts and ends at the domain's ends, and has the vertex points at
-    // its ends.
-    Law_CanonicalDiscretizationIffCanonical(k: Integer, e: Integer, r: Integer): Boolean
-    {
-        var m = CatalogProofModelAt(k);
-        return m.IsEdgeInRange(BrepEdgeIndex(e))
-            ? CheckCanonicalDiscretization(m, CatalogEntryAt(k, e, r)).IsDecided
-                == (m.IsEvaluable(CatalogEntryAt(k, e, r))
-                    ? (CatalogEntryAt(k, e, r).RunsAlongCurve
-                        && CatalogEntryAt(k, e, r).Parameters.Count.Range.All(i => CatalogEntryAt(k, e, r).ParametersStrictlyIncreasing(i))
-                        && m.LowestParameterIsDomainStart(CatalogEntryAt(k, e, r))
-                        && m.HighestParameterIsDomainEnd(CatalogEntryAt(k, e, r))
-                        && Law_DomainStartPointIsVertex(m, CatalogEntryAt(k, e, r))
-                        && Law_DomainEndPointIsVertex(m, CatalogEntryAt(k, e, r)))
-                    : false)
-            : true;
-    }
-
-    // DiscretizeAll's entry for an edge it discretized is canonical, and its
-    // reversal is not: the two directions are told apart by type.
-    Law_DiscretizedEntryIsCanonicalReversedIsNot(k: Integer, e: Integer, r: Integer): Boolean
-    {
-        var m = CatalogProofModelAt(k);
-        return m.IsEdgeInRange(BrepEdgeIndex(e))
-            ? (m.IsEvaluable(CatalogEntryAt(k, e, r))
-                ? CheckCanonicalDiscretization(m, CatalogEntryAt(k, e, r)).IsDecided == (((r % 2) + 2) % 2 == 0)
-                : true)
-            : true;
-    }
-
-    // A CanonicalDiscretization keeps its polyline and points at its edge.
-    Law_CanonicalDiscretizationKeepsPolyline(k: Integer, e: Integer): Boolean
-        => CatalogProofModelAt(k).IsEdgeInRange(BrepEdgeIndex(e))
-            ? CatalogCanonicalKeeps(CatalogEntryAt(k, e, 0), CheckCanonicalDiscretization(CatalogProofModelAt(k), CatalogEntryAt(k, e, 0)))
-            : true;
-
     // The claim of Law_CanonicalDiscretizationKeepsPolyline for the
     // result c of checking polyline d.
     CatalogCanonicalKeeps(d: EdgeDiscretization, c: DecidedCanonicalDiscretization): Boolean
@@ -134,13 +72,6 @@ library StepToMeshProofsDiscretizationLaws
             Decided(p) => p.Discretization.SameDiscretization(d) && p.Where == Provenance.KernelEdge(d.Edge);
             Undecided(r) => true;
         };
-
-    // A canonical polyline directed Same is itself, and directed Opposite
-    // is its reversal, and the direction is recorded.
-    Law_DirectedAlongReversesOnlyWhenOpposite(k: Integer, e: Integer, s: Integer): Boolean
-        => CatalogProofModelAt(k).IsEdgeInRange(BrepEdgeIndex(e))
-            ? CatalogDirectedAlong(CatalogSenseOf(s), CheckCanonicalDiscretization(CatalogProofModelAt(k), CatalogEntryAt(k, e, 0)))
-            : true;
 
     // Same for an even s, Opposite for an odd one.
     CatalogSenseOf(s: Integer): Sense
@@ -155,22 +86,6 @@ library StepToMeshProofsDiscretizationLaws
                     s == Sense.Same ? p.Discretization : p.Discretization.Reversed);
             Undecided(r) => true;
         };
-
-    // CheckMeetsCriteriaProof succeeds exactly when the polyline meets the
-    // criteria.
-    Law_MeetsCriteriaProofIffMeetsCriteria(k: Integer, e: Integer): Boolean
-        => CatalogProofModelAt(k).IsEdgeInRange(BrepEdgeIndex(e))
-            ? CheckMeetsCriteriaProof(CatalogProofModelAt(k), CatalogEntryAt(k, e, 0), DiscretizationCriteria.CatalogEdgeCriteria).IsDecided
-                == CatalogProofModelAt(k).MeetsCriteria(CatalogEntryAt(k, e, 0), DiscretizationCriteria.CatalogEdgeCriteria)
-            : true;
-
-    // A MeetsCriteriaProof names its edge and criteria, and its Worst is
-    // the largest Sagitta of the polyline's segments.
-    Law_MeetsCriteriaProofRecordsWorst(k: Integer, e: Integer): Boolean
-        => CatalogProofModelAt(k).IsEdgeInRange(BrepEdgeIndex(e))
-            ? CatalogMeetsRecords(CatalogProofModelAt(k), CatalogEntryAt(k, e, 0),
-                CheckMeetsCriteriaProof(CatalogProofModelAt(k), CatalogEntryAt(k, e, 0), DiscretizationCriteria.CatalogEdgeCriteria))
-            : true;
 
     // The claim of Law_MeetsCriteriaProofRecordsWorst for the
     // result c of checking polyline d of model m. Exact by construction:

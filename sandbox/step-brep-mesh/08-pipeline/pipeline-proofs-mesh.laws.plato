@@ -74,22 +74,6 @@ library StepToMeshProofsMeshLaws
     //==
     // # Face outcomes
 
-    // CheckFullyMeshedModel succeeds exactly when there is one outcome per
-    // face, outcome i is of face i, and each holds a non-empty mesh and no
-    // blocking request.
-    Law_FullyMeshedModelIffEveryFaceMeshed(j: Integer): Boolean
-        => CheckFullyMeshedModel(BrepModel.CatalogBox, CatalogBoxOutcomes(j)).IsDecided
-            == (CatalogBoxOutcomes(j).Count == BrepModel.CatalogBox.Faces.Count
-                ? CatalogBoxOutcomes(j).Count.Range.All(i =>
-                    CatalogBoxOutcomes(j)[i].Mesh.Face == BrepFaceIndex(i)
-                    && CatalogBoxOutcomes(j)[i].Mesh.IsEmptyFaceMesh.Not
-                    && CatalogBoxOutcomes(j)[i].HasBlockingRequest.Not)
-                : false);
-
-    // A FullyMeshedModel keeps every outcome.
-    Law_FullyMeshedModelKeepsOutcomes(j: Integer): Boolean
-        => CatalogFullyMeshedKeeps(CatalogBoxOutcomes(j), CheckFullyMeshedModel(BrepModel.CatalogBox, CatalogBoxOutcomes(j)));
-
     // The claim of Law_FullyMeshedModelKeepsOutcomes for the result
     // d of checking outcomes o.
     CatalogFullyMeshedKeeps(o: Array<FaceMeshOutcome>, d: DecidedFullyMeshedModel): Boolean
@@ -97,16 +81,6 @@ library StepToMeshProofsMeshLaws
             Decided(p) => p.Outcomes.Count == o.Count && p.Model.Faces.Count == o.Count;
             Undecided(r) => true;
         };
-
-    // CheckMeshedFaceSet over faces 0 to 2 of the box succeeds exactly when
-    // their three outcomes are meshed.
-    Law_MeshedFaceSetIffFacesMeshed(j: Integer): Boolean
-        => CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], CatalogBoxOutcomes(j).Take(3)).IsDecided
-            == 3.Range.All(i => CatalogBoxOutcomes(j)[i].Mesh.IsEmptyFaceMesh.Not && CatalogBoxOutcomes(j)[i].HasBlockingRequest.Not);
-
-    // A MeshedFaceSet pairs each face with its outcome.
-    Law_MeshedFaceSetPairsFaces(j: Integer): Boolean
-        => CatalogMeshedFaceSetPairs(CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], CatalogBoxOutcomes(j).Take(3)));
 
     // The claim of Law_MeshedFaceSetPairsFaces for one result.
     CatalogMeshedFaceSetPairs(d: DecidedMeshedFaceSet): Boolean
@@ -120,16 +94,6 @@ library StepToMeshProofsMeshLaws
     //==
     // # The model mesh
 
-    // CheckWatertightMesh succeeds exactly when the mesh is well formed and
-    // every edge has two element sides.
-    Law_WatertightMeshIffClosed(k: Integer): Boolean
-        => CheckWatertightMesh(CatalogMeshAt(k)).IsDecided
-            == (CatalogMeshAt(k).IsWellFormed ? CatalogMeshAt(k).IsClosed : false);
-
-    // A WatertightMesh keeps its mesh.
-    Law_WatertightMeshKeepsMesh(k: Integer): Boolean
-        => CatalogWatertightKeeps(CatalogMeshAt(k), CheckWatertightMesh(CatalogMeshAt(k)));
-
     // The claim of Law_WatertightMeshKeepsMesh for the result d of
     // checking mesh.
     CatalogWatertightKeeps(mesh: ModelMesh, d: DecidedWatertightMesh): Boolean
@@ -137,33 +101,6 @@ library StepToMeshProofsMeshLaws
             Decided(p) => p.Mesh.ElementCount == mesh.ElementCount && p.Mesh.Positions.Count == mesh.Positions.Count;
             Undecided(r) => true;
         };
-
-    // CheckCheckedMesh succeeds exactly when the mesh is well formed,
-    // manifold, consistently oriented, and closed on every shell of the box
-    // that uses each counted edge twice.
-    Law_CheckedMeshIffMeshChecks(k: Integer): Boolean
-    {
-        var m = BrepModel.CatalogBox;
-        var mesh = CatalogMeshAt(k);
-        return CheckCheckedMesh(m, mesh).IsDecided
-            == (mesh.IsWellFormed
-                ? (mesh.IsManifold && mesh.IsConsistentlyOriented
-                    && m.Shells.Count.Range.All(s =>
-                        m.EdgesOfShell(ShellIndex(s)).All(e => m.CountsAsEdge(e) ? m.UseCount(ShellIndex(s), e).IsZeroOrTwo : true)
-                            ? m.RestrictedToShell(mesh, ShellIndex(s)).IsClosed
-                            : true))
-                : false);
-    }
-
-    // The closed tetrahedron, its reversal, and the box's pipeline mesh are
-    // checked meshes; the tetrahedron without a face is not.
-    Law_ClosedWitnessMeshesAreChecked(k: Integer): Boolean
-        => CheckCheckedMesh(BrepModel.CatalogBox, CatalogMeshAt(k)).IsDecided == (((k % 4) + 4) % 4 != 2);
-
-    // A CheckedMesh carries ComponentCountsOf of its mesh, one per
-    // component.
-    Law_CheckedMeshRecordsCounts(k: Integer): Boolean
-        => CatalogCheckedMeshRecords(CatalogMeshAt(k), CheckCheckedMesh(BrepModel.CatalogBox, CatalogMeshAt(k)));
 
     // The claim of Law_CheckedMeshRecordsCounts for the result d of
     // checking mesh.
@@ -177,19 +114,6 @@ library StepToMeshProofsMeshLaws
             Undecided(r) => true;
         };
     }
-
-    // CheckQualityGradedMesh succeeds exactly when the mesh is well formed
-    // and every element's corners name positions.
-    Law_QualityGradedMeshIffMeasurable(k: Integer): Boolean
-        => CheckQualityGradedMesh(CatalogMeshAt(k)).IsDecided
-            == (CatalogMeshAt(k).IsWellFormed
-                ? CatalogMeshAt(k).ElementCount.Range.All(e => CatalogMeshAt(k).HasValidCorners(ElementIndex(e)))
-                : false);
-
-    // A QualityGradedMesh holds TriangleQualityAt of each triangle and
-    // QuadQualityAt of each quad, in element order.
-    Law_QualityGradedMeshRecordsQualities(k: Integer, j: Integer): Boolean
-        => CatalogQualityRecords(CatalogMeshAt(k), j, CheckQualityGradedMesh(CatalogMeshAt(k)));
 
     // The claim of Law_QualityGradedMeshRecordsQualities at
     // triangle and quad j. Exact by construction: the same metric of the

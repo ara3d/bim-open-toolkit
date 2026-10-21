@@ -1,7 +1,7 @@
 # perf-proofs-laws: the proofs laws and five layer 4 laws read tables and meshes built once per sweep
 
 Ticket: TKT-392
-Status: ready: L3
+Status: merged: L3 (2026-10-21, into 04-discretization/discretization-witness.{types,library}.plato and 08-pipeline/pipeline-discretization-witness.laws.plato, pipeline-discretized-witness.{types,library}.plato, pipeline-proofs-{discretization,mesh}-witness.laws.plato; the originals of the same names deleted)
 
 ## Done
 - L3, (this commit), about 1.3 h against 2 h expected. Types added:
