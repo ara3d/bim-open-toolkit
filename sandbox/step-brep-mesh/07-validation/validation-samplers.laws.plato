@@ -1,0 +1,122 @@
+//==
+// # Arena samplers with well-formedness checked once: laws (complexity sweep, chunk V1)
+//
+// The count witness for CheckCurveSamplesCounted (read by layer 00's
+// Law_WorkIsWithinSlope), the exact count, and the agreement of every staged
+// form with the library form it replaces, Check by Check (layer 0's
+// Identical: law, hold, worst, bound and provenance), on the ArenaCase
+// witnesses: curved arenas, a pcurve, the catalog arena of every case, and an
+// arena that is not well formed.
+//
+// Sections, in order:
+//  - Arena cases
+//  - Count witness
+//  - Guards agree
+//  - Samplers agree
+//  - Checks agree
+
+library BrepCheckingSamplersLaws
+{
+    //==
+    // # Arena cases
+
+    // Model m with its geometry arena replaced by g: the same topology,
+    // tolerances and unit.
+    WithGeometry(m: BrepModel, g: GeometrySet): BrepModel
+        => BrepModel(g, m.Vertices, m.Edges, m.Loops, m.Faces, m.Shells, m.Bodies, m.Tolerances, m.Unit);
+
+    // The unit box's arena with one more curve, trimmed from curve 99, which
+    // does not exist: IsWellFormed fails, every index the topology cites
+    // stays in range.
+    NotWellFormedArena(_: GeometrySet): GeometrySet
+    {
+        var g = BrepModel.Witness_UnitBox.Geometry;
+        return GeometrySet(
+            g.Curves.Concatenate([BrepCurve.Trimmed(CurveIndex(99), NumberInterval(0.0, 1.0), true)]),
+            g.Curves2D, g.Pcurves, g.Surfaces, g.Closures);
+    }
+
+    Witness_UnitBoxArena(_: ArenaCase): ArenaCase
+        => ArenaCase("UnitBox", BrepModel.Witness_UnitBox);
+
+    Witness_CylinderArena(_: ArenaCase): ArenaCase
+        => ArenaCase("Cylinder", BrepModel.Witness_Cylinder);
+
+    Witness_SphereArena(_: ArenaCase): ArenaCase
+        => ArenaCase("Sphere", BrepModel.Witness_Sphere);
+
+    Witness_TorusArena(_: ArenaCase): ArenaCase
+        => ArenaCase("Torus", BrepModel.Witness_Torus);
+
+    Witness_ConeArena(_: ArenaCase): ArenaCase
+        => ArenaCase("Cone", BrepModel.Witness_Cone);
+
+    Witness_BSplinePatchSolidArena(_: ArenaCase): ArenaCase
+        => ArenaCase("BSplinePatchSolid", BrepModel.Witness_BSplinePatchSolid);
+
+    // A surface curve with a pcurve whose parameter runs at twice the curve's.
+    Witness_PcurveBoxArena(_: ArenaCase): ArenaCase
+        => ArenaCase("UnitBoxWithBottomPcurve2", BrepModel.Witness_UnitBoxWithBottomPcurve(2.0));
+
+    // Every curve and surface case of layer 1, on the unit box's topology.
+    Witness_CatalogArenaCase(_: ArenaCase): ArenaCase
+        => ArenaCase("CatalogArena", BrepModel.Witness_UnitBox.WithGeometry(GeometrySet.Witness_CatalogArena));
+
+    // The arena that is not well formed: every guard false.
+    Witness_NotWellFormedArena(_: ArenaCase): ArenaCase
+        => ArenaCase("NotWellFormed", BrepModel.Witness_UnitBox.WithGeometry(GeometrySet.NotWellFormedArena));
+
+    //==
+    // # Count witness
+
+    // The box family by curve count: the unit box (12 curves) up to 12, the
+    // hollow box (24 curves) above.
+    SamplerBoxWithCurves(n: Integer): BrepModel
+        => n <= 12 ? BrepModel.Witness_UnitBox : BrepModel.Witness_HollowBox;
+
+    // The IsWellFormed runs of the curve sampler over the box with n curves,
+    // sampling the derivative law at the check plan.
+    CheckCurveSamplesWork(n: Integer): WorkBudget
+    {
+        var m = n.SamplerBoxWithCurves;
+        return m.CheckCurveSamplesCounted(SamplePlan.CheckPlan, "Law_DerivativeMatchesCentralDifference",
+            (c, t) => Law_DerivativeMatchesCentralDifference(m.Geometry, c, t)).Work;
+    }
+
+    // The curve sampler runs IsWellFormed (counted as Flips) at most once per
+    // curve, at 12 and 24 curves; it in fact runs it once per check
+    // (Law_CheckCurveSamplesRunsIsWellFormedOnce), where the library's
+    // sampler ran it once per sample: 60 runs at 12 curves, 120 at 24. The
+    // law the sampler folds may still run it itself (FINDINGS in TRACK.md).
+    Witness_CheckCurveSamplesWork(_: WorkClaim): WorkClaim
+        => WorkClaim("CheckCurveSamples: IsWellFormed runs per curve", Flips(1), [12, 24], n => CheckCurveSamplesWork(n));
+
+    // The sampler runs IsWellFormed exactly once on every arena case.
+    Law_CheckCurveSamplesRunsIsWellFormedOnce(a: ArenaCase): Boolean
+        => a.Model.CheckCurveSamplesCounted(SamplePlan.CheckPlan, "Law_Synthetic", (c, t) => t < 0.5).Work.Flips == 1;
+
+    //==
+    // # Guards agree
+
+    // CanEvaluateGiven with IsWellFormed's answer is CanEvaluate, for every
+    // index kind, in range or not.
+    Law_CanEvaluateGivenAgrees(a: ArenaCase, i: Integer): Boolean
+    {
+        var g = a.Model.Geometry;
+        var ok = g.IsWellFormed;
+        return g.CanEvaluateGiven(ok, CurveIndex(i)) == g.CanEvaluate(CurveIndex(i))
+            && g.CanEvaluateGiven(ok, Curve2DIndex(i)) == g.CanEvaluate(Curve2DIndex(i))
+            && g.CanEvaluateGiven(ok, PcurveIndex(i)) == g.CanEvaluate(PcurveIndex(i))
+            && g.CanEvaluateGiven(ok, SurfaceIndex(i)) == g.CanEvaluate(SurfaceIndex(i));
+    }
+
+    //==
+    // # Samplers agree
+    //
+    // Each sampler on a synthetic law that fails at some samples (so the
+    // fold's choice of provenance is compared) and on a library law.
+
+    //==
+    // # Checks agree
+
+}

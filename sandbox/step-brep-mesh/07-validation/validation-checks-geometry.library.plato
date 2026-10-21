@@ -236,27 +236,16 @@ library BrepCheckingGeometry
 
     // Law_TrimmedRangeInsideBasis at every curve.
     Check_TrimmedRangeInsideBasis(m: BrepModel): Check
-        => CheckAllWithinEach("Law_TrimmedRangeInsideBasis", m.Geometry.Curves.Count,
-            c => m.Geometry.CanEvaluate(CurveIndex(c)) ? m.Geometry.TrimExcess(CurveIndex(c)) : 0.0,
-            c => m.Geometry.CanEvaluate(CurveIndex(c)) ? m.Geometry.ParameterFloorOf(CurveIndex(c), m.Tolerances).Value : 0.0,
-            c => m.CurveSite(CurveIndex(c)));
+        => m.Check_TrimmedRangeInsideBasisHoisted;
 
     // Law_RectangularTrimmedInsideBasis at every surface and parameter.
     Check_RectangularTrimmedInsideBasis(m: BrepModel): Check
-        => CheckGridWithinEach("Law_RectangularTrimmedInsideBasis", m.Geometry.Surfaces.Count, 2,
-            (s, k) => m.Geometry.CanEvaluate(SurfaceIndex(s)) ? m.Geometry.TrimBoxExcess(SurfaceIndex(s), k.ParameterOfSlot) : 0.0,
-            (s, k) => m.Geometry.CanEvaluate(SurfaceIndex(s))
-                ? m.Geometry.ParameterFloorAlong(SurfaceIndex(s), k.ParameterOfSlot, m.Tolerances).Value
-                : 0.0,
-            (s, k) => m.SurfaceSite(SurfaceIndex(s)));
+        => m.Check_RectangularTrimmedInsideBasisHoisted;
 
     // Law_CompositeSegmentsChain at every curve and every join i (vacuous
     // past the curve's last segment).
     Check_CompositeSegmentsChain(m: BrepModel): Check
-        => CheckGridWithin("Law_CompositeSegmentsChain", m.Geometry.Curves.Count, m.Geometry.MostCompositeSegments,
-            (c, i) => m.Geometry.CanEvaluate(CurveIndex(c)) ? m.Geometry.SegmentGap(CurveIndex(c), i) : 0.0,
-            m.Tolerances.Length.Value,
-            (c, i) => m.CurveSite(CurveIndex(c)));
+        => m.Check_CompositeSegmentsChainHoisted;
 
     // Law_OffsetReferenceNotTangent at every curve and sample.
     Check_OffsetReferenceNotTangent(m: BrepModel, plan: SamplePlan): Check
@@ -269,67 +258,32 @@ library BrepCheckingGeometry
     // Law_SurfaceCurveLiesOnSupport at every curve, sample, and support k:
     // sample j is the plan's sample j % n of support j / n.
     Check_SurfaceCurveLiesOnSupport(m: BrepModel, plan: SamplePlan): Check
-        => CheckGridWithin("Law_SurfaceCurveLiesOnSupport", m.Geometry.Curves.Count, 2 * plan.Count,
-            (c, j) => m.Geometry.CanEvaluate(CurveIndex(c))
-                ? m.Geometry.SupportGap(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[j % plan.Count], j / plan.Count)
-                : 0.0,
-            m.Tolerances.Length.Value,
-            (c, j) => m.CurveSite(CurveIndex(c)));
+        => m.Check_SurfaceCurveLiesOnSupportHoisted(plan);
 
     // Law_SurfaceCurvePcurveLiesOnCurve at every curve, sample, and support.
     Check_SurfaceCurvePcurveLiesOnCurve(m: BrepModel, plan: SamplePlan): Check
-        => CheckGridWithin("Law_SurfaceCurvePcurveLiesOnCurve", m.Geometry.Curves.Count, 2 * plan.Count,
-            (c, j) => m.Geometry.CanEvaluate(CurveIndex(c))
-                ? m.Geometry.PcurveToCurveGap(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[j % plan.Count], j / plan.Count)
-                : 0.0,
-            m.Tolerances.Length.Value,
-            (c, j) => m.CurveSite(CurveIndex(c)));
+        => m.Check_SurfaceCurvePcurveLiesOnCurveHoisted(plan);
 
     // Law_SurfaceCurveLiesOnPcurve at every curve, sample, and support.
     Check_SurfaceCurveLiesOnPcurve(m: BrepModel, plan: SamplePlan): Check
-        => CheckGridWithin("Law_SurfaceCurveLiesOnPcurve", m.Geometry.Curves.Count, 2 * plan.Count,
-            (c, j) => m.Geometry.CanEvaluate(CurveIndex(c))
-                ? m.Geometry.CurveToPcurveGap(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[j % plan.Count], j / plan.Count)
-                : 0.0,
-            m.Tolerances.Length.Value,
-            (c, j) => m.CurveSite(CurveIndex(c)));
+        => m.Check_SurfaceCurveLiesOnPcurveHoisted(plan);
 
     // Law_PcurveWithinSurfaceDomain at every pcurve and sample.
     Check_PcurveWithinSurfaceDomain(m: BrepModel, plan: SamplePlan): Check
-        => CheckGridWithinEach("Law_PcurveWithinSurfaceDomain", m.Geometry.Pcurves.Count, 2 * plan.Count,
-            (p, j) => m.Geometry.CanEvaluate(PcurveIndex(p))
-                ? m.Geometry.PcurveDomainExcess(PcurveIndex(p), m.PcurveSamples(PcurveIndex(p), plan)[j % plan.Count], (j / plan.Count).ParameterOfSlot)
-                : 0.0,
-            (p, j) => m.Geometry.CanEvaluate(PcurveIndex(p))
-                ? m.Geometry.ParameterFloorAlong(m.Geometry.PcurveAt(PcurveIndex(p)).Surface, (j / plan.Count).ParameterOfSlot, m.Tolerances).Value
-                : 0.0,
-            (p, j) => m.PcurveSite(PcurveIndex(p)));
+        => m.Check_PcurveWithinSurfaceDomainHoisted(plan);
 
     // Law_CollapsedLineIsOnePoint at every surface, both parameters, the
     // first two collapsed lines of each, and every pair of the plan's samples
     // along the line. File law for splines and revolutions, library law for
     // the analytic cases.
     Check_CollapsedLineIsOnePoint(m: BrepModel, plan: SamplePlan): Check
-        => CheckGridWithin("Law_CollapsedLineIsOnePoint", m.Geometry.Surfaces.Count, 4 * plan.Count * plan.Count,
-            (s, j) => m.Geometry.CanEvaluate(SurfaceIndex(s))
-                ? m.Geometry.CollapsedLineSpread(SurfaceIndex(s),
-                    j < 2 * plan.Count * plan.Count ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV,
-                    (j / (plan.Count * plan.Count)) % 2,
-                    m.AlongSample(SurfaceIndex(s), j < 2 * plan.Count * plan.Count, plan, (j / plan.Count) % plan.Count),
-                    m.AlongSample(SurfaceIndex(s), j < 2 * plan.Count * plan.Count, plan, j % plan.Count),
-                    m.Tolerances)
-                : 0.0,
-            m.Tolerances.Length.Value,
-            (s, j) => m.SurfaceSite(SurfaceIndex(s)));
+        => m.Check_CollapsedLineIsOnePointHoisted(plan);
 
     // Law_TangentialPartialVanishesOnDegenerateSide at every surface, each of
     // its at most four degenerate sides, and every sample along the side.
     // File law for splines and revolutions, library law otherwise.
     Check_TangentialPartialVanishesOnDegenerateSide(m: BrepModel, plan: SamplePlan): Check
-        => CheckGrid("Law_TangentialPartialVanishesOnDegenerateSide", m.Geometry.Surfaces.Count, 4 * plan.Count,
-            (s, j) => Law_TangentialPartialVanishesOnDegenerateSide(m.Geometry, SurfaceIndex(s), j / plan.Count,
-                m.DegenerateSideSample(SurfaceIndex(s), j / plan.Count, plan, j % plan.Count), m.Tolerances),
-            (s, j) => m.SurfaceSite(SurfaceIndex(s)));
+        => m.Check_TangentialPartialVanishesOnDegenerateSideHoisted(plan);
 
     //==
     // # Library self-tests: curves
@@ -361,11 +315,11 @@ library BrepCheckingGeometry
 
     // Law_DerivativeMatchesCentralDifference at every curve and sample.
     Check_DerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurveSamples(plan, "Law_DerivativeMatchesCentralDifference", (c, t) => Law_DerivativeMatchesCentralDifference(m.Geometry, c, t));
+        => m.Check_DerivativeMatchesCentralDifferenceHoisted(plan);
 
     // Law_SecondDerivativeMatchesCentralDifference at every curve and sample.
     Check_SecondDerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurveSamples(plan, "Law_SecondDerivativeMatchesCentralDifference", (c, t) => Law_SecondDerivativeMatchesCentralDifference(m.Geometry, c, t));
+        => m.Check_SecondDerivativeMatchesCentralDifferenceHoisted(plan);
 
     // Law_ClosestParameterRecoversPoint at every curve and sample.
     Check_ClosestParameterRecoversPoint(m: BrepModel, plan: SamplePlan): Check
@@ -379,17 +333,12 @@ library BrepCheckingGeometry
     // whose point, moved off the curve (OffCurvePoint), is the query, and
     // every sample j as the competitor (review M4). Self-test: Error.
     Check_ClosestParameterNoWorseThanSample(m: BrepModel, plan: SamplePlan): Check
-        => CheckGrid("Law_ClosestParameterNoWorseThanSample", m.Geometry.Curves.Count, plan.Count * plan.Count,
-            (c, ij) => Law_ClosestParameterNoWorseThanSample(m.Geometry, CurveIndex(c),
-                m.OffCurvePoint(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[ij / plan.Count]),
-                m.CurveSamples(CurveIndex(c), plan)[ij % plan.Count]),
-            (c, ij) => m.CurveSite(CurveIndex(c)));
+        => m.Check_ClosestParameterNoWorseThanSampleHoisted(plan);
 
     // Law_ClosestParameterIsStationary at every curve and the off-curve point
     // of every sample. Self-test: Error.
     Check_ClosestParameterIsStationary(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurveSamples(plan, "Law_ClosestParameterIsStationary",
-            (c, t) => Law_ClosestParameterIsStationary(m.Geometry, c, m.OffCurvePoint(c, t)));
+        => m.Check_ClosestParameterIsStationaryHoisted(plan);
 
     // Law_PcurveClosestParameterIsBounded at every pcurve and sample (review
     // F4b). Self-test: Error.
@@ -423,17 +372,11 @@ library BrepCheckingGeometry
     // are (review M4); the origin where c cannot be evaluated (the law is
     // vacuous there, and its argument is computed first).
     OffCurvePoint(m: BrepModel, c: CurveIndex, t: Number): Point3D
-        => m.Geometry.CanEvaluate(c)
-            ? m.Geometry.Eval(c, m.Geometry.Domain(c).SampleIn(t))
-                + Vector3D(m.Tolerances.Length.Value, m.Tolerances.Length.Value, m.Tolerances.Length.Value)
-            : Point3D(0.0, 0.0, 0.0);
+        => m.OffCurvePointGiven(m.Geometry.IsWellFormed, c, t);
 
     // Surface s's point at uv moved off the surface the same way.
     OffSurfacePoint(m: BrepModel, s: SurfaceIndex, uv: UvCoordinate): Point3D
-        => m.Geometry.CanEvaluate(s)
-            ? m.Geometry.Eval(s, m.Geometry.Domain(s).SampleIn(uv))
-                + Vector3D(m.Tolerances.Length.Value, m.Tolerances.Length.Value, m.Tolerances.Length.Value)
-            : Point3D(0.0, 0.0, 0.0);
+        => m.OffSurfacePointGiven(m.Geometry.IsWellFormed, s, uv);
 
     // Law_TrimmedStartsAtSensedEnd at every curve.
     Check_TrimmedStartsAtSensedEnd(m: BrepModel): Check
@@ -458,21 +401,21 @@ library BrepCheckingGeometry
     // Law_Curve2DDerivativeMatchesCentralDifference at every parameter-plane
     // curve and sample.
     Check_Curve2DDerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurve2DSamples(plan, "Law_Curve2DDerivativeMatchesCentralDifference", (c, t) => Law_Curve2DDerivativeMatchesCentralDifference(m.Geometry, c, t));
+        => m.Check_Curve2DDerivativeMatchesCentralDifferenceHoisted(plan);
 
     // Law_Curve2DSecondDerivativeMatchesCentralDifference at every
     // parameter-plane curve and sample.
     Check_Curve2DSecondDerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckCurve2DSamples(plan, "Law_Curve2DSecondDerivativeMatchesCentralDifference", (c, t) => Law_Curve2DSecondDerivativeMatchesCentralDifference(m.Geometry, c, t));
+        => m.Check_Curve2DSecondDerivativeMatchesCentralDifferenceHoisted(plan);
 
     // Law_PcurveDerivativeMatchesCentralDifference at every pcurve and sample.
     Check_PcurveDerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckPcurveSamples(plan, "Law_PcurveDerivativeMatchesCentralDifference", (p, t) => Law_PcurveDerivativeMatchesCentralDifference(m.Geometry, p, t));
+        => m.Check_PcurveDerivativeMatchesCentralDifferenceHoisted(plan);
 
     // Law_PcurveSecondDerivativeMatchesCentralDifference at every pcurve and
     // sample.
     Check_PcurveSecondDerivativeMatchesCentralDifference(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckPcurveSamples(plan, "Law_PcurveSecondDerivativeMatchesCentralDifference", (p, t) => Law_PcurveSecondDerivativeMatchesCentralDifference(m.Geometry, p, t));
+        => m.Check_PcurveSecondDerivativeMatchesCentralDifferenceHoisted(plan);
 
     //==
     // # Library self-tests: surfaces
@@ -544,29 +487,18 @@ library BrepCheckingGeometry
     // point, moved off the surface, is the query, and every grid point as the
     // competitor (review M4). Self-test: Error.
     Check_ProjectNoWorseThanSample(m: BrepModel, plan: SamplePlan): Check
-        => CheckGrid("Law_ProjectNoWorseThanSample", m.Geometry.Surfaces.Count, plan.Count * plan.Count * plan.Count * plan.Count,
-            (s, ij) => Law_ProjectNoWorseThanSample(m.Geometry, SurfaceIndex(s),
-                m.OffSurfacePoint(SurfaceIndex(s), m.SurfaceSamples(SurfaceIndex(s), plan)[ij / (plan.Count * plan.Count)]),
-                m.SurfaceSamples(SurfaceIndex(s), plan)[ij % (plan.Count * plan.Count)]),
-            (s, ij) => m.SurfaceSite(SurfaceIndex(s)));
+        => m.Check_ProjectNoWorseThanSampleHoisted(plan);
 
     // Law_ProjectIsStationary at every surface, grid point (moved off the
     // surface) and parameter. Self-test: Error.
     Check_ProjectIsStationary(m: BrepModel, plan: SamplePlan): Check
-        => m.CheckSurfaceParameterSamples(plan, "Law_ProjectIsStationary",
-            (s, uv, which) => Law_ProjectIsStationary(m.Geometry, s, m.OffSurfacePoint(s, uv), which));
+        => m.Check_ProjectIsStationaryHoisted(plan);
 
     // Law_ProjectNearRecoversFromNearbySeed at every surface, grid point, and
     // the four seeds offset by half the near-seed radius in each parameter
     // (review section 5: seeded off the answer). Self-test: Error.
     Check_ProjectNearRecoversFromNearbySeed(m: BrepModel, plan: SamplePlan): Check
-        => CheckGrid("Law_ProjectNearRecoversFromNearbySeed", m.Geometry.Surfaces.Count, 4 * plan.Count * plan.Count,
-            (s, j) => Law_ProjectNearRecoversFromNearbySeed(m.Geometry, SurfaceIndex(s),
-                m.SurfaceSamples(SurfaceIndex(s), plan)[j % (plan.Count * plan.Count)],
-                (j / (plan.Count * plan.Count)) % 2 == 0 ? 0.5 : -0.5,
-                j / (2 * plan.Count * plan.Count) == 0 ? 0.5 : -0.5,
-                m.Tolerances),
-            (s, j) => m.SurfaceSite(SurfaceIndex(s)));
+        => m.Check_ProjectNearRecoversFromNearbySeedHoisted(plan);
 
     // Law_ScaledSurfacePointIsScaled at every surface and grid point, scaling
     // by 2. Self-test: Error.
@@ -666,25 +598,4 @@ library BrepCheckingGeometry
     MostCompositeSegments(g: GeometrySet): Integer
         => g.Curves.Reduce(0, (n, curve) => n.Max(curve.CompositeSegmentCount));
 
-    // Sample i of the plan along a collapsed line of surface s: a sample of
-    // V's bounded range when the collapsed parameter is U (collapsedIsU), of
-    // U's otherwise, which is the parameter that varies along the line. 0
-    // when s cannot be evaluated.
-    AlongSample(m: BrepModel, s: SurfaceIndex, collapsedIsU: Boolean, plan: SamplePlan, i: Integer): Number
-        => m.Geometry.CanEvaluate(s)
-            ? (collapsedIsU
-                ? m.Geometry.Domain(s).V.BoundedSampleRange.Samples(plan.Count)[i]
-                : m.Geometry.Domain(s).U.BoundedSampleRange.Samples(plan.Count)[i])
-            : 0.0;
-
-    // Sample i of the plan along degenerate side k of surface s: a sample of
-    // the bounded range of the parameter that varies along the side. 0 when
-    // s cannot be evaluated or has no side k.
-    DegenerateSideSample(m: BrepModel, s: SurfaceIndex, k: Integer, plan: SamplePlan, i: Integer): Number
-        => m.Geometry.CanEvaluate(s)
-            ? (m.Geometry.DegenerateSides(s, m.Tolerances).IsValidIndex(k)
-                ? m.Geometry.Domain(s).DomainAlong(m.Geometry.DegenerateSides(s, m.Tolerances)[k].AlongParameter)
-                    .BoundedSampleRange.Samples(plan.Count)[i]
-                : 0.0)
-            : 0.0;
 }

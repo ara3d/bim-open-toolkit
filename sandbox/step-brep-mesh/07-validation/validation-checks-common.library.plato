@@ -290,28 +290,20 @@ library BrepCheckingCommon
     // The plan's samples of curve c's parameter: equally spaced over its
     // bounded sample range, or zeros when c cannot be evaluated.
     CurveSamples(m: BrepModel, c: CurveIndex, plan: SamplePlan): Array<Number>
-        => m.Geometry.CanEvaluate(c)
-            ? m.Geometry.Domain(c).BoundedSampleRange.Samples(plan.Count)
-            : plan.Count.MapRange(i => 0.0);
+        => m.CurveSamplesGiven(m.Geometry.IsWellFormed, c, plan);
 
     // The plan's samples of parameter-plane curve c's parameter.
     Curve2DSamples(m: BrepModel, c: Curve2DIndex, plan: SamplePlan): Array<Number>
-        => m.Geometry.CanEvaluate(c)
-            ? m.Geometry.Domain(c).BoundedSampleRange.Samples(plan.Count)
-            : plan.Count.MapRange(i => 0.0);
+        => m.Curve2DSamplesGiven(m.Geometry.IsWellFormed, c, plan);
 
     // The plan's samples of pcurve p's parameter.
     PcurveSamples(m: BrepModel, p: PcurveIndex, plan: SamplePlan): Array<Number>
-        => m.Geometry.CanEvaluate(p)
-            ? m.Geometry.Domain(p).BoundedSampleRange.Samples(plan.Count)
-            : plan.Count.MapRange(i => 0.0);
+        => m.PcurveSamplesGiven(m.Geometry.IsWellFormed, p, plan);
 
     // The plan's grid of samples of surface s's parameters, plan.Count
     // squared points, u varying fastest.
     SurfaceSamples(m: BrepModel, s: SurfaceIndex, plan: SamplePlan): Array<UvCoordinate>
-        => m.Geometry.CanEvaluate(s)
-            ? m.Geometry.Domain(s).BoundedSampleDomain.Samples(plan)
-            : (plan.Count * plan.Count).MapRange(i => UvCoordinate(0.0, 0.0));
+        => m.SurfaceSamplesGiven(m.Geometry.IsWellFormed, s, plan);
 
     // An exact law at every curve of the arena.
     CheckCurves(m: BrepModel, law: String, holds: Function1<CurveIndex, Boolean>): Check
@@ -337,42 +329,29 @@ library BrepCheckingCommon
 
     // A pointwise law at every curve and every sample of its parameter.
     CheckCurveSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<CurveIndex, Number, Boolean>): Check
-        => CheckGrid(law, m.Geometry.Curves.Count, plan.Count,
-            (c, j) => holds(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[j]),
-            (c, j) => m.CurveSite(CurveIndex(c)));
+        => m.CheckCurveSamplesCounted(plan, law, holds).Value;
 
     // A pointwise law at every parameter-plane curve and every sample.
     CheckCurve2DSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<Curve2DIndex, Number, Boolean>): Check
-        => CheckGrid(law, m.Geometry.Curves2D.Count, plan.Count,
-            (c, j) => holds(Curve2DIndex(c), m.Curve2DSamples(Curve2DIndex(c), plan)[j]),
-            (c, j) => m.Curve2DSite(Curve2DIndex(c)));
+        => m.CheckCurve2DSamplesGiven(m.Geometry.IsWellFormed, plan, law, holds);
 
     // A pointwise law at every pcurve and every sample.
     CheckPcurveSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<PcurveIndex, Number, Boolean>): Check
-        => CheckGrid(law, m.Geometry.Pcurves.Count, plan.Count,
-            (p, j) => holds(PcurveIndex(p), m.PcurveSamples(PcurveIndex(p), plan)[j]),
-            (p, j) => m.PcurveSite(PcurveIndex(p)));
+        => m.CheckPcurveSamplesGiven(m.Geometry.IsWellFormed, plan, law, holds);
 
     // A pointwise law at every curve, every sample, and each of a surface
     // curve's two supports k = 0, 1.
     CheckCurveSupportSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function3<CurveIndex, Number, Integer, Boolean>): Check
-        => CheckGrid(law, m.Geometry.Curves.Count, 2 * plan.Count,
-            (c, j) => holds(CurveIndex(c), m.CurveSamples(CurveIndex(c), plan)[j % plan.Count], j / plan.Count),
-            (c, j) => m.CurveSite(CurveIndex(c)));
+        => m.CheckCurveSupportSamplesGiven(m.Geometry.IsWellFormed, plan, law, holds);
 
     // A pointwise law at every surface and every point of the plan's grid.
     CheckSurfaceSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function2<SurfaceIndex, UvCoordinate, Boolean>): Check
-        => CheckGrid(law, m.Geometry.Surfaces.Count, plan.Count * plan.Count,
-            (s, j) => holds(SurfaceIndex(s), m.SurfaceSamples(SurfaceIndex(s), plan)[j]),
-            (s, j) => m.SurfaceSite(SurfaceIndex(s)));
+        => m.CheckSurfaceSamplesGiven(m.Geometry.IsWellFormed, plan, law, holds);
 
     // A pointwise law at every surface, every point of the grid, and each of
     // the surface's two parameters.
     CheckSurfaceParameterSamples(m: BrepModel, plan: SamplePlan, law: String, holds: Function3<SurfaceIndex, UvCoordinate, SurfaceParameter, Boolean>): Check
-        => CheckGrid(law, m.Geometry.Surfaces.Count, 2 * plan.Count * plan.Count,
-            (s, j) => holds(SurfaceIndex(s), m.SurfaceSamples(SurfaceIndex(s), plan)[j % (plan.Count * plan.Count)],
-                j < plan.Count * plan.Count ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV),
-            (s, j) => m.SurfaceSite(SurfaceIndex(s)));
+        => m.CheckSurfaceParameterSamplesGiven(m.Geometry.IsWellFormed, plan, law, holds);
 
     //==
     // # STEP file samplers

@@ -411,19 +411,19 @@ library BrepGeometry
     // True when curve c of g may be evaluated: the arena is well formed and c
     // is in range. The guard of every law that evaluates a curve.
     CanEvaluate(g: GeometrySet, c: CurveIndex): Boolean
-        => g.IsWellFormed ? g.IsCurveInRange(c) : false;
+        => g.CanEvaluateGiven(g.IsWellFormed, c);
 
     // True when parameter-plane curve c of g may be evaluated.
     CanEvaluate(g: GeometrySet, c: Curve2DIndex): Boolean
-        => g.IsWellFormed ? g.IsCurve2DInRange(c) : false;
+        => g.CanEvaluateGiven(g.IsWellFormed, c);
 
     // True when pcurve p of g may be evaluated.
     CanEvaluate(g: GeometrySet, p: PcurveIndex): Boolean
-        => g.IsWellFormed ? g.IsPcurveInRange(p) : false;
+        => g.CanEvaluateGiven(g.IsWellFormed, p);
 
     // True when surface s of g may be evaluated.
     CanEvaluate(g: GeometrySet, s: SurfaceIndex): Boolean
-        => g.IsWellFormed ? g.IsSurfaceInRange(s) : false;
+        => g.CanEvaluateGiven(g.IsWellFormed, s);
 
     //==
     // # Placements
