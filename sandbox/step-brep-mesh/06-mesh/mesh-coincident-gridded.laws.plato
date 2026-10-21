@@ -103,13 +103,13 @@ library ModelMeshCoincidentGriddedLaws
 
     // On every generated mesh and tolerance, zero and negative ones included (the pairwise
     // fallback), the grid gives the pairwise array.
-    Law_Perf_CoincidentVertexPairsGriddedAgrees(mesh: ModelMesh, tol: LengthTolerance): Boolean
+    Law_CoincidentVertexPairsGriddedAgrees(mesh: ModelMesh, tol: LengthTolerance): Boolean
         => mesh.GriddedAgrees(mesh.ComponentsOf, tol);
 
     // On the mesh of every meshed witness, at its model's length tolerance and at four larger
     // ones that pair many vertices, the grid gives the pairwise array; at 1.5 the array is not
     // empty, so the agreement is not vacuous.
-    Law_Perf_CoincidentVertexPairsGriddedAgreesOnWitnesses(w: MeshedWitness): Boolean
+    Law_CoincidentVertexPairsGriddedAgreesOnWitnesses(w: MeshedWitness): Boolean
     {
         var mesh = w.Outcome.Mesh;
         var comps = mesh.ComponentsOf;
@@ -120,7 +120,7 @@ library ModelMeshCoincidentGriddedLaws
 
     // On a cloud of 48 + 3 |k| points with planted pairs, three components alternating, at
     // tolerance 0.01 (1 + |k| mod 4), the grid gives the pairwise array, and it is not empty.
-    Law_Perf_CoincidentVertexPairsGriddedAgreesOnPlantedCloud(k: Integer): Boolean
+    Law_CoincidentVertexPairsGriddedAgreesOnPlantedCloud(k: Integer): Boolean
     {
         var tol = 0.01 * (1 + k.Abs % 4).ToNumber;
         var points = PlantedCloud(48 + 3 * k.Abs, tol);
@@ -132,7 +132,7 @@ library ModelMeshCoincidentGriddedLaws
 
     // Far from the origin, where a cell coordinate passes CoincidenceCellBound, the pairwise
     // fallback runs and the arrays agree.
-    Law_Perf_CoincidentVertexPairsGriddedAgreesFarOut(k: Integer): Boolean
+    Law_CoincidentVertexPairsGriddedAgreesFarOut(k: Integer): Boolean
     {
         var points = PlantedCloud(12, 0.01).Map(p => p + Vector3D(1.0e13 * (1 + k.Abs).ToNumber, 0.0, 0.0));
         var mesh = PointCloudMesh(points);
@@ -143,17 +143,17 @@ library ModelMeshCoincidentGriddedLaws
     // # Agreement: pieces
 
     // On every generated edge list, union-find gives the label count.
-    Law_Perf_PieceCountByUnionFindAgrees(edges: Array<VertexPair>): Boolean
+    Law_PieceCountByUnionFindAgrees(edges: Array<VertexPair>): Boolean
         => PiecesAgree(edges);
 
     // On every generated mesh, union-find gives the label count on each component's boundary
     // edges and each vertex's link.
-    Law_Perf_PieceCountByUnionFindAgreesOnMesh(mesh: ModelMesh): Boolean
+    Law_PieceCountByUnionFindAgreesOnMesh(mesh: ModelMesh): Boolean
         => mesh.PiecesAgreeOnMesh;
 
     // On the open meshes cut from every meshed witness (its first one, two and three faces) and
     // on the whole mesh, union-find gives the label count; the cut meshes have boundary.
-    Law_Perf_PieceCountByUnionFindAgreesOnWitnesses(w: MeshedWitness): Boolean
+    Law_PieceCountByUnionFindAgreesOnWitnesses(w: MeshedWitness): Boolean
     {
         var mesh = w.Outcome.Mesh;
         var cuts = [1, 2, 3].Map(f => mesh.RestrictedToFaces(f.MapRange(i => BrepFaceIndex(i))));
@@ -163,7 +163,7 @@ library ModelMeshCoincidentGriddedLaws
 
     // On 1 + |k| mod 4 interleaved cycles of 3 + |k| mod 5 vertices, union-find gives the label
     // count, which is the number of cycles.
-    Law_Perf_PieceCountByUnionFindAgreesOnCycles(k: Integer): Boolean
+    Law_PieceCountByUnionFindAgreesOnCycles(k: Integer): Boolean
     {
         var m = 1 + k.Abs % 4;
         var edges = InterleavedCycles(m, 3 + k.Abs % 5);

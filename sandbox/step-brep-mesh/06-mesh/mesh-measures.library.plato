@@ -275,19 +275,7 @@ library ModelMeshMeasures
     // tolerance, in lexicographic order by construction (a outer, b inner).
     // Quadratic, where the deferred note hashes into cells of the tolerance.
     CoincidentVertexPairs(mesh: ModelMesh, comps: MeshComponents, tol: LengthTolerance): Array<VertexPair>
-    {
-        var n = mesh.Positions.Count;
-        return n.Range.FlatMap(a => n.Range.FlatMap(b =>
-            (a < b
-                ? (comps.VertexComponentOf(VertexIndex(a)).Value >= 0
-                    ? (comps.VertexComponentOf(VertexIndex(a)).Value == comps.VertexComponentOf(VertexIndex(b)).Value
-                        ? mesh.Positions[a].Distance(mesh.Positions[b]) <= tol.Value
-                        : false)
-                    : false)
-                : false)
-                ? [VertexPair(VertexIndex(a), VertexIndex(b))]
-                : [VertexPair(VertexIndex(0), VertexIndex(0))].Take(0)));
-    }
+        => mesh.CoincidentVertexPairsGriddedCounted(comps, tol).Value;
 
     //==
     // # Element normals and folds

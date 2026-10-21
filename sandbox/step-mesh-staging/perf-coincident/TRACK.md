@@ -1,7 +1,7 @@
 # perf-coincident: coincident vertex pairs on a grid, boundary pieces by union-find
 
 Ticket: TKT-375
-Status: ready: V7
+Status: merged: V7 (2026-10-21, into 06-mesh/mesh-coincident-gridded.{types,library,laws}.plato and mesh-pieces-union-find.library.plato)
 
 ## Done
 - V7, (this commit), about 1.2 h against 2 h expected. Added `CoincidentVertexPairsGridded`, `CoincidentVertexPairsGriddedCounted`, `GriddedPairsCounted`, `FirstCellAtLeast` and the cell helpers (`mesh-coincident-gridded.library.plato`); `PieceCountByUnionFind`, `PieceCountByUnionFindCounted` (`mesh-pieces-union-find.library.plato`); the references `CoincidentVertexPairsPairwise` and `PieceCountByLabels`, copies of the bodies the wiring replaces. Type added: `CoincidenceCell` (X, Y, Z whole Numbers), a grid key that cannot overflow a 32-bit Integer the way a packed key would. Laws: 8 `Law_Perf_*` agreement laws and two `Witness_*Work` claims (`mesh-coincident-gridded.laws.plato`).

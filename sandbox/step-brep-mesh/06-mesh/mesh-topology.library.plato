@@ -327,11 +327,7 @@ library ModelMeshTopology
     // all of its vertices, since no path is longer; the vertices that keep their own position are
     // one per piece.
     PieceCount(edges: Array<VertexPair>): Integer
-    {
-        var ends = edges.DistinctEnds;
-        var labels = PieceLabels(edges, ends, ends.Count.MapRange(i => i), ends.Count);
-        return ends.Count.MapRange(i => labels[i] == i).CountTrue;
-    }
+        => edges.PieceCountByUnionFindCounted.Value;
 
     //==
     // # Euler characteristic and genus of a component
