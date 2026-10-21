@@ -1,0 +1,122 @@
+//==
+// # Editing: scripts composing only the remaps that renumber (complexity sweep, chunk L8)
+//
+// Ranked candidate 41 of docs/plans/step-mesher-complexity.md, layer 10. Apply(m, script)
+// composes the running remap with every applied edit's remap, all ten tables each time, so a
+// script of s edits costs O(s N_all) in composition alone, though every edit with a body but
+// RemoveFace and RestoreFace returns the identity remap. Composing with an identity changes
+// nothing (ComposeNewOf of x with an identity of the current row count is x), so here those
+// edits skip the composition, RemoveFace and RestoreFace compose the face table only (they keep
+// every other table), and any other edit composes all ten tables as before. The remap types stay.
+//
+// Sections, in order:
+//  - Which tables an edit renumbers
+//  - Scripts
+
+library BrepEditingScripts
+{
+    //==
+    // # Which tables an edit renumbers
+
+    // Whether an applied edit's remap is the identity: geometric and tolerance edits, and the
+    // two reversals (ApplyGeometric, ApplyTolerance and ApplyTopological use AppliedInPlace).
+    KeepsRowNumbers(edit: ModelEdit): Boolean
+        => match (edit) {
+            Geometric(g) => true;
+            Topological(t) => t.TopologicalKeepsRowNumbers;
+            Tolerance(t) => true;
+        };
+
+    // KeepsRowNumbers for a topological edit: the reversals only. The deferred edits are false,
+    // so a body written for one later is composed in full.
+    TopologicalKeepsRowNumbers(t: TopologicalEdit): Boolean
+        => match (t) {
+            SplitEdge(e, at) => false;
+            MergeEdges(a, b) => false;
+            SplitFace(f, along) => false;
+            RemoveFace(f) => false;
+            AddFace(face) => false;
+            RestoreFace(at, face, uses) => false;
+            ReverseFace(f) => true;
+            ReverseLoop(l) => true;
+            RetrimFace(f, bounds) => false;
+        };
+
+    // Whether an applied edit's remap differs from the identity in the face table only:
+    // RemoveFace and RestoreFace (WithFaceRemap).
+    RenumbersOnlyFaces(edit: ModelEdit): Boolean
+        => match (edit) {
+            Geometric(g) => false;
+            Topological(t) => t.TopologicalRenumbersOnlyFaces;
+            Tolerance(t) => false;
+        };
+
+    // RenumbersOnlyFaces for a topological edit.
+    TopologicalRenumbersOnlyFaces(t: TopologicalEdit): Boolean
+        => match (t) {
+            SplitEdge(e, at) => false;
+            MergeEdges(a, b) => false;
+            SplitFace(f, along) => false;
+            RemoveFace(f) => true;
+            AddFace(face) => false;
+            RestoreFace(at, face, uses) => true;
+            ReverseFace(f) => false;
+            ReverseLoop(l) => false;
+            RetrimFace(f, bounds) => false;
+        };
+
+    // Compose(first, second) when second is the identity in every table but the faces: first's
+    // other tables kept, its face table composed. O(F).
+    ComposeFaces(first: KernelRemap, second: KernelRemap): KernelRemap
+        => KernelRemap(first.Vertices, first.Edges, first.Loops,
+            first.NewOfValues(TableName.FacesTable).ComposeNewOf(second.NewOfValues(TableName.FacesTable)).ToFaceRemap,
+            first.Shells, first.Bodies, first.Curves, first.Curves2D, first.Pcurves, first.Surfaces);
+
+    // The running remap of a script after an applied edit with remap next: unchanged for an edit
+    // that keeps row numbers, the face table composed for a face removal or restoration, every
+    // table composed otherwise. Equal to remap.Compose(next) in every case.
+    ComposedAfter(remap: KernelRemap, edit: ModelEdit, next: KernelRemap): KernelRemap
+        => edit.KeepsRowNumbers
+            ? remap
+            : (edit.RenumbersOnlyFaces ? remap.ComposeFaces(next) : remap.Compose(next));
+
+    //==
+    // # Scripts
+
+    // Apply(m, script) with the running remap composed only where an edit renumbers: the same
+    // outcome, O(N_all + F per face edit) of composition instead of O(s N_all).
+    ApplyScriptComposingRenumberings(m: BrepModel, script: EditScript): ScriptOutcome
+    {
+        var model = m;
+        var remap = m.IdentityRemap;
+        var inverses = new List<ModelEdit>();
+        var failed = -1;
+        var reason = EditPrecondition.NotYetImplemented;
+        var where = Provenance.Nowhere;
+        var step = 0;
+        while (step < script.Edits.Count)
+        {
+            if (failed < 0)
+            {
+                var o = model.Apply(script.Edits[step]);
+                if (o.IsApplied)
+                {
+                    remap = remap.ComposedAfter(script.Edits[step], model.ResultRemap(o));
+                    inverses = inverses.Add(o.InverseOr(script.Edits[step]));
+                    model = model.ResultModel(o);
+                }
+                else
+                {
+                    failed = step;
+                    reason = o.PreconditionOr(reason);
+                    where = o.WhereOr(where);
+                }
+            }
+            step = step + 1;
+        }
+        var undo = inverses.Freeze();
+        return failed < 0
+            ? ScriptOutcome.ScriptApplied(model, remap, EditScript(undo.Count.MapRange(i => undo[undo.Count - 1 - i])))
+            : ScriptOutcome.ScriptRefused(failed, reason, where);
+    }
+}
