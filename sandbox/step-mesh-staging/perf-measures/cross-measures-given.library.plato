@@ -1,0 +1,102 @@
+//==
+// # Cross measures and checks with the whole-model guard hoisted (complexity sweep, chunk V2)
+//
+// Layer 7's cross measures (validation-checks-cross.library.plato,
+// "Measures") evaluate m.IsEveryIndexInRange && m.Geometry.IsWellFormed, two
+// whole-model scans, per mesh vertex, per element and per corner (&& evaluates
+// both operands). Here that guard is IsIndexedAndWellFormed, passed in as ok,
+// and the three geometry cross checks bind it once per check
+// (docs/plans/step-mesher-complexity.md, ranked candidate 13). Same
+// expressions, so the same Check, field for field (Law_Perf_*HoistedAgrees).
+// At merge each measure becomes `=> m.<Name>Given(mesh, m.IsIndexedAndWellFormed, ...)`
+// and each Check_ takes its *Hoisted body.
+//
+// Sections, in order:
+//  - The whole-model guard
+//  - Measures behind a given guard
+//  - Checks: geometry against the B-rep
+
+library BrepCrossCheckingGiven
+{
+    //==
+    // # The whole-model guard
+
+    // True when every index of the model is in range and its geometry arena
+    // is well formed: the part of the cross measures' guards that reads the
+    // whole model, not one vertex or element.
+    IsIndexedAndWellFormed(m: BrepModel): Boolean
+        => m.IsEveryIndexInRange && m.Geometry.IsWellFormed;
+
+    //==
+    // # Measures behind a given guard
+    //
+    // Each is the library measure of the same name without Given, with ok in
+    // place of IsIndexedAndWellFormed.
+
+    // ReevaluationDeviation: the distance from mesh vertex v's position to the
+    // model point its provenance names, 0 where the law is vacuous.
+    ReevaluationDeviationGiven(m: BrepModel, mesh: ModelMesh, ok: Boolean, v: VertexIndex): Number
+        => (mesh.Positions.IsValidIndex(v) && mesh.VertexProvenance.IsValidIndex(v) && ok)
+            ? (m.ProvenanceInModel(mesh.VertexProvenance[v])
+                ? mesh.Positions[v].Distance(m.ProvenancePoint(mesh.VertexProvenance[v]))
+                : 0.0)
+            : 0.0;
+
+    // CanCompareElement: valid corners and corner attributes, its face a face
+    // of the model, and ok. Holds exactly when CanCompareElement does: that
+    // form tests the geometry after the face, this one with the indices.
+    CanCompareElementGiven(m: BrepModel, mesh: ModelMesh, ok: Boolean, e: ElementIndex): Boolean
+        => (mesh.HasValidCorners(e) && mesh.HasValidCornerAttributes(e) && mesh.ElementFace.IsValidIndex(e) && ok)
+            ? m.IsFaceInRange(mesh.ElementFace[e])
+            : false;
+
+    // ElementNormalGap: the angle between element e's normal and the face
+    // normal at its corner-parameter centroid, 0 where the law is vacuous or
+    // the element touches a collapsed line.
+    ElementNormalGapGiven(m: BrepModel, mesh: ModelMesh, ok: Boolean, e: ElementIndex): Number
+        => m.CanCompareElementGiven(mesh, ok, e)
+            ? (mesh.ElementArity(e).Range.Any(s => m.IsOnAnyCollapse(mesh.ElementFace[e], mesh.CornerUvAt(e, s)))
+                ? 0.0
+                : AngleBetweenDirections(
+                    Direction3D(mesh.ElementNormalVector(e)),
+                    m.FaceNormalOf(mesh.ElementFace[e], mesh.CornerUvCentroid(e), Direction3D(mesh.ElementNormalVector(e)))).Radians)
+            : 0.0;
+
+    // CornerNormalGap: the angle between the normal stored at corner slot of
+    // element e and the face normal at the corner's parameters, 0 where the
+    // law is vacuous or the corner is on a collapsed line.
+    CornerNormalGapGiven(m: BrepModel, mesh: ModelMesh, ok: Boolean, e: ElementIndex, slot: Integer): Number
+        => (m.CanCompareElementGiven(mesh, ok, e) ? (slot >= 0 && slot < mesh.ElementArity(e)) : false)
+            ? (m.IsOnAnyCollapse(mesh.ElementFace[e], mesh.CornerUvAt(e, slot))
+                ? 0.0
+                : AngleBetweenDirections(mesh.CornerNormalAt(e, slot),
+                    m.FaceNormalOf(mesh.ElementFace[e], mesh.CornerUvAt(e, slot), mesh.CornerNormalAt(e, slot))).Radians)
+            : 0.0;
+
+    //==
+    // # Checks: geometry against the B-rep
+
+    // Check_VertexReevaluatesFromProvenance with the guard bound once.
+    Check_VertexReevaluatesFromProvenanceHoisted(m: BrepModel, mesh: ModelMesh): Check
+    {
+        var ok = m.IsIndexedAndWellFormed;
+        return CheckAllWithin("VertexReevaluatesFromProvenance", mesh.Positions.Count,
+            v => m.ReevaluationDeviationGiven(mesh, ok, VertexIndex(v)), m.Tolerances.Length.Value, v => AtMeshVertex(v));
+    }
+
+    // Check_CornerNormalIsFaceNormal with the guard bound once.
+    Check_CornerNormalIsFaceNormalHoisted(m: BrepModel, mesh: ModelMesh): Check
+    {
+        var ok = m.IsIndexedAndWellFormed;
+        return CheckGridWithin("CornerNormalIsFaceNormal", mesh.ElementCount, 4,
+            (e, s) => m.CornerNormalGapGiven(mesh, ok, ElementIndex(e), s), m.Tolerances.Angle.Value.Radians, (e, s) => AtElement(e));
+    }
+
+    // Check_ElementNormalAgreesWithFaceNormal with the guard bound once.
+    Check_ElementNormalAgreesWithFaceNormalHoisted(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
+    {
+        var ok = m.IsIndexedAndWellFormed;
+        return CheckAllWithin("ElementNormalAgreesWithFaceNormal", mesh.ElementCount,
+            e => m.ElementNormalGapGiven(mesh, ok, ElementIndex(e)), c.SurfaceAngular.Radians, e => AtElement(e));
+    }
+}

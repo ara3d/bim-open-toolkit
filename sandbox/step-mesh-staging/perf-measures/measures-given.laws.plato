@@ -1,0 +1,91 @@
+//==
+// # Measures behind a hoisted guard: laws (complexity sweep, chunk V2)
+//
+// The count witness for Check_EdgeLiesOnAdjacentSurfacesCounted (read by layer
+// 00's Law_WorkIsWithinSlope), and the agreement of every *Hoisted check with
+// the library check it replaces, field for field (Identical): the topology
+// checks over the runner's models and plans, the cross checks over the
+// runner's (model, mesh) pairs and over the CrossCheckPair witnesses, each
+// meshed once per sweep.
+//
+// Sections, in order:
+//  - Count witness
+//  - Topology checks agree
+//  - Cross checks agree
+
+library MeasuresGivenLaws
+{
+    //==
+    // # Count witness
+
+    // The whole-model scans Check_EdgeLiesOnAdjacentSurfaces makes on the
+    // model with n edges (the unit box for 12, the block with a through hole
+    // for 24) under the default plan.
+    EdgeOnSurfaceCheckWork(n: Integer): WorkBudget
+        => BrepModel.GuardsModelOfSize(n).Check_EdgeLiesOnAdjacentSurfacesCounted(SamplePlan.CheckPlan).Work;
+
+    // Check_EdgeLiesOnAdjacentSurfaces makes at most two whole-model scans
+    // (IsEveryIndexInRange, AllCoedgeSites), counted as Flips, per edge, at 12
+    // and 24 edges. The hoisted check makes two in all; the library's makes
+    // three per sample, 2 x plan.Count x 3 per edge.
+    Witness_EdgeOnSurfaceCheckWork(_: WorkClaim): WorkClaim
+        => WorkClaim("Check_EdgeLiesOnAdjacentSurfaces: whole-model scans per edge", Flips(2), [12, 24], n => EdgeOnSurfaceCheckWork(n));
+
+    //==
+    // # Topology checks agree
+
+    // The hoisted checks without a plan are the library's, field for field.
+    Law_Perf_EdgeEndChecksHoistedAgree(m: BrepModel): Boolean
+        => Identical(m.Check_EdgeDomainEndsAtVerticesHoisted, m.Check_EdgeDomainEndsAtVertices)
+            && Identical(m.Check_VertexCoincidesWithCurveEndHoisted, m.Check_VertexCoincidesWithCurveEnd)
+            && Identical(m.Check_PcurveSurfaceIsAFaceSurfaceHoisted, m.Check_PcurveSurfaceIsAFaceSurface);
+
+    // The hoisted edge checks over plan's fractions are the library's, field
+    // for field.
+    Law_Perf_EdgeSampleChecksHoistedAgree(m: BrepModel, plan: SamplePlan): Boolean
+        => Identical(m.Check_DegenerateEdgeStaysAtStartHoisted(plan), m.Check_DegenerateEdgeStaysAtStart(plan))
+            && Identical(m.Check_PcurveAgreesWithCurveHoisted(plan), m.Check_PcurveAgreesWithCurve(plan))
+            && Identical(m.Check_CurveAgreesWithPcurveHoisted(plan), m.Check_CurveAgreesWithPcurve(plan))
+            && Identical(m.Check_PcurveRunsWithCurveHoisted(plan), m.Check_PcurveRunsWithCurve(plan));
+
+    // The hoisted coedge-site checks are the library's, field for field, and
+    // the counted one makes exactly two whole-model scans whatever the model.
+    Law_Perf_SiteChecksHoistedAgree(m: BrepModel, plan: SamplePlan): Boolean
+    {
+        var counted = m.Check_EdgeLiesOnAdjacentSurfacesCounted(plan);
+        return Identical(counted.Value, m.Check_EdgeLiesOnAdjacentSurfaces(plan))
+            && counted.Work.Flips == 2
+            && Identical(m.Check_ParameterizationSignIsConstantOnFaceHoisted(plan), m.Check_ParameterizationSignIsConstantOnFace(plan));
+    }
+
+    //==
+    // # Cross checks agree
+
+    // The three hoisted geometry cross checks are the library's on model m
+    // and mesh, field for field.
+    CrossChecksAgreeOn(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Boolean
+        => Identical(m.Check_VertexReevaluatesFromProvenanceHoisted(mesh), m.Check_VertexReevaluatesFromProvenance(mesh))
+            && Identical(m.Check_CornerNormalIsFaceNormalHoisted(mesh), m.Check_CornerNormalIsFaceNormal(mesh))
+            && Identical(m.Check_ElementNormalAgreesWithFaceNormalHoisted(mesh, c), m.Check_ElementNormalAgreesWithFaceNormal(mesh, c));
+
+    // On the runner's (model, mesh, criteria) cases: mostly a mesh of another
+    // model, so provenance out of range and failing checks.
+    Law_Perf_CrossChecksHoistedAgree(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Boolean
+        => CrossChecksAgreeOn(m, mesh, c);
+
+    // On a model with a mesh made from it, and on a model with another's mesh,
+    // under the witness criteria. Only the unit box is meshed: under the C#
+    // backend its witness mesh takes about 4 s, the block with a hole's 13 s
+    // and the cylinder's over 20 s, and a witness has no budget.
+    Law_Perf_WitnessCrossChecksHoistedAgree(p: CrossCheckPair): Boolean
+        => CrossChecksAgreeOn(p.Model, p.Mesh, MeshingOptions.WitnessOptions.Face);
+
+    // The unit box and its witness mesh: every check holds.
+    Witness_UnitBoxCrossPair(_: CrossCheckPair): CrossCheckPair
+        => CrossCheckPair("UnitBox", BrepModel.Witness_UnitBox, BrepModel.Witness_UnitBox.WitnessMesh);
+
+    // The cylinder against the unit box's mesh: provenance off the cylinder's
+    // surfaces and faces out of range, so the checks fail at a named cell.
+    Witness_CylinderWithBoxMeshCrossPair(_: CrossCheckPair): CrossCheckPair
+        => CrossCheckPair("CylinderWithBoxMesh", BrepModel.Witness_Cylinder, BrepModel.Witness_UnitBox.WitnessMesh);
+}

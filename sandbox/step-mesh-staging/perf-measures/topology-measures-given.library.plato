@@ -1,0 +1,175 @@
+//==
+// # Topology measures and checks with the whole-model guard hoisted (complexity sweep, chunk V2)
+//
+// Layer 7's six coupling measures (validation-checks-topology.library.plato,
+// "Measures") with their m.IsEveryIndexInRange guard passed in as ok, and
+// *Hoisted forms of the nine checks that fold them or a layer 2 law with the
+// same guard: each binds ok, the coedge sites and the plan's fractions once
+// per check, where the library's form rebuilds them per sample
+// (docs/plans/step-mesher-complexity.md, ranked candidate 13). Same
+// expressions, so the same Check, field for field (Law_Perf_*HoistedAgrees).
+// At merge each measure becomes `=> m.<Name>Given(m.IsEveryIndexInRange, ...)`
+// and each Check_ takes its *Hoisted body.
+//
+// Sections, in order:
+//  - Measures behind a given guard
+//  - Edge domains and degenerate edges
+//  - Geometry coupling
+//  - Self-tests
+
+library BrepCheckingTopologyGiven
+{
+    //==
+    // # Measures behind a given guard
+    //
+    // Each is the library measure of the same name without Given, with ok in
+    // place of m.IsEveryIndexInRange.
+
+    // DomainEndDeviation behind Law_EdgeDomainEndsAtVertices's guard.
+    EndDeviationGiven(m: BrepModel, ok: Boolean, e: BrepEdgeIndex, atStart: Boolean): Number
+        => ok ? (m.IsEdgeInRange(e) ? m.DomainEndDeviation(e, atStart) : 0.0) : 0.0;
+
+    // VertexCurveDeviation behind Law_VertexCoincidesWithCurveEnd's guard.
+    VertexOnCurveDeviationGiven(m: BrepModel, ok: Boolean, e: BrepEdgeIndex, atStart: Boolean): Number
+        => ok ? (m.IsEdgeInRange(e) ? m.VertexCurveDeviation(e, atStart) : 0.0) : 0.0;
+
+    // StartVertexDeviationAt behind Law_DegenerateEdgeStaysAtStart's guard.
+    DegenerateDeviationAtGiven(m: BrepModel, ok: Boolean, e: BrepEdgeIndex, t: Number): Number
+        => ok
+            ? (m.IsEdgeInRange(e) ? (m.IsDegenerateEdge(e) ? m.StartVertexDeviationAt(e, t) : 0.0) : 0.0)
+            : 0.0;
+
+    // SurfaceDeviationAt behind Law_EdgeLiesOnAdjacentSurfaces's guard.
+    SiteSurfaceDeviationGiven(m: BrepModel, ok: Boolean, site: CoedgeSite, t: Number): Number
+        => ok ? (m.IsCoedgeSiteInRange(site) ? m.SurfaceDeviationAt(site, t) : 0.0) : 0.0;
+
+    // CurvePcurveDeviationAt behind Law_CurveAgreesWithPcurve's guard.
+    CurvePcurveDeviationGiven(m: BrepModel, ok: Boolean, e: BrepEdgeIndex, k: Integer, t: Number): Number
+        => ok
+            ? (m.IsEdgeInRange(e) ? (m.HasPcurve(e, k) ? m.CurvePcurveDeviationAt(e, k, t) : 0.0) : 0.0)
+            : 0.0;
+
+    // PcurveDeviationAt behind Law_PcurveAgreesWithCurve's guard.
+    PcurveCurveDeviationGiven(m: BrepModel, ok: Boolean, e: BrepEdgeIndex, k: Integer, t: Number): Number
+        => ok
+            ? (m.IsEdgeInRange(e)
+                ? (m.Geometry.PcurvesOf(m.Edges[e].Curve).IsValidIndex(k) ? m.PcurveDeviationAt(e, k, t) : 0.0)
+                : 0.0)
+            : 0.0;
+
+    //==
+    // # Edge domains and degenerate edges
+
+    // Check_DegenerateEdgeStaysAtStart with the guard and the fractions bound
+    // once.
+    Check_DegenerateEdgeStaysAtStartHoisted(m: BrepModel, plan: SamplePlan): Check
+    {
+        var ok = m.IsEveryIndexInRange;
+        var fractions = plan.PlanFractions;
+        return CheckGridWithin("Law_DegenerateEdgeStaysAtStart", m.Edges.Count, plan.Count,
+            (e, j) => m.DegenerateDeviationAtGiven(ok, BrepEdgeIndex(e), fractions[j]),
+            m.Tolerances.Length.Value,
+            (e, j) => AtEdge(e));
+    }
+
+    //==
+    // # Geometry coupling
+
+    // Check_EdgeDomainEndsAtVertices with the guard bound once.
+    Check_EdgeDomainEndsAtVerticesHoisted(m: BrepModel): Check
+    {
+        var ok = m.IsEveryIndexInRange;
+        return CheckGridWithin("Law_EdgeDomainEndsAtVertices", m.Edges.Count, 2,
+            (e, k) => m.EndDeviationGiven(ok, BrepEdgeIndex(e), k == 0),
+            m.Tolerances.Length.Value,
+            (e, k) => AtEdge(e));
+    }
+
+    // Check_VertexCoincidesWithCurveEnd with the guard bound once.
+    Check_VertexCoincidesWithCurveEndHoisted(m: BrepModel): Check
+    {
+        var ok = m.IsEveryIndexInRange;
+        return CheckGridWithin("Law_VertexCoincidesWithCurveEnd", m.Edges.Count, 2,
+            (e, k) => m.VertexOnCurveDeviationGiven(ok, BrepEdgeIndex(e), k == 0),
+            m.Tolerances.Length.Value,
+            (e, k) => AtEdge(e));
+    }
+
+    // Check_EdgeLiesOnAdjacentSurfaces with the guard, the coedge sites and
+    // the fractions bound once, its whole-model scans counted as Flips: one
+    // IsEveryIndexInRange and one AllCoedgeSites, 2 whatever the model's size.
+    // The library's form makes one of each per sample, and one more
+    // AllCoedgeSites per sample for the provenance.
+    Check_EdgeLiesOnAdjacentSurfacesCounted(m: BrepModel, plan: SamplePlan): Counted<Check>
+    {
+        var ok = m.IsEveryIndexInRange;
+        var sites = m.AllCoedgeSites;
+        var fractions = plan.PlanFractions;
+        return Counted(
+            CheckGridWithin("Law_EdgeLiesOnAdjacentSurfaces", sites.Count, plan.Count,
+                (k, j) => m.SiteSurfaceDeviationGiven(ok, sites[k], fractions[j]),
+                m.Tolerances.Length.Value,
+                (k, j) => Provenance.KernelFace(sites[k].Face)),
+            Flips(2));
+    }
+
+    // Check_EdgeLiesOnAdjacentSurfaces with the guard, the coedge sites and
+    // the fractions bound once.
+    Check_EdgeLiesOnAdjacentSurfacesHoisted(m: BrepModel, plan: SamplePlan): Check
+        => m.Check_EdgeLiesOnAdjacentSurfacesCounted(plan).Value;
+
+    // Check_PcurveAgreesWithCurve with the guard and the fractions bound once.
+    Check_PcurveAgreesWithCurveHoisted(m: BrepModel, plan: SamplePlan): Check
+    {
+        var ok = m.IsEveryIndexInRange;
+        var fractions = plan.PlanFractions;
+        return CheckGridWithin("Law_PcurveAgreesWithCurve", m.Edges.Count, 2 * plan.Count,
+            (e, j) => m.PcurveCurveDeviationGiven(ok, BrepEdgeIndex(e), j / plan.Count, fractions[j % plan.Count]),
+            m.Tolerances.Length.Value,
+            (e, j) => AtEdge(e));
+    }
+
+    // Check_CurveAgreesWithPcurve with the guard and the fractions bound once.
+    Check_CurveAgreesWithPcurveHoisted(m: BrepModel, plan: SamplePlan): Check
+    {
+        var ok = m.IsEveryIndexInRange;
+        var fractions = plan.PlanFractions;
+        return CheckGridWithin("Law_CurveAgreesWithPcurve", m.Edges.Count, 2 * plan.Count,
+            (e, j) => m.CurvePcurveDeviationGiven(ok, BrepEdgeIndex(e), j / plan.Count, fractions[j % plan.Count]),
+            m.Tolerances.Length.Value,
+            (e, j) => AtEdge(e));
+    }
+
+    // Check_PcurveRunsWithCurve with the guard and the fractions bound once.
+    Check_PcurveRunsWithCurveHoisted(m: BrepModel, plan: SamplePlan): Check
+    {
+        var ok = m.IsEveryIndexInRange;
+        var fractions = plan.PlanFractions;
+        return CheckGrid("Law_PcurveRunsWithCurve", m.Edges.Count, 2 * plan.Count,
+            (e, j) => m.PcurveRunsWithCurveGiven(ok, BrepEdgeIndex(e), j / plan.Count, fractions[j % plan.Count]),
+            (e, j) => AtEdge(e));
+    }
+
+    // Check_PcurveSurfaceIsAFaceSurface with the guard bound once.
+    Check_PcurveSurfaceIsAFaceSurfaceHoisted(m: BrepModel): Check
+    {
+        var ok = m.IsEveryIndexInRange;
+        return CheckGrid("Law_PcurveSurfaceIsAFaceSurface", m.Edges.Count, 2,
+            (e, k) => m.PcurveSurfaceIsAFaceSurfaceGiven(ok, BrepEdgeIndex(e), k), (e, k) => AtEdge(e));
+    }
+
+    //==
+    // # Self-tests
+
+    // Check_ParameterizationSignIsConstantOnFace with the guard, the coedge
+    // sites and the fractions bound once.
+    Check_ParameterizationSignIsConstantOnFaceHoisted(m: BrepModel, plan: SamplePlan): Check
+    {
+        var ok = m.IsEveryIndexInRange;
+        var sites = m.AllCoedgeSites;
+        var fractions = plan.PlanFractions;
+        return CheckGrid("Law_ParameterizationSignIsConstantOnFace", sites.Count, plan.Count,
+            (k, j) => m.ParameterizationSignIsConstantOnFaceGiven(ok, sites[k], fractions[j]),
+            (k, j) => Provenance.KernelFace(sites[k].Face));
+    }
+}

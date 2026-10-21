@@ -1,0 +1,18 @@
+//==
+// # A model with its mesh (complexity sweep, chunk V2)
+//
+// The cross agreement laws of measures-given.laws.plato compare the library's
+// geometry cross checks with the *Hoisted forms on a model and the mesh made
+// from it. Each is a Witness_* value, so a sweep meshes the model once, not
+// once per law case. Chunk L1's MeshedWitness (model and outcome) serves the
+// same purpose once it merges; this type is deleted at merge.
+
+// A model and a mesh to cross-check against it: the model's own witness mesh,
+// or another model's mesh, so the checks fail somewhere.
+// Removes: meshing a witness inside every case of an agreement law.
+type CrossCheckPair
+{
+    Name: String;
+    Model: BrepModel;
+    Mesh: ModelMesh;
+}
