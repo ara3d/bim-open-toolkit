@@ -48,18 +48,18 @@ library EdgeRefineIndexedLaws
     // RaisedToCount copies each parameter of its result once: at most two per segment asked for
     // (n + 1 for n segments), at 8 and 64 segments. The reference copied the whole array once
     // per raise, n (n + 1) / 2 in all from one segment. The heap's own moves grow as n log n,
-    // which a slope cannot state; Law_Perf_RaisedToCountHeapMovesWithinLog bounds them.
+    // which a slope cannot state; Law_RaisedToCountHeapMovesWithinLog bounds them.
     Witness_RaisedToCountHeapWork(_: WorkClaim): WorkClaim
         => WorkClaim("RaisedToCount: parameters copied per segment asked", Insertions(2), [8, 64], n => RaisedHeapWork(n));
 
     // Exact: raising n input segments by k copies n + k + 1 parameters, and moves heap entries
     // at most n (1 + L) + k (2 + 2 L) times, L = floor(log2(n + k)): per raise, a root
     // replacement and a push, each sifting at most L levels. No raise, no work.
-    Law_Perf_RaisedToCountHeapMovesWithinLog(_: Integer): Boolean
+    Law_RaisedToCountHeapMovesWithinLog(_: Integer): Boolean
         => Integer.RaiseLists.All(ps => Integer.RaiseCounts.All(least =>
             HeapWorkHolds(ps, least, BrepModel.Witness_UnitBox.RaisedToCountHeapCounted(ps, least))));
 
-    // The exact claim of Law_Perf_RaisedToCountHeapMovesWithinLog for one list and count.
+    // The exact claim of Law_RaisedToCountHeapMovesWithinLog for one list and count.
     HeapWorkHolds(ps: Array<Number>, least: Integer, c: Counted<Array<Number>>): Boolean
     {
         var n = ps.Count - 1;
@@ -76,7 +76,7 @@ library EdgeRefineIndexedLaws
     // W0's RaisedToCountCounted, the old loop with its raises counted (its value is RaisedToCount's,
     // Law_RaisedToCountCountedAgrees), so the law still compares two algorithms once RaisedToCount
     // is wired to the heap.
-    Law_Perf_RaisedToCountHeapAgrees(_: Integer): Boolean
+    Law_RaisedToCountHeapAgrees(_: Integer): Boolean
         => Integer.RaiseLists.All(ps => Integer.RaiseCounts.All(least =>
             SameParameters(
                 BrepModel.Witness_UnitBox.RaisedToCountHeap(ps, least),
@@ -95,7 +95,7 @@ library EdgeRefineIndexedLaws
     }
 
     // RaisedToCountHeap agrees on the unit box, the cylinder and the block with a through hole.
-    Law_Perf_RaisedToCountHeapAgreesOnModels(_: Integer): Boolean
+    Law_RaisedToCountHeapAgreesOnModels(_: Integer): Boolean
         => RaisedAgreesOn(BrepModel.Witness_UnitBox)
             && RaisedAgreesOn(BrepModel.Witness_Cylinder)
             && RaisedAgreesOn(BrepModel.Witness_BlockWithThroughHole);
@@ -129,37 +129,6 @@ library EdgeRefineIndexedLaws
             && (m.IsRefinable(d, requests, c) ? SameTables(m.RefineIndexed(d, requests, c), m.Refine(d, requests, c)) : true);
     }
 
-    // RefineIndexed agrees on the unit box, the cylinder, the block with a through hole and the
-    // cube with an off-surface edge; the first three are refinable under the requests.
-    Law_Perf_RefineIndexedAgrees(_: Integer): Boolean
-    {
-        var c = DiscretizationCriteria.CatalogEdgeCriteria;
-        var box = BrepModel.Witness_UnitBox;
-        var cylinder = BrepModel.Witness_Cylinder;
-        var block = BrepModel.Witness_BlockWithThroughHole;
-        return RefineAgreesOn(box) && RefineAgreesOn(cylinder) && RefineAgreesOn(block)
-            && RefineAgreesOn(BrepModel.TermOffSurfaceCube(1))
-            && box.IsRefinable(box.DiscretizeAll(c, SegmentFloors.NoFloors), RefineRequests(c), c)
-            && cylinder.IsRefinable(cylinder.DiscretizeAll(c, SegmentFloors.NoFloors), RefineRequests(c), c)
-            && block.IsRefinable(block.DiscretizeAll(c, SegmentFloors.NoFloors), RefineRequests(c), c);
-    }
-
-    // RaisedFloorsByScatter is RaisedFloors, entry for entry, on the unit box: with no floors,
-    // with floors shorter than the edges, and with requests naming an edge twice, a negative
-    // edge and an edge past the last.
-    Law_Perf_RaisedFloorsByScatterAgrees(_: Integer): Boolean
-    {
-        var m = BrepModel.Witness_UnitBox;
-        var c = DiscretizationCriteria.CatalogEdgeCriteria;
-        var requests = RefineRequests(c).Concatenate([
-            EdgeRefinementRequest(BrepEdgeIndex(-1), RefinementReason.QuadCountMismatch, c.Chordal, 9),
-            EdgeRefinementRequest(BrepEdgeIndex(11), RefinementReason.QuadCountMismatch, c.Chordal, 3),
-            EdgeRefinementRequest(BrepEdgeIndex(4), RefinementReason.QuadCountMismatch, c.Chordal, 2)]);
-        return [SegmentFloors.NoFloors, SegmentFloors([3, 0, 30, 1, 6])].All(floors =>
-            [requests, requests.Take(0)].All(rs =>
-                SameCounts(m.RaisedFloorsByScatter(floors, rs).ByEdge, m.RaisedFloors(floors, rs).ByEdge)));
-    }
-
     // Two count arrays are the same, entry for entry.
     SameCounts(a: Array<Integer>, b: Array<Integer>): Boolean
         => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
@@ -186,7 +155,7 @@ library EdgeRefineIndexedLaws
 
     // Exact: 2 E + R, an index slot and a lookup per entry and a visit per request, at both
     // witness sizes, with nothing else counted.
-    Law_Perf_RefineIndexedScansOnce(_: Integer): Boolean
+    Law_RefineIndexedScansOnce(_: Integer): Boolean
         => [16, 24].All(n => RefineScanWork(n).Insertions == 2 * 12 + (n - 12)
             && RefineScanWork(n).Evaluations == 0 && RefineScanWork(n).Flips == 0 && RefineScanWork(n).Projections == 0);
 
@@ -222,7 +191,7 @@ library EdgeRefineIndexedLaws
 
     // The per-segment test agrees on the unit box, the cylinder (whose coarsened circles fail)
     // and the cube with an off-surface edge.
-    Law_Perf_SegmentMeetsCriteriaFromAgrees(_: Integer): Boolean
+    Law_SegmentMeetsCriteriaFromAgrees(_: Integer): Boolean
         => SegmentTestAgreesOn(BrepModel.Witness_UnitBox)
             && SegmentTestAgreesOn(BrepModel.Witness_Cylinder)
             && SegmentTestAgreesOn(BrepModel.TermOffSurfaceCube(1));

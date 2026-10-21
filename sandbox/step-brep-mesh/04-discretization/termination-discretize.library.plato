@@ -212,11 +212,7 @@ library TermDiscretize
 
     // Layer 4's RefinedParameters over the given images.
     RefinedParametersOn(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, images: Array<EdgeImage>): Array<Number>
-        => [d.Parameters[0]].Concatenate(d.SegmentCount.Range.FlatMap(i =>
-            (m.SegmentMeetsCriteriaOn(d, c, i, images)
-                ? [d.Parameters[i]].Take(0)
-                : m.RefinedSpanOn(d.Edge, c, d.Parameters[i], d.Parameters[i + 1], 0, images))
-            .Concatenate([d.Parameters[i + 1]])));
+        => m.IsEdgeEvaluable(d.Edge) ? m.RefinedParametersIndexed(d, c, images, m.EdgeDomain(d.Edge).Range) : d.Parameters;
 
     // Layer 4's RefinedSpan over the given images.
     RefinedSpanOn(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: Number, b: Number, depth: Integer, images: Array<EdgeImage>): Array<Number>

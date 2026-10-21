@@ -1,28 +1,15 @@
 //==
 // # Counted forms of edge discretization: laws (complexity sweep)
 //
-// The first Witness_*Work claim: RaisedToCount's raises are at most one per segment asked
-// for, measured at two sizes of one family (a two-parameter list raised to 8 and to 32
-// segments). Law_WorkIsWithinSlope (layer 00) reads it. The laws here only tie the counted
-// form to the plain one.
+// The counted form of RaisedToCount (W0) stays as the reference the heap form (chunk R6,
+// 08-pipeline/pipeline-refine-indexed.laws.plato, which also holds the count witness that
+// replaced W0's) is compared against; the laws here tie it to the plain one.
 //
 // Sections, in order:
-//  - Witness
 //  - Agreement
 
 library EdgeDiscretizingWorkLaws
 {
-    //==
-    // # Witness
-
-    // The work of raising the unit interval to n segments.
-    RaisedWork(n: Integer): WorkBudget
-        => BrepModel.Witness_UnitBox.RaisedToCountCounted([0.0, 1.0], n).Work;
-
-    // RaisedToCount does at most one raise per segment asked for, at 8 and at 32 segments.
-    Witness_RaisedToCountWork(_: WorkClaim): WorkClaim
-        => WorkClaim("RaisedToCount: raises per segment", WorkBudgetOf(0, 0, 1, 0), [8, 32], n => RaisedWork(n));
-
     //==
     // # Agreement
 

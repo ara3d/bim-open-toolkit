@@ -167,8 +167,7 @@ library StepToMesh
     // The floors raised to every segment count the requests ask for, one
     // entry per edge: the record of the count requests answered so far.
     RaisedFloors(m: BrepModel, floors: SegmentFloors, requests: Array<EdgeRefinementRequest>): SegmentFloors
-        => SegmentFloors(m.Edges.Count.MapRange(i =>
-            floors.FloorOf(BrepEdgeIndex(i)).Max(requests.RequestedSegments(BrepEdgeIndex(i)))));
+        => m.RaisedFloorsByScatter(floors, requests);
 
     //==
     // # Faces

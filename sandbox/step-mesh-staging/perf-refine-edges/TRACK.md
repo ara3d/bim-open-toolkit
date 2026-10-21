@@ -1,7 +1,7 @@
 # perf-refine-edges: raises by a heap, requests indexed per edge, chord deviations once per edge
 
 Ticket: TKT-388
-Status: ready: R6
+Status: merged: R6 (2026-10-21, into 04-discretization/discretization-refine-indexed.{types,library}.plato and 08-pipeline/pipeline-refine-indexed.laws.plato; W0's raise witness replaced by the heap witness)
 
 ## Files
 

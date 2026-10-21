@@ -717,15 +717,7 @@ library EdgeDiscretizing
     // one at a time (the first such on a tie), until there are at least
     // `least` segments.
     RaisedToCount(m: BrepModel, parameters: Array<Number>, least: Integer): Array<Number>
-    {
-        var ts = parameters;
-        while (ts.Count - 1 < least)
-        {
-            var widest = (ts.Count - 1).Range.Reduce(0, (w, i) => ts[i + 1] - ts[i] > ts[w + 1] - ts[w] ? i : w);
-            ts = ts.Take(widest + 1).Concatenate([(ts[widest] + ts[widest + 1]) * 0.5]).Concatenate(ts.Skip(widest + 1));
-        }
-        return ts;
-    }
+        => m.RaisedToCountHeap(parameters, least);
 
     // The entry of an edge that `CanDiscretize` rejects: no parameters and no points. It keeps the
     // table at one entry per edge; every law is vacuous on it (`IsEvaluable` needs two samples),
