@@ -1,0 +1,29 @@
+//==
+// # Loop run witnesses (complexity sweep, chunk L2)
+//
+// A model's refinement loop run once per sweep, for the laws of layer 8 that read the loop's
+// states and the mesh it assembles (pipeline.laws.plato: the step, refinement, watertightness and
+// mesh-against-model laws). The law runner builds every Witness_* of these types once, before any
+// law runs, and exhausts the finite list: neither type is generatable, since both hold a
+// BrepModel and PipelineStates.
+
+// A model and every state its refinement loop passes through under the witness options, every
+// face chosen, and the mesh the last state assembles, without validation.
+// Invariant: States[0] is InitialState, States[i + 1] is Step of States[i] while States[i] is not
+// terminal, the last state is FinalState, and Mesh is AssembledMesh of the last state: the mesh
+// MeshModel gives (UnvalidatedMesh).
+type LoopRunWitness
+{
+    Name: String;
+    Model: BrepModel;
+    States: Array<PipelineState>;
+    Mesh: ModelMesh;
+}
+
+// A loop run whose model takes longer to mesh than a law's budget (2 s compiled), so no law over
+// it meshes the model again: the laws that run the pipeline a second time (determinism,
+// metamorphic relations, current outcomes) run over LoopRunWitness only.
+type CostlyLoopRunWitness
+{
+    Run: LoopRunWitness;
+}

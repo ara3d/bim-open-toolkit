@@ -1,0 +1,344 @@
+//==
+// # StepToMeshLaws over loop runs (complexity sweep, chunk L2)
+//
+// The laws of pipeline.laws.plato that read the refinement loop's states or the mesh, restated
+// over LoopRunWitness (pipeline-run-witness.types.plato): each reads the states and mesh the
+// runner built once per sweep. Where an original compared StateAfter(k) with StateAfter(k + 1),
+// replaying the loop from the start twice per k, the restated law takes one Step from each state
+// the witness holds that is not terminal. A law the original swept by an Integer index (a round,
+// an edge, a face, a parameter, an element, a corner slot, a vertex, a shell, a body) checks every
+// index of the witness in one case. Only the laws whose point is a second run (determinism, the
+// metamorphic relations, current outcomes) mesh again. At merge each Law_Perf_<X> replaces
+// Law_<X> of StepToMeshLaws (TRACK.md).
+//
+// Sections, in order:
+//  - Helpers
+//  - Outcomes
+//  - Diagnostics
+//  - The loop: termination
+//  - The loop: monotone and local refinement
+//  - The loop: state invariants
+//  - Failure isolation
+//  - Watertightness
+//  - Metamorphic relations
+//  - The mesh against its model
+
+library StepToMeshLoopRunLaws
+{
+    //==
+    // # Helpers
+
+    // The terminal state of witness w's loop: FinalState.
+    FinalOf(w: LoopRunWitness): PipelineState
+        => w.States[w.States.Count - 1];
+
+    // The findings of witness w's loop (LoopReport): face meshing's and the pipeline's own, before
+    // validation.
+    LoopReportOf(w: LoopRunWitness): Report
+        => w.Model.LoopReport(MeshingOptions.WitnessOptions, w.Model.AllFaces, w.FinalOf);
+
+    // True when claim holds of every step of witness w's loop: for each state a the witness holds
+    // that is not terminal, of a and Step(a), the step computed here from the bound state.
+    EveryStepHolds(w: LoopRunWitness, claim: Function2<PipelineState, PipelineState, Boolean>): Boolean
+    {
+        var m = w.Model;
+        var o = MeshingOptions.WitnessOptions;
+        return w.States.All(a => a.IsTerminal(o) ? true : claim(a, m.Step(o, m.AllFaces, a)));
+    }
+
+    // True when face f of the run that kept it (first state first, final state kept) failed
+    // silently: its final mesh is empty, it holds no request, and every edge it cites is as first
+    // discretized. The hypothesis of Law_FailedFaceLeavesOthersUnchanged.
+    IsSilentFace(m: BrepModel, f: BrepFaceIndex, first: PipelineState, kept: PipelineState): Boolean
+        => kept.Outcomes[f].Mesh.IsEmptyFaceMesh
+            && kept.Outcomes[f].Requests.Count == 0
+            && m.FaceEdges(f).All(e => kept.Discretizations.ByEdge[e].SameDiscretization(first.Discretizations.ByEdge[e]));
+
+    // True when face f cites an edge marked changed (or one out of the table's range).
+    CitesChangedEdge(m: BrepModel, f: BrepFaceIndex, changed: Array<Boolean>): Boolean
+        => m.FaceEdges(f).Any(e => changed.IsValidIndex(e) ? changed[e] : true);
+
+    // True when every face of state s left without a mesh has an error located at the face in
+    // report r.
+    EmptyFacesAreDiagnosed(m: BrepModel, s: PipelineState, r: Report): Boolean
+        => m.Faces.Count.Range.All(f =>
+            s.Outcomes[BrepFaceIndex(f)].Mesh.IsEmptyFaceMesh
+                ? r.Diagnostics.Any(d => d.Severity.IsError && d.Where == Provenance.KernelFace(BrepFaceIndex(f)))
+                : true);
+
+    // True when witness w meets the hypotheses of WatertightByConstruction: its model is runnable
+    // and a closed-shell model, and no face of its final state is left without a mesh.
+    MeetsWatertightHypotheses(w: LoopRunWitness): Boolean
+        => w.Model.IsRunnable(MeshingOptions.WitnessOptions)
+            && w.Model.IsClosedShellModel
+            && !w.FinalOf.Outcomes.Any(x => x.Mesh.IsEmptyFaceMesh);
+
+    // The witness options validated at the Structural level only: the options of the
+    // determinism law's two runs, since an Oracle validation takes seconds compiled per run.
+    StructuralWitnessOptions(_: MeshingOptions): MeshingOptions
+    {
+        var o = MeshingOptions.WitnessOptions;
+        return MeshingOptions(o.Face, ConformanceLevel.Structural, o.MaxRefinementRounds, o.Decode, o.Quality);
+    }
+
+    //==
+    // # Outcomes
+
+    // Meshing witness w's model twice gives the same outcome, bit for bit: no hash order, thread
+    // schedule, or address decides anything. Two runs, as the law's point is, validated at the
+    // Structural level; that validation reads its inputs and nothing else is
+    // Law_ValidationIsIdempotent's claim.
+    Law_Perf_MeshModelIsDeterministic(w: LoopRunWitness): Boolean
+        => w.Model.MeshModel(MeshingOptions.StructuralWitnessOptions)
+            .SameMeshOutcome(w.Model.MeshModel(MeshingOptions.StructuralWitnessOptions));
+
+    // The rounds the loop took are at most the witness options' round limit.
+    Law_Perf_RoundsWithinLimit(w: LoopRunWitness): Boolean
+        => MeshingOptions.WitnessOptions.IsWellFormed
+            ? w.FinalOf.Round <= MeshingOptions.WitnessOptions.MaxRefinementRounds
+            : w.FinalOf.Round == 0;
+
+    //==
+    // # Diagnostics
+
+    // A face left without a mesh has an error located at the face, from face meshing or the
+    // pipeline's own (FailureDiagnostics): both are the loop's findings, which MeshModel's report
+    // holds before its validation.
+    Law_Perf_EmptyFaceIsDiagnosed(w: LoopRunWitness): Boolean
+        => w.Model.IsRunnable(MeshingOptions.WitnessOptions)
+            ? w.Model.EmptyFacesAreDiagnosed(w.FinalOf, w.LoopReportOf)
+            : true;
+
+    // The same on the planted bad face's run, where a face is left empty by design, over its
+    // outcome's report.
+    Law_Perf_PlantedEmptyFaceIsDiagnosed(w: FailedFaceWitness): Boolean
+        => w.Meshed.Model.EmptyFacesAreDiagnosed(w.Final, w.Meshed.Outcome.Report);
+
+    //==
+    // # The loop: termination
+
+    // The loop stops with nothing pending or at the round limit.
+    Law_Perf_LoopEndsTerminal(w: LoopRunWitness): Boolean
+        => w.FinalOf.IsTerminal(MeshingOptions.WitnessOptions);
+
+    // A step taken from a state that is not terminal raises Round by one, so the measure
+    // MaxRefinementRounds - Round falls by one.
+    Law_Perf_StepDecreasesMeasure(w: LoopRunWitness): Boolean
+        => w.EveryStepHolds((a, b) => b.Round == a.Round + 1);
+
+    // No state passes the round limit, so the measure MaxRefinementRounds - Round is never
+    // negative.
+    Law_Perf_MeasureIsNeverNegative(w: LoopRunWitness): Boolean
+        => w.States.All(s => s.Round <= MeshingOptions.WitnessOptions.MaxRefinementRounds);
+
+    //==
+    // # The loop: monotone and local refinement
+
+    // No edge coarsens across a step: every parameter of every edge before the step is still a
+    // parameter of that edge after it.
+    Law_Perf_RefinementNeverCoarsens(w: LoopRunWitness): Boolean
+        => w.EveryStepHolds((a, b) =>
+            a.Discretizations.ByEdge.Count.Range.All(e =>
+                b.Discretizations.ByEdge.IsValidIndex(BrepEdgeIndex(e))
+                    ? a.Discretizations.ByEdge[BrepEdgeIndex(e)].Parameters.All(t => b.Discretizations.ByEdge[BrepEdgeIndex(e)].ContainsParameter(t))
+                    : a.Discretizations.ByEdge[BrepEdgeIndex(e)].Parameters.Count == 0));
+
+    // A step meshes again only faces that cite an edge it changed: a face whose edges all come
+    // through the step unchanged keeps its outcome, bit for bit.
+    Law_Perf_OnlyFacesOfChangedEdgesAreRemeshed(w: LoopRunWitness): Boolean
+    {
+        var m = w.Model;
+        return w.EveryStepHolds((a, b) =>
+            m.Faces.Count.Range.All(f =>
+                m.CitesChangedEdge(BrepFaceIndex(f), b.Discretizations.ChangedEdges(a.Discretizations))
+                    ? true
+                    : a.Outcomes[BrepFaceIndex(f)].SameFaceMeshOutcome(b.Outcomes[BrepFaceIndex(f)])));
+    }
+
+    // Every outcome of every state the loop reaches is current: face f's outcome is what
+    // FaceOutcome gives for f under the state's discretizations. Meshes every face again once per
+    // state.
+    Law_Perf_OutcomesAreCurrent(w: LoopRunWitness): Boolean
+    {
+        var m = w.Model;
+        var o = MeshingOptions.WitnessOptions;
+        return w.States.All(s =>
+            m.Faces.Count.Range.All(f =>
+                s.Outcomes[BrepFaceIndex(f)].SameFaceMeshOutcome(m.FaceOutcome(BrepFaceIndex(f), s.Discretizations, o, m.AllFaces))));
+    }
+
+    // At the end of the loop every discretized edge meets the floors the requests raised, with
+    // layer 4's structural floors.
+    Law_Perf_FinalDiscretizationsMeetFloors(w: LoopRunWitness): Boolean
+    {
+        var m = w.Model;
+        var c = MeshingOptions.WitnessOptions.Face.Discretization;
+        var s = w.FinalOf;
+        return m.Edges.Count.Range.All(e =>
+            m.CanDiscretize(BrepEdgeIndex(e), c)
+                ? Law_SegmentFloorMet(m, s.Discretizations.ByEdge[BrepEdgeIndex(e)], c, s.Floors)
+                : true);
+    }
+
+    //==
+    // # The loop: state invariants
+
+    // In every state the loop reaches, layer 4's Refine can answer the pending requests.
+    Law_Perf_PendingRequestsAreRefinable(w: LoopRunWitness): Boolean
+        => w.States.All(s => w.Model.IsRefinable(s.Discretizations, s.Pending, MeshingOptions.WitnessOptions.Face.Discretization));
+
+    // In every state the loop reaches, an edge has no discretization exactly when CanDiscretize
+    // rejects it.
+    Law_Perf_EmptyDiscretizationExactlyWhenEdgeUnusable(w: LoopRunWitness): Boolean
+    {
+        var m = w.Model;
+        var c = MeshingOptions.WitnessOptions.Face.Discretization;
+        return w.States.All(s =>
+            m.Edges.Count.Range.All(e =>
+                s.Discretizations.ByEdge.IsValidIndex(BrepEdgeIndex(e))
+                    ? (s.Discretizations.ByEdge[BrepEdgeIndex(e)].Parameters.Count == 0) == !m.CanDiscretize(BrepEdgeIndex(e), c)
+                    : true));
+    }
+
+    //==
+    // # Failure isolation
+
+    // A face that fails without asking for anything leaves every other face's mesh as it is in
+    // the run without it. The run without face f is built only for a face that failed silently,
+    // once for all other faces g; the planted bad face's run (FailedFaceWitness) holds it already
+    // (Law_PlantedBadFaceLeavesOthersUnchanged).
+    Law_Perf_FailedFaceLeavesOthersUnchanged(w: LoopRunWitness): Boolean
+    {
+        var m = w.Model;
+        if (!m.IsRunnable(MeshingOptions.WitnessOptions))
+        {
+            return true;
+        }
+        var first = w.States[0];
+        var kept = w.FinalOf;
+        return m.Faces.Count.Range.All(f =>
+            m.IsSilentFace(BrepFaceIndex(f), first, kept) ? m.SilentFaceLeavesOthersUnchanged(BrepFaceIndex(f), first, kept) : true);
+    }
+
+    // For a face f that failed silently, every other face's final mesh with f kept is its final
+    // mesh in the run without f.
+    SilentFaceLeavesOthersUnchanged(m: BrepModel, f: BrepFaceIndex, first: PipelineState, kept: PipelineState): Boolean
+    {
+        var dropped = m.FinalState(MeshingOptions.WitnessOptions, m.AllFaces.Excluding(f));
+        return m.Faces.Count.Range.All(g =>
+            g == f.Value ? true : m.SilentFaceLeavesFaceUnchanged(f, BrepFaceIndex(g), first, kept, dropped));
+    }
+
+    //==
+    // # Watertightness
+
+    // When every shell is a closed shell, every face belongs to one, and no face is left without
+    // a mesh, the mesh is closed: every mesh edge has exactly two element sides.
+    Law_Perf_ClosedWhenEveryShellClosedAndNoFaceEmpty(w: LoopRunWitness): Boolean
+        => w.MeetsWatertightHypotheses ? w.Mesh.IsClosed : true;
+
+    // Under the same hypotheses the mesh is consistently oriented.
+    Law_Perf_OrientedWhenEveryShellClosedAndNoFaceEmpty(w: LoopRunWitness): Boolean
+        => w.MeetsWatertightHypotheses ? w.Mesh.IsConsistentlyOriented : true;
+
+    //==
+    // # Metamorphic relations
+    //
+    // The run after the perturbation is built without validation (UnvalidatedMesh), as chunk L1's
+    // metamorphic laws build it.
+
+    // Reversing any one edge gives the same mesh, bit for bit.
+    Law_Perf_EdgeReversalPreservesMesh(w: LoopRunWitness): Boolean
+        => w.Model.IsRunnable(MeshingOptions.WitnessOptions)
+            ? w.Model.Edges.Count.Range.All(e =>
+                w.Model.WithEdgeReversed(BrepEdgeIndex(e)).UnvalidatedMesh(MeshingOptions.WitnessOptions).SameModelMesh(w.Mesh))
+            : true;
+
+    // Reversing every shell negates the signed volume, within the length tolerance times the
+    // area.
+    Law_Perf_ShellReversalNegatesVolume(w: LoopRunWitness): Boolean
+        => w.Model.IsRunnable(MeshingOptions.WitnessOptions)
+            ? (w.Mesh.SignedVolume + w.Model.WithEveryFaceReversed.UnvalidatedMesh(MeshingOptions.WitnessOptions).SignedVolume).Abs
+                <= w.Model.Tolerances.Length.Value * w.Mesh.Area
+            : true;
+
+    //==
+    // # The mesh against its model
+    //
+    // Layers 6 and 7's predicates over (model, mesh) on witness w's mesh, at every index.
+
+    // The mesh meets the ModelMesh invariants (layer 6's IsWellFormed).
+    Law_Perf_MeshedMeshIsWellFormed(w: LoopRunWitness): Boolean
+        => w.Mesh.IsWellFormed;
+
+    // The mesh passes layer 7's structural checks of a model mesh with the model's tolerances.
+    Law_Perf_MeshedMeshValidatesStructurally(w: LoopRunWitness): Boolean
+        => w.Mesh.ValidateModelMesh(w.Model.Tolerances, MeshingOptions.WitnessOptions.Quality, ConformanceLevel.Structural).IsClean;
+
+    // The assembly's inputs in the loop's final state, its face meshes and the vertex numbering
+    // the mesh carries, pass layer 7's structural checks.
+    Law_Perf_MeshedAssemblyValidatesStructurally(w: LoopRunWitness): Boolean
+        => w.Model.IsRunnable(MeshingOptions.WitnessOptions)
+            ? w.Model.ValidateAssembly(w.FinalOf.Discretizations, w.FinalOf.FaceMeshesOf, w.Mesh, ConformanceLevel.Structural).IsClean
+            : true;
+
+    // The face each element approximates is a face of the model (layer 6).
+    Law_Perf_ElementFaceIsModelFace(w: LoopRunWitness): Boolean
+        => w.Mesh.ElementCount.Range.All(e => w.Model.ElementFaceIsModelFace(w.Mesh, ElementIndex(e)));
+
+    // Every corner of every element maps into the closure of its face (layer 6, review M9).
+    Law_Perf_CornerProvenanceIsOnItsElementFace(w: LoopRunWitness): Boolean
+        => w.Mesh.ElementCount.Range.All(e =>
+            w.Mesh.ElementArity(ElementIndex(e)).Range.All(slot => w.Model.CornerProvenanceIsOnItsElementFace(w.Mesh, ElementIndex(e), slot)));
+
+    // The complete mesh of every shell has the shell's reduced Euler characteristic (layer 7).
+    Law_Perf_MeshEulerEqualsBrepEuler(w: LoopRunWitness): Boolean
+        => w.Model.Shells.Count.Range.All(s => w.Model.MeshEulerEqualsBrepEuler(w.Mesh, ShellIndex(s)));
+
+    // The complete mesh of every shell is closed exactly when the shell is (layer 7).
+    Law_Perf_MeshClosedExactlyWhenShellClosed(w: LoopRunWitness): Boolean
+        => w.Model.Shells.Count.Range.All(s => w.Model.MeshClosedExactlyWhenShellClosed(w.Mesh, ShellIndex(s)));
+
+    // Every vertex's provenance names a cell of the model (layer 7).
+    Law_Perf_ProvenanceNamesModelCell(w: LoopRunWitness): Boolean
+        => w.Mesh.Positions.Count.Range.All(v => w.Model.ProvenanceNamesModelCell(w.Mesh, VertexIndex(v)));
+
+    // The meshes of every solid's outer shell and each of its voids share no vertex (layer 7).
+    Law_Perf_SolidShellMeshesShareNoVertex(w: LoopRunWitness): Boolean
+        => w.Model.Bodies.Count.Range.All(b =>
+            w.Model.Bodies[BodyIndex(b)].VoidShellsOf.Count.Range.All(k => w.Model.SolidShellMeshesShareNoVertex(w.Mesh, BodyIndex(b), k)));
+
+    // The closed, oriented mesh of every solid's outer shell encloses a positive volume (layer 7).
+    Law_Perf_OuterShellVolumePositive(w: LoopRunWitness): Boolean
+        => w.Model.Bodies.Count.Range.All(b => w.Model.OuterShellVolumePositive(w.Mesh, BodyIndex(b)));
+
+    // The closed, oriented mesh of every void shell encloses a negative volume (layer 7).
+    Law_Perf_VoidShellVolumeNegative(w: LoopRunWitness): Boolean
+        => w.Model.Bodies.Count.Range.All(b =>
+            w.Model.Bodies[BodyIndex(b)].VoidShellsOf.Count.Range.All(k => w.Model.VoidShellVolumeNegative(w.Mesh, BodyIndex(b), k)));
+
+    // Every vertex re-evaluates from its provenance to its position within the length tolerance:
+    // layer 7's VertexReevaluatesFromProvenance with its whole-model guard computed once, not per
+    // vertex.
+    Law_Perf_VertexReevaluatesFromProvenance(w: LoopRunWitness): Boolean
+    {
+        var ok = w.Model.IsIndexedAndWellFormed;
+        return w.Mesh.Positions.Count.Range.All(v =>
+            w.Model.ReevaluationDeviationGiven(w.Mesh, ok, VertexIndex(v)) <= w.Model.Tolerances.Length.Value);
+    }
+
+    // Every corner normal is its face's exact normal at the corner within the angle tolerance:
+    // layer 7's CornerNormalIsFaceNormal with its whole-model guard computed once, not per corner.
+    Law_Perf_CornerNormalIsFaceNormal(w: LoopRunWitness): Boolean
+    {
+        var ok = w.Model.IsIndexedAndWellFormed;
+        return w.Mesh.ElementCount.Range.All(e =>
+            w.Mesh.ElementArity(ElementIndex(e)).Range.All(slot =>
+                w.Model.CornerNormalGapGiven(w.Mesh, ok, ElementIndex(e), slot) <= w.Model.Tolerances.Angle.Value.Radians));
+    }
+
+    // The angle defects of every closed, oriented shell mesh sum to 2 pi times its Euler
+    // characteristic (layer 7).
+    Law_Perf_AngleDefectMatchesBrepEuler(w: LoopRunWitness): Boolean
+        => w.Model.Shells.Count.Range.All(s => w.Model.AngleDefectMatchesBrepEuler(w.Mesh, ShellIndex(s)));
+}
