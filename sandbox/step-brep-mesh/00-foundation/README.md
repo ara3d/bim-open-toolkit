@@ -11,6 +11,7 @@ body, because every body here is its own specification; nothing is deferred.
 |---|---|
 | `foundation-tolerances.types.plato` | `LengthTolerance`, `AngleTolerance`, `ParameterTolerance`, `UvTolerance`, `Tolerances` |
 | `foundation-budgets.{types,library,laws,spec}.plato` | `TimeBudget`, `Elapsed`, `WorkBudget` (section 10; types moved from catalog-validation at the catalog merge, meshing, because `TerminationCertificate` and `IBudgeted` name `WorkBudget`), their constructors, orders, `Add` and `IsWithin`; blocks `BrepFoundationBudgets`, `BrepFoundationBudgetsLaws` (6 laws) (catalog merge, validation, 2026-10-20) |
+| `foundation-work.{types,library,laws}.plato` | `Counted<T>` and `WorkClaim`, the operation-count types of the complexity sweep (`docs/plans/step-mesher-complexity.md`, testing strategy b), the `Evaluations`/`Insertions`/`Flips`/`Projections` budgets, `Times`, and the one law `Law_WorkIsWithinSlope` that every `Witness_*Work` in a higher layer is a case of; blocks `BrepFoundationWork`, `BrepFoundationWorkLaws` (4 laws) (2026-10-21) |
 | `foundation-domains.types.plato` | `Periodicity`, `CurveDomain`, `SurfaceDomain`, `DomainSide`, `SamplePlan` |
 | `foundation-indices.types.plato` | the 14 typed indices |
 | `foundation-diagnostics.types.plato` | `MeshVertexProvenance`, `Provenance`, `Severity`, `ConstraintGroup`, `LawName` (the type of `Check.Law`, catalog merge, validation), `Check`, `Diagnostic`, `Report` |

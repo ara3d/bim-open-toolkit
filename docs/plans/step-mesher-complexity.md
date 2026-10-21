@@ -96,22 +96,23 @@ Law_WitnessMeshesOk(w: MeshedWitness): Boolean => w.Outcome.Ok;
 
 A law whose parameter is `MeshedWitness` runs once per witness (the runner exhausts a finite witness list) and reads `w.Outcome.Mesh`; it never calls `MeshModel`. The same form serves layer 04 (`DiscretizedWitness`: model, criteria, `EdgeDiscretizations`) and layer 05 (`TriangulatedWitness`: model, face, region, chart, triangulation), each added by the first chunk in its layer that needs it (L3 and L4). This is TKT-356's second criterion.
 
-**(b) Operation-count laws, one generic form.** The fixed function returns its work beside its value, and one law bounds the work by a constant times n on two sizes of the same witness family, so growth is visible. Layer 00 already has `WorkBudget` (Evaluations, Insertions, Flips, Projections). Chunk W0 adds three types and one law, in `00-foundation/foundation-work.types.plato` and `.laws.plato`:
+**(b) Operation-count laws, one generic form.** The fixed function returns its work beside its value, and one law bounds the work by a constant times n on two sizes of the same witness family, so growth is visible. Layer 00 already has `WorkBudget` (Evaluations, Insertions, Flips, Projections). Chunk W0 (merged 2026-10-21, TKT-357) added two types and one law, in `00-foundation/foundation-work.{types,library,laws}.plato`:
 
 ```
 // The value a function computed and the work it counted doing so.
 type Counted<T> { Value: T; Work: WorkBudget; }
-// One measurement: the size n of the input and the work done.
-type WorkSample { Size: Integer; Work: WorkBudget; }
-// A claim that a function's work is at most Slope per unit of size, with its evidence.
-type WorkClaim { Family: String; Slope: WorkBudget; Samples: Array<WorkSample>; }
+// A claim that a function's work is at most Slope per unit of size, measured by WorkAt at two or more growing Sizes.
+type WorkClaim { Family: String; Slope: WorkBudget; Sizes: Array<Integer>; WorkAt: Function1<Integer, WorkBudget>; }
 
-// Every sample of every claim does at most Slope x Size work, and a claim holds two sizes.
-Law_WorkIsWithinSlope(c: WorkClaim): Boolean
-    => c.Samples.Count >= 2 && c.Samples.All(s => s.Work.IsWithin(c.Slope.Times(s.Size)));
+// Every claim holds two or more growing sizes, and the work measured at each is within Slope times the size.
+Law_WorkIsWithinSlope(c: WorkClaim): Boolean => c.HasGrowingSizes && c.HoldsAtEverySize;
 ```
 
-A chunk adds no law for its count: it adds one witness, `Witness_<Family>Work(_: WorkClaim): WorkClaim`, that builds its family at two sizes (for example a 32-point and a 128-point plane face), calls the counted form of the fixed function (`UnwrapCounted(...)`: Counted<UvLoop>`), and states the slope (`WorkBudgetOf(evaluations: 2, insertions: 0, flips: 0, projections: 0)` means at most two evaluations per unit of n). The runner enumerates every `Witness_*Work` as a case of the one law. Plato allows this: `CornerAttribute<T>` and `StageOutcome<T>` are generic product types in the library already, and `RaisedToCount` shows a `var` counter in a `while` loop. The counted form counts the calls it makes itself (its own Evals, copies, candidates), not the transitive total; the plain name becomes `=> XCounted(...).Value`, so no caller changes. What a count counts goes in `Evaluations` (surface and curve evaluations and projections of the function's own), `Insertions` (array elements copied or candidate points visited), `Flips` (flips or table rebuilds): the witness's comment says which.
+A chunk adds no law for its count: it adds one witness, `Witness_<Family>Work(_: WorkClaim): WorkClaim`, that names its family, its slope (`Flips(1)` means at most one flip per unit of n; `Evaluations(n)`, `Insertions(n)`, `Projections(n)` are the other constructors, and `Add` combines them), two or more sizes, and a function from size to measured work that builds the family at that size and calls the counted form of the fixed function (`UnwrapCounted(...): Counted<UvLoop>`, built with the constructor `Counted(value, work)`). The runner enumerates every `Witness_*Work` as a case of the one law and generates no other case: the function-typed field makes `WorkClaim` non-generatable, so only witnesses serve it (`LawRunner.DomainOf`). The first witness is `EdgeDiscretizingWorkLaws.Witness_RaisedToCountWork` (`04-discretization/discretization-work.laws.plato`): `RaisedToCountCounted` counts its raises as Flips, slope `Flips(1)`, sizes 8 and 32; chunk R6 replaces the body and counts copies as Insertions.
+
+The counted form counts the calls it makes itself (its own evaluations, copies, candidates visited), not the transitive total; the plain name becomes `=> XCounted(...).Value` at merge, so no caller changes. A `var` counter in a `while` loop (as in `RaisedToCountCounted`) or a `Reduce` accumulator carries the count; a count that must cross a lambda is returned from the lambda as part of its value.
+
+Three Plato facts W0 met, binding on every counted form: a generic library function whose first parameter is concrete and second a type variable is not monomorphized by the C# writer ("no ground TIR for moved member"), so build `Counted` with its constructor, never through a generic helper; the interpreter projects a record field only in a call with no other argument, so a function-typed field is projected alone and applied through a function-typed parameter (`MeasureAt(n, c.WorkAt)`), never called as `c.WorkAt(n)`; and the checker cannot type a local bound to a function value (CHK101).
 
 **(c) Verdict preservation.** The laws the candidate's row names keep their verdicts against `sandbox/step-brep-mesh/reviews/verdicts-cpu64.tsv`: the merge check runs them, and a pass that no longer passes stops the merge. A fix that changes a floating-point result (a seeded search, an early stop) says so in its `TRACK.md` and the verdict is re-established, never loosened.
 
@@ -174,4 +175,5 @@ Dispatch order: W0 first (supervisor, the same day); then wave A, every chunk wi
 
 ## Log
 
+- 2026-10-21: W0 (TKT-357) built by the supervisor and merged into layers 00 and 04 directly: 6 laws pass on the interpreter and on the compiled backend (31.7 s total, laws 0.1 s). Two Plato defects met and worked around (strategy (b)): generic helper not monomorphized by the C# writer, record field call with arguments not resolved by the interpreter.
 - 2026-10-21: two pre-steps before the readers: `triangulation-fast.laws.plato`'s `==` on `Array<Integer>` (the one type error since the catalog merge, every law run exited 1) fixed in f288b4bc; the library did not compile on the C# backend (5 errors from the catalog merge: `Sign.Negative` case and method, an `At` field emitted as the indexer) fixed in 0b22c442 by renaming `IsoLine.At` to `Fixed` and `Negative(Sign)` to `Negated`. Nine opus readers (layers 00, 01, 02+03, 04, 05, 06, 07, 08+09, 10+11), 150,000 to 275,000 tokens each, 5 to 14 minutes; two reports reached the supervisor only through the main session.

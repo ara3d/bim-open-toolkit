@@ -1,0 +1,46 @@
+//==
+// # Counted work: laws (complexity sweep)
+//
+// The one operation-count law of the testing strategy
+// (docs/plans/step-mesher-complexity.md): every Witness_*Work claim the
+// library declares is a case of Law_WorkIsWithinSlope. The witnesses live in
+// the layer of the function they count (the first is layer 04's
+// discretization-work.laws.plato); this file holds no witness, so the law has
+// no case until one exists above.
+//
+// Sections, in order:
+//  - The slope law
+//  - Arithmetic
+
+library BrepFoundationWorkLaws
+{
+    //==
+    // # The slope law
+
+    // The work measured at every size of every claim is at most Slope times the
+    // size, over two or more growing sizes, so a quadratic function fails at the
+    // larger size where it might pass at the smaller.
+    Law_WorkIsWithinSlope(c: WorkClaim): Boolean
+        => c.HasGrowingSizes && c.HoldsAtEverySize;
+
+    //==
+    // # Arithmetic
+
+    // Scaling a budget by a size scales every count.
+    Law_TimesScalesEveryCount(e: Integer, i: Integer, f: Integer, p: Integer, n: Integer): Boolean
+    {
+        var w = WorkBudgetOf(e, i, f, p).Times(n.Max(0));
+        return w.Evaluations == e.Max(0) * n.Max(0) && w.Insertions == i.Max(0) * n.Max(0)
+            && w.Flips == f.Max(0) * n.Max(0) && w.Projections == p.Max(0) * n.Max(0);
+    }
+
+    // A counted value carries its value and exactly its count.
+    Law_CountedValueKeepsItsCount(n: Integer, k: Integer): Boolean
+        => Counted(n, Evaluations(k)).Value == n && Counted(n, Evaluations(k)).Work.Evaluations == k.Max(0);
+
+    // A counted value within a slope stays within a larger size's allowance.
+    Law_SlopeAllowanceGrowsWithSize(e: Integer, n: Integer, m: Integer): Boolean
+        => n >= 0 && m >= n
+            ? WorkBudgetOf(e, 0, 0, 0).Times(n).IsWithin(WorkBudgetOf(e, 0, 0, 0).Times(m))
+            : true;
+}
