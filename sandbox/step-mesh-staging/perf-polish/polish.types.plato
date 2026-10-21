@@ -1,0 +1,42 @@
+//==
+// # Cached polish: types (complexity sweep, chunk I4, TKT-381)
+//
+// One evaluation that returns a surface's point and both first partials,
+// and the record of one polish run with the work it did.
+//
+// Sections, in order:
+//  - Jets
+//  - Polish runs
+
+//==
+// # Jets
+
+// A surface's point and first partials at one parameter, from one call
+// (FirstJet). The stdlib's SurfaceJet3D also holds the second partials,
+// which a Gauss-Newton step does not need and a B-spline pays three more
+// homogeneous partials for; filling them with zero would be a fabricated
+// value. Removes: the point, S_u and S_v evaluated by three calls at one uv,
+// each with its own knot-span search and local control net.
+type SurfaceFirstJet
+    implements IValue
+{
+    Position: Point3D;
+    DerivativeU: Vector3D;
+    DerivativeV: Vector3D;
+}
+
+//==
+// # Polish runs
+
+// The answer of a damped Gauss-Newton polish and its work: the iterations
+// it ran, the step halvings over all of them, and the surface evaluations
+// (a first jet or a point, one each). Invariant: Evaluations = 2 Iterations
+// + Halvings. Removes: a per-iteration cost claimed without a count.
+type PolishRun
+    implements IValue
+{
+    Uv: UvCoordinate;
+    Iterations: Integer;
+    Halvings: Integer;
+    Evaluations: Integer;
+}
