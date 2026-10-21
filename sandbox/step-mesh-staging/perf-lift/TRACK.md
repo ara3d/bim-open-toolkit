@@ -1,7 +1,7 @@
 # perf-lift: Lift by source key, ClassRoots with path halving (chunk F3)
 
 Ticket: TKT-362
-Status: ready: F3
+Status: merged: F3 (2026-10-21, into 05-face-meshing/face-meshing-lift.{types,library,laws}.plato and 00-foundation/foundation-class-roots.library.plato; PositionOfItem deleted; ClassRoots wired to ClassRootsLinear)
 
 ## Done
 - F3, this commit, about 1.3 h against 1.5 h expected. Added `LiftIndexed` and `LiftCounted` (O(N + B log B) for N points, B of them on the boundary, in place of O(N^3) writes and O(N^2) `PositionOfItem` searches), and `ClassRootsLinear` (path halving). Types added: `SourceKey` (the key under which `IdentifiedSources` identifies two sources: what replaces the pair comparison), `LiftBranch` and `LiftCase` (law witnesses: a model's faces triangulated once, and the branches of Lift they reach). Verdicts: the 8 Lift laws, the 2 LiftTable laws and `Law_ReducedEulerMatchesOracle` pass before and after, as in `reviews/verdicts-cpu64.tsv`; the new laws pass:

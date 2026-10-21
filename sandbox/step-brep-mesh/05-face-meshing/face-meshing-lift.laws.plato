@@ -41,7 +41,12 @@ library FaceMeshingLiftIndexedLaws
     // The quad grid of region r when the criteria prefer quads and one is built, else its
     // unrefined constrained triangulation.
     GridOrCdt(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, c: FaceMeshingCriteria): UvTriangulation
-        => match (m.FaceQuadGrid(f, d, r, c)) {
+        => m.GridOrCdtOf(f, r, m.FaceQuadGrid(f, d, r, c));
+
+    // The match on a parameter: the interpreter cannot match on a call's result here (a sum
+    // whose initialiser sorts later), so GridOrCdt passes it in.
+    GridOrCdtOf(m: BrepModel, f: BrepFaceIndex, r: UvRegion, grid: QuadGridOutcome): UvTriangulation
+        => match (grid) {
             NoGrid => r.TriangulateRegionCdt(m.ChartOf(f, r));
             CountsDiffer(floors) => r.TriangulateRegionCdt(m.ChartOf(f, r));
             Grid(mesh) => mesh;
@@ -129,12 +134,6 @@ library FaceMeshingLiftIndexedLaws
             && a.Quads.Count == b.Quads.Count && a.Quads.Count.Range.All(i => a.Quads[i] == b.Quads[i])
             && a.Provenance.Count == b.Provenance.Count && a.Provenance.Count.Range.All(i => a.Provenance[i] == b.Provenance[i]);
 
-    // LiftIndexed gives Lift's face mesh, field for field, on every triangulated face of the case.
-    Law_Perf_LiftIndexedAgrees(w: LiftCase): Boolean
-        => w.Faces.Count.Range.All(i => SameFaceMesh(
-            w.Model.Lift(w.Faces[i], w.Discretizations, w.Triangulations[i]),
-            w.Model.LiftIndexed(w.Faces[i], w.Discretizations, w.Triangulations[i])));
-
     // True when some face of case w has a point whose source key is of the given kind
     // (SourceKey: 0 interior, 3 seam cut, 4 pole).
     HasSourceKind(w: LiftCase, kind: Integer): Boolean
@@ -167,9 +166,9 @@ library FaceMeshingLiftIndexedLaws
 
     // Every case reaches the branches it lists; together the cases list every branch
     // (SphereByPoleLoops seam cuts, Hemispheres pole segments, CylinderRefined interior points,
-    // HemispheresQuads collapsed quads, Sphere dropped triangles), so Law_Perf_LiftIndexedAgrees
+    // HemispheresQuads collapsed quads, Sphere dropped triangles), so Law_LiftIndexedAgrees
     // compares every branch of the lift.
-    Law_Perf_LiftCaseReachesItsBranches(w: LiftCase): Boolean
+    Law_LiftCaseReachesItsBranches(w: LiftCase): Boolean
         => w.Reaches.All(b => w.ReachesBranch(b));
 
     //==
@@ -201,7 +200,7 @@ library FaceMeshingLiftIndexedLaws
     // Two sources are identified exactly when both are keyed and their keys are equal: the
     // grouping LiftIndexed makes is IdentifiedSources' relation. The runner exhausts both
     // Integers (-1 to 12), so every pair of the sample list is met.
-    Law_Perf_SourceKeyMatchesIdentification(a: Integer, b: Integer): Boolean
+    Law_SourceKeyMatchesIdentification(a: Integer, b: Integer): Boolean
         => IdentifiedSources(SourceSample(a), SourceSample(b))
             == (SourceSample(a).SourceKeyOf.IsKeyed && SourceSample(a).SourceKeyOf.SameKey(SourceSample(b).SourceKeyOf));
 

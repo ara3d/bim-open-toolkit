@@ -318,6 +318,10 @@ library FaceMeshing
     //==
     // # Lifting
 
+    // The position of value x in xs; -1 when absent.
+    PositionOfItem(xs: Array<Integer>, x: Integer): Integer
+        => xs.Count.Range.Reduce(-1, (found, i) => found >= 0 ? found : (xs[i] == x ? i : -1));
+
     // Chunk A body, from the contract Lift: the local 3D vertices are the
     // classes of the points under IdentifiedSources (layer 0's ClassRoots),
     // numbered in order of first appearance; each class positioned by
@@ -328,30 +332,7 @@ library FaceMeshing
     // triangle with two corners in one class dropped; a quad with two such
     // corners turned into the triangle of its other three corners.
     Lift(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, t: UvTriangulation): FaceMesh
-    {
-        var n = t.Points.Count;
-        var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
-            (i < j ? IdentifiedSources(t.Sources[i], t.Sources[j]) : false) ? [i * n + j] : n.Range.Take(0)));
-        var roots = ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n));
-        var firsts = n.Range.FlatMap(i => roots[i] == i ? [i] : n.Range.Take(0));
-        var local = n.MapRange(i => VertexIndex(firsts.PositionOfItem(roots[i])));
-        var s = m.SurfaceOf(f);
-        return FaceMesh(
-            f,
-            t.Points,
-            t.Sources,
-            local,
-            firsts.Map(i => m.SharedPosition(d, t.Sources[i], m.Geometry.Eval(s, t.Points[i]))),
-            t.Points.Map(uv => m.LiftNormal(f, uv)),
-            t.Triangles.FlatMap(x => x.DistinctlyLifted(local) ? [x] : t.Triangles.Take(0))
-                .Concatenate(t.Quads.FlatMap(q => q.CollapsedToTriangle(local))),
-            t.Quads.FlatMap(q => q.DistinctlyLifted(local) ? [q] : t.Quads.Take(0)),
-            firsts.Map(i => d.ProvenanceOfSource(f, t.Sources[i], t.Points[i])));
-    }
-
-    // The position of value x in xs; -1 when absent.
-    PositionOfItem(xs: Array<Integer>, x: Integer): Integer
-        => xs.Count.Range.Reduce(-1, (found, i) => found >= 0 ? found : (xs[i] == x ? i : -1));
+        => m.LiftCounted(f, d, t).Value;
 
     // The normal stored at parameter point uv of face f: the face normal, or
     // on a collapsed line the surface's limit normal there times the face's
