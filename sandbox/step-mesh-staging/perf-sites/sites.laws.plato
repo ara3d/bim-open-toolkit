@@ -1,0 +1,183 @@
+//==
+// # Finding sites as tables: laws (complexity sweep, chunk V3)
+//
+// The site tables of sites.library.plato agree with PcurveSite and
+// Curve2DSite entry by entry, and each indexed check is Identical (law,
+// hold, worst, bound and provenance) to the library check it replaces, on
+// V1's ArenaCase witnesses, on the ten positive witnesses, and on an arena
+// built so that the tables' choices show: pcurves carried by several edges,
+// a pcurve and a parameter-plane curve nobody uses, and references outside
+// the arena. Then the count witness and its exact count.
+//
+// Sections, in order:
+//  - A shared-pcurve arena
+//  - Tables agree
+//  - Checks agree
+//  - Count witness
+
+library BrepCheckingSitesLaws
+{
+    //==
+    // # A shared-pcurve arena
+
+    // Arena g with every curve i turned into a surface curve over a copy of
+    // itself (appended at n + i) carrying pcurves i % 5 and (i + 3) % 5; the
+    // last carries i % 5 and pcurve 99, outside the arena. Eight pcurves: 0
+    // to 4 are carried, by more than one edge when n > 5; 5 and 6 by none,
+    // so they report at their surface; 7 names a 2D curve and a surface
+    // outside the arena. Pcurve j uses 2D curve (6 - j) % 4, so 2D curves 0
+    // to 3 are used first by pcurves 2, 1, 0 and 3, and 2D curve 4 by none.
+    // Not evaluable as a model; only the site tables and the checks read it.
+    SharedPcurvesArena(g: GeometrySet): GeometrySet
+    {
+        var n = g.Curves.Count;
+        var surfaces = g.Surfaces.Count.Max(1);
+        return GeometrySet(
+            n.MapRange(i => BrepCurve.OnSurface(CurveIndex(n + i),
+                i == n - 1
+                    ? [CurveSupport.Parametric(PcurveIndex(i % 5)), CurveSupport.Parametric(PcurveIndex(99))]
+                    : [CurveSupport.Parametric(PcurveIndex(i % 5)), CurveSupport.Parametric(PcurveIndex((i + 3) % 5))],
+                PreferredRepresentation.SpaceCurve)).Concatenate(g.Curves),
+            5.MapRange(k => BrepCurve2D.Line(UvCoordinate(k.ToNumber, 0.0), Vector2D(1.0, 0.0))),
+            8.MapRange(j => j == 7
+                ? Pcurve(SurfaceIndex(99), Curve2DIndex(99))
+                : Pcurve(SurfaceIndex(j % surfaces), Curve2DIndex((6 - j) % 4))),
+            g.Surfaces,
+            g.Closures);
+    }
+
+    // Model m over its shared-pcurve arena.
+    WithSharedPcurves(m: BrepModel): BrepModel
+        => m.WithGeometry(m.Geometry.SharedPcurvesArena);
+
+    // The unit box's topology over its shared-pcurve arena: 12 edges.
+    Witness_SharedPcurvesBoxArena(_: ArenaCase): ArenaCase
+        => ArenaCase("SharedPcurvesBox", BrepModel.Witness_UnitBox.WithSharedPcurves);
+
+    //==
+    // # Tables agree
+
+    // Entry p of PcurveSiteTable is PcurveSite(m, p) for every pcurve, and
+    // entry c of Curve2DSiteTable is Curve2DSite(m, c) for every 2D curve.
+    SiteTablesAgree(m: BrepModel): Boolean
+    {
+        var pcurves = m.PcurveSiteTable;
+        var curves = m.Curve2DSiteTable;
+        return pcurves.Count == m.Geometry.Pcurves.Count
+            && curves.Count == m.Geometry.Curves2D.Count
+            && pcurves.Count.Range.All(p => pcurves[p] == m.PcurveSite(PcurveIndex(p)))
+            && curves.Count.Range.All(c => curves[c] == m.Curve2DSite(Curve2DIndex(c)));
+    }
+
+    // The tables agree on every arena case.
+    Law_Perf_SiteTablesAgree(a: ArenaCase): Boolean
+        => a.Model.SiteTablesAgree;
+
+    // The tables agree on positive witness k.
+    Law_Perf_SiteTablesAgreeOnWitness(k: Integer): Boolean
+        => BrepModel.WitnessAt(k).SiteTablesAgree;
+
+    // The shared-pcurve box reaches every branch the tables choose between:
+    // a pcurve at its first edge though a later edge also carries it, a
+    // pcurve at its surface, one at a surface outside the arena, a 2D curve
+    // at its first pcurve's edge, and a 2D curve at the whole input; and the
+    // synthetic laws of the agreement laws below fail on it, so the
+    // provenance of a failing entry is compared.
+    Law_Perf_SharedPcurvesBoxReachesEveryBranch(_: ArenaCase): Boolean
+    {
+        var m = BrepModel.Witness_UnitBox.WithSharedPcurves;
+        var pcurves = m.PcurveSiteTable;
+        var curves = m.Curve2DSiteTable;
+        return pcurves[0] == AtEdge(0)
+            && pcurves[3] == AtEdge(0)
+            && pcurves[2] == AtEdge(2)
+            && pcurves[5] == Provenance.KernelSurface(SurfaceIndex(5))
+            && pcurves[7] == Provenance.KernelSurface(SurfaceIndex(99))
+            && curves[0] == AtEdge(2)
+            && curves[4] == Provenance.WholeInput
+            && !m.CheckPcurvesIndexed("Law_Synthetic", p => p.Value % 2 == 0).Holds
+            && !m.CheckCurves2DIndexed("Law_Synthetic", c => c.Value % 2 == 0).Holds
+            && !m.CheckPcurveSamplesIndexed(false, SamplePlan.CheckPlan, "Law_Synthetic", (p, t) => p.Value % 2 == 0).Holds
+            && !m.CheckCurve2DSamplesIndexed(false, SamplePlan.CheckPlan, "Law_Synthetic", (c, t) => c.Value % 2 == 0).Holds;
+    }
+
+    //==
+    // # Checks agree
+    //
+    // Each on a synthetic law that fails at odd entries (so the fold's
+    // provenance is compared) and, for the two whole-entry checks, on a
+    // library law.
+
+    // CheckPcurvesIndexed is CheckPcurves.
+    Law_Perf_CheckPcurvesIndexedAgrees(a: ArenaCase): Boolean
+    {
+        var m = a.Model;
+        return m.CheckPcurvesIndexed("Law_Synthetic", p => p.Value % 2 == 0)
+                .Identical(m.CheckPcurves("Law_Synthetic", p => p.Value % 2 == 0))
+            && m.CheckPcurvesIndexed("Law_PcurveReferencesInRange", p => Law_PcurveReferencesInRange(m.Geometry, p))
+                .Identical(m.CheckPcurves("Law_PcurveReferencesInRange", p => Law_PcurveReferencesInRange(m.Geometry, p)));
+    }
+
+    // CheckCurves2DIndexed is CheckCurves2D.
+    Law_Perf_CheckCurves2DIndexedAgrees(a: ArenaCase): Boolean
+    {
+        var m = a.Model;
+        return m.CheckCurves2DIndexed("Law_Synthetic", c => c.Value % 2 == 0)
+                .Identical(m.CheckCurves2D("Law_Synthetic", c => c.Value % 2 == 0))
+            && m.CheckCurves2DIndexed("Law_Curve2DReferencesInRange", c => Law_Curve2DReferencesInRange(m.Geometry, c))
+                .Identical(m.CheckCurves2D("Law_Curve2DReferencesInRange", c => Law_Curve2DReferencesInRange(m.Geometry, c)));
+    }
+
+    // CheckPcurveSamplesIndexed is CheckPcurveSamplesGiven, with ok as
+    // IsWellFormed says and with ok false, on a synthetic law failing at
+    // every sample of an odd pcurve.
+    Law_Perf_CheckPcurveSamplesIndexedAgrees(a: ArenaCase): Boolean
+    {
+        var m = a.Model;
+        var ok = m.Geometry.IsWellFormed;
+        return [ok, false].All(given =>
+            m.CheckPcurveSamplesIndexed(given, SamplePlan.CheckPlan, "Law_Synthetic", (p, t) => p.Value % 2 == 0)
+                .Identical(m.CheckPcurveSamplesGiven(given, SamplePlan.CheckPlan, "Law_Synthetic", (p, t) => p.Value % 2 == 0)));
+    }
+
+    // CheckCurve2DSamplesIndexed is CheckCurve2DSamplesGiven.
+    Law_Perf_CheckCurve2DSamplesIndexedAgrees(a: ArenaCase): Boolean
+    {
+        var m = a.Model;
+        var ok = m.Geometry.IsWellFormed;
+        return [ok, false].All(given =>
+            m.CheckCurve2DSamplesIndexed(given, SamplePlan.CheckPlan, "Law_Synthetic", (c, t) => c.Value % 2 == 0)
+                .Identical(m.CheckCurve2DSamplesGiven(given, SamplePlan.CheckPlan, "Law_Synthetic", (c, t) => c.Value % 2 == 0)));
+    }
+
+    //==
+    // # Count witness
+
+    // The family by E + P: the unit cylinder (3 edges, no pcurve), the unit
+    // box with its bottom pcurve (12 + 1), the shared-pcurve box (12 + 8)
+    // and the shared-pcurve hollow box (24 + 8).
+    SiteFamilyModel(n: Integer): BrepModel
+        => n <= 3 ? BrepModel.Witness_Cylinder
+            : (n <= 13 ? BrepModel.Witness_UnitBoxWithBottomPcurve(2.0)
+            : (n <= 20 ? BrepModel.Witness_UnitBox.WithSharedPcurves
+            : BrepModel.Witness_HollowBox.WithSharedPcurves));
+
+    // The work of PcurveSiteTable on the family member of size n.
+    PcurveSiteTableWork(n: Integer): WorkBudget
+        => n.SiteFamilyModel.PcurveSiteTableCounted.Work;
+
+    // PcurveSiteTable visits each edge once and fills each entry once
+    // (Insertions): E + P, so slope 1, where PcurveSite visited every edge
+    // per pcurve, P E visits: 12 at size 13, 96 at 20 and 192 at 32.
+    Witness_PcurveSiteTableWork(_: WorkClaim): WorkClaim
+        => WorkClaim("PcurveSiteTable: edges and pcurves visited per E + P", Insertions(1), [3, 13, 20, 32], n => PcurveSiteTableWork(n));
+
+    // The family's sizes are its members' E + P.
+    Law_Perf_SiteFamilySizes(_: ArenaCase): Boolean
+        => [3, 13, 20, 32].All(n => n.SiteFamilyModel.Edges.Count + n.SiteFamilyModel.Geometry.Pcurves.Count == n);
+
+    // The table visits exactly E + P on every arena case: one scan of the
+    // edges per check.
+    Law_Perf_PcurveSiteTableVisitsEachEdgeOnce(a: ArenaCase): Boolean
+        => a.Model.PcurveSiteTableCounted.Work == Insertions(a.Model.Edges.Count + a.Model.Geometry.Pcurves.Count);
+}
