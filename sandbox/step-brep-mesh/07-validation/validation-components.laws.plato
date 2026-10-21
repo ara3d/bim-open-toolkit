@@ -96,27 +96,9 @@ library ComponentChecksGivenLaws
     //==
     // # Agreement
 
-    // Every component check agrees with the library's on the literal meshes.
-    Law_Perf_ComponentChecksAgree(k: Integer): Boolean
-        => ModelMesh.IncidenceTestMeshAt(k).ComponentChecksAgreeOn(Tolerances.ComponentTolerances);
-
-    // Every component check agrees with the library's on every mesh the runner gives.
-    Law_Perf_ComponentChecksAgreeOnAnyMesh(mesh: ModelMesh, t: Tolerances): Boolean
-        => mesh.ComponentChecksAgreeOn(t);
-
-    // The Structure report agrees with ModelMeshReport's on the literal meshes, with one
-    // ComponentsOf build.
-    Law_Perf_StructureReportAgrees(k: Integer): Boolean
-        => ModelMesh.IncidenceTestMeshAt(k).StructureReportAgreesOn(Tolerances.ComponentTolerances);
-
-    // The Structure report agrees with ModelMeshReport's on every mesh the runner gives, with one
-    // ComponentsOf build.
-    Law_Perf_StructureReportAgreesOnAnyMesh(mesh: ModelMesh, t: Tolerances): Boolean
-        => mesh.StructureReportAgreesOn(t);
-
     // The linear root check is Identical to the grid, and the tabled RootsBelow equals the
     // counted one, on the components of each literal mesh and on the misrooted table.
-    Law_Perf_RootIsLowestLinearAgrees(k: Integer): Boolean
+    Law_RootIsLowestLinearAgrees(k: Integer): Boolean
     {
         var mesh = ModelMesh.IncidenceTestMeshAt(k);
         var interleaved = ModelMesh.IncidenceTestInterleaved;
@@ -126,7 +108,7 @@ library ComponentChecksGivenLaws
     }
 
     // The same on any mesh and any component table the runner gives, consistent or not.
-    Law_Perf_RootIsLowestLinearAgreesOnAnyTable(mesh: ModelMesh, comps: MeshComponents): Boolean
+    Law_RootIsLowestLinearAgreesOnAnyTable(mesh: ModelMesh, comps: MeshComponents): Boolean
         => mesh.RootIsLowestLinearAgreesOn(comps) && mesh.RootsBelowAgreesOn(comps);
 
     //==
@@ -135,7 +117,7 @@ library ComponentChecksGivenLaws
     // The agreement above is not vacuous: on the misrooted table the linear root check fails at
     // element 3 and the numbering check at element 1; on the pinched pair, closed, the hoisted
     // pinch check fails at vertex 0.
-    Law_Perf_FailingComponentChecksNameTheirCell(_: ModelMesh): Boolean
+    Law_FailingComponentChecksNameTheirCell(_: ModelMesh): Boolean
     {
         var interleaved = ModelMesh.IncidenceTestInterleaved;
         var comps = MeshComponents.MisrootedComponents;
@@ -157,7 +139,7 @@ library ComponentChecksGivenLaws
         => IncidenceTestFan(n).ModelMeshStructureReportCounted(Tolerances.ComponentTolerances).Work;
 
     // The Structure report's component checks build ComponentsOf once (Flips, at most one per
-    // element and exactly one per report, Law_Perf_StructureReportAgrees) and visit at most 8
+    // element and exactly one per report, Law_StructureReportAgrees) and visit at most 8
     // elements per element (Insertions: the root tables' pass and six per-element checks, 7 per
     // element), on fans of 6 (IncidenceTestMeshAt's fan) and 64 triangles. The library's checks
     // build ComponentsOf several times per element per check and per sample of the N x N root

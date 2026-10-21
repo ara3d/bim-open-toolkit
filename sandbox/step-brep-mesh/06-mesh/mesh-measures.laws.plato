@@ -83,25 +83,14 @@ library ModelMeshMeasuresLaws
     // triangle with a zero-length side, an element list inconsistent with the counts behind chi,
     // and an error in either of two independently written computations.
     Law_AngleDefectSumIsTwoPiTimesEuler(mesh: ModelMesh, c: MeshComponentIndex): Boolean
-        => (mesh.HasAllValidCorners && mesh.CountsOf(c).IsClosed && mesh.CountsOf(c).Quads == 0
-                && mesh.CountsOf(c).Vertices > 0)
-            ? (mesh.AngleDefectSum(mesh.ComponentsOf, c).Radians
-                    - Number.Tau * mesh.CountsOf(c).EulerCharacteristic.ToNumber).Abs
-                <= DefectSumResolution(mesh.CountsOf(c).Vertices, 0, 3 * mesh.CountsOf(c).Triangles)
-            : true;
+        => mesh.AngleDefectSumIsTwoPiTimesEulerGiven(mesh.ComponentsOf, mesh.CountsOf(c), mesh.HasAllValidCorners, c);
 
     // Discrete Gauss-Bonnet on a closed component with quads: the angle defects sum to 2 pi times
     // the Euler characteristic plus the quads' own angle defects, within the rounding of the two
     // sums. Since a quad's defect is 0 exactly when it is planar and convex, the excess measures the
     // total non-planarity of the quads.
     Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects(mesh: ModelMesh, c: MeshComponentIndex): Boolean
-        => (mesh.HasAllValidCorners && mesh.CountsOf(c).IsClosed && mesh.CountsOf(c).Vertices > 0)
-            ? (mesh.AngleDefectSum(mesh.ComponentsOf, c).Radians
-                    - mesh.QuadAngleDefectSum(mesh.ComponentsOf, c).Radians
-                    - Number.Tau * mesh.CountsOf(c).EulerCharacteristic.ToNumber).Abs
-                <= DefectSumResolution(mesh.CountsOf(c).Vertices, mesh.CountsOf(c).Quads,
-                    3 * mesh.CountsOf(c).Triangles + 4 * mesh.CountsOf(c).Quads)
-            : true;
+        => mesh.AngleDefectSumIsTwoPiTimesEulerPlusQuadDefectsGiven(mesh.ComponentsOf, mesh.CountsOf(c), mesh.HasAllValidCorners, c);
 
     //==
     // # Degenerate elements, coincident vertices, folds
@@ -120,11 +109,7 @@ library ModelMeshMeasuresLaws
     // inside a component; a pair that is coincident is a crack that index identity left open.
     VerticesOfOneComponentAreApart(mesh: ModelMesh, a: VertexIndex, b: VertexIndex,
         tol: LengthTolerance): Boolean
-        => (mesh.Positions.IsValidIndex(a) && mesh.Positions.IsValidIndex(b) && a.Value != b.Value
-                && mesh.ComponentsOf.VertexComponentOf(a).Value >= 0
-                && mesh.ComponentsOf.VertexComponentOf(a).Value == mesh.ComponentsOf.VertexComponentOf(b).Value)
-            ? mesh.Positions[a].Distance(mesh.Positions[b]) > tol.Value
-            : true;
+        => mesh.VerticesOfOneComponentAreApartGiven(mesh.ComponentsOf, a, b, tol);
 
     // Library law: every pair CoincidentVertexPairs reports is two vertices of one component, the
     // first lower, within the tolerance.

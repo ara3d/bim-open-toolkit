@@ -1,7 +1,7 @@
 # perf-component-checks: the component checks of layer 7 over tables built once per report (chunk V6)
 
 Ticket: TKT-374
-Status: ready: V6
+Status: merged: V6 (2026-10-21, into 06-mesh/mesh-components-given.{types,library}.plato, 07-validation/validation-checks-components.library.plato, validation-components.laws.plato; the meshed comparison file deleted after wiring)
 
 ## Done
 - V6, (this commit), about 0.8 h against 2 h expected. Added:

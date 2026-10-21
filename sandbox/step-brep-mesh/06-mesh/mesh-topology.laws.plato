@@ -117,7 +117,7 @@ library ModelMeshTopologyLaws
     // Model law: a closed mesh has no pinched vertex: around every vertex the elements form one
     // fan, so a small sphere about the vertex meets the mesh in one circle.
     Law_ClosedMeshHasNoPinchedVertex(mesh: ModelMesh, v: VertexIndex): Boolean
-        => (mesh.Positions.IsValidIndex(v) ? mesh.IsClosed : false) ? mesh.IsPinchedVertex(v).Not : true;
+        => mesh.ClosedMeshHasNoPinchedVertexGiven(mesh.IsClosed, mesh.VertexElementIncidence, v);
 
     //==
     // # Components
@@ -131,42 +131,26 @@ library ModelMeshTopologyLaws
 
     // Table law: each element's parent in the spanning forest is an element of the same component.
     Law_ComponentParentIsInItsComponent(mesh: ModelMesh, e: ElementIndex): Boolean
-        => mesh.IsElementInRange(e)
-            ? (mesh.IsElementInRange(mesh.ComponentsOf.ElementParentOf(e))
-                ? mesh.ComponentsOf.ElementComponentOf(mesh.ComponentsOf.ElementParentOf(e)).Value
-                    == mesh.ComponentsOf.ElementComponentOf(e).Value
-                : false)
-            : true;
+        => mesh.ComponentParentIsInItsComponentGiven(mesh.ComponentsOf, e);
 
     // Table law: each element that is not a root shares a vertex with its parent, so a parent
     // chain is a chain of elements each sharing a vertex with the next.
     Law_ComponentParentSharesAVertex(mesh: ModelMesh, e: ElementIndex): Boolean
-        => (mesh.IsElementInRange(e) ? mesh.ComponentsOf.IsComponentRoot(e).Not : false)
-            ? mesh.SharesAVertex(e, mesh.ComponentsOf.ElementParentOf(e))
-            : true;
+        => mesh.ComponentParentSharesAVertexGiven(mesh.ComponentsOf, e);
 
     // Table law: an element is a root exactly when its depth is 0.
     Law_ComponentRootHasDepthZero(mesh: ModelMesh, e: ElementIndex): Boolean
-        => mesh.IsElementInRange(e)
-            ? mesh.ComponentsOf.IsComponentRoot(e) == (mesh.ComponentsOf.ElementDepthOf(e) == 0)
-            : true;
+        => mesh.ComponentRootHasDepthZeroGiven(mesh.ComponentsOf, e);
 
     // Table law: a non-root element is one level deeper than its parent, so every parent chain
     // reaches a root in at most its depth steps.
     Law_ComponentParentIsOneShallower(mesh: ModelMesh, e: ElementIndex): Boolean
-        => (mesh.IsElementInRange(e) ? mesh.ComponentsOf.IsComponentRoot(e).Not : false)
-            ? mesh.ComponentsOf.ElementDepthOf(mesh.ComponentsOf.ElementParentOf(e)) + 1
-                == mesh.ComponentsOf.ElementDepthOf(e)
-            : true;
+        => mesh.ComponentParentIsOneShallowerGiven(mesh.ComponentsOf, e);
 
     // Table law: a root is the lowest element of its component. Two roots of one component would
     // each be below the other, so a component has exactly one root.
     Law_ComponentRootIsItsLowestElement(mesh: ModelMesh, r: ElementIndex, e: ElementIndex): Boolean
-        => ((mesh.IsElementInRange(r) && mesh.IsElementInRange(e)) ? mesh.ComponentsOf.IsComponentRoot(r) : false)
-            ? (mesh.ComponentsOf.ElementComponentOf(r).Value == mesh.ComponentsOf.ElementComponentOf(e).Value
-                ? r.Value <= e.Value
-                : true)
-            : true;
+        => mesh.ComponentRootIsItsLowestElementGiven(mesh.ComponentsOf, r, e);
 
     // Table law: components are numbered in the order of their roots, which are their lowest
     // elements: the component rooted at r is the number of roots below r.
@@ -177,7 +161,7 @@ library ModelMeshTopologyLaws
 
     // Table law: there is one component per root.
     Law_ComponentCountIsRootCount(mesh: ModelMesh): Boolean
-        => mesh.ComponentsOf.ComponentCount == mesh.ComponentsOf.RootCount;
+        => mesh.ComponentsOf.ComponentCountIsRootCountGiven;
 
     // Table law: the components' Euler characteristics, plus one for each unreferenced vertex (a
     // point is its own component), add up to the mesh's.
@@ -195,19 +179,13 @@ library ModelMeshTopologyLaws
     // surface has an even Euler characteristic of at most 2, so it has a genus. Failing it means
     // the counts are wrong, since no such surface exists.
     Law_ClosedOrientedSurfaceHasGenus(mesh: ModelMesh, c: MeshComponentIndex): Boolean
-        => mesh.IsWellFormed
-            ? ((mesh.CountsOf(c).IsClosed && mesh.CountsOf(c).IsConsistentlyOriented && mesh.CountsOf(c).IsSurface)
-                ? mesh.CountsOf(c).HasGenus
-                : true)
-            : true;
+        => mesh.CountsOf(c).ClosedOrientedSurfaceHasGenusGiven(mesh.IsWellFormed);
 
     // Model law, by the classification of compact surfaces with boundary: a connected, consistently
     // oriented surface with boundary edges has 2 - chi - B even and non-negative, B its boundary
     // cycles, so it has a genus. The closed case is Law_ClosedOrientedSurfaceHasGenus.
     Law_OrientedSurfaceWithBoundaryHasGenus(mesh: ModelMesh, c: MeshComponentIndex): Boolean
-        => (mesh.CountsOf(c).BoundaryEdges > 0 && mesh.CountsOf(c).IsConsistentlyOriented && mesh.CountsOf(c).IsSurface)
-            ? mesh.CountsOf(c).HasGenus
-            : true;
+        => mesh.CountsOf(c).OrientedSurfaceWithBoundaryHasGenusGiven;
 
     // Library law: the Euler characteristic of a closed component with a genus is 2 minus twice
     // its genus. Holds for every counts record, so the runner can check it on random ones.
