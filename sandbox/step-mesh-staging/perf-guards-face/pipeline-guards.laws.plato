@@ -1,0 +1,120 @@
+//==
+// # Face outcomes with the arena checked once: laws (complexity sweep, chunk G2)
+//
+// The count witness for FaceOutcomesCounted (read by layer 00's Law_WorkIsWithinSlope), the
+// exact count, and the agreement of every staged form with the library form it replaces: the
+// guards over the runner's (m, b, d) and (m, f, d) cases, the face outcomes over every model
+// witness with no discretization (no face meshes, so every model is cheap), and the
+// refinement states over the StatePair witnesses, each meshed once per sweep.
+//
+// Sections, in order:
+//  - Count witness
+//  - Guards agree
+//  - Outcomes agree
+
+library PipelineGuardsLaws
+{
+    //==
+    // # Count witness
+
+    // The box family by face count: the unit box (6 faces) up to 6, the hollow box (12 faces,
+    // two shells) above.
+    GuardBoxWithFaces(n: Integer): BrepModel
+        => n <= 6 ? BrepModel.Witness_UnitBox : BrepModel.Witness_HollowBox;
+
+    // The arena scans of the face-outcome pass over the box with n faces, every face chosen and
+    // meshed under the witness options.
+    FaceOutcomesWork(n: Integer): WorkBudget
+    {
+        var m = n.GuardBoxWithFaces;
+        var o = MeshingOptions.WitnessOptions;
+        return m.FaceOutcomesCounted(m.DiscretizeAll(o.Face.Discretization, SegmentFloors.NoFloors), o, m.AllFaces).Work;
+    }
+
+    // The face-outcome pass scans the geometry arena (counted as Flips) at most once per face,
+    // at 6 and 12 faces; the pass in fact scans it once (Law_Perf_FaceOutcomesScanArenaOnce).
+    Witness_FaceOutcomesWork(_: WorkClaim): WorkClaim
+        => WorkClaim("FaceOutcomes: arena scans per face", WorkBudgetOf(0, 0, 1, 0), [6, 12], n => FaceOutcomesWork(n));
+
+    // The pass scans the arena exactly once, with no discretization (nothing meshed) on every
+    // model witness: the claim the per-face slope is too coarse to state.
+    Law_Perf_FaceOutcomesScanArenaOnce(m: BrepModel): Boolean
+    {
+        var o = MeshingOptions.WitnessOptions;
+        return m.FaceOutcomesCounted(m.NoDiscretizations, o, m.AllFaces).Work.Flips == 1;
+    }
+
+    //==
+    // # Guards agree
+
+    // IsDiscretizedBoundIn given the arena check is IsDiscretizedBound.
+    Law_Perf_IsDiscretizedBoundInAgrees(m: BrepModel, b: FaceBound, d: EdgeDiscretizations): Boolean
+        => m.IsDiscretizedBoundIn(b, d, m.Geometry.IsEveryIndexInRange) == m.IsDiscretizedBound(b, d);
+
+    // IsDiscretizedFaceIn given the arena check is IsDiscretizedFace.
+    Law_Perf_IsDiscretizedFaceInAgrees(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Boolean
+        => m.IsDiscretizedFaceIn(f, d, m.Geometry.IsEveryIndexInRange) == m.IsDiscretizedFace(f, d);
+
+    // Every face of every bound of model m is discretized in IsDiscretizedFaceIn's view exactly
+    // when IsDiscretizedFace says so, under m's own discretization: the multi-bound faces of
+    // the witnesses (the block's holed faces) included, which the runner's random (m, f, d)
+    // cases rarely reach.
+    Law_Perf_WitnessFacesGuardAgrees(m: BrepModel): Boolean
+    {
+        var d = m.DiscretizeAll(MeshingOptions.WitnessOptions.Face.Discretization, SegmentFloors.NoFloors);
+        var arenaOk = m.Geometry.IsEveryIndexInRange;
+        return m.Faces.Count.Range.All(k =>
+            m.IsDiscretizedFaceIn(BrepFaceIndex(k), d, arenaOk) == m.IsDiscretizedFace(BrepFaceIndex(k), d));
+    }
+
+    //==
+    // # Outcomes agree
+
+    // True when a and b hold the same outcomes face by face.
+    SameOutcomes(a: Array<FaceMeshOutcome>, b: Array<FaceMeshOutcome>): Boolean
+        => a.Count == b.Count && a.Count.Range.All(k => a[k].SameFaceMeshOutcome(b[k]));
+
+    // With no discretization, FaceOutcomes gives FaceOutcome's outcome for every face of every
+    // model witness: the undiscretized and excluded paths, with nothing meshed.
+    Law_Perf_UnmeshedFaceOutcomesAgree(m: BrepModel): Boolean
+    {
+        var o = MeshingOptions.WitnessOptions;
+        var d = m.NoDiscretizations;
+        var chosen = m.AllFaces.Excluding(BrepFaceIndex(0));
+        return SameOutcomes(m.FaceOutcomes(d, o, chosen),
+            m.Faces.Count.MapRange(k => m.FaceOutcome(BrepFaceIndex(k), d, o, chosen)));
+    }
+
+    // The unit box's initial state, every face chosen, built both ways.
+    Witness_UnitBoxInitialStates(_: StatePair): StatePair
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var o = MeshingOptions.WitnessOptions;
+        return StatePair(m.InitialState(o, m.AllFaces), m.InitialStateInRange(o, m.AllFaces));
+    }
+
+    // The hollow box's initial state with face 2 left out, built both ways.
+    Witness_HollowBoxInitialStates(_: StatePair): StatePair
+    {
+        var m = BrepModel.Witness_HollowBox;
+        var o = MeshingOptions.WitnessOptions;
+        var chosen = m.AllFaces.Excluding(BrepFaceIndex(2));
+        return StatePair(m.InitialState(o, chosen), m.InitialStateInRange(o, chosen));
+    }
+
+    // One step from the unit box's initial state, taken both ways.
+    Witness_UnitBoxSteps(_: StatePair): StatePair
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var o = MeshingOptions.WitnessOptions;
+        var s = m.InitialState(o, m.AllFaces);
+        return StatePair(m.Step(o, m.AllFaces, s), m.StepInRange(o, m.AllFaces, s));
+    }
+
+    // The staged state is the library's: the same round, the same outcome for every face, and
+    // the same pending requests.
+    Law_Perf_StatesAgree(p: StatePair): Boolean
+        => p.Plain.Round == p.Staged.Round
+            && SameOutcomes(p.Plain.Outcomes, p.Staged.Outcomes)
+            && p.Plain.Pending.Count == p.Staged.Pending.Count;
+}
