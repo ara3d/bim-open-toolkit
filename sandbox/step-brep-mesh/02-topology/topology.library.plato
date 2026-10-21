@@ -1600,7 +1600,7 @@ library BrepTopology
         var d = m.Geometry.Domain(s);
         var coedges = m.LoopCoedges(b.Loop);
         var ordered = b.Orientation ? coedges : coedges.Count.MapRange(i => coedges[coedges.Count - 1 - i]);
-        var raw = ordered.FlatMap(c => m.CoedgeSamples(b, c)).Map(p => m.Geometry.Project(s, p));
+        var raw = m.Geometry.ProjectAlong(s, ordered.FlatMap(c => m.CoedgeSamples(b, c)), m.Tolerances.Length);
         var n = raw.Count;
         var lifted = new List<UvCoordinate>();
         var i = 0;

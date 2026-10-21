@@ -203,11 +203,7 @@ library BsplineInverse
     // it is as close as the minimizer to rounding (the join).
     MinimizeOverDomain(eval: Function1<Number, Point3D>, deriv: Function1<Number, Vector3D>, p: Point3D, d: CurveDomain, breaks: Array<Number>): Number
     {
-        var t = MinimizeOverCuts(eval, deriv, p, d.SearchWindow(eval, p).WindowCuts(breaks));
-        var wrapped = d.HasSeam ? d.Wrap(t) : t;
-        return d.HasSeam && eval(d.Range.Start).Distance(p) <= eval(wrapped).Distance(p) + ResolutionAt(eval(wrapped).PositionVector.Length + p.PositionVector.Length).Value
-            ? d.Range.Start
-            : wrapped;
+        return CanonicalOnDomain(eval, p, d, MinimizeOverCuts(eval, deriv, p, d.SearchWindow(eval, p).WindowCuts(breaks)));
     }
 
     //==
@@ -229,10 +225,7 @@ library BsplineInverse
     // [0, T); otherwise it covers the pcurve's domain.
     PcurveClosestParameterBySearchBody(g: GeometrySet, p: PcurveIndex, q: Point3D): Number
     {
-        var period = g.PcurveParameterPeriod(p);
-        var d = period > 0.0 && !g.Domain(p).Periodicity.IsPeriodic
-            ? CurveDomain(NumberInterval(0.0, period), Periodicity.Periodic(period))
-            : g.Domain(p);
+        var d = g.PcurveSearchDomain(p);
         return MinimizeOverDomain(t => g.Eval(p, t), t => g.Derivative(p, t), q, d,
             g.Curve2DAt(g.PcurveAt(p).Curve).Breaks(g, Integer.SearchBreakOrder));
     }
@@ -293,31 +286,7 @@ library BsplineInverse
     // distance does not grow by more than rounding; stops when a step moves
     // neither coordinate by more than its rounding or no halving helps.
     PolishProjection(surface: BrepSurface, g: GeometrySet, p: Point3D, start: UvCoordinate, w: SurfaceWindow, radius: Vector2D): UvCoordinate
-    {
-        var uv = start.ClampInto(w);
-        var n = 0;
-        var moving = true;
-        while (moving && n < Integer.PolishIterations)
-        {
-            var here = surface.Eval(g, uv).Distance(p);
-            var slack = ResolutionAt(surface.Eval(g, uv).PositionVector.Length + p.PositionVector.Length).Value;
-            var step = surface.GaussNewtonStep(g, p, uv).Limited(radius);
-            var next = surface.ProjectedStep(g, p, uv, step, w);
-            var halvings = 0;
-            while (halvings < 12 && surface.Eval(g, next).Distance(p) > here + slack)
-            {
-                step = step * 0.5;
-                next = surface.ProjectedStep(g, p, uv, step, w);
-                halvings = halvings + 1;
-            }
-            moving = surface.Eval(g, next).Distance(p) <= here + slack
-                && ((next.U - uv.U).Abs > ResolutionAt(uv.U.Abs + w.U.End.Abs.Min(w.U.Start.Abs)).Value
-                    || (next.V - uv.V).Abs > ResolutionAt(uv.V.Abs + w.V.End.Abs.Min(w.V.Start.Abs)).Value);
-            uv = surface.Eval(g, next).Distance(p) <= here + slack ? next : uv;
-            n = n + 1;
-        }
-        return uv;
-    }
+        => surface.PolishProjectionCounted(g, p, start, w, radius).Value;
 
     //==
     // # Surfaces: global and local
@@ -397,17 +366,7 @@ library BsplineInverse
     // with no wrapping, so the answer is the copy reached from the seed; a
     // coordinate the point does not determine keeps the seed's value.
     ProjectNearBySearchBody(surface: BrepSurface, g: GeometrySet, p: Point3D, seed: UvCoordinate): UvCoordinate
-    {
-        var d = surface.Domain(g);
-        var w = SurfaceWindow(d.U.NearWindow(seed.U), d.V.NearWindow(seed.V));
-        var radius = Vector2D(d.U.NearStep(w.U), d.V.NearStep(w.V));
-        var uv = surface.PolishProjection(g, p, seed, w, radius);
-        var here = surface.Eval(g, uv);
-        var slack = ResolutionAt(here.PositionVector.Length).Value;
-        return UvCoordinate(
-            surface.Eval(g, UvCoordinate(seed.U, uv.V)).Distance(here) <= slack ? seed.U : uv.U,
-            surface.Eval(g, UvCoordinate(uv.U, seed.V)).Distance(here) <= slack ? seed.V : uv.V);
-    }
+        => surface.ProjectNearBySearchCounted(g, p, seed).Value;
 
     // The window of a local search in one direction: a quarter period either
     // side of the seed's coordinate when the direction has a seam, else the

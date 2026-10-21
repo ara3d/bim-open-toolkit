@@ -72,23 +72,11 @@ library ProjectAlongLaws
 
     // On the count witness's edge image the run makes exactly one grid
     // search, at both sizes: the claim's slope allows n, the run needs 1.
-    Law_Perf_ProjectAlongSearchesOncePerEdge(_: Integer): Boolean
+    Law_ProjectAlongSearchesOncePerEdge(_: Integer): Boolean
         => ProjectAlongWork(16).Flips == 1 && ProjectAlongWork(64).Flips == 1;
 
     //==
     // # Counted forms
-
-    // The counted seeded search returns ProjectNearBySearchBody's answer,
-    // bit for bit, from any seed toward any point, on every surface fixture.
-    Law_Perf_ProjectNearCountedAgrees(k: Integer, p: Point3D, u: Number, v: Number): Boolean
-    {
-        var g = k.SurfaceFixtureSet;
-        var surface = g.SurfaceAt(SurfaceIndex(0));
-        var seed = g.Domain(SurfaceIndex(0)).SampleIn(UvCoordinate(u, v));
-        var counted = surface.ProjectNearBySearchCounted(g, p, seed).Value;
-        var plain = ProjectNearBySearchBody(surface, g, p, seed);
-        return counted.U == plain.U && counted.V == plain.V;
-    }
 
     //==
     // # Surfaces
@@ -99,7 +87,7 @@ library ProjectAlongLaws
     // the parameter tolerance there (two references, not eight: each Project
     // is a grid search, and eight per case passed the 2 s budget), and one
     // grid search serves the run.
-    Law_Perf_ProjectAlongAgrees(k: Integer, u0: Number, v0: Number, u1: Number, v1: Number): Boolean
+    Law_ProjectAlongAgrees(k: Integer, u0: Number, v0: Number, u1: Number, v1: Number): Boolean
     {
         var g = k.SurfaceFixtureSet;
         var s = SurfaceIndex(0);
@@ -114,7 +102,7 @@ library ProjectAlongLaws
     // On a run of 4 points between any two points of space, on the surface
     // or off it, no answer's point is farther from its point than Project's
     // by more than the length tolerance.
-    Law_Perf_ProjectAlongIsNearlyMinimal(k: Integer, a: Point3D, b: Point3D): Boolean
+    Law_ProjectAlongIsNearlyMinimal(k: Integer, a: Point3D, b: Point3D): Boolean
     {
         var g = k.SurfaceFixtureSet;
         var s = SurfaceIndex(0);
@@ -132,7 +120,7 @@ library ProjectAlongLaws
     // parameters, each answer gives its point back within the length
     // tolerance and is ClosestParameter's within the pcurve's parameter
     // floor, and one global search serves the run.
-    Law_Perf_ClosestParametersAlongAgrees(k: Integer, t0: Number, t1: Number): Boolean
+    Law_ClosestParametersAlongAgrees(k: Integer, t0: Number, t1: Number): Boolean
     {
         var g = k.PcurveFixtureSet;
         var p = PcurveIndex(0);
@@ -147,7 +135,7 @@ library ProjectAlongLaws
     // On a run of 6 points between any two points of space, no answer's
     // point is farther from its point than ClosestParameter's by more than
     // the length tolerance.
-    Law_Perf_ClosestParametersAlongIsNearlyMinimal(k: Integer, a: Point3D, b: Point3D): Boolean
+    Law_ClosestParametersAlongIsNearlyMinimal(k: Integer, a: Point3D, b: Point3D): Boolean
     {
         var g = k.PcurveFixtureSet;
         var p = PcurveIndex(0);
@@ -161,50 +149,4 @@ library ProjectAlongLaws
     //==
     // # Callers
 
-    // On every witness model, every edge sampled at 12 parameters, and every
-    // image of it: CanonicalImagePointsAlong names CanonicalImagePoints'
-    // parameters within the parameter tolerance at each.
-    Law_Perf_CanonicalImagePointsAlongAgrees(m: BrepModel): Boolean
-        => m.IsEveryIndexInRange
-            ? m.Edges.Count.Range.All(j => m.PerfImagesAgree(m.DiscretizationAt(BrepEdgeIndex(j), m.EdgeDomain(BrepEdgeIndex(j)).Range.Samples(12))))
-            : true;
-
-    // CanonicalImagePointsAlong agrees with CanonicalImagePoints on every
-    // evaluable image of discretization d.
-    PerfImagesAgree(m: BrepModel, d: EdgeDiscretization): Boolean
-        => m.IsEvaluable(d)
-            ? m.EdgeImages(d.Edge).All(img => m.IsImageEvaluable(img) ? m.PerfImageAgrees(d, img) : true)
-            : true;
-
-    // The two image point arrays have one count and agree point by point.
-    PerfImageAgrees(m: BrepModel, d: EdgeDiscretization, img: EdgeImage): Boolean
-    {
-        var s = m.ImageSurface(img);
-        var plain = m.CanonicalImagePoints(d, img);
-        var along = m.CanonicalImagePointsAlong(d, img);
-        return plain.Count == along.Count
-            ? plain.Count.Range.All(i => m.Geometry.Domain(s).SameParameter(along[i], plain[i], m.Geometry.UvToleranceAt(s, plain[i], m.Tolerances)))
-            : false;
-    }
-
-    // On every witness model, every bound of every face with only edge
-    // loops: LiftedBoundAlong names LiftedBound's parameters within the
-    // parameter tolerance at each point.
-    Law_Perf_LiftedBoundAlongAgrees(m: BrepModel): Boolean
-        => m.IsEveryIndexInRange
-            ? m.Faces.Count.Range.All(j => m.HasOnlyEdgeLoops(BrepFaceIndex(j))
-                ? m.Faces[BrepFaceIndex(j)].Bounds.All(b => m.PerfBoundAgrees(BrepFaceIndex(j), b))
-                : true)
-            : true;
-
-    // The two lifted polygons of bound b have one count and agree point by point.
-    PerfBoundAgrees(m: BrepModel, f: BrepFaceIndex, b: FaceBound): Boolean
-    {
-        var s = m.Faces[f].Surface;
-        var plain = m.LiftedBound(f, b);
-        var along = m.LiftedBoundAlong(f, b);
-        return plain.Count == along.Count
-            ? plain.Count.Range.All(i => m.Geometry.Domain(s).SameParameter(along[i], plain[i], m.Geometry.UvToleranceAt(s, plain[i], m.Tolerances)))
-            : false;
-    }
 }

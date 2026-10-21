@@ -1,7 +1,7 @@
 # perf-project-along: one global search per edge, seeded inverse evaluation after
 
 Ticket: TKT-380
-Status: ready: I3
+Status: merged: I3 (2026-10-21, into 01-geometry/bspline-along.{library,laws}.plato; the staged image and bound copies deleted after wiring)
 
 ## Done
 - I3, (this commit), about 1 h against 2 h expected. Functions added (no types: every value

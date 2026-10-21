@@ -514,8 +514,8 @@ library EdgeDiscretizing
     {
         var s = m.ImageSurface(img);
         var raw = img.Pcurve.IsNone
-            ? m.PolesFilled(s, d.Points.Map(p => m.Geometry.Project(s, p)))
-            : d.Points.Map(p => m.Geometry.Eval(m.Geometry.Pcurves[img.Pcurve].Curve, m.Geometry.ClosestParameter(img.Pcurve, p)));
+            ? m.PolesFilled(s, m.Geometry.ProjectAlong(s, d.Points, m.Tolerances.Length))
+            : m.Geometry.ClosestParametersAlong(img.Pcurve, d.Points, m.Tolerances.Length).Map(t => m.Geometry.Eval(m.Geometry.Pcurves[img.Pcurve].Curve, t));
         return m.Geometry.Domain(s).UnwrappedByContinuity(raw);
     }
 
