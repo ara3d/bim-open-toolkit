@@ -1,0 +1,120 @@
+//==
+// # Laws of the discretization proofs over discretized witnesses (complexity sweep, chunk L3)
+//
+// The laws of StepToMeshProofsDiscretizationLaws (08-pipeline/pipeline-proofs-discretization.laws.plato)
+// restated over DiscretizedWitness: each reads the table the runner built once per sweep and
+// quantifies inside the body, over every knock-out of one entry (the whole-table laws) or over
+// every entry in both directions (the one-edge laws), where the original ran DiscretizeAll once
+// per case and again per parameter. The originals covered the thirteen models of
+// CatalogProofModelAt under CatalogEdgeCriteria; the catalog family of witnesses is those thirteen
+// under the same criteria, and two more witnesses vary the criteria. At merge each Law_Perf_<X>
+// replaces Law_<X> (TRACK.md).
+//
+// Sections, in order:
+//  - Tables
+//  - Whole tables
+//  - One edge
+
+library StepToMeshProofsDiscretizationWitnessLaws
+{
+    //==
+    // # Tables
+
+    // The witness's table with each entry j in turn replaced by Undiscretized, and last the table
+    // itself (j = n knocks out nothing).
+    KnockOuts(w: DiscretizedWitness): Array<EdgeDiscretizations>
+        => (w.Discretizations.ByEdge.Count + 1).MapRange(j => w.Discretizations.CatalogWithUndiscretized(j));
+
+    //==
+    // # Whole tables
+
+    // CheckCompleteDiscretization succeeds exactly when the table has one entry per edge and every
+    // entry is discretized, on every knock-out of the witness's table.
+    Law_Perf_CompleteDiscretizationIffAllDiscretized(w: DiscretizedWitness): Boolean
+        => w.KnockOuts.All(d => w.Model.CompleteIffAllDiscretized(d));
+
+    // The claim of Law_Perf_CompleteDiscretizationIffAllDiscretized on table d.
+    CompleteIffAllDiscretized(m: BrepModel, d: EdgeDiscretizations): Boolean
+        => CheckCompleteDiscretization(m, d).IsDecided
+            == (d.ByEdge.Count == m.Edges.Count ? d.ByEdge.All(x => x.IsDiscretized) : false);
+
+    // A CompleteDiscretization keeps every entry of the table, on every knock-out.
+    Law_Perf_CompleteDiscretizationKeepsTable(w: DiscretizedWitness): Boolean
+        => w.KnockOuts.All(d => CatalogCompleteKeeps(d, CheckCompleteDiscretization(w.Model, d)));
+
+    // CheckPartialDiscretization succeeds exactly when the table has one entry per edge and some
+    // entry is undiscretized, on every knock-out.
+    Law_Perf_PartialDiscretizationIffSomeFailed(w: DiscretizedWitness): Boolean
+        => w.KnockOuts.All(d => w.Model.PartialIffSomeFailed(d));
+
+    // The claim of Law_Perf_PartialDiscretizationIffSomeFailed on table d.
+    PartialIffSomeFailed(m: BrepModel, d: EdgeDiscretizations): Boolean
+        => CheckPartialDiscretization(m, d).IsDecided
+            == (d.ByEdge.Count == m.Edges.Count ? d.ByEdge.Any(x => x.IsDiscretized.Not) : false);
+
+    // A PartialDiscretization lists exactly the undiscretized entries, on every knock-out.
+    Law_Perf_PartialDiscretizationListsFailures(w: DiscretizedWitness): Boolean
+        => w.KnockOuts.All(d => CatalogPartialLists(d, CheckPartialDiscretization(w.Model, d)));
+
+    //==
+    // # One edge
+
+    // CheckCanonicalDiscretization succeeds exactly when the polyline is evaluable, runs along the
+    // curve with strictly increasing parameters, starts and ends at the domain's ends, and has the
+    // vertex points at its ends: on every entry and its reversal.
+    Law_Perf_CanonicalDiscretizationIffCanonical(w: DiscretizedWitness): Boolean
+        => w.Discretizations.ByEdge.All(d => w.Model.CanonicalIffCanonical(d) && w.Model.CanonicalIffCanonical(d.Reversed));
+
+    // The claim of Law_Perf_CanonicalDiscretizationIffCanonical on polyline d.
+    CanonicalIffCanonical(m: BrepModel, d: EdgeDiscretization): Boolean
+        => CheckCanonicalDiscretization(m, d).IsDecided
+            == (m.IsEvaluable(d)
+                ? (d.RunsAlongCurve
+                    && d.Parameters.Count.Range.All(i => d.ParametersStrictlyIncreasing(i))
+                    && m.LowestParameterIsDomainStart(d)
+                    && m.HighestParameterIsDomainEnd(d)
+                    && Law_DomainStartPointIsVertex(m, d)
+                    && Law_DomainEndPointIsVertex(m, d))
+                : false);
+
+    // DiscretizeAll's entry for an edge it discretized is canonical, and its reversal is not.
+    Law_Perf_DiscretizedEntryIsCanonicalReversedIsNot(w: DiscretizedWitness): Boolean
+        => w.Discretizations.ByEdge.All(d =>
+            (w.Model.IsEvaluable(d) ? CheckCanonicalDiscretization(w.Model, d).IsDecided : true)
+            && (w.Model.IsEvaluable(d.Reversed) ? CheckCanonicalDiscretization(w.Model, d.Reversed).IsDecided.Not : true));
+
+    // A CanonicalDiscretization keeps its polyline and points at its edge, on every entry.
+    Law_Perf_CanonicalDiscretizationKeepsPolyline(w: DiscretizedWitness): Boolean
+        => w.Discretizations.ByEdge.All(d => CatalogCanonicalKeeps(d, CheckCanonicalDiscretization(w.Model, d)));
+
+    // A canonical polyline directed Same is itself, directed Opposite is its reversal, and the
+    // direction is recorded: on every entry, in both senses.
+    Law_Perf_DirectedAlongReversesOnlyWhenOpposite(w: DiscretizedWitness): Boolean
+        => w.Discretizations.ByEdge.All(d =>
+            CatalogDirectedAlong(Sense.Same, CheckCanonicalDiscretization(w.Model, d))
+            && CatalogDirectedAlong(Sense.Opposite, CheckCanonicalDiscretization(w.Model, d)));
+
+    // CheckMeetsCriteriaProof succeeds exactly when the polyline meets the witness's criteria, on
+    // every entry.
+    Law_Perf_MeetsCriteriaProofIffMeetsCriteria(w: DiscretizedWitness): Boolean
+        => w.Discretizations.ByEdge.All(d =>
+            CheckMeetsCriteriaProof(w.Model, d, w.Criteria).IsDecided == w.Model.MeetsCriteria(d, w.Criteria));
+
+    // A MeetsCriteriaProof names its edge and criteria, and its Worst is the largest Sagitta of the
+    // polyline's segments, on every entry.
+    Law_Perf_MeetsCriteriaProofRecordsWorst(w: DiscretizedWitness): Boolean
+        => w.Discretizations.ByEdge.All(d =>
+            w.Model.MeetsRecordsWorst(w.Criteria, d, CheckMeetsCriteriaProof(w.Model, d, w.Criteria)));
+
+    // The claim of Law_Perf_MeetsCriteriaProofRecordsWorst for the result p of checking polyline d
+    // of model m under criteria c: CatalogMeetsRecords with the criteria a parameter. Exact by
+    // construction: the same Sagitta calls on the same parameters.
+    MeetsRecordsWorst(m: BrepModel, c: DiscretizationCriteria, d: EdgeDiscretization, p: DecidedMeetsCriteriaProof): Boolean
+        => match (p) {
+            Decided(x) => x.Edge == d.Edge
+                && x.Criteria == c
+                && x.Worst.Value == d.SegmentCount.Range.Reduce(0.0, (s, i) => s.Max(m.Sagitta(d.Edge, d.Parameters[i], d.Parameters[i + 1])))
+                && x.Where == Provenance.KernelEdge(d.Edge);
+            Undecided(r) => true;
+        };
+}

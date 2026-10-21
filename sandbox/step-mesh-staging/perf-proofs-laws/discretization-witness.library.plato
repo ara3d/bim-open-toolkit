@@ -1,0 +1,25 @@
+//==
+// # Discretized witnesses: building one (complexity sweep, chunk L3)
+//
+// The constructor every Witness_* of DiscretizedWitness goes through, and the refinement requests
+// the Refine law asks of a witness's table.
+
+library EdgeDiscretizingWitnesses
+{
+    // Model m named name, its edges discretized by DiscretizeAll under c and floors.
+    DiscretizedWitnessOf(m: BrepModel, name: String, c: DiscretizationCriteria, floors: SegmentFloors): DiscretizedWitness
+        => DiscretizedWitness(name, m, c, floors, m.DiscretizeAll(c, floors));
+
+    // A request for entry d: half the witness's chordal bound and twice the segments, so Refine
+    // both bisects and raises the count.
+    HalvingRequest(w: DiscretizedWitness, d: EdgeDiscretization): EdgeRefinementRequest
+        => EdgeRefinementRequest(d.Edge, RefinementReason.TooCoarseInParameterSpace, 0.5 * w.Criteria.Chordal, 2 * d.SegmentCount);
+
+    // One HalvingRequest per discretized entry of the witness's table, in edge order. Undiscretized
+    // entries get none: Refine's precondition (IsRefinable) asks CanDiscretize of every requested
+    // edge.
+    RefinementRequestsOf(w: DiscretizedWitness): Array<EdgeRefinementRequest>
+        => w.Discretizations.ByEdge.Reduce(
+            0.MapRange(i => EdgeRefinementRequest(BrepEdgeIndex(i), RefinementReason.TooCoarseInParameterSpace, 0.0, 0)),
+            (rs, x) => x.IsDiscretized ? rs.Append(w.HalvingRequest(x)) : rs);
+}

@@ -1,0 +1,97 @@
+//==
+// # Discretized witnesses: the values (complexity sweep, chunk L3)
+//
+// The Witness_* values of DiscretizedWitness (04-discretization/discretization-witness.types.plato)
+// and FaceOutcomesWitness (pipeline-discretized-witness.types.plato), each built once per sweep.
+// The catalog family is the thirteen models the proof laws covered through CatalogProofModelAt
+// (layer 7's ten positive witnesses and its three negative ones) under the witness criteria
+// (CatalogEdgeCriteria) with no floors, as CatalogTableOf discretized them. Two more vary the
+// criteria and floors, which the layer 4 laws drew at random before: a length limit with floors,
+// and criteria that are not well formed, so every entry is Undiscretized.
+//
+// Sections, in order:
+//  - The catalog family
+//  - Other criteria
+//  - Face outcomes
+
+library StepToMeshDiscretizedWitnesses
+{
+    //==
+    // # The catalog family
+
+    // Model m named name, discretized as CatalogTableOf does: the witness criteria, no floors.
+    CatalogDiscretized(m: BrepModel, name: String): DiscretizedWitness
+        => m.DiscretizedWitnessOf(name, DiscretizationCriteria.CatalogEdgeCriteria, SegmentFloors.NoFloors);
+
+    Witness_UnitBoxDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_UnitBox.CatalogDiscretized("UnitBox");
+
+    Witness_CylinderDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_Cylinder.CatalogDiscretized("Cylinder");
+
+    Witness_SphereDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_Sphere.CatalogDiscretized("Sphere");
+
+    Witness_TorusDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_Torus.CatalogDiscretized("Torus");
+
+    Witness_ConeDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_Cone.CatalogDiscretized("Cone");
+
+    Witness_BlockWithThroughHoleDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_BlockWithThroughHole.CatalogDiscretized("BlockWithThroughHole");
+
+    Witness_HollowBoxDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_HollowBox.CatalogDiscretized("HollowBox");
+
+    Witness_BSplinePatchSolidDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_BSplinePatchSolid.CatalogDiscretized("BSplinePatchSolid");
+
+    Witness_QuarterCylinderDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_Cylinder(1.0, 1.0, Angle(Number.HalfPi)).CatalogDiscretized("QuarterCylinder");
+
+    Witness_SphereByPoleLoopsDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_SphereByPoleLoops(1.0).CatalogDiscretized("SphereByPoleLoops");
+
+    Witness_BoxWithFlippedFaceDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_BoxWithFlippedFace.CatalogDiscretized("BoxWithFlippedFace");
+
+    Witness_TwoBoxesSharingCornerDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_TwoBoxesSharingCorner.CatalogDiscretized("TwoBoxesSharingCorner");
+
+    Witness_BoxWithPolyLoopSheetDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_BoxWithPolyLoopSheet.CatalogDiscretized("BoxWithPolyLoopSheet");
+
+    //==
+    // # Other criteria
+
+    // The unit box with segments at most 0.3 long (so four per edge) and floors of 5, 0 and 7 on
+    // edges 0 to 2.
+    Witness_UnitBoxLimitedDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_UnitBox.DiscretizedWitnessOf("UnitBoxLimited",
+            DiscretizationCriteria(0.05, 15.0.Degrees, Limit.AtMost(0.3), 0.005, 3), SegmentFloors([5, 0, 7]));
+
+    // The unit cylinder under the same length limit and floors.
+    Witness_CylinderLimitedDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_Cylinder.DiscretizedWitnessOf("CylinderLimited",
+            DiscretizationCriteria(0.05, 15.0.Degrees, Limit.AtMost(0.3), 0.005, 3), SegmentFloors([5, 0, 7]));
+
+    // The unit box under criteria with a zero chordal bound, which are not well formed: CanDiscretize
+    // rejects every edge.
+    Witness_UnitBoxIllFormedDiscretized(_: DiscretizedWitness): DiscretizedWitness
+        => BrepModel.Witness_UnitBox.DiscretizedWitnessOf("UnitBoxIllFormed",
+            DiscretizationCriteria(0.0, 15.0.Degrees, Limit.Unlimited, 0.0, 3), SegmentFloors.NoFloors);
+
+    //==
+    // # Face outcomes
+
+    // Every face of witness w meshed by MeshFace over its table under the witness options' face
+    // criteria.
+    FaceOutcomesOf(w: DiscretizedWitness): FaceOutcomesWitness
+        => FaceOutcomesWitness(w, w.Model.Faces.Count.MapRange(f =>
+            w.Model.MeshFace(BrepFaceIndex(f), w.Discretizations, MeshingOptions.WitnessOptions.Face)));
+
+    // The unit box's six faces, as CatalogBoxOutcome meshed them.
+    Witness_UnitBoxFaceOutcomes(_: FaceOutcomesWitness): FaceOutcomesWitness
+        => BrepModel.Witness_UnitBox.CatalogDiscretized("UnitBox").FaceOutcomesOf;
+}

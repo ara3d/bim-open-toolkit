@@ -1,0 +1,155 @@
+//==
+// # Laws of the face-mesh and model-mesh proofs over shared witnesses (complexity sweep, chunk L3)
+//
+// The face-outcome and model-mesh laws of StepToMeshProofsMeshLaws
+// (08-pipeline/pipeline-proofs-mesh.laws.plato) restated: the face-outcome laws over
+// FaceOutcomesWitness, whose outcomes the runner meshes once per sweep, quantifying over every
+// knock-out of one outcome inside the body (the original meshed every face again, DiscretizeAll
+// included, per face per case); the model-mesh laws over MeshedWitness, quantifying over layer 6's
+// three literal tetrahedra and the witness's pipeline mesh inside the body (the original meshed
+// the unit box with Oracle validation in every case k = 3 modulo 4, and once per element in the
+// quality law). At merge each Law_Perf_<X> replaces Law_<X> (TRACK.md). The quad laws are
+// unchanged: they mesh nothing.
+//
+// Sections, in order:
+//  - Witnesses
+//  - Face outcomes
+//  - The model mesh
+
+library StepToMeshProofsMeshWitnessLaws
+{
+    //==
+    // # Witnesses
+
+    // The witness's outcomes with outcome j replaced by an unmeshed one when j names a face, as
+    // CatalogBoxOutcomes(j) did.
+    KnockedOutOutcomes(w: FaceOutcomesWitness, j: Integer): Array<FaceMeshOutcome>
+        => w.Outcomes.Count.MapRange(f => f == j
+            ? UnmeshedOutcome(BrepFaceIndex(f), "CATALOG-KNOCKED-OUT", "This face's outcome was replaced by an unmeshed one.")
+            : w.Outcomes[f]);
+
+    // Every knock-out of one outcome, and last the outcomes themselves (j = count knocks out
+    // nothing).
+    OutcomeKnockOuts(w: FaceOutcomesWitness): Array<Array<FaceMeshOutcome>>
+        => (w.Outcomes.Count + 1).MapRange(j => w.KnockedOutOutcomes(j));
+
+    // The meshes the model-mesh laws check, in CatalogMeshAt's order: the unit tetrahedron, its
+    // reversal, the tetrahedron without its fourth face (open), and the witness's pipeline mesh.
+    CatalogMeshesOf(w: MeshedWitness): Array<ModelMesh>
+        => [ModelMesh.Witness_UnitTetrahedron,
+            ModelMesh.Witness_UnitTetrahedron.Reversed,
+            ModelMesh.Witness_UnitTetrahedron.RestrictedToFaces([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)]),
+            w.Outcome.Mesh];
+
+    // The model CheckCheckedMesh checks mesh i of CatalogMeshesOf against: the unit box for the
+    // tetrahedra, as CatalogBox was, and the witness's own model for its mesh.
+    CatalogMeshModelOf(w: MeshedWitness, i: Integer): BrepModel
+        => i == 3 ? w.Model : BrepModel.CatalogBox;
+
+    //==
+    // # Face outcomes
+
+    // CheckFullyMeshedModel succeeds exactly when there is one outcome per face, outcome i is of
+    // face i, and each holds a non-empty mesh and no blocking request: on every knock-out.
+    Law_Perf_FullyMeshedModelIffEveryFaceMeshed(w: FaceOutcomesWitness): Boolean
+        => w.OutcomeKnockOuts.All(o => w.Discretized.Model.FullyMeshedIffEveryFaceMeshed(o));
+
+    // The claim of Law_Perf_FullyMeshedModelIffEveryFaceMeshed on outcomes o of model m.
+    FullyMeshedIffEveryFaceMeshed(m: BrepModel, o: Array<FaceMeshOutcome>): Boolean
+        => CheckFullyMeshedModel(m, o).IsDecided
+            == (o.Count == m.Faces.Count
+                ? o.Count.Range.All(i =>
+                    o[i].Mesh.Face == BrepFaceIndex(i)
+                    && o[i].Mesh.IsEmptyFaceMesh.Not
+                    && o[i].HasBlockingRequest.Not)
+                : false);
+
+    // A FullyMeshedModel keeps every outcome, on every knock-out.
+    Law_Perf_FullyMeshedModelKeepsOutcomes(w: FaceOutcomesWitness): Boolean
+        => w.OutcomeKnockOuts.All(o => CatalogFullyMeshedKeeps(o, CheckFullyMeshedModel(w.Discretized.Model, o)));
+
+    // CheckMeshedFaceSet over faces 0 to 2 succeeds exactly when their three outcomes are meshed,
+    // on every knock-out.
+    Law_Perf_MeshedFaceSetIffFacesMeshed(w: FaceOutcomesWitness): Boolean
+        => w.OutcomeKnockOuts.All(o =>
+            CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], o.Take(3)).IsDecided
+                == 3.Range.All(i => o[i].Mesh.IsEmptyFaceMesh.Not && o[i].HasBlockingRequest.Not));
+
+    // A MeshedFaceSet pairs each face with its outcome, on every knock-out.
+    Law_Perf_MeshedFaceSetPairsFaces(w: FaceOutcomesWitness): Boolean
+        => w.OutcomeKnockOuts.All(o =>
+            CatalogMeshedFaceSetPairs(CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], o.Take(3))));
+
+    //==
+    // # The model mesh
+
+    // CheckWatertightMesh succeeds exactly when the mesh is well formed and every edge has two
+    // element sides, on every mesh of CatalogMeshesOf.
+    Law_Perf_WatertightMeshIffClosed(w: MeshedWitness): Boolean
+        => w.CatalogMeshesOf.All(mesh =>
+            CheckWatertightMesh(mesh).IsDecided == (mesh.IsWellFormed ? mesh.IsClosed : false));
+
+    // A WatertightMesh keeps its mesh, on every mesh of CatalogMeshesOf.
+    Law_Perf_WatertightMeshKeepsMesh(w: MeshedWitness): Boolean
+        => w.CatalogMeshesOf.All(mesh => CatalogWatertightKeeps(mesh, CheckWatertightMesh(mesh)));
+
+    // CheckCheckedMesh succeeds exactly when the mesh is well formed, manifold, consistently
+    // oriented, and closed on every shell of its model that uses each counted edge twice.
+    Law_Perf_CheckedMeshIffMeshChecks(w: MeshedWitness): Boolean
+    {
+        var meshes = w.CatalogMeshesOf;
+        return 4.Range.All(i => w.CatalogMeshModelOf(i).CheckedMeshIffMeshChecks(meshes[i]));
+    }
+
+    // The claim of Law_Perf_CheckedMeshIffMeshChecks on mesh of model m.
+    CheckedMeshIffMeshChecks(m: BrepModel, mesh: ModelMesh): Boolean
+        => CheckCheckedMesh(m, mesh).IsDecided
+            == (mesh.IsWellFormed
+                ? (mesh.IsManifold && mesh.IsConsistentlyOriented
+                    && m.Shells.Count.Range.All(s =>
+                        m.EdgesOfShell(ShellIndex(s)).All(e => m.CountsAsEdge(e) ? m.UseCount(ShellIndex(s), e).IsZeroOrTwo : true)
+                            ? m.RestrictedToShell(mesh, ShellIndex(s)).IsClosed
+                            : true))
+                : false);
+
+    // The closed tetrahedron, its reversal, and the witness's pipeline mesh are checked meshes;
+    // the tetrahedron without a face is not.
+    Law_Perf_ClosedWitnessMeshesAreChecked(w: MeshedWitness): Boolean
+    {
+        var meshes = w.CatalogMeshesOf;
+        return 4.Range.All(i => CheckCheckedMesh(w.CatalogMeshModelOf(i), meshes[i]).IsDecided == (i != 2));
+    }
+
+    // A CheckedMesh carries ComponentCountsOf of its mesh, one per component.
+    Law_Perf_CheckedMeshRecordsCounts(w: MeshedWitness): Boolean
+    {
+        var meshes = w.CatalogMeshesOf;
+        return 4.Range.All(i => CatalogCheckedMeshRecords(meshes[i], CheckCheckedMesh(w.CatalogMeshModelOf(i), meshes[i])));
+    }
+
+    // CheckQualityGradedMesh succeeds exactly when the mesh is well formed and every element's
+    // corners name positions, on every mesh of CatalogMeshesOf.
+    Law_Perf_QualityGradedMeshIffMeasurable(w: MeshedWitness): Boolean
+        => w.CatalogMeshesOf.All(mesh =>
+            CheckQualityGradedMesh(mesh).IsDecided
+                == (mesh.IsWellFormed
+                    ? mesh.ElementCount.Range.All(e => mesh.HasValidCorners(ElementIndex(e)))
+                    : false));
+
+    // A QualityGradedMesh holds TriangleQualityAt of each triangle and QuadQualityAt of each quad,
+    // in element order, on every mesh of CatalogMeshesOf.
+    Law_Perf_QualityGradedMeshRecordsQualities(w: MeshedWitness): Boolean
+        => w.CatalogMeshesOf.All(mesh => QualityRecordsEvery(mesh, CheckQualityGradedMesh(mesh)));
+
+    // The claim of Law_Perf_QualityGradedMeshRecordsQualities for the result d of grading mesh:
+    // CatalogQualityRecords at every triangle and quad. Exact by construction: the same metric of
+    // the same corners.
+    QualityRecordsEvery(mesh: ModelMesh, d: DecidedQualityGradedMesh): Boolean
+        => match (d) {
+            Decided(p) => (p.Triangles.Count == mesh.Triangles.Count && p.Quads.Count == mesh.Quads.Count)
+                ? (p.Triangles.Count.Range.All(j => p.Triangles[j] == mesh.TriangleQualityAt(ElementIndex(j)))
+                    && p.Quads.Count.Range.All(j => p.Quads[j] == mesh.QuadQualityAt(ElementIndex(mesh.Triangles.Count + j))))
+                : false;
+            Undecided(r) => true;
+        };
+}
