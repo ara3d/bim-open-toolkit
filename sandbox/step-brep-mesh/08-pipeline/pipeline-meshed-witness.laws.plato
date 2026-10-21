@@ -155,9 +155,7 @@ library StepToMeshMeshedWitnessesLaws
     SilentFaceLeavesFaceUnchanged(m: BrepModel, f: BrepFaceIndex, g: BrepFaceIndex,
             first: PipelineState, kept: PipelineState, dropped: PipelineState): Boolean
     {
-        var silent = kept.Outcomes[f].Mesh.IsEmptyFaceMesh
-            && kept.Outcomes[f].Requests.Count == 0
-            && m.FaceEdges(f).All(e => kept.Discretizations.ByEdge[e].SameDiscretization(first.Discretizations.ByEdge[e]));
+        var silent = m.IsSilentFace(f, first, kept);
         return silent ? kept.Outcomes[g].Mesh.SameFaceMesh(dropped.Outcomes[g].Mesh) : true;
     }
 

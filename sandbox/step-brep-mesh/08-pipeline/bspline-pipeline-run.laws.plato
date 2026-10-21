@@ -7,7 +7,7 @@
 // crescent sheet is a LoopRunWitness, so every law of StepToMeshLoopRunLaws runs over it directly,
 // the original Law_ModelLaws, Law_DiagnosticLaws, Law_EdgeLaws and Law_RoundLaws on it included.
 // A law about the crescent runs over every LoopRunWitness and states its claim on the one whose
-// model is the crescent (SameModel), as chunk L1's laws do. At merge each Law_Perf_<X> replaces
+// model is the crescent (SameModel), as chunk L1's laws do. At merge each Law_<X> replaces
 // Law_<X> of BsplinePipelineLaws (TRACK.md).
 //
 // Sections, in order:
@@ -45,7 +45,7 @@ library BsplinePipelineLoopRunLaws
     // layer 7's area bound: inside the witness's bracket [1, 1 + 16 b^2 / 45]
     // (Law_BSplineTopAreaInBracket) widened by layer 7's FaceAreaTolerance for the options'
     // criteria.
-    Law_Perf_BumpSolidMeshesClosedWithinAreaBound(c: CostlyLoopRunWitness): Boolean
+    Law_BumpSolidMeshesClosedWithinAreaBound(c: CostlyLoopRunWitness): Boolean
     {
         var w = c.Run;
         if (!w.IsBumpSolidRun)
@@ -67,7 +67,7 @@ library BsplinePipelineLoopRunLaws
     // initial state leaves nothing pending, so StateAfter returns that state under any round
     // limit, 0 included (InitialState reads the options only through o.Face, which the limit
     // does not change); under the no-round options its loop's findings are clean.
-    Law_Perf_BumpSolidNeedsNoRound(c: CostlyLoopRunWitness): Boolean
+    Law_BumpSolidNeedsNoRound(c: CostlyLoopRunWitness): Boolean
     {
         var w = c.Run;
         if (!w.IsBumpSolidRun)
@@ -88,41 +88,41 @@ library BsplinePipelineLoopRunLaws
     // The loop and its states: the round limit, an empty face diagnosed, a terminal loop, the step
     // laws, the floors, refinable requests, empty discretizations, failure isolation, and the
     // state laws.
-    Law_Perf_BumpSolidLoopLaws(c: CostlyLoopRunWitness): Boolean
+    Law_BumpSolidLoopLaws(c: CostlyLoopRunWitness): Boolean
     {
         var w = c.Run;
-        return Law_Perf_RoundsWithinLimit(w) && Law_Perf_EmptyFaceIsDiagnosed(w) && Law_Perf_LoopEndsTerminal(w)
-            && Law_Perf_StepDecreasesMeasure(w) && Law_Perf_MeasureIsNeverNegative(w)
-            && Law_Perf_RefinementNeverCoarsens(w) && Law_Perf_OnlyFacesOfChangedEdgesAreRemeshed(w)
-            && Law_Perf_FinalDiscretizationsMeetFloors(w) && Law_Perf_PendingRequestsAreRefinable(w)
-            && Law_Perf_EmptyDiscretizationExactlyWhenEdgeUnusable(w) && Law_Perf_FailedFaceLeavesOthersUnchanged(w)
-            && Law_Perf_StateLaws(w);
+        return Law_RoundsWithinLimit(w) && Law_EmptyFaceIsDiagnosed(w) && Law_LoopEndsTerminal(w)
+            && Law_StepDecreasesMeasure(w) && Law_MeasureIsNeverNegative(w)
+            && Law_RefinementNeverCoarsens(w) && Law_OnlyFacesOfChangedEdgesAreRemeshed(w)
+            && Law_FinalDiscretizationsMeetFloors(w) && Law_PendingRequestsAreRefinable(w)
+            && Law_EmptyDiscretizationExactlyWhenEdgeUnusable(w) && Law_FailedFaceLeavesOthersUnchanged(w)
+            && Law_StateLaws(w);
     }
 
     // Watertightness and the mesh's invariants: closed, oriented, and well formed.
-    Law_Perf_BumpSolidWatertightLaws(c: CostlyLoopRunWitness): Boolean
+    Law_BumpSolidWatertightLaws(c: CostlyLoopRunWitness): Boolean
     {
         var w = c.Run;
-        return Law_Perf_ClosedWhenEveryShellClosedAndNoFaceEmpty(w) && Law_Perf_OrientedWhenEveryShellClosedAndNoFaceEmpty(w)
-            && Law_Perf_MeshedMeshIsWellFormed(w);
+        return Law_ClosedWhenEveryShellClosedAndNoFaceEmpty(w) && Law_OrientedWhenEveryShellClosedAndNoFaceEmpty(w)
+            && Law_MeshedMeshIsWellFormed(w);
     }
 
     // The mesh is clean under layer 7's structural checks of a model mesh: the part of the
     // original Law_BumpSolidPassesWitnessLaws ("validates clean") that finishes compiled, in 0.3 s.
     // Fails on 2026-10-21: ElementIsNotDegenerate at element 1541 (TRACK.md, "Findings").
-    Law_Perf_BumpSolidValidatesStructurally(c: CostlyLoopRunWitness): Boolean
-        => Law_Perf_MeshedMeshValidatesStructurally(c.Run);
+    Law_BumpSolidValidatesStructurally(c: CostlyLoopRunWitness): Boolean
+        => Law_MeshedMeshValidatesStructurally(c.Run);
 
     // The mesh against its model: layers 6 and 7's predicates at every index.
-    Law_Perf_BumpSolidMeshAgainstModelLaws(c: CostlyLoopRunWitness): Boolean
+    Law_BumpSolidMeshAgainstModelLaws(c: CostlyLoopRunWitness): Boolean
     {
         var w = c.Run;
-        return Law_Perf_ElementFaceIsModelFace(w) && Law_Perf_CornerProvenanceIsOnItsElementFace(w)
-            && Law_Perf_MeshEulerEqualsBrepEuler(w) && Law_Perf_MeshClosedExactlyWhenShellClosed(w)
-            && Law_Perf_ProvenanceNamesModelCell(w) && Law_Perf_SolidShellMeshesShareNoVertex(w)
-            && Law_Perf_OuterShellVolumePositive(w) && Law_Perf_VoidShellVolumeNegative(w)
-            && Law_Perf_VertexReevaluatesFromProvenance(w) && Law_Perf_CornerNormalIsFaceNormal(w)
-            && Law_Perf_AngleDefectMatchesBrepEuler(w);
+        return Law_ElementFaceIsModelFace(w) && Law_CornerProvenanceIsOnItsElementFace(w)
+            && Law_MeshEulerEqualsBrepEuler(w) && Law_MeshClosedExactlyWhenShellClosed(w)
+            && Law_ProvenanceNamesModelCell(w) && Law_SolidShellMeshesShareNoVertex(w)
+            && Law_OuterShellVolumePositive(w) && Law_VoidShellVolumeNegative(w)
+            && Law_VertexReevaluatesFromProvenance(w) && Law_CornerNormalIsFaceNormal(w)
+            && Law_AngleDefectMatchesBrepEuler(w);
     }
 
     //==
@@ -131,7 +131,7 @@ library BsplinePipelineLoopRunLaws
     // The crescent's first polylines cross in the parameter plane, so face meshing asks, for each
     // of its two edges, a LoopSelfIntersects refinement with a chordal bound below the edge's
     // current largest sagitta.
-    Law_Perf_CrossingLoopAsksLoopSelfIntersects(w: LoopRunWitness): Boolean
+    Law_CrossingLoopAsksLoopSelfIntersects(w: LoopRunWitness): Boolean
     {
         if (!w.IsCrescentRun)
         {
@@ -150,7 +150,7 @@ library BsplinePipelineLoopRunLaws
     // and reports PIPELINE-FACE-UNRESOLVED at the face. Both are read from the run's loop
     // findings, without its validation: the finding is the loop's (FailureDiagnostics), an Error,
     // and a merged report with a part that is not clean is not clean, so the run is not Ok.
-    Law_Perf_NoRoundsLeaveCrossingFaceUnresolved(w: LoopRunWitness): Boolean
+    Law_NoRoundsLeaveCrossingFaceUnresolved(w: LoopRunWitness): Boolean
     {
         if (!w.IsCrescentRun)
         {
@@ -168,7 +168,7 @@ library BsplinePipelineLoopRunLaws
 
     // The state laws on every state of the loop: each outcome is of its face, and each pending
     // request is a request of some face's outcome.
-    Law_Perf_StateLaws(w: LoopRunWitness): Boolean
+    Law_StateLaws(w: LoopRunWitness): Boolean
         => w.States.All(s =>
             s.Outcomes.Count.Range.All(k => Law_OutcomeIsOfItsFace(s, k))
                 && s.Pending.Count.Range.All(q => Law_PendingRequestIsInSomeOutcome(s, q)));

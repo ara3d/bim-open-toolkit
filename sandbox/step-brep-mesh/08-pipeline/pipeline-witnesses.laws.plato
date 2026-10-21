@@ -156,13 +156,6 @@ library StepToMeshWitnessesLaws
         return last.Mesh.IsEmptyFaceMesh && last.Requests.Count == 0;
     }
 
-    // Leaving the planted face out of the run or keeping it gives face g the
-    // same final mesh, bit for bit: Law_FailedFaceLeavesOthersUnchanged at the
-    // planted face.
-    PlantedBadFaceLeavesOthersUnchangedAt(g: Integer): Boolean
-        => BrepModel.Witness_BoxWithPolyLoopSheet.Law_FailedFaceLeavesOthersUnchanged(
-            MeshingOptions.WitnessOptions, BrepFaceIndex.PlantedBadFace, BrepFaceIndex(g));
-
     // Meshing the model is not Ok, and the planted face carries an Error.
     PlantedBadFaceIsDiagnosedAt(_: BrepModel): Boolean
         => BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Ok.Not
@@ -208,11 +201,4 @@ library StepToMeshWitnessesLaws
     WitnessPowerOfTwoScalingScalesPositionsAt(k: Integer, e: Integer, v: Integer): Boolean
         => BrepModel.WitnessAt(k).Law_PowerOfTwoScalingScalesPositions(MeshingOptions.WitnessOptions, e, VertexIndex(v));
 
-    // Reversing edge e of witness k gives the same mesh, bit for bit.
-    WitnessEdgeReversalPreservesMeshAt(k: Integer, e: Integer): Boolean
-        => BrepModel.WitnessAt(k).Law_EdgeReversalPreservesMesh(MeshingOptions.WitnessOptions, BrepEdgeIndex(e));
-
-    // Reversing every face of witness k negates its mesh's signed volume.
-    WitnessShellReversalNegatesVolumeAt(k: Integer): Boolean
-        => BrepModel.WitnessAt(k).Law_ShellReversalNegatesVolume(MeshingOptions.WitnessOptions);
 }

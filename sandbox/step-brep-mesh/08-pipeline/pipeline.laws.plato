@@ -130,23 +130,10 @@ library StepToMeshLaws
     //==
     // # Outcomes
 
-    // Meshing a model twice gives the same outcome, bit for bit: no hash
-    // order, thread schedule, or address decides anything. Library, exact.
-    Law_MeshModelIsDeterministic(m: BrepModel, o: MeshingOptions): Boolean
-        => m.MeshModel(o).SameMeshOutcome(m.MeshModel(o));
-
     // Meshing a STEP text twice gives the same outcome, bit for bit. Library,
     // exact.
     Law_MeshStepTextIsDeterministic(text: String, o: MeshingOptions): Boolean
         => text.MeshStepText(o).SameMeshOutcome(text.MeshStepText(o));
-
-    // A model's outcome is Ok exactly when its report is clean at the
-    // requested level. Library, exact.
-    Law_OkExactlyWhenClean(m: BrepModel, o: MeshingOptions): Boolean
-    {
-        var x = m.MeshModel(o);
-        return x.Ok == x.Report.IsClean;
-    }
 
     // A STEP text's outcome is Ok exactly when its report, parse and decode
     // findings included, is clean. Library, exact.
@@ -155,13 +142,6 @@ library StepToMeshLaws
         var x = text.MeshStepText(o);
         return x.Ok == x.Report.IsClean;
     }
-
-    // The rounds taken are at most the round limit of well-formed options,
-    // and 0 for options a run refuses. Library, exact.
-    Law_RoundsWithinLimit(m: BrepModel, o: MeshingOptions): Boolean
-        => o.IsWellFormed
-            ? m.MeshModel(o).Rounds <= o.MaxRefinementRounds
-            : m.MeshModel(o).Rounds == 0;
 
     // A text whose parse reported an Error gives an outcome that is not Ok.
     // Library, exact.
@@ -195,14 +175,6 @@ library StepToMeshLaws
     //==
     // # Diagnostics
 
-    // Every diagnostic of a model's outcome is located: its provenance is not
-    // Nowhere. Library, exact.
-    Law_EveryDiagnosticIsLocated(m: BrepModel, o: MeshingOptions, k: Integer): Boolean
-    {
-        var r = m.MeshModel(o).Report;
-        return r.Diagnostics.IsValidIndex(k) ? !(r.Diagnostics[k].Where == Provenance.Nowhere) : true;
-    }
-
     // Every diagnostic of a STEP text's outcome, parse and decode findings
     // included, is located. Library, exact.
     Law_EveryStepTextDiagnosticIsLocated(text: String, o: MeshingOptions, k: Integer): Boolean
@@ -211,138 +183,14 @@ library StepToMeshLaws
         return r.Diagnostics.IsValidIndex(k) ? !(r.Diagnostics[k].Where == Provenance.Nowhere) : true;
     }
 
-    // An edge that cannot be discretized has an error located at the edge.
-    // Library, exact.
-    Law_UndiscretizableEdgeIsDiagnosed(m: BrepModel, o: MeshingOptions, e: BrepEdgeIndex): Boolean
-        => (m.IsRunnable(o) && m.IsEdgeInRange(e))
-            ? (m.CanDiscretize(e, o.Face.Discretization)
-                ? true
-                : m.MeshModel(o).Report.Diagnostics.Any(d => d.Severity.IsError && d.Where == Provenance.KernelEdge(e)))
-            : true;
-
-    // A face left without a mesh has an error located at the face: from face
-    // meshing, or the pipeline's own (FailureDiagnostics). Library, exact.
-    Law_EmptyFaceIsDiagnosed(m: BrepModel, o: MeshingOptions, f: BrepFaceIndex): Boolean
-        => (m.IsRunnable(o) && m.IsFaceInRange(f))
-            ? (m.FinalState(o, m.AllFaces).Outcomes[f].Mesh.IsEmptyFaceMesh
-                ? m.MeshModel(o).Report.Diagnostics.Any(d => d.Severity.IsError && d.Where == Provenance.KernelFace(f))
-                : true)
-            : true;
-
     //==
     // # The loop: termination
-
-    // The loop stops with nothing pending or at the round limit. Library,
-    // exact.
-    Law_LoopEndsTerminal(m: BrepModel, o: MeshingOptions): Boolean
-        => m.IsRunnable(o) ? m.FinalState(o, m.AllFaces).IsTerminal(o) : true;
-
-    // A step taken from a state that is not terminal raises Round by one, so
-    // the measure MaxRefinementRounds - Round falls by one. Library, exact.
-    Law_StepDecreasesMeasure(m: BrepModel, o: MeshingOptions, k: Integer): Boolean
-    {
-        if (!(m.IsRunnable(o) && k >= 0))
-        {
-            return true;
-        }
-        var a = m.StateAfter(o, m.AllFaces, k);
-        var b = m.StateAfter(o, m.AllFaces, k + 1);
-        return a.IsTerminal(o) ? true : b.Round == a.Round + 1;
-    }
-
-    // No state passes the round limit, so the measure MaxRefinementRounds -
-    // Round is never negative. Library, exact.
-    Law_MeasureIsNeverNegative(m: BrepModel, o: MeshingOptions, k: Integer): Boolean
-        => m.IsRunnable(o) ? m.StateAfter(o, m.AllFaces, k).Round <= o.MaxRefinementRounds : true;
 
     //==
     // # The loop: monotone and local refinement
 
-    // No edge coarsens across a step: parameter j of edge e before the step
-    // is still a parameter of edge e after it. Library, exact by
-    // construction (Refine copies every old parameter).
-    Law_RefinementNeverCoarsens(m: BrepModel, o: MeshingOptions, k: Integer, e: BrepEdgeIndex, j: Integer): Boolean
-    {
-        if (!m.IsRunnable(o))
-        {
-            return true;
-        }
-        var before = m.StateAfter(o, m.AllFaces, k).Discretizations;
-        var after = m.StateAfter(o, m.AllFaces, k + 1).Discretizations;
-        return before.ByEdge.IsValidIndex(e)
-            ? (before.ByEdge[e].Parameters.IsValidIndex(j)
-                ? (after.ByEdge.IsValidIndex(e) ? after.ByEdge[e].ContainsParameter(before.ByEdge[e].Parameters[j]) : false)
-                : true)
-            : true;
-    }
-
-    // A step meshes again only faces that cite an edge it changed: a face
-    // whose edges all come through the step unchanged keeps its outcome, bit
-    // for bit. Library, exact.
-    Law_OnlyFacesOfChangedEdgesAreRemeshed(m: BrepModel, o: MeshingOptions, k: Integer, f: BrepFaceIndex): Boolean
-    {
-        if (!(m.IsRunnable(o) && m.IsFaceInRange(f)))
-        {
-            return true;
-        }
-        var before = m.StateAfter(o, m.AllFaces, k);
-        var after = m.StateAfter(o, m.AllFaces, k + 1);
-        var changed = after.Discretizations.ChangedEdges(before.Discretizations);
-        return m.FaceEdges(f).Any(e => changed.IsValidIndex(e) ? changed[e] : true)
-            ? true
-            : before.Outcomes[f].SameFaceMeshOutcome(after.Outcomes[f]);
-    }
-
-    // Every outcome of a state the loop reaches is current: face f's outcome
-    // is what FaceOutcome gives for f under the state's discretizations, so
-    // the result depends on the loop's history only through the
-    // discretizations. Library, exact. It follows from Step's rule (a face is
-    // meshed again when an edge it cites changed) and layer 5's
-    // Law_MeshFaceReadsOnlyFaceEdges, an ensures of MeshFace: an outcome
-    // whose face's edges did not change equals MeshFace under the new
-    // discretizations.
-    Law_OutcomesAreCurrent(m: BrepModel, o: MeshingOptions, k: Integer, f: BrepFaceIndex): Boolean
-    {
-        if (!(m.IsRunnable(o) && m.IsFaceInRange(f)))
-        {
-            return true;
-        }
-        var s = m.StateAfter(o, m.AllFaces, k);
-        return s.Outcomes[f].SameFaceMeshOutcome(m.FaceOutcome(f, s.Discretizations, o, m.AllFaces));
-    }
-
-    // At the end of the loop every discretized edge meets the floors the
-    // requests raised, with layer 4's structural floors. Library, exact.
-    Law_FinalDiscretizationsMeetFloors(m: BrepModel, o: MeshingOptions, e: BrepEdgeIndex): Boolean
-    {
-        if (!(m.IsRunnable(o) && m.IsEdgeInRange(e)))
-        {
-            return true;
-        }
-        var s = m.FinalState(o, m.AllFaces);
-        return m.CanDiscretize(e, o.Face.Discretization)
-            ? Law_SegmentFloorMet(m, s.Discretizations.ByEdge[e], o.Face.Discretization, s.Floors)
-            : true;
-    }
-
     //==
     // # The loop: state invariants
-
-    // In every state the loop reaches, layer 4's Refine can answer the
-    // pending requests: one entry per edge, and every requested entry
-    // discretizable, evaluable, and canonical (IsRefinable, which asks
-    // nothing of the entries no request names). It holds because a request
-    // comes only from a face MeshFace meshed, whose edges are all discretized
-    // (IsDiscretizedFace), and names one of that face's edges. Library, exact.
-    Law_PendingRequestsAreRefinable(m: BrepModel, o: MeshingOptions, k: Integer): Boolean
-    {
-        if (!m.IsRunnable(o))
-        {
-            return true;
-        }
-        var s = m.StateAfter(o, m.AllFaces, k);
-        return m.IsRefinable(s.Discretizations, s.Pending, o.Face.Discretization);
-    }
 
     // Outcome k of a state is the outcome of face k. Convention, exact.
     Law_OutcomeIsOfItsFace(s: PipelineState, k: Integer): Boolean
@@ -353,84 +201,11 @@ library StepToMeshLaws
     Law_PendingRequestIsInSomeOutcome(s: PipelineState, q: Integer): Boolean
         => s.Pending.IsValidIndex(q) ? s.Outcomes.Any(x => x.Requests.Any(r => r == s.Pending[q])) : true;
 
-    // In every state the loop reaches, edge e has no discretization exactly
-    // when CanDiscretize rejects it. Library, exact.
-    Law_EmptyDiscretizationExactlyWhenEdgeUnusable(m: BrepModel, o: MeshingOptions, k: Integer, e: BrepEdgeIndex): Boolean
-    {
-        if (!(m.IsRunnable(o) && m.IsEdgeInRange(e)))
-        {
-            return true;
-        }
-        var d = m.StateAfter(o, m.AllFaces, k).Discretizations;
-        return d.ByEdge.IsValidIndex(e)
-            ? (d.ByEdge[e].Parameters.Count == 0) == !m.CanDiscretize(e, o.Face.Discretization)
-            : true;
-    }
-
     //==
     // # Failure isolation
 
-    // A face that fails without asking for anything leaves every other face's
-    // mesh as it is in the run without it. Face f failed (its final mesh is
-    // empty), holds no request, and no edge of it was ever refined, so it was
-    // meshed once and asked for nothing; then face g's final mesh is
-    // bit-identical to g's final mesh when f is left out of the run. Library,
-    // exact. Run over a witness with one planted bad face (README, "Left
-    // open").
-    Law_FailedFaceLeavesOthersUnchanged(m: BrepModel, o: MeshingOptions, f: BrepFaceIndex, g: BrepFaceIndex): Boolean
-    {
-        if (!(m.IsRunnable(o) && m.IsFaceInRange(f) && m.IsFaceInRange(g)))
-        {
-            return true;
-        }
-        if (f == g)
-        {
-            return true;
-        }
-        var first = m.InitialState(o, m.AllFaces);
-        var kept = m.FinalState(o, m.AllFaces);
-        var dropped = m.FinalState(o, m.AllFaces.Excluding(f));
-        return m.SilentFaceLeavesFaceUnchanged(f, g, first, kept, dropped);
-    }
-
     //==
     // # Watertightness
-
-    // When every shell is a closed shell, every face belongs to one, and no
-    // face is left without a mesh, the mesh is closed: every mesh edge has
-    // exactly two element sides. Library, exact; the executable instance of
-    // WatertightByConstruction.
-    Law_ClosedWhenEveryShellClosedAndNoFaceEmpty(m: BrepModel, o: MeshingOptions): Boolean
-    {
-        if (!m.IsRunnable(o))
-        {
-            return true;
-        }
-        if (!m.IsClosedShellModel)
-        {
-            return true;
-        }
-        return m.FinalState(o, m.AllFaces).Outcomes.Any(x => x.Mesh.IsEmptyFaceMesh)
-            ? true
-            : m.MeshModel(o).Mesh.IsClosed;
-    }
-
-    // Under the same hypotheses the mesh is consistently oriented: every mesh
-    // edge is traversed once each way. Library, exact.
-    Law_OrientedWhenEveryShellClosedAndNoFaceEmpty(m: BrepModel, o: MeshingOptions): Boolean
-    {
-        if (!m.IsRunnable(o))
-        {
-            return true;
-        }
-        if (!m.IsClosedShellModel)
-        {
-            return true;
-        }
-        return m.FinalState(o, m.AllFaces).Outcomes.Any(x => x.Mesh.IsEmptyFaceMesh)
-            ? true
-            : m.MeshModel(o).Mesh.IsConsistentlyOriented;
-    }
 
     //==
     // # Metamorphic relations
@@ -486,30 +261,6 @@ library StepToMeshLaws
             : true;
     }
 
-    // Reversing an edge (vertices swapped, SameSense flipped, every use
-    // flipped) gives the same mesh, bit for bit: discretization runs in the
-    // curve's own direction and loops read it through AlongCoedge. Library,
-    // exact.
-    Law_EdgeReversalPreservesMesh(m: BrepModel, o: MeshingOptions, e: BrepEdgeIndex): Boolean
-        => (m.IsRunnable(o) && m.IsEdgeInRange(e))
-            ? m.WithEdgeReversed(e).MeshModel(o).Mesh.SameModelMesh(m.MeshModel(o).Mesh)
-            : true;
-
-    // Reversing every shell (every face's SameSense and every bound's
-    // Orientation flipped) negates the signed volume, within the length
-    // tolerance times the area: the elements are the same, wound the other
-    // way. Library, LengthTolerance times area.
-    Law_ShellReversalNegatesVolume(m: BrepModel, o: MeshingOptions): Boolean
-    {
-        if (!m.IsRunnable(o))
-        {
-            return true;
-        }
-        var before = m.MeshModel(o).Mesh;
-        var after = m.WithEveryFaceReversed.MeshModel(o).Mesh;
-        return (before.SignedVolume + after.SignedVolume).Abs <= m.Tolerances.Length.Value * before.Area;
-    }
-
     // A mesh made under a tighter chordal bound shows, wherever the criteria
     // govern it, no deviation above the looser bound: tightening never lets
     // the governed deviation exceed what the looser options promise. The
@@ -529,76 +280,6 @@ library StepToMeshLaws
     // cannot be laws there (finding F-54). These laws take MeshModel's own
     // inputs instead and mesh the model under its precondition, IsRunnable.
     // Library, exact unless the predicate says otherwise.
-
-    // The mesh of a runnable model meets the ModelMesh invariants (layer 6's
-    // IsWellFormed).
-    Law_MeshedMeshIsWellFormed(m: BrepModel, o: MeshingOptions): Boolean
-        => m.IsRunnable(o) ? m.MeshModel(o).Mesh.IsWellFormed : true;
-
-    // The mesh of a runnable model passes layer 7's structural checks of a
-    // model mesh with the model's tolerances: every predicate of layer 6 over
-    // the mesh alone, its edge table and its components.
-    Law_MeshedMeshValidatesStructurally(m: BrepModel, o: MeshingOptions): Boolean
-        => m.IsRunnable(o)
-            ? m.MeshModel(o).Mesh.ValidateModelMesh(m.Tolerances, o.Quality, ConformanceLevel.Structural).IsClean
-            : true;
-
-    // The assembly's inputs in the loop's final state, its face meshes and
-    // the vertex numbering the mesh carries, pass layer 7's structural checks:
-    // layer 6's numbering and face-mesh predicates.
-    Law_MeshedAssemblyValidatesStructurally(m: BrepModel, o: MeshingOptions): Boolean
-    {
-        if (!m.IsRunnable(o))
-        {
-            return true;
-        }
-        var s = m.FinalState(o, m.AllFaces);
-        return m.ValidateAssembly(s.Discretizations, s.FaceMeshesOf, m.MeshModel(o).Mesh, ConformanceLevel.Structural).IsClean;
-    }
-
-    // The face each element of the mesh approximates is a face of the model (layer 6).
-    Law_ElementFaceIsModelFace(m: BrepModel, o: MeshingOptions, e: ElementIndex): Boolean
-        => m.IsRunnable(o) ? m.ElementFaceIsModelFace(m.MeshModel(o).Mesh, e) : true;
-
-    // Every corner of an element maps into the closure of its face (layer 6, review M9).
-    Law_CornerProvenanceIsOnItsElementFace(m: BrepModel, o: MeshingOptions, e: ElementIndex, slot: Integer): Boolean
-        => m.IsRunnable(o) ? m.CornerProvenanceIsOnItsElementFace(m.MeshModel(o).Mesh, e, slot) : true;
-
-    // The complete mesh of a shell has the shell's reduced Euler characteristic (layer 7).
-    Law_MeshEulerEqualsBrepEuler(m: BrepModel, o: MeshingOptions, s: ShellIndex): Boolean
-        => m.IsRunnable(o) ? m.MeshEulerEqualsBrepEuler(m.MeshModel(o).Mesh, s) : true;
-
-    // The complete mesh of a shell is closed exactly when the shell is (layer 7).
-    Law_MeshClosedExactlyWhenShellClosed(m: BrepModel, o: MeshingOptions, s: ShellIndex): Boolean
-        => m.IsRunnable(o) ? m.MeshClosedExactlyWhenShellClosed(m.MeshModel(o).Mesh, s) : true;
-
-    // Every vertex's provenance names a cell of the model (layer 7).
-    Law_ProvenanceNamesModelCell(m: BrepModel, o: MeshingOptions, v: VertexIndex): Boolean
-        => m.IsRunnable(o) ? m.ProvenanceNamesModelCell(m.MeshModel(o).Mesh, v) : true;
-
-    // The meshes of a solid's shells share no vertex (layer 7).
-    Law_SolidShellMeshesShareNoVertex(m: BrepModel, o: MeshingOptions, b: BodyIndex, k: Integer): Boolean
-        => m.IsRunnable(o) ? m.SolidShellMeshesShareNoVertex(m.MeshModel(o).Mesh, b, k) : true;
-
-    // The closed, oriented mesh of a solid's outer shell encloses a positive volume (layer 7).
-    Law_OuterShellVolumePositive(m: BrepModel, o: MeshingOptions, b: BodyIndex): Boolean
-        => m.IsRunnable(o) ? m.OuterShellVolumePositive(m.MeshModel(o).Mesh, b) : true;
-
-    // The closed, oriented mesh of a void shell encloses a negative volume (layer 7).
-    Law_VoidShellVolumeNegative(m: BrepModel, o: MeshingOptions, b: BodyIndex, k: Integer): Boolean
-        => m.IsRunnable(o) ? m.VoidShellVolumeNegative(m.MeshModel(o).Mesh, b, k) : true;
-
-    // Every vertex re-evaluates from its provenance to its position within the tolerance (layer 7).
-    Law_VertexReevaluatesFromProvenance(m: BrepModel, o: MeshingOptions, v: VertexIndex): Boolean
-        => m.IsRunnable(o) ? m.VertexReevaluatesFromProvenance(m.MeshModel(o).Mesh, v) : true;
-
-    // Every corner normal is its face's exact normal at the corner (layer 7).
-    Law_CornerNormalIsFaceNormal(m: BrepModel, o: MeshingOptions, e: ElementIndex, slot: Integer): Boolean
-        => m.IsRunnable(o) ? m.CornerNormalIsFaceNormal(m.MeshModel(o).Mesh, e, slot) : true;
-
-    // The angle defects of a closed, oriented shell mesh sum to 2 pi times its Euler characteristic (layer 7).
-    Law_AngleDefectMatchesBrepEuler(m: BrepModel, o: MeshingOptions, s: ShellIndex): Boolean
-        => m.IsRunnable(o) ? m.AngleDefectMatchesBrepEuler(m.MeshModel(o).Mesh, s) : true;
 
     //==
     // # Validation

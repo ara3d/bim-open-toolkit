@@ -1,7 +1,7 @@
 # perf-pipeline-laws: layer 8's index-swept laws and the B-spline pipeline laws read loop runs built once per sweep
 
 Ticket: TKT-391
-Status: ready: L2
+Status: merged: L2 (2026-10-21, into 08-pipeline/pipeline-run-witness.{types,library}.plato, pipeline-run.laws.plato, pipeline-outcome-meshed.laws.plato, bspline-pipeline-run.laws.plato; BsplineMeshModel kept: Law_TighterChordalStaysWithinLooserBound still reads it)
 
 ## Done
 - L2, (this commit), about 2.2 h against 2 h expected, most of it waiting on compiled runs and finding why the bump patch solid's witness stalled. Types added (`pipeline-run-witness.types.plato`, layer 08): `LoopRunWitness { Name; Model; States; Mesh }`, a model's refinement loop run once under the witness options with every state kept and the mesh the last state assembles, not validated; `CostlyLoopRunWitness { Run }`, the same for a model whose one run exceeds a law's budget, so no law over it meshes again. Why not `MeshedWitness` or a `PipelineRunWitness` holding a `MeshOutcome`: the bump patch solid's validation does not finish compiled at any level (Findings), and the crescent's Oracle validation takes 6.2 s, so no law can rebuild an outcome and no witness of these models can hold one; the laws that read a validated report keep L1's `MeshedWitness`. Functions (`pipeline-run-witness.library.plato`, block `StepToMeshLoopRunWitnesses`): `LoopStates`, `LoopRunWitnessOf`, `Witness_UnitBoxLoopRun`, `Witness_BlockWithThroughHoleLoopRun`, `Witness_HollowBoxLoopRun`, `Witness_CrescentLoopRun`, `Witness_BumpSolidLoopRun`. `UnvalidatedMesh` and `WitnessMeshUnvalidated` are L1's, used as they are. No count witness (the dispatch said none).
