@@ -255,28 +255,28 @@ library ToolingLawRunner
     // The witness laws of 08-pipeline/pipeline-witnesses.laws.plato.
     PipelineWitnessRuns(_: LawRun): Array<LawRun>
         => Flattened([
-            OverWitnesses("Law_WitnessMeshesOk", k => Law_WitnessMeshesOk(k)),
-            OverWitnesses("Law_WitnessMeshCrossChecksClean", k => Law_WitnessMeshCrossChecksClean(k)),
-            OverWitnesses("Law_WitnessMeshValidatesClean", k => Law_WitnessMeshValidatesClean(k)),
+            OverWitnesses("Law_WitnessMeshesOk", k => WitnessMeshesOkAt(k)),
+            OverWitnesses("Law_WitnessMeshCrossChecksClean", k => WitnessMeshCrossChecksCleanAt(k)),
+            OverWitnesses("Law_WitnessMeshValidatesClean", k => WitnessMeshValidatesCleanAt(k)),
             [OverSamples("Law_HollowBoxVoidMeshVolumeNegative", "HollowBoxFamily",
-                i => Law_HollowBoxVoidMeshVolumeNegative(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
+                i => HollowBoxVoidMeshVolumeNegativeAt(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
              OverSamples("Law_HollowBoxOuterMeshVolumePositive", "HollowBoxFamily",
-                i => Law_HollowBoxOuterMeshVolumePositive(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
+                i => HollowBoxOuterMeshVolumePositiveAt(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
              OverSamples("Law_HollowBoxMeshVolumeIsDifference", "HollowBoxFamily",
-                i => Law_HollowBoxMeshVolumeIsDifference(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
-             Once("Law_PlantedBadFaceFailsSilently", "BoxWithPolyLoopSheet", BrepModel.Law_PlantedBadFaceFailsSilently),
+                i => HollowBoxMeshVolumeIsDifferenceAt(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
+             Once("Law_PlantedBadFaceFailsSilently", "BoxWithPolyLoopSheet", BrepModel.PlantedBadFaceFailsSilentlyAt),
              OverRange("Law_PlantedBadFaceLeavesOthersUnchanged", "BoxWithPolyLoopSheet",
-                BrepModel.Witness_BoxWithPolyLoopSheet.Faces.Count, g => Law_PlantedBadFaceLeavesOthersUnchanged(g)),
-             Once("Law_PlantedBadFaceIsDiagnosed", "BoxWithPolyLoopSheet", BrepModel.Law_PlantedBadFaceIsDiagnosed),
+                BrepModel.Witness_BoxWithPolyLoopSheet.Faces.Count, g => PlantedBadFaceLeavesOthersUnchangedAt(g)),
+             Once("Law_PlantedBadFaceIsDiagnosed", "BoxWithPolyLoopSheet", BrepModel.PlantedBadFaceIsDiagnosedAt),
              OverRange("Law_PlantedBadFaceErrorsStayInTheSheet", "BoxWithPolyLoopSheet",
                 BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics.Count,
-                k => Law_PlantedBadFaceErrorsStayInTheSheet(k)),
-             Once("Law_PlantedBadFaceHasTwoErrors", "BoxWithPolyLoopSheet", BrepModel.Law_PlantedBadFaceHasTwoErrors),
+                k => PlantedBadFaceErrorsStayInTheSheetAt(k)),
+             Once("Law_PlantedBadFaceHasTwoErrors", "BoxWithPolyLoopSheet", BrepModel.PlantedBadFaceHasTwoErrorsAt),
              NotRun("Law_WitnessRigidMotionMovesPositions", "needs drawn frames and re-meshes per vertex; run through ToolingGenerators' DrawMotion once meshing has bodies")],
-            OverWitnesses("Law_WitnessPowerOfTwoScalingKeepsConnectivity", k => Law_WitnessPowerOfTwoScalingKeepsConnectivity(k, 1)),
+            OverWitnesses("Law_WitnessPowerOfTwoScalingKeepsConnectivity", k => WitnessPowerOfTwoScalingKeepsConnectivityAt(k, 1)),
             [NotRun("Law_WitnessPowerOfTwoScalingScalesPositions", "re-meshes the witness for every vertex; sweep it when a run is cheap")],
-            OverWitnessEdges("Law_WitnessEdgeReversalPreservesMesh", (k, e) => Law_WitnessEdgeReversalPreservesMesh(k, e)),
-            OverWitnesses("Law_WitnessShellReversalNegatesVolume", k => Law_WitnessShellReversalNegatesVolume(k))]);
+            OverWitnessEdges("Law_WitnessEdgeReversalPreservesMesh", (k, e) => WitnessEdgeReversalPreservesMeshAt(k, e)),
+            OverWitnesses("Law_WitnessShellReversalNegatesVolume", k => WitnessShellReversalNegatesVolumeAt(k))]);
 
     //==
     // # Layer 9: tooling

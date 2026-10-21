@@ -52,12 +52,12 @@ library StepToMeshWitnessesLaws
 
     // Witness k meshes with Ok: no Error in the meshing or in the validation
     // the pipeline runs at the Oracle level.
-    Law_WitnessMeshesOk(k: Integer): Boolean
+    WitnessMeshesOkAt(k: Integer): Boolean
         => BrepModel.WitnessAt(k).WitnessOutcome.Ok;
 
     // The mesh of witness k passes CrossCheck at the Oracle level with the
     // criteria it was made with.
-    Law_WitnessMeshCrossChecksClean(k: Integer): Boolean
+    WitnessMeshCrossChecksCleanAt(k: Integer): Boolean
         => BrepModel.WitnessAt(k).CrossCheck(
                 BrepModel.WitnessAt(k).WitnessMesh,
                 ConformanceLevel.Oracle,
@@ -66,7 +66,7 @@ library StepToMeshWitnessesLaws
 
     // The mesh of witness k passes ValidateModelMesh at the Oracle level with
     // the witness's tolerances and the witness options' quality thresholds.
-    Law_WitnessMeshValidatesClean(k: Integer): Boolean
+    WitnessMeshValidatesCleanAt(k: Integer): Boolean
         => BrepModel.WitnessAt(k).WitnessMesh.ValidateModelMesh(
                 BrepModel.WitnessAt(k).Tolerances, MeshingOptions.WitnessOptions.Quality, ConformanceLevel.Oracle)
             .IsClean;
@@ -75,7 +75,7 @@ library StepToMeshWitnessesLaws
     // triangles, no quad, closed, consistently oriented, Euler characteristic
     // 2, signed volume 1 within the mesh's volume rounding, no refinement
     // round, Ok.
-    Law_UnitBoxMeshesAsStated(_: BrepModel): Boolean
+    UnitBoxMeshesAsStatedAt(_: BrepModel): Boolean
     {
         var outcome = BrepModel.Witness_UnitBox.WitnessOutcome;
         var mesh = outcome.Mesh;
@@ -87,7 +87,7 @@ library StepToMeshWitnessesLaws
 
     // After meshing the hollow box a x a x a around a void b x b x b, the
     // void's mesh encloses a negative volume beyond its rounding.
-    Law_HollowBoxVoidMeshVolumeNegative(a: Number, b: Number): Boolean
+    HollowBoxVoidMeshVolumeNegativeAt(a: Number, b: Number): Boolean
         => (b > 0.0 && a > b && a.IsFinite)
             ? BrepModel.Witness_HollowBox(a, b).ShellMeshVolume(BrepModel.Witness_HollowBox(a, b).WitnessMesh, ShellIndex(1))
                 < 0.0 - BrepModel.Witness_HollowBox(a, b).WitnessMesh.VolumeRoundoff
@@ -95,7 +95,7 @@ library StepToMeshWitnessesLaws
 
     // After meshing the hollow box, the outer shell's mesh encloses a
     // positive volume beyond its rounding.
-    Law_HollowBoxOuterMeshVolumePositive(a: Number, b: Number): Boolean
+    HollowBoxOuterMeshVolumePositiveAt(a: Number, b: Number): Boolean
         => (b > 0.0 && a > b && a.IsFinite)
             ? BrepModel.Witness_HollowBox(a, b).ShellMeshVolume(BrepModel.Witness_HollowBox(a, b).WitnessMesh, ShellIndex(0))
                 > BrepModel.Witness_HollowBox(a, b).WitnessMesh.VolumeRoundoff
@@ -103,7 +103,7 @@ library StepToMeshWitnessesLaws
 
     // The hollow box's meshed solid volume is a^3 - b^3: every face is
     // planar and bounded by lines, so the mesh is exact up to rounding.
-    Law_HollowBoxMeshVolumeIsDifference(a: Number, b: Number): Boolean
+    HollowBoxMeshVolumeIsDifferenceAt(a: Number, b: Number): Boolean
         => (b > 0.0 && a > b && a.IsFinite)
             ? (BrepModel.Witness_HollowBox(a, b).BodyMeshVolume(BrepModel.Witness_HollowBox(a, b).WitnessMesh, BodyIndex(0))
                     - (a * a * a - b * b * b)).Abs
@@ -113,7 +113,7 @@ library StepToMeshWitnessesLaws
     // The block with a square through hole meshes to one component, closed,
     // consistently oriented and unpinched, of Euler characteristic 0: a
     // torus, genus 1, as its B-rep's reduced counts say (chunk G).
-    Law_BlockWithHoleMeshIsOneTorus(_: BrepModel): Boolean
+    BlockWithHoleMeshIsOneTorusAt(_: BrepModel): Boolean
     {
         var mesh = BrepModel.Witness_BlockWithThroughHole.WitnessMesh;
         var c = mesh.CountsOf(MeshComponentIndex(0));
@@ -125,7 +125,7 @@ library StepToMeshWitnessesLaws
     // void, each closed, consistently oriented and unpinched, of Euler
     // characteristic 2: two spheres, the void's sharing no vertex with the
     // outer's (chunk G).
-    Law_HollowBoxMeshIsTwoSpheres(_: BrepModel): Boolean
+    HollowBoxMeshIsTwoSpheresAt(_: BrepModel): Boolean
     {
         var mesh = BrepModel.Witness_HollowBox.WitnessMesh;
         return mesh.ComponentsOf.ComponentCount == 2
@@ -149,7 +149,7 @@ library StepToMeshWitnessesLaws
     // The planted face fails silently, the hypothesis of
     // Law_FailedFaceLeavesOthersUnchanged: its final mesh is empty and it
     // holds no request.
-    Law_PlantedBadFaceFailsSilently(_: BrepModel): Boolean
+    PlantedBadFaceFailsSilentlyAt(_: BrepModel): Boolean
     {
         var m = BrepModel.Witness_BoxWithPolyLoopSheet;
         var last = m.FinalState(MeshingOptions.WitnessOptions, m.AllFaces).Outcomes[BrepFaceIndex.PlantedBadFace];
@@ -159,19 +159,19 @@ library StepToMeshWitnessesLaws
     // Leaving the planted face out of the run or keeping it gives face g the
     // same final mesh, bit for bit: Law_FailedFaceLeavesOthersUnchanged at the
     // planted face.
-    Law_PlantedBadFaceLeavesOthersUnchanged(g: Integer): Boolean
+    PlantedBadFaceLeavesOthersUnchangedAt(g: Integer): Boolean
         => BrepModel.Witness_BoxWithPolyLoopSheet.Law_FailedFaceLeavesOthersUnchanged(
             MeshingOptions.WitnessOptions, BrepFaceIndex.PlantedBadFace, BrepFaceIndex(g));
 
     // Meshing the model is not Ok, and the planted face carries an Error.
-    Law_PlantedBadFaceIsDiagnosed(_: BrepModel): Boolean
+    PlantedBadFaceIsDiagnosedAt(_: BrepModel): Boolean
         => BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Ok.Not
             && BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics.Any(d =>
                 d.Severity.IsError && d.Where == Provenance.KernelFace(BrepFaceIndex.PlantedBadFace));
 
     // Every Error of the run is about the sheet: the failure stays where it
     // is, and the box beside it is clean (finding k of the report).
-    Law_PlantedBadFaceErrorsStayInTheSheet(k: Integer): Boolean
+    PlantedBadFaceErrorsStayInTheSheetAt(k: Integer): Boolean
         => BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics.IsValidIndex(k)
             ? (BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics[k].Severity.IsError
                 ? BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics[k].Where.IsAboutPlantedSheet
@@ -181,7 +181,7 @@ library StepToMeshWitnessesLaws
     // At the planted face the run has exactly two Errors, layer 5's
     // FACE-POLY-LOOP and the cross check EveryFaceIsMeshed, as
     // Witness_BoxWithPolyLoopSheet states.
-    Law_PlantedBadFaceHasTwoErrors(_: BrepModel): Boolean
+    PlantedBadFaceHasTwoErrorsAt(_: BrepModel): Boolean
         => BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics.Reduce(0, (n, d) =>
             (d.Severity.IsError ? d.Where == Provenance.KernelFace(BrepFaceIndex.PlantedBadFace) : false) ? n + 1 : n) == 2;
 
@@ -196,23 +196,23 @@ library StepToMeshWitnessesLaws
 
     // Moving witness k rigidly by a frame moves mesh vertex v with it, when
     // the two meshes have the same connectivity.
-    Law_WitnessRigidMotionMovesPositions(k: Integer, motion: Frame3D, v: Integer): Boolean
+    WitnessRigidMotionMovesPositionsAt(k: Integer, motion: Frame3D, v: Integer): Boolean
         => BrepModel.WitnessAt(k).Law_RigidMotionMovesPositions(MeshingOptions.WitnessOptions, motion, VertexIndex(v));
 
     // Scaling witness k and the length criteria by 2^e keeps the mesh's
     // connectivity, over the exponents the law admits.
-    Law_WitnessPowerOfTwoScalingKeepsConnectivity(k: Integer, e: Integer): Boolean
+    WitnessPowerOfTwoScalingKeepsConnectivityAt(k: Integer, e: Integer): Boolean
         => BrepModel.WitnessAt(k).Law_PowerOfTwoScalingKeepsConnectivity(MeshingOptions.WitnessOptions, e);
 
     // Scaling witness k by 2^e scales mesh vertex v's position by 2^e exactly.
-    Law_WitnessPowerOfTwoScalingScalesPositions(k: Integer, e: Integer, v: Integer): Boolean
+    WitnessPowerOfTwoScalingScalesPositionsAt(k: Integer, e: Integer, v: Integer): Boolean
         => BrepModel.WitnessAt(k).Law_PowerOfTwoScalingScalesPositions(MeshingOptions.WitnessOptions, e, VertexIndex(v));
 
     // Reversing edge e of witness k gives the same mesh, bit for bit.
-    Law_WitnessEdgeReversalPreservesMesh(k: Integer, e: Integer): Boolean
+    WitnessEdgeReversalPreservesMeshAt(k: Integer, e: Integer): Boolean
         => BrepModel.WitnessAt(k).Law_EdgeReversalPreservesMesh(MeshingOptions.WitnessOptions, BrepEdgeIndex(e));
 
     // Reversing every face of witness k negates its mesh's signed volume.
-    Law_WitnessShellReversalNegatesVolume(k: Integer): Boolean
+    WitnessShellReversalNegatesVolumeAt(k: Integer): Boolean
         => BrepModel.WitnessAt(k).Law_ShellReversalNegatesVolume(MeshingOptions.WitnessOptions);
 }

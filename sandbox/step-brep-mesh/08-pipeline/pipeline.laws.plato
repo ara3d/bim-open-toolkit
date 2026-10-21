@@ -390,10 +390,7 @@ library StepToMeshLaws
         var first = m.InitialState(o, m.AllFaces);
         var kept = m.FinalState(o, m.AllFaces);
         var dropped = m.FinalState(o, m.AllFaces.Excluding(f));
-        var silent = kept.Outcomes[f].Mesh.IsEmptyFaceMesh
-            && kept.Outcomes[f].Requests.Count == 0
-            && m.FaceEdges(f).All(e => kept.Discretizations.ByEdge[e].SameDiscretization(first.Discretizations.ByEdge[e]));
-        return silent ? kept.Outcomes[g].Mesh.SameFaceMesh(dropped.Outcomes[g].Mesh) : true;
+        return m.SilentFaceLeavesFaceUnchanged(f, g, first, kept, dropped);
     }
 
     //==

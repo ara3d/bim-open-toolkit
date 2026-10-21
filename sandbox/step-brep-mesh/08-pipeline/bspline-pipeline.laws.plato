@@ -60,7 +60,7 @@ library BsplinePipelineLaws
     // it meshes Ok, its mesh cross-checks clean against the B-rep, and it
     // validates clean, all at the Oracle level.
     Law_BumpSolidPassesWitnessLaws(_: Integer): Boolean
-        => Law_WitnessMeshesOk(7) && Law_WitnessMeshCrossChecksClean(7) && Law_WitnessMeshValidatesClean(7);
+        => WitnessMeshesOkAt(7) && WitnessMeshCrossChecksCleanAt(7) && WitnessMeshValidatesCleanAt(7);
 
     // With no refinement round allowed, the bump patch solid meshes the
     // same, Ok: none of its faces asks for refinement (its edges are lines

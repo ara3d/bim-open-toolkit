@@ -1,7 +1,7 @@
 # perf-witnesses: models meshed once per sweep, and the witness laws of layer 08 read them
 
 Ticket: TKT-390
-Status: ready: L1
+Status: merged: L1 (2026-10-21, into 08-pipeline/pipeline-meshed-witness.{types,library,laws}.plato; the 18 Integer-indexed laws kept as <X>At for the tooling runner and the bump-solid law until L2 and L7 land)
 
 ## Done
 - L1, (this commit), about 1.6 h against 2 h expected, much of it waiting on compiled runs. Types added (pipeline-meshed-witness.types.plato, layer 08): `MeshedWitness { Name; Model; Outcome }` as the plan states it, and `FailedFaceWitness { Meshed; Face; Initial; Final; Dropped }`, the planted bad face's model meshed once with the three loop states the failure-isolation law compares. Functions (pipeline-meshed-witness.library.plato, block `StepToMeshMeshedWitnesses`): `MeshedWitnessOf`, `Witness_UnitBoxMeshed`, `Witness_BlockWithThroughHoleMeshed`, `Witness_HollowBoxMeshed`, `Witness_PlantedBadFaceRun`, `UnvalidatedMesh(m, o)`, `WitnessMeshUnvalidated(m)`. Laws (pipeline-meshed-witness.laws.plato, block `StepToMeshMeshedWitnessesLaws`): the 18 laws of `StepToMeshWitnessesLaws` as `Law_Perf_*`, plus `Law_Perf_UnvalidatedMeshIsMeshModels`, `Law_Perf_PlantedUnvalidatedMeshIsMeshModels`, and two probe laws that count their cases. No count witness (the dispatch said none for this chunk).
