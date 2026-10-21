@@ -123,7 +123,7 @@ library FaceMeshingLiftIndexedLaws
             a[i].Vector.X == b[i].Vector.X && a[i].Vector.Y == b[i].Vector.Y && a[i].Vector.Z == b[i].Vector.Z);
 
     // True when two face meshes are identical in every field.
-    SameFaceMesh(a: FaceMesh, b: FaceMesh): Boolean
+    SameLiftedFaceMesh(a: FaceMesh, b: FaceMesh): Boolean
         => a.Face == b.Face
             && SameUvPoints(a.UvPoints, b.UvPoints)
             && a.Sources.Count == b.Sources.Count && a.Sources.Count.Range.All(i => a.Sources[i] == b.Sources[i])
