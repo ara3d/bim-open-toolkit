@@ -1,0 +1,96 @@
+//==
+// # Sparse check grids: sites grouped by key (complexity sweep, chunk V5)
+//
+// Layer 02. Groups coedge sites under the edge they cite or the vertex they reach, keeping only
+// the keys some site carries, in increasing key order: a stable sort of the sites by key, O(k log
+// k) for k sites, whatever the model's edge and vertex counts. Layer 7's sparse checks
+// (sparse-grids-checks.library.plato) walk these rows in place of a dense shell by edge, shell by
+// vertex or face by edge grid.
+//
+// Sections, in order:
+//  - Grouping
+//  - Keys of sites
+
+library BrepKeyedSiteRows
+{
+    //==
+    // # Grouping
+
+    // The sites grouped by key, keys increasing and each row in the given order, with its work:
+    // Insertions is one per site placed in a row. A site whose key is negative is in no row.
+    // Precondition: keys and sites have the same count.
+    KeyedSiteRowsCounted(keys: Array<Integer>, sites: Array<CoedgeSite>): Counted<KeyedSiteRows>
+    {
+        var order = keys.SortedIndices((a, b) => a <= b);
+        var distinct = new List<Integer>();
+        var offsets = new List<Integer>();
+        var grouped = new List<CoedgeSite>();
+        var last = -1;
+        var i = 0;
+        while (i < order.Count)
+        {
+            var k = keys[order[i]];
+            if (k >= 0)
+            {
+                if (k != last)
+                {
+                    distinct = distinct.Add(k);
+                    offsets = offsets.Add(grouped.Count);
+                    last = k;
+                }
+                grouped = grouped.Add(sites[order[i]]);
+            }
+            i = i + 1;
+        }
+        offsets = offsets.Add(grouped.Count);
+        var placed = grouped.Count;
+        return Counted(KeyedSiteRows(distinct.Freeze(), CoedgeSiteRows(offsets.Freeze(), grouped.Freeze())), Insertions(placed));
+    }
+
+    // No sites, no rows.
+    NoKeyedSiteRows(_: KeyedSiteRows): Counted<KeyedSiteRows>
+        => KeyedSiteRowsCounted(0.MapRange(k => k), 0.MapRange(k => CoedgeSite(BrepFaceIndex(k), BoundSlot(k), CoedgeSlot(k))));
+
+    //==
+    // # Keys of sites
+
+    // The sites grouped by the edge their coedge cites: row i is layer 2's SitesCiting(m, sites,
+    // BrepEdgeIndex(Keys[i])), and every edge in range that a site cites has a row. A site citing an
+    // edge out of range is in no row. Precondition: every site is in range.
+    SitesByEdge(m: BrepModel, sites: Array<CoedgeSite>): Counted<KeyedSiteRows>
+        => KeyedSiteRowsCounted(sites.Map(x => m.IsEdgeInRange(m.CoedgeAt(x).Edge) ? m.CoedgeAt(x).Edge.Value : -1), sites);
+
+    // The sites grouped by the vertex their coedge reaches (layer 2's ArrivesAt): row i is the
+    // corners at vertex Keys[i] among the sites, as CornersAtVertex lists them, for every vertex in
+    // range. A site whose edge or end vertex is out of range is in no row. Precondition: every site
+    // is in range.
+    SitesByEndVertex(m: BrepModel, sites: Array<CoedgeSite>): Counted<KeyedSiteRows>
+        => KeyedSiteRowsCounted(sites.Map(x => m.ArrivingVertexKey(x)), sites);
+
+    // The vertex the coedge at a site reaches, as an index, or -1 when its edge or that vertex is
+    // out of range. Precondition: m.IsCoedgeSiteInRange(site).
+    ArrivingVertexKey(m: BrepModel, site: CoedgeSite): Integer
+        => m.IsEdgeInRange(m.CoedgeAt(site).Edge)
+            ? m.VertexKey(m.EndVertex(m.CoedgeAt(site)))
+            : -1;
+
+    // The sites grouped by each vertex their coedge's edge has as an end (layer 2's
+    // CoedgeTouchesVertex): a site appears in the row of its edge's Start and in the row of its
+    // End, twice in one row when the two are the same vertex. A site whose edge is out of range,
+    // or an end out of range, is in no row for that end. Precondition: every site is in range.
+    SitesByTouchedVertex(m: BrepModel, sites: Array<CoedgeSite>): Counted<KeyedSiteRows>
+        => KeyedSiteRowsCounted(
+            (2 * sites.Count).MapRange(j => m.TouchedVertexKey(sites[j / 2], j % 2 == 0)),
+            (2 * sites.Count).MapRange(j => sites[j / 2]));
+
+    // The Start (atStart) or End vertex of the edge of the coedge at a site, as an index, or -1
+    // when the edge or that vertex is out of range. Precondition: m.IsCoedgeSiteInRange(site).
+    TouchedVertexKey(m: BrepModel, site: CoedgeSite, atStart: Boolean): Integer
+        => m.IsEdgeInRange(m.CoedgeAt(site).Edge)
+            ? m.VertexKey(atStart ? m.Edges[m.CoedgeAt(site).Edge].Start : m.Edges[m.CoedgeAt(site).Edge].End)
+            : -1;
+
+    // A vertex index as a key: its value when in range, else -1.
+    VertexKey(m: BrepModel, v: BrepVertexIndex): Integer
+        => m.IsVertexInRange(v) ? v.Value : -1;
+}

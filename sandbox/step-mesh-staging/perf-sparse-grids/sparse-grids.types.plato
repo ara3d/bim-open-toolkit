@@ -1,0 +1,17 @@
+//==
+// # Sparse check grids: types (complexity sweep, chunk V5)
+//
+// Layer 02. One type: coedge sites grouped under the keys some site carries, and only those.
+
+// Coedge sites grouped by an integer key, one row per key that occurs: Keys is strictly
+// increasing, and row i of Rows (V4's compressed rows) is the sites whose key is Keys[i], in the
+// order they were given. Unlike V4's EdgeUseTable and VertexCornerTable, which hold one row per
+// model edge or vertex, it has no row for a key no site carries, so building and walking it costs
+// the sites, not the model's edges or vertices. Removes: the O(E) and O(V) per shell (and per
+// face) that one row per model cell costs when a check walks every shell or every face.
+type KeyedSiteRows
+    implements IValue
+{
+    Keys: Array<Integer>;
+    Rows: CoedgeSiteRows;
+}
