@@ -1,0 +1,305 @@
+//==
+// # The indexed boundary: laws (complexity sweep, chunk R3, TKT-385)
+//
+// The staged functions of uv-boundary-index.library.plato and
+// triangulation-built-indexed.library.plato against the originals they replace: on every
+// triangulated witness (each face of the triangulation laws' six sample models, built once per
+// sweep), on the plane star and jagged regions of TriangulationCdtIndexedLaws (up to three holes
+// and a point hole), and on random quadruples for the in-circle test. Every agreement is exact:
+// the same Boolean, the same Number, the same triangles in the same order. The count witnesses
+// show IsConstrainedIn reading at most two table entries per query, whether the region has one
+// hole or thirteen; IsConstrained visited O(L^2) loops per query. Law_WorkIsWithinSlope (layer 00)
+// reads them.
+//
+// Sections, in order:
+//  - Regions and probes
+//  - Boundary segments
+//  - Strictly inside
+//  - The in-circle test
+//  - Flips, split sides and refinement
+//  - Count witnesses
+
+library BoundaryIndexLaws
+{
+    //==
+    // # Regions and probes
+
+    // A star of 48 points between radii 2 and 1.8 with h square holes of half-diagonal 0.12: one
+    // at the centre when h is 1, else h on the circle of radius 1. The count witnesses' regions.
+    HolesRegion(h: Integer): UvRegion
+        => UvRegion(StarLoop(48, 0.0, 0.0, 2.0, 1.8, 1, 0.0),
+            h.MapRange(i => h == 1
+                ? StarLoop(4, 0.0, 0.0, 0.12, 0.12, -1, 0.5)
+                : StarLoop(4, (Number.Tau * i.ToNumber / h.ToNumber).Cos, (Number.Tau * i.ToNumber / h.ToNumber).Sin, 0.12, 0.12, -1, 0.5)));
+
+    // Region r with every point moved from [-2.2, 2.2] squared into the unit square, so it lies
+    // in the parameter domain of the unit box's plane face 0.
+    UnitSquareRegion(r: UvRegion): UvRegion
+        => UvRegion(UnitSquareLoop(r.Outer), r.Holes.Map(h => UnitSquareLoop(h)));
+
+    // Loop l moved as UnitSquareRegion moves it.
+    UnitSquareLoop(l: UvLoop): UvLoop
+        => UvLoop(l.Points.Map(p => UvCoordinate((p.U + 2.2) / 4.4, (p.V + 2.2) / 4.4)), l.Sources);
+
+    // The tolerance the plane cases are tested under: 0.01 in u and 0.02 in v.
+    PlaneTolerance(_: Integer): UvTolerance
+        => UvTolerance(ParameterTolerance(0.01), ParameterTolerance(0.02));
+
+    // Points near the boundary of r under tol: each boundary point moved by -1, -0.5, 1 and 1.5
+    // tolerance units along u and by -1.5, -1, 0.5 and 1 along v, and each segment's midpoint
+    // moved by 1 unit along u and v both ways: the points whose gap or crossing is closest to
+    // deciding.
+    NearBoundary(r: UvRegion, tol: UvTolerance): Array<UvCoordinate>
+    {
+        var points = r.BoundaryPoints;
+        var ends = r.SegmentEnds;
+        var alongU = [-1.0, -0.5, 1.0, 1.5];
+        var alongV = [-1.5, -1.0, 0.5, 1.0];
+        var du = tol.U.Value;
+        var dv = tol.V.Value;
+        return points.Count.Range.FlatMap(i =>
+            alongU.Map(s => UvCoordinate(points[i].U + s * du, points[i].V))
+                .Concatenate(alongV.Map(s => UvCoordinate(points[i].U, points[i].V + s * dv)))
+                .Concatenate([
+                    UvCoordinate((points[i].U + points[ends[i]].U) / 2.0 + du, (points[i].V + points[ends[i]].V) / 2.0),
+                    UvCoordinate((points[i].U + points[ends[i]].U) / 2.0 - du, (points[i].V + points[ends[i]].V) / 2.0),
+                    UvCoordinate((points[i].U + points[ends[i]].U) / 2.0, (points[i].V + points[ends[i]].V) / 2.0 + dv),
+                    UvCoordinate((points[i].U + points[ends[i]].U) / 2.0, (points[i].V + points[ends[i]].V) / 2.0 - dv)]));
+    }
+
+    // An n x n lattice over [lo, hi] squared, off the boundary points' coordinates.
+    Lattice(n: Integer, lo: Number, hi: Number): Array<UvCoordinate>
+        => (n * n).MapRange(i => UvCoordinate(
+            lo + (hi - lo) * ((i % n).ToNumber + 0.37) / n.ToNumber,
+            lo + (hi - lo) * ((i / n).ToNumber + 0.61) / n.ToNumber));
+
+    //==
+    // # Boundary segments
+
+    // At the pair (a, b): IsConstrainedIn on the table is IsConstrained, and IsBoundarySegmentBody
+    // is IsBoundarySegment both ways.
+    ConstrainedPairAgrees(r: UvRegion, next: Array<Integer>, a: Integer, b: Integer): Boolean
+        => next.IsConstrainedIn(a, b) == r.IsConstrained(a, b)
+            && r.IsBoundarySegmentBody(a, b) == r.IsBoundarySegment(a, b)
+            && r.IsBoundarySegmentBody(b, a) == r.IsBoundarySegment(b, a);
+
+    // On region r: the pairs at every side of triangulation t, and for every index a from -1 to
+    // two past the boundary, the pairs with a + 1, a - 1, -1, the first point and a's next
+    // boundary point; and the table's entry is NextBoundaryPoint on loops of three or more points.
+    ConstrainedAgreesOn(r: UvRegion, t: UvTriangulation): Boolean
+    {
+        var next = r.NextBoundaryTable;
+        var n = r.BoundaryCount;
+        return next.Count == n
+            && n.Range.All(a => next[a] < 0 ? true : next[a] == r.NextBoundaryPoint(a))
+            && t.Triangles.All(x => 3.Range.All(j => r.ConstrainedPairAgrees(next, x.Corner(j), x.Corner(j + 1))))
+            && (n + 3).Range.All(i => r.ConstrainedPairAgrees(next, i - 1, i)
+                && r.ConstrainedPairAgrees(next, i - 1, i - 2)
+                && r.ConstrainedPairAgrees(next, i - 1, -1)
+                && r.ConstrainedPairAgrees(next, i - 1, 0)
+                && r.ConstrainedPairAgrees(next, i - 1, r.NextBoundaryPoint(i - 1)));
+    }
+
+    // On region r, every pair of indices from -1 to one past the boundary.
+    ConstrainedAgreesOnEveryPair(r: UvRegion): Boolean
+    {
+        var next = r.NextBoundaryTable;
+        var n = r.BoundaryCount + 2;
+        return (n * n).Range.All(q => r.ConstrainedPairAgrees(next, q % n - 1, q / n - 1));
+    }
+
+    // On every triangulated witness, IsConstrainedIn and IsBoundarySegmentBody agree with the
+    // originals at the sides of the constrained and the refined triangulation and along the
+    // boundary.
+    Law_Perf_IsConstrainedInAgrees(w: TriangulatedWitness): Boolean
+        => w.Region.ConstrainedAgreesOn(w.Cdt) && w.Region.ConstrainedAgreesOn(w.Refined);
+
+    // On star case k % 5 (holes and a point hole) at every pair of indices; on jagged case k
+    // along the boundary and at its triangulation's sides.
+    Law_Perf_IsConstrainedInAgreesOnStars(k: Integer): Boolean
+        => StarCase(k % 5).ConstrainedAgreesOnEveryPair
+            && JaggedCase(k).ConstrainedAgreesOn(JaggedCase(k).TriangulateRegionCdt(PlaneChart(0)));
+
+    //==
+    // # Strictly inside
+
+    // At every point of uvs, IsStrictlyInsideIndexed on r's index under tol is IsStrictlyInside.
+    InsideAgreesAt(r: UvRegion, tol: UvTolerance, uvs: Array<UvCoordinate>): Boolean
+    {
+        var x = r.BoundaryIndexOf(tol);
+        return uvs.All(uv => x.IsStrictlyInsideIndexed(uv) == r.IsStrictlyInside(uv, tol));
+    }
+
+    // The points the laws probe for triangulation t of r: its points, its triangles' parameter
+    // centroids and the parameter midpoints of their sides, and the points near the boundary.
+    InsideProbes(r: UvRegion, tol: UvTolerance, t: UvTriangulation): Array<UvCoordinate>
+        => t.Points
+            .Concatenate(t.Triangles.Count.MapRange(k => t.ElementUvCentroid(ElementIndex(k))))
+            .Concatenate(t.Triangles.FlatMap(x => 3.MapRange(j => t.Points[x.Corner(j)].UvMidpoint(t.Points[x.Corner(j + 1)]))))
+            .Concatenate(r.NearBoundary(tol));
+
+    // On every triangulated witness, under the face's region tolerance, IsStrictlyInsideIndexed
+    // agrees with IsStrictlyInside at the refined triangulation's points, centroids and side
+    // midpoints and at the points near the boundary.
+    Law_Perf_IsStrictlyInsideIndexedAgrees(w: TriangulatedWitness): Boolean
+    {
+        var tol = w.Model.RegionTolerance(w.Face, w.Chart);
+        return w.Region.InsideAgreesAt(tol, w.Region.InsideProbes(tol, w.Refined));
+    }
+
+    // On star case k % 3 (holes and a point hole) under PlaneTolerance: at an 11 x 11 lattice
+    // over the region's box and beyond it and at the points near the boundary (the triangulation
+    // probes are the witness law's; the reference scans every segment per probe). Also under a
+    // zero tolerance, where the index is not usable and the region's own test answers.
+    Law_Perf_IsStrictlyInsideIndexedAgreesOnStars(k: Integer): Boolean
+    {
+        var tol = PlaneTolerance(0);
+        var star = StarCase(k % 3);
+        var zero = UvTolerance(ParameterTolerance(0.0), ParameterTolerance(0.01));
+        return star.InsideAgreesAt(tol, Lattice(11, -2.3, 2.3).Concatenate(star.NearBoundary(tol)))
+            && star.InsideAgreesAt(zero, Lattice(5, -2.3, 2.3));
+    }
+
+    // On jagged case k % 4 under PlaneTolerance: at an 11 x 11 lattice and at the points near
+    // the boundary.
+    Law_Perf_IsStrictlyInsideIndexedAgreesOnJagged(k: Integer): Boolean
+        => JaggedCase(k % 4).InsideAgreesAt(PlaneTolerance(0), Lattice(11, -2.3, 2.3).Concatenate(JaggedCase(k % 4).NearBoundary(PlaneTolerance(0))));
+
+    //==
+    // # The in-circle test
+
+    // Whether x and y are the same Number, NaN included.
+    SameNumber(x: Number, y: Number): Boolean
+        => x == y ? true : (x.IsNaN && y.IsNaN);
+
+    // For every one of the 256 index quadruples over four points (repeats included),
+    // InCircleOfSorted is InCircleOf exactly; and InCircleOfFourSorted is InCircleOfFour on the
+    // same quadruple with the indices renamed 11, 4, 23, 7 (another order).
+    Law_Perf_InCircleOfSortedAgrees(a: Point2D, b: Point2D, c: Point2D, d: Point2D): Boolean
+    {
+        var points = [a, b, c, d];
+        var ids = [11, 4, 23, 7];
+        return 256.Range.All(q => SameNumber(
+                points.InCircleOfSorted(q % 4, (q / 4) % 4, (q / 16) % 4, q / 64),
+                InCircleOf(points, q % 4, (q / 4) % 4, (q / 16) % 4, q / 64))
+            && SameNumber(
+                InCircleOfFourSorted(ids[q % 4], ids[(q / 4) % 4], ids[(q / 16) % 4], ids[q / 64], points[q % 4], points[(q / 4) % 4], points[(q / 16) % 4], points[q / 64]),
+                InCircleOfFour(ids[q % 4], ids[(q / 4) % 4], ids[(q / 16) % 4], ids[q / 64], points[q % 4], points[(q / 4) % 4], points[(q / 16) % 4], points[q / 64])));
+    }
+
+    //==
+    // # Flips, split sides and refinement
+
+    // TriangulateRegionCdtIndexedCounted's triangulation with DelaunayedIndexed in place of
+    // Delaunayed: what TriangulateRegionCdt gives once the merge wires the table in.
+    CdtWithIndexedFlips(r: UvRegion, chart: FaceChart): UvTriangulation
+    {
+        var points = r.BoundaryPoints.Map(uv => chart.ChartPoint(uv));
+        var seed = r.CdtSeedIndexedCounted(points);
+        var pointHoles = r.Holes.Count.Range.FlatMap(h =>
+            r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : [h].Take(0));
+        var triangles = r.NextBoundaryTable.DelaunayedIndexed(points, pointHoles.Reduce(seed.Value, (ts, p) => ts.WithPointInserted(p, points)));
+        return UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
+    }
+
+    // On every triangulated witness, the flips with the table give the witness's constrained
+    // triangulation, field for field.
+    Law_Perf_DelaunayedIndexedAgrees(w: TriangulatedWitness): Boolean
+        => SameTriangulation(w.Cdt, w.Region.CdtWithIndexedFlips(w.Chart));
+
+    // On star case k and jagged case k, the flips with the table give TriangulateRegionCdt's
+    // triangulation.
+    Law_Perf_DelaunayedIndexedAgreesOnStars(k: Integer): Boolean
+        => SameTriangulation(StarCase(k).TriangulateRegionCdt(PlaneChart(0)), StarCase(k).CdtWithIndexedFlips(PlaneChart(0)))
+            && SameTriangulation(JaggedCase(k).TriangulateRegionCdt(PlaneChart(0)), JaggedCase(k).CdtWithIndexedFlips(PlaneChart(0)));
+
+    // For every triangle of t, SplitSideSlotIndexed is SplitSideSlot and SplitSideSlotOfIndexed
+    // is SplitSideSlotOf.
+    SplitSidesAgreeOn(r: UvRegion, chart: FaceChart, t: UvTriangulation): Boolean
+    {
+        var points = t.Points.Map(uv => chart.ChartPoint(uv));
+        var nb = NeighbourSlots(t.Triangles, t.Points.Count);
+        var next = r.NextBoundaryTable;
+        return t.Triangles.Count.Range.All(k =>
+            next.SplitSideSlotIndexed(points, t.Triangles[k], nb, k) == r.SplitSideSlot(points, t.Triangles[k], nb, k)
+            && next.SplitSideSlotOfIndexed(t.Triangles[k], [points[t.Triangles[k].Corner(0)], points[t.Triangles[k].Corner(1)], points[t.Triangles[k].Corner(2)]], [nb[3 * k], nb[3 * k + 1], nb[3 * k + 2]])
+                == r.SplitSideSlotOf(t.Triangles[k], [points[t.Triangles[k].Corner(0)], points[t.Triangles[k].Corner(1)], points[t.Triangles[k].Corner(2)]], [nb[3 * k], nb[3 * k + 1], nb[3 * k + 2]]));
+    }
+
+    // On every triangulated witness, the split sides agree on the constrained and the refined
+    // triangulation.
+    Law_Perf_SplitSideSlotIndexedAgrees(w: TriangulatedWitness): Boolean
+        => w.Region.SplitSidesAgreeOn(w.Chart, w.Cdt) && w.Region.SplitSidesAgreeOn(w.Chart, w.Refined);
+
+    // On every triangulated witness, the refinement over the indexed boundary is the witness's
+    // refined triangulation (RefineToSurfaceByInsertion's), point for point and triangle for
+    // triangle: the same insertions in the same order.
+    Law_Perf_RefineIndexedAgrees(w: TriangulatedWitness): Boolean
+        => SameTriangulation(w.Refined, w.Model.RefineToSurfaceByInsertionIndexed(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0)));
+
+    // On the unit box's plane face 0 with region r moved into the unit square, the refinement
+    // over the indexed boundary is RefineToSurfaceByInsertion's.
+    RefineIndexedAgreesOnPlane(r: UvRegion): Boolean
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var f = BrepFaceIndex(0);
+        var q = UnitSquareRegion(r);
+        var chart = m.ChartOf(f, q);
+        var t = q.TriangulateRegionCdt(chart);
+        return SameTriangulation(m.RefineToSurfaceByInsertion(f, q, chart, t, TriCriteria(0)),
+            m.RefineToSurfaceByInsertionIndexed(f, q, chart, t, TriCriteria(0)));
+    }
+
+    // On star case k % 5 as a region of the unit box's plane face 0, the refinement over the
+    // indexed boundary is RefineToSurfaceByInsertion's. The angle pass tries points near every
+    // hole.
+    Law_Perf_RefineIndexedAgreesOnStars(k: Integer): Boolean
+        => RefineIndexedAgreesOnPlane(StarCase(k % 5));
+
+    // The count witnesses' 13-hole region, built once: IsConstrainedIn agrees along its boundary
+    // and at its triangulation's sides, the flips with the table give TriangulateRegionCdt's
+    // triangulation, and on the unit box's plane face 0 the refinement over the indexed boundary
+    // is RefineToSurfaceByInsertion's.
+    Law_Perf_ThirteenHolesAgree(_: Integer): Boolean
+    {
+        var r = HolesRegion(13);
+        var t = r.TriangulateRegionCdt(PlaneChart(0));
+        return r.ConstrainedAgreesOn(t)
+            && SameTriangulation(t, r.CdtWithIndexedFlips(PlaneChart(0)))
+            && RefineIndexedAgreesOnPlane(r);
+    }
+
+    //==
+    // # Count witnesses
+
+    // The table reads of n IsConstrainedIn queries on HolesRegion(h): query i asks the pair
+    // ((7 i) mod (B + 4) - 1, then the next index for even i, else (13 i) mod (B + 4) - 1), so
+    // the queries cover boundary segments, other boundary pairs, interior points past the
+    // boundary and -1.
+    ConstrainedWork(h: Integer, n: Integer): WorkBudget
+    {
+        var r = HolesRegion(h);
+        var next = r.NextBoundaryTable;
+        var span = r.BoundaryCount + 4;
+        var work = Insertions(0);
+        var i = 0;
+        while (i < n)
+        {
+            var a = (7 * i) % span - 1;
+            var b = i % 2 == 0 ? a + 1 : (13 * i) % span - 1;
+            work = work.Add(next.IsConstrainedInCounted(a, b).Work);
+            i = i + 1;
+        }
+        return work;
+    }
+
+    // IsConstrainedIn reads at most two table entries (Insertions) per query on a region with
+    // one hole, at 64 and 512 queries. IsConstrained visited every loop for each of the L loops
+    // LoopOfBoundaryPoint tried, twice per query.
+    Witness_IsConstrainedInOneHoleWork(_: WorkClaim): WorkClaim
+        => WorkClaim("IsConstrainedIn: table reads per query, one hole", Insertions(2), [64, 512], n => ConstrainedWork(1, n));
+
+    // The same on a region with thirteen holes: the reads per query do not grow with the loops.
+    Witness_IsConstrainedInThirteenHolesWork(_: WorkClaim): WorkClaim
+        => WorkClaim("IsConstrainedIn: table reads per query, thirteen holes", Insertions(2), [64, 512], n => ConstrainedWork(13, n));
+}

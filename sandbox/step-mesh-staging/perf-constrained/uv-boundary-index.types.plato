@@ -1,0 +1,32 @@
+//==
+// # A region's boundary, indexed once per face (complexity sweep, chunk R3, TKT-385)
+//
+// Layer 05-face-meshing. The value the refinement asks its boundary questions of: which
+// point pairs are boundary segments (IsConstrained) and whether a new point is strictly inside
+// (IsStrictlyInside). Built once per refinement by BoundaryIndexOf (uv-boundary-index.library.plato).
+
+// Region Region's boundary under tolerance Tolerance, indexed. Boundary point i is
+// Region.BoundaryPoints[i]; segment i runs from boundary point i to the next point of its loop,
+// SegmentEnd[i] (itself for a point hole), on loop SegmentLoop[i]. Next is NextBoundaryTable:
+// SegmentEnd[i] on a loop of at least three points, else -1, so Next[i] >= 0 exactly when
+// segment i is a boundary segment and a side of the loop's polygon. Raw holds the points as
+// plane points (ToPoint2D), Units in tolerance units (InToleranceUnits). Grid lists each segment
+// under the cells its box in tolerance units, grown by BoundaryIndexMargin on every side, meets;
+// FirstColumn[i] is the first grid column of segment i's box. Usable is false when a point in
+// tolerance units is not finite or a tolerance is not positive: then IsStrictlyInsideIndexed
+// asks the region itself.
+// Removes: the O(L^2) loop search per IsConstrained call (LoopOfBoundaryPoint over LoopOffset)
+// and the scan over every boundary segment per IsStrictlyInside call.
+type BoundaryIndex
+{
+    Region: UvRegion;
+    Tolerance: UvTolerance;
+    Next: Array<Integer>;
+    SegmentEnd: Array<Integer>;
+    SegmentLoop: Array<Integer>;
+    Raw: Array<Point2D>;
+    Units: Array<Point2D>;
+    Grid: ChartGrid;
+    FirstColumn: Array<Integer>;
+    Usable: Boolean;
+}

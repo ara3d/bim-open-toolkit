@@ -1,0 +1,339 @@
+//==
+// # A region's boundary, indexed once per face (complexity sweep, chunk R3, TKT-385)
+//
+// Layer 05-face-meshing. UvDelaunay's IsConstrained asked IsBoundarySegment twice per call, and
+// each found the loop of a point by LoopOfBoundaryPoint, which recomputes LoopOffset (a fold over
+// the loops) for every loop: O(L^2) per call over L loops, made per flip test, per trial
+// insertion and three times per triangle in SplitSideSlot. IsStrictlyInside measured the gap to
+// every boundary segment and ran the even-odd test over every loop: O(B) per candidate point.
+// InCircleOf built four arrays and about twenty closures per in-circle test.
+//
+// Here the region is indexed once (BoundaryIndexOf): the next boundary point of each boundary
+// point (NextBoundaryTable), so IsConstrainedIn reads two table entries; and a ChartGrid of the
+// boundary segments in tolerance units, so IsStrictlyInsideIndexed measures the gap only to the
+// segments near the point and counts ray crossings only in the point's grid row. The answers are
+// the originals', bit for bit: the same predicates on the same numbers, asked of a superset of the
+// segments that can change the answer. InCircleOfSorted sorts the four indices by a five-step
+// sorting network on locals and counts inversions for the parity: the value InCircleOf gives,
+// with no allocation. DelaunayedIndexed and SplitSideSlotIndexed are UvDelaunay's Delaunayed and
+// SplitSideSlot with the table and the sorted test.
+//
+// Sections, in order:
+//  - The next-boundary table
+//  - Strictly inside, on the grid
+//  - The in-circle test without allocation
+//  - Flips and split sides with the table
+
+library UvBoundaryIndex
+{
+    //==
+    // # The next-boundary table
+
+    // The position in BoundaryPoints of each loop's first point, and the boundary count last:
+    // NumberOfLoops + 1 entries. LoopOffset(r, k) is entry k.
+    LoopOffsets(r: UvRegion): Array<Integer>
+    {
+        var offsets = new List<Integer>().Add(0);
+        var k = 0;
+        while (k < r.NumberOfLoops)
+        {
+            offsets = offsets.Add(offsets.At(k) + r.LoopAt(k).Points.Count);
+            k = k + 1;
+        }
+        return offsets.Freeze();
+    }
+
+    // For each boundary point, the boundary point after it along its loop (itself for a point
+    // hole): the end of the segment GapToLoop measures from it.
+    SegmentEnds(r: UvRegion): Array<Integer>
+    {
+        var o = r.LoopOffsets;
+        return r.NumberOfLoops.Range.FlatMap(k => (o[k + 1] - o[k]).MapRange(i => o[k] + (i + 1) % (o[k + 1] - o[k])));
+    }
+
+    // For each boundary point, the loop it belongs to.
+    SegmentLoops(r: UvRegion): Array<Integer>
+    {
+        var o = r.LoopOffsets;
+        return r.NumberOfLoops.Range.FlatMap(k => (o[k + 1] - o[k]).MapRange(i => k));
+    }
+
+    // For each boundary point a, NextBoundaryPoint(a) when its loop has at least three points,
+    // else -1 (a point hole or a two-point loop has no boundary segment, IsBoundarySegment).
+    // IsBoundarySegment(r, a, b) is a valid index a with entry b.
+    NextBoundaryTable(r: UvRegion): Array<Integer>
+    {
+        var o = r.LoopOffsets;
+        return r.NumberOfLoops.Range.FlatMap(k => (o[k + 1] - o[k]).MapRange(i =>
+            o[k + 1] - o[k] >= 3 ? o[k] + (i + 1) % (o[k + 1] - o[k]) : -1));
+    }
+
+    // UvDelaunay's IsConstrained by the region's NextBoundaryTable: whether the points a and b
+    // (any indices; interior points and -1 are never on a segment) form a boundary segment in
+    // either direction. Two table reads.
+    IsConstrainedIn(next: Array<Integer>, a: Integer, b: Integer): Boolean
+        => ((a >= 0 && a < next.Count) ? (b >= 0 && next[a] == b) : false)
+            || ((b >= 0 && b < next.Count) ? (a >= 0 && next[b] == a) : false);
+
+    // IsConstrainedIn with its work: the table entries read, as Insertions (at most two; the old
+    // form visited O(L^2) loops).
+    IsConstrainedInCounted(next: Array<Integer>, a: Integer, b: Integer): Counted<Boolean>
+        => Counted(next.IsConstrainedIn(a, b),
+            Insertions(((a >= 0 && a < next.Count) ? 1 : 0) + ((b >= 0 && b < next.Count) ? 1 : 0)));
+
+    // IsBoundarySegment in one pass over the loops, O(L) and no table: for callers that ask once
+    // and have no index (the laws, TriangleNeedsRefinement until it takes the table). The same
+    // answer: a lies on a loop of at least three points and b follows it there.
+    IsBoundarySegmentBody(r: UvRegion, a: Integer, b: Integer): Boolean
+    {
+        var k = 0;
+        var o = 0;
+        var found = false;
+        while (k < r.NumberOfLoops)
+        {
+            var n = r.LoopAt(k).Points.Count;
+            if (a >= o && a < o + n)
+            {
+                found = n >= 3 && o + (a - o + 1) % n == b;
+            }
+            o = o + n;
+            k = k + 1;
+        }
+        return found;
+    }
+
+    //==
+    // # Strictly inside, on the grid
+
+    // How far, in tolerance units, each segment's box is grown before it enters the grid: twice
+    // the gap IsStrictlyInside requires, so a segment within one unit of a point, or one whose ray
+    // crossing rounds past its end, is always listed in the point's cell.
+    BoundaryIndexMargin(_: BoundaryIndex): Number
+        => 2.0;
+
+    // Region r's boundary under tolerance tol, indexed: the next-boundary table and the segment
+    // grid. O(B) once, plus the grid; every IsConstrainedIn and IsStrictlyInsideIndexed after
+    // reads it.
+    BoundaryIndexOf(r: UvRegion, tol: UvTolerance): BoundaryIndex
+    {
+        var points = r.BoundaryPoints;
+        var raw = points.Map(uv => uv.ToPoint2D);
+        var units = points.Map(uv => uv.InToleranceUnits(tol));
+        var ends = r.SegmentEnds;
+        var margin = BoundaryIndex.BoundaryIndexMargin;
+        var lows = ends.Count.MapRange(s => Point2D(units[s].X.Min(units[ends[s]].X) - margin, units[s].Y.Min(units[ends[s]].Y) - margin));
+        var highs = ends.Count.MapRange(s => Point2D(units[s].X.Max(units[ends[s]].X) + margin, units[s].Y.Max(units[ends[s]].Y) + margin));
+        var grid = ChartGridOf(lows, highs);
+        var first = ends.Count.MapRange(s => IsFiniteBox(lows[s], highs[s]) ? GridCellClamped(lows[s].X, grid.Origin.X, grid.Side, grid.Columns, 0) : 0);
+        var usable = tol.U.Value > 0.0 && tol.V.Value > 0.0 && units.All(p => p.X.IsFinite && p.Y.IsFinite);
+        return BoundaryIndex(r, tol, r.NextBoundaryTable, ends, r.SegmentLoops, raw, units, grid, first, usable);
+    }
+
+    // Whether the ray from p towards +X crosses segment s, as LoopContains counts it: only a
+    // segment of a loop of at least three points.
+    CrossesRayAt(x: BoundaryIndex, s: Integer, p: Point2D): Boolean
+        => x.Next[s] >= 0 ? EdgeCrossesRay(x.Raw[s], x.Raw[x.Next[s]], p) : false;
+
+    // UvRegions' IsStrictlyInside for the indexed region under its tolerance, the same answer:
+    // on the grid when the index is usable and uv finite, else the region's own test.
+    IsStrictlyInsideIndexed(x: BoundaryIndex, uv: UvCoordinate): Boolean
+        => (x.Usable ? (uv.U.IsFinite && uv.V.IsFinite) : false)
+            ? x.IsStrictlyInsideOnGrid(uv)
+            : x.Region.IsStrictlyInside(uv, x.Tolerance);
+
+    // IsStrictlyInside on the grid. The gap is measured only to the segments listed near uv's
+    // cell (a segment within one unit has its grown box there); each loop's crossings are counted
+    // only among the segments in uv's grid row from the column before uv's onward, each segment
+    // once, at the first of those cells it is listed in, and in Everywhere (a segment crossed by
+    // the ray covers uv's row and reaches past uv). Inside when the outer loop is crossed an odd
+    // number of times, every hole an even number, and every gap exceeds one unit.
+    IsStrictlyInsideOnGrid(x: BoundaryIndex, uv: UvCoordinate): Boolean
+    {
+        var p = uv.ToPoint2D;
+        var u = uv.InToleranceUnits(x.Tolerance);
+        var g = x.Grid;
+        var clear = g.ItemsNear(u, u).All(s => DistanceToSegment(x.Units[s], x.Units[x.SegmentEnd[s]], u) > 1.0);
+        var row = GridCellClamped(u.Y, g.Origin.Y, g.Side, g.Rows, 0);
+        var from = GridCellClamped(u.X, g.Origin.X, g.Side, g.Columns, -1);
+        var crossed = new List<Integer>();
+        var c = from;
+        while (c < g.Columns)
+        {
+            var cell = row * g.Columns + c;
+            var i = g.Starts[cell];
+            while (i < g.Starts[cell + 1])
+            {
+                var s = g.Items[i];
+                if (x.FirstColumn[s].Max(from) == c ? x.CrossesRayAt(s, p) : false)
+                {
+                    crossed = crossed.Add(x.SegmentLoop[s]);
+                }
+                i = i + 1;
+            }
+            c = c + 1;
+        }
+        var w = 0;
+        while (w < g.Everywhere.Count)
+        {
+            if (x.CrossesRayAt(g.Everywhere[w], p))
+            {
+                crossed = crossed.Add(x.SegmentLoop[g.Everywhere[w]]);
+            }
+            w = w + 1;
+        }
+        var loops = crossed.Freeze();
+        return clear
+            && loops.Reduce(0, (n, l) => l == 0 ? n + 1 : n) % 2 == 1
+            && loops.All(l => l == 0 ? true : loops.Reduce(0, (n, q) => q == l ? n + 1 : n) % 2 == 0);
+    }
+
+    //==
+    // # The in-circle test without allocation
+
+    // TriangulationCdt's InCircleOf for indices a, b, c, d with points pa, pb, pc, pd: the
+    // determinant of the four in increasing index order, negated when the indices have an odd
+    // number of inversions. The order comes from a five-step sorting network on locals (each
+    // index carries its point), the parity from the six pairwise comparisons, so nothing is
+    // allocated. The same value as InCircleOf: equal indices name the same point, so any sort
+    // gives InCircleOf's points, and its parity is the same inversion count.
+    InCircleOfFourSorted(a: Integer, b: Integer, c: Integer, d: Integer, pa: Point2D, pb: Point2D, pc: Point2D, pd: Point2D): Number
+    {
+        var inversions = (a > b ? 1 : 0) + (a > c ? 1 : 0) + (a > d ? 1 : 0) + (b > c ? 1 : 0) + (b > d ? 1 : 0) + (c > d ? 1 : 0);
+        var i0 = a;
+        var i1 = b;
+        var i2 = c;
+        var i3 = d;
+        var p0 = pa;
+        var p1 = pb;
+        var p2 = pc;
+        var p3 = pd;
+        var ti = 0;
+        var tp = pa;
+        if (i0 > i1)
+        {
+            ti = i0;
+            tp = p0;
+            i0 = i1;
+            p0 = p1;
+            i1 = ti;
+            p1 = tp;
+        }
+        if (i2 > i3)
+        {
+            ti = i2;
+            tp = p2;
+            i2 = i3;
+            p2 = p3;
+            i3 = ti;
+            p3 = tp;
+        }
+        if (i0 > i2)
+        {
+            ti = i0;
+            tp = p0;
+            i0 = i2;
+            p0 = p2;
+            i2 = ti;
+            p2 = tp;
+        }
+        if (i1 > i3)
+        {
+            ti = i1;
+            tp = p1;
+            i1 = i3;
+            p1 = p3;
+            i3 = ti;
+            p3 = tp;
+        }
+        if (i1 > i2)
+        {
+            ti = i1;
+            tp = p1;
+            i1 = i2;
+            p1 = p2;
+            i2 = ti;
+            p2 = tp;
+        }
+        var det = InCircle(p0, p1, p2, p3);
+        return inversions % 2 == 0 ? det : 0.0 - det;
+    }
+
+    // TriangulationCdt's InCircleOf of the points with indices a, b, c, d, without allocation.
+    InCircleOfSorted(points: Array<Point2D>, a: Integer, b: Integer, c: Integer, d: Integer): Number
+        => InCircleOfFourSorted(a, b, c, d, points[a], points[b], points[c], points[d]);
+
+    //==
+    // # Flips and split sides with the table
+
+    // TriangulationCdt's IsFlippableCdt with the region's NextBoundaryTable and InCircleOfSorted.
+    IsFlippableCdtIndexed(next: Array<Integer>, points: Array<Point2D>, t: TriangleFace, j: Integer, u: TriangleFace): Boolean
+    {
+        var a = t.Corner(j);
+        var b = t.Corner(j + 1);
+        var c = t.Corner(j + 2);
+        var d = u.OppositeCorner(a, b);
+        return (d < 0 ? true : next.IsConstrainedIn(a, b))
+            ? false
+            : (TwiceSignedArea(points[a], points[d], points[c]) > 0.0
+                && TwiceSignedArea(points[d], points[b], points[c]) > 0.0
+                && points.InCircleOfSorted(a, b, c, d) > 0.0);
+    }
+
+    // UvDelaunay's Delaunayed with the region's NextBoundaryTable: the same flips in the same
+    // order (IsFlippableCdtIndexed gives IsFlippableCdt's answer), so the same triangles.
+    DelaunayedIndexed(next: Array<Integer>, points: Array<Point2D>, tris: Array<TriangleFace>): Array<TriangleFace>
+    {
+        var result = tris.EmptyList.AddRange(tris);
+        var nb = new List<Integer>().AddRange(NeighbourSlots(tris, points.Count));
+        var queue = new List<Integer>().AddRange((3 * tris.Count).Range);
+        var i = 0;
+        var flips = 0;
+        while (i < queue.Count && flips < 3 * tris.Count * tris.Count)
+        {
+            var s = queue.At(i);
+            var t = s / 3;
+            var j = s % 3;
+            var u = nb.At(s);
+            if (u >= 0 ? next.IsFlippableCdtIndexed(points, result.At(t), j, result.At(u)) : false)
+            {
+                var a = result.At(t).Corner(j);
+                var b = result.At(t).Corner(j + 1);
+                var c = result.At(t).Corner(j + 2);
+                var d = result.At(u).OppositeCorner(a, b);
+                var tbc = nb.At(3 * t + (j + 1) % 3);
+                var tca = nb.At(3 * t + (j + 2) % 3);
+                var uad = nb.At(3 * u + result.At(u).SideSlot(a, d));
+                var udb = nb.At(3 * u + result.At(u).SideSlot(d, b));
+                result = result.Set(t, TriangleOf(a, d, c)).Set(u, TriangleOf(d, b, c));
+                nb = nb.Set(3 * t, uad).Set(3 * t + 1, u).Set(3 * t + 2, tca)
+                    .Set(3 * u, udb).Set(3 * u + 1, tbc).Set(3 * u + 2, t);
+                nb = nb.PointedBack(result, uad, a, d, t).PointedBack(result, tca, c, a, t)
+                    .PointedBack(result, udb, d, b, u).PointedBack(result, tbc, b, c, u);
+                queue = queue.Add(3 * t).Add(3 * t + 2).Add(3 * u).Add(3 * u + 1);
+                flips = flips + 1;
+            }
+            i = i + 1;
+        }
+        return result.Freeze();
+    }
+
+    // UvDelaunay's SplitSideSlot with the region's NextBoundaryTable: the longest side of
+    // triangle k (corners tri) in the chart that is not a boundary segment and has a neighbour in
+    // nb; -1 when none has.
+    SplitSideSlotIndexed(next: Array<Integer>, points: Array<Point2D>, tri: TriangleFace, nb: Array<Integer>, k: Integer): Integer
+        => 3.Range.Reduce(-1, (best, j) =>
+            (next.IsConstrainedIn(tri.Corner(j), tri.Corner(j + 1)) || nb[3 * k + j] < 0)
+                ? best
+                : (best < 0 ? j : (points[tri.Corner(j)].Distance(points[tri.Corner(j + 1)])
+                    > points[tri.Corner(best)].Distance(points[tri.Corner(best + 1)]) ? j : best)));
+
+    // TriangulationBuilt's SplitSideSlotOf with the region's NextBoundaryTable: the longest side
+    // of triangle tri, given its corners' chart points and the triangles across its sides, that
+    // is not a boundary segment and has a neighbour; -1 when none has.
+    SplitSideSlotOfIndexed(next: Array<Integer>, tri: TriangleFace, corners: Array<Point2D>, across: Array<Integer>): Integer
+        => 3.Range.Reduce(-1, (best, j) =>
+            (next.IsConstrainedIn(tri.Corner(j), tri.Corner(j + 1)) || across[j] < 0)
+                ? best
+                : (best < 0 ? j : (corners[j].Distance(corners[(j + 1) % 3])
+                    > corners[best].Distance(corners[(best + 1) % 3]) ? j : best)));
+}
