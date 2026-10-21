@@ -1,0 +1,52 @@
+//==
+// # Refinement with indexed requests and a raise heap: types (complexity sweep, chunk R6)
+//
+// Layer 4. The values RaisedToCountHeap keeps while it halves the widest segment, and the
+// per-edge request index RefineIndexed and RaisedFloorsByScatter build in one pass over the
+// requests.
+//
+// Sections, in order:
+//  - Raising a parameter list
+//  - Requests by edge
+
+//==
+// # Raising a parameter list
+
+// One node of the split forest RaisedToCountHeap grows: the parameter interval [Start, End], and
+// its two halves' nodes, or -1 for both while it is a leaf. The roots are the input segments, in
+// order; the leaves, read left to right, are the result's segments.
+// Removes: copying the whole parameter array to insert one midpoint.
+type RaiseNode
+{
+    Start: Number;
+    End: Number;
+    Left: Integer;
+    Right: Integer;
+}
+
+// A leaf of the split forest as the raise heap holds it: its width End - Start, the input
+// segment it lies in, its position key inside that segment (Start on an increasing input
+// segment, -Start on a decreasing one, so the key grows along the array either way) and its
+// node. The heap's top is the widest leaf, the first in array order on a tie.
+// Removes: a scan of every segment per raise to find the widest.
+type RaisePiece
+{
+    Width: Number;
+    Segment: Integer;
+    Order: Number;
+    Node: Integer;
+}
+
+//==
+// # Requests by edge
+
+// The strongest request per edge, entry e for edge e: whether a request names the edge, the
+// smallest chordal bound requested for it (meaningful only where Requested), and the largest
+// segment count requested (0 when none).
+// Removes: a scan of every request per edge (IsRequested, RequestedChordal, RequestedSegments).
+type EdgeRequestIndex
+{
+    Requested: Array<Boolean>;
+    Chordal: Array<Number>;
+    Segments: Array<Integer>;
+}

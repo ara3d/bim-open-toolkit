@@ -1,0 +1,348 @@
+//==
+// # Refinement with indexed requests and a raise heap (complexity sweep, chunk R6)
+//
+// Ranked candidate 30 of docs/plans/step-mesher-complexity.md. Four costs, one per section:
+//  - RaisedToCount rebuilt the whole parameter array and rescanned every segment for the widest
+//    once per raise: O(k n) for k raises. RaisedToCountHeap keeps the segments in a max-heap and
+//    the splits in a forest, and writes the result once.
+//  - Refine asked IsRequested, RequestedChordal and RequestedSegments per edge, each a scan of
+//    every request: O(E R). RefineIndexed builds the strongest request per edge in one pass.
+//  - Layer 8's RaisedFloors asked RequestedSegments per edge per round, the same O(E R).
+//    RaisedFloorsByScatter reads the same index.
+//  - The refinement test asked each image's chord deviations for the whole discretization to
+//    read one segment's (ImageChordHolds): O(n^2) per image per edge. RefinedParametersIndexed
+//    computes them once per image and tests each segment against them.
+// Every result is the reference's, bit for bit, on the inputs the references accept (see each
+// function); the laws in refine-edges.laws.plato show it on the witness models.
+//
+// Sections, in order:
+//  - Raising a parameter list
+//  - Requests by edge
+//  - The per-segment test from deviations
+//  - Refinement
+
+library EdgeRefineIndexed
+{
+    //==
+    // # Raising a parameter list
+
+    // True when piece a is popped before piece b: wider first, then the earlier in the array (a
+    // lower input segment, then a lower position key). Two pieces of one input segment with the
+    // same width and key are the same interval, so splitting either gives the same parameters.
+    RanksAbove(a: RaisePiece, b: RaisePiece): Boolean
+        => a.Width > b.Width
+            ? true
+            : (a.Width < b.Width
+                ? false
+                : (a.Segment != b.Segment ? a.Segment < b.Segment : a.Order < b.Order));
+
+    // RaisedToCount with a heap, and its work: the same parameters, bit for bit, for two or more
+    // parameters that increase or decrease along each segment (each midpoint is the reference's
+    // (a + b) * 0.5 of the same two values, each width its b - a, and the heap pops the piece the
+    // reference's scan picks, the first on a tie). Below two parameters, where the reference
+    // indexes out of range, the parameters are returned unchanged.
+    // Work: Insertions are the parameters copied into the result, n + k + 1 for n input segments
+    // and k raises (the reference copied the whole array per raise); Flips are heap entry moves,
+    // one per push and one per sift step, at most n (1 + L) + k (2 + 2 L) with L = floor(log2(n +
+    // k)): a push and a root replacement per raise, each sifting at most L levels. The forest's
+    // writes, n + 3 per raise, are not counted.
+    RaisedToCountHeapCounted(m: BrepModel, parameters: Array<Number>, least: Integer): Counted<Array<Number>>
+    {
+        var n = parameters.Count - 1;
+        if (n < 1 ? true : least <= n)
+        {
+            return Counted(parameters, Insertions(0));
+        }
+        var nodes = new List<RaiseNode>();
+        var heap = new List<RaisePiece>();
+        var moves = 0;
+        var pushed = 0;
+        var raises = 0;
+        while (pushed < n ? true : n + raises < least)
+        {
+            var piece = RaisePiece(0.0, 0, 0.0, 0);
+            if (pushed < n)
+            {
+                var a = parameters[pushed];
+                var b = parameters[pushed + 1];
+                nodes = nodes.Add(RaiseNode(a, b, -1, -1));
+                piece = RaisePiece(b - a, pushed, a <= b ? a : -a, pushed);
+                pushed = pushed + 1;
+            }
+            else
+            {
+                var top = heap.At(0);
+                var node = nodes.At(top.Node);
+                var middle = (node.Start + node.End) * 0.5;
+                var increasing = parameters[top.Segment] <= parameters[top.Segment + 1];
+                var left = nodes.Count;
+                nodes = nodes.Add(RaiseNode(node.Start, middle, -1, -1));
+                nodes = nodes.Add(RaiseNode(middle, node.End, -1, -1));
+                nodes = nodes.Set(top.Node, RaiseNode(node.Start, node.End, left, left + 1));
+                heap = heap.Set(0, RaisePiece(middle - node.Start, top.Segment, increasing ? node.Start : -node.Start, left));
+                moves = moves + 1;
+                var down = 0;
+                var sinking = true;
+                while (sinking)
+                {
+                    var child = 2 * down + 1;
+                    var best = down;
+                    if (child < heap.Count)
+                    {
+                        if (heap.At(child).RanksAbove(heap.At(best)))
+                        {
+                            best = child;
+                        }
+                    }
+                    if (child + 1 < heap.Count)
+                    {
+                        if (heap.At(child + 1).RanksAbove(heap.At(best)))
+                        {
+                            best = child + 1;
+                        }
+                    }
+                    if (best == down)
+                    {
+                        sinking = false;
+                    }
+                    else
+                    {
+                        var sunk = heap.At(down);
+                        heap = heap.Set(down, heap.At(best));
+                        heap = heap.Set(best, sunk);
+                        down = best;
+                        moves = moves + 1;
+                    }
+                }
+                piece = RaisePiece(node.End - middle, top.Segment, increasing ? middle : -middle, left + 1);
+                raises = raises + 1;
+            }
+            heap = heap.Add(piece);
+            moves = moves + 1;
+            var up = heap.Count - 1;
+            var rising = up > 0;
+            while (rising)
+            {
+                var parent = (up - 1) / 2;
+                if (heap.At(up).RanksAbove(heap.At(parent)))
+                {
+                    var lifted = heap.At(up);
+                    heap = heap.Set(up, heap.At(parent));
+                    heap = heap.Set(parent, lifted);
+                    up = parent;
+                    moves = moves + 1;
+                    rising = up > 0;
+                }
+                else
+                {
+                    rising = false;
+                }
+            }
+        }
+        var result = new List<Number>().Add(parameters[0]);
+        var stack = new List<Integer>();
+        var depth = 0;
+        var root = 0;
+        while (root < n)
+        {
+            if (depth < stack.Count)
+            {
+                stack = stack.Set(depth, root);
+            }
+            else
+            {
+                stack = stack.Add(root);
+            }
+            depth = 1;
+            while (depth > 0)
+            {
+                depth = depth - 1;
+                var visited = nodes.At(stack.At(depth));
+                if (visited.Left < 0)
+                {
+                    result = result.Add(visited.End);
+                }
+                else
+                {
+                    if (depth < stack.Count)
+                    {
+                        stack = stack.Set(depth, visited.Right);
+                    }
+                    else
+                    {
+                        stack = stack.Add(visited.Right);
+                    }
+                    depth = depth + 1;
+                    if (depth < stack.Count)
+                    {
+                        stack = stack.Set(depth, visited.Left);
+                    }
+                    else
+                    {
+                        stack = stack.Add(visited.Left);
+                    }
+                    depth = depth + 1;
+                }
+            }
+            root = root + 1;
+        }
+        var copied = result.Count;
+        return Counted(result.Freeze(), Insertions(copied).Add(Flips(moves)));
+    }
+
+    // RaisedToCount with a heap: RaisedToCount(m, parameters, least) is
+    // m.RaisedToCountHeap(parameters, least).
+    RaisedToCountHeap(m: BrepModel, parameters: Array<Number>, least: Integer): Array<Number>
+        => m.RaisedToCountHeapCounted(parameters, least).Value;
+
+    //==
+    // # Requests by edge
+
+    // The strongest request per edge over edges 0 to edges - 1, built in one pass over the
+    // requests, in request order; a request naming an edge outside that range is ignored, as the
+    // per-edge scans ignored it. Work: Insertions, one per slot written and one per request
+    // visited (edges + requests).
+    RequestIndexCounted(requests: Array<EdgeRefinementRequest>, edges: Integer): Counted<EdgeRequestIndex>
+    {
+        var named = new List<Boolean>();
+        var chordal = new List<Number>();
+        var segments = new List<Integer>();
+        var e = 0;
+        while (e < edges)
+        {
+            named = named.Add(false);
+            chordal = chordal.Add(0.0);
+            segments = segments.Add(0);
+            e = e + 1;
+        }
+        var k = 0;
+        while (k < requests.Count)
+        {
+            var r = requests[k];
+            var slot = r.Edge.Value;
+            if (slot >= 0 ? slot < edges : false)
+            {
+                chordal = chordal.Set(slot, named.At(slot) ? chordal.At(slot).Min(r.Chordal) : r.Chordal);
+                segments = segments.Set(slot, segments.At(slot).Max(r.Segments));
+                named = named.Set(slot, true);
+            }
+            k = k + 1;
+        }
+        var written = edges.Max(0);
+        return Counted(EdgeRequestIndex(named.Freeze(), chordal.Freeze(), segments.Freeze()), Insertions(written + requests.Count));
+    }
+
+    // True when some request names the edge: IsRequested(requests, e) for e inside the index.
+    IsRequestedIn(ix: EdgeRequestIndex, e: BrepEdgeIndex): Boolean
+        => ix.Requested.IsValidIndex(e) ? ix.Requested[e] : false;
+
+    // RequestedChordal(requests, e, current) for e inside the index: the smaller of current and
+    // every chordal bound requested for e. Equal to the reference's left fold for every bound
+    // but a signed zero, where Min may keep the other sign.
+    RequestedChordalIn(ix: EdgeRequestIndex, e: BrepEdgeIndex, current: Number): Number
+        => ix.IsRequestedIn(e) ? current.Min(ix.Chordal[e]) : current;
+
+    // RequestedSegments(requests, e) for e inside the index: the largest count requested, 0 when
+    // none.
+    RequestedSegmentsIn(ix: EdgeRequestIndex, e: BrepEdgeIndex): Integer
+        => ix.Segments.IsValidIndex(e) ? ix.Segments[e] : 0;
+
+    // Layer 8's RaisedFloors with the requests scattered to their edges once: the floors raised
+    // to every count the requests ask for, one entry per edge of m. RaisedFloors(m, floors,
+    // requests) is m.RaisedFloorsByScatter(floors, requests).
+    RaisedFloorsByScatter(m: BrepModel, floors: SegmentFloors, requests: Array<EdgeRefinementRequest>): SegmentFloors
+    {
+        var ix = RequestIndexCounted(requests, m.Edges.Count).Value;
+        return SegmentFloors(m.Edges.Count.MapRange(i =>
+            floors.FloorOf(BrepEdgeIndex(i)).Max(ix.RequestedSegmentsIn(BrepEdgeIndex(i)))));
+    }
+
+    //==
+    // # The per-segment test from deviations
+
+    // Each image's chord deviations over the whole of d, once: entry j is
+    // ImageChordDeviations(d, images[j], plan) when image j is evaluable, empty otherwise.
+    ImageDeviationsOf(m: BrepModel, d: EdgeDiscretization, images: Array<EdgeImage>, plan: SamplePlan): Array<Array<Number>>
+        => images.Map(img => m.IsImageEvaluable(img) ? m.ImageChordDeviations(d, img, plan) : 0.MapRange(i => 0.0));
+
+    // ImageChordHolds with the image's deviations given: ImageChordHolds(m, d, c, img, plan, i)
+    // is m.ImageChordHoldsFrom(d, c, m.ImageChordDeviations(d, img, plan), i).
+    ImageChordHoldsFrom(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, deviations: Array<Number>, i: Integer): Boolean
+        => deviations.IsValidIndex(i)
+            ? (deviations[i] <= c.EffectiveChordal(m.Tolerances) + 2.0 * m.Tolerances.Length.Value
+                || m.IsAtLengthFloor(d, c, i))
+            : true;
+
+    // SegmentMeetsCriteriaGiven with every image's deviations given (ImageDeviationsOf): an
+    // image that is not evaluable has none, and its test holds, as the reference's guard made it.
+    // SegmentMeetsCriteriaGiven(m, d, c, i, images, evaluable) is
+    // m.SegmentMeetsCriteriaFrom(d, c, i, m.ImageDeviationsOf(d, images, plan), evaluable) with
+    // plan the discretization plan.
+    SegmentMeetsCriteriaFrom(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, i: Integer, deviations: Array<Array<Number>>, evaluable: Boolean): Boolean
+        => (evaluable ? d.IsSegmentIndex(i) : false)
+            ? (m.CertifiedSagittaHolds(d, c, i)
+                && m.TangentDeviationHolds(d, c, SamplePlan.DiscretizationPlan, i)
+                && m.SegmentMaxLengthHolds(d, c, i)
+                && deviations.All(x => m.ImageChordHoldsFrom(d, c, x, i)))
+            : true;
+
+    //==
+    // # Refinement
+
+    // Chunk E2's RefinedParametersGiven with IsEvaluable and every image's chord deviations
+    // computed once per edge, not once per segment: the same parameters, bit for bit. The halves
+    // a failing segment splits into are one-segment pieces, whose test was already O(1) per image.
+    RefinedParametersIndexed(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, images: Array<EdgeImage>, range: NumberInterval): Array<Number>
+    {
+        var evaluable = d.IsEvaluableGiven(range);
+        var deviations = evaluable
+            ? m.ImageDeviationsOf(d, images, SamplePlan.DiscretizationPlan)
+            : 0.MapRange(j => 0.MapRange(i => 0.0));
+        return [d.Parameters[0]].Concatenate(d.SegmentCount.Range.FlatMap(i =>
+            (m.SegmentMeetsCriteriaFrom(d, c, i, deviations, evaluable)
+                ? [d.Parameters[i]].Take(0)
+                : m.RefinedSpanGiven(d.Edge, c, d.Parameters[i], d.Parameters[i + 1], 0, images, range))
+            .Concatenate([d.Parameters[i + 1]])));
+    }
+
+    // Chunk E2's RefineEdgeBoundedRanged over RefinedParametersIndexed and RaisedToCountHeap.
+    // Precondition: d's edge is evaluable.
+    RefineEdgeBoundedIndexed(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, segments: Integer, images: Array<EdgeImage>, range: NumberInterval): EdgeDiscretization
+        => m.IsDegenerateEdgeGiven(d.Edge, range)
+            ? d
+            : m.DiscretizationAt(d.Edge, m.RaisedToCountHeap(m.RefinedParametersIndexed(d, c, images, range), segments));
+
+    // Chunk E2's RefineEdgeRangedIn over RefineEdgeBoundedIndexed. Precondition: d's edge is
+    // evaluable.
+    RefineEdgeIndexedIn(t: EdgeFaceTable, m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, segments: Integer): EdgeDiscretization
+    {
+        var range = m.EdgeDomain(d.Edge).Range;
+        return m.RefineEdgeBoundedIndexed(d, c, segments, m.UsableImagesGiven(d.Edge, c, t.EdgeImagesIn(m, d.Edge), range), range);
+    }
+
+    // Refine with the strongest request per edge built once, and its work: Refine(m, d,
+    // requests, c) is m.RefineIndexedCounted(d, requests, c).Value under Refine's precondition
+    // IsRefinable (entry i is edge i, so every request the reference matched is inside the
+    // index). Work: Insertions, the index's (one per entry slot and one per request) and one per
+    // entry looked up: 2 E + R for E entries and R requests. The refinement's own work is not
+    // counted here.
+    RefineIndexedCounted(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria): Counted<EdgeDiscretizations>
+    {
+        var t = m.EdgeFaceTable;
+        var built = RequestIndexCounted(requests, d.ByEdge.Count);
+        var ix = built.Value;
+        var refined = EdgeDiscretizations(d.ByEdge.Map(old =>
+            ix.IsRequestedIn(old.Edge)
+                ? t.RefineEdgeIndexedIn(
+                    m,
+                    old,
+                    c.WithChordal(ix.RequestedChordalIn(old.Edge, c.Chordal)),
+                    ix.RequestedSegmentsIn(old.Edge))
+                : old));
+        return Counted(refined, built.Work.Add(Insertions(d.ByEdge.Count)));
+    }
+
+    // Refine with the strongest request per edge built once.
+    RefineIndexed(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria): EdgeDiscretizations
+        => m.RefineIndexedCounted(d, requests, c).Value;
+}
