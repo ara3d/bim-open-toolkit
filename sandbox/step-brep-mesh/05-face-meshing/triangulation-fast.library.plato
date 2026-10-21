@@ -361,30 +361,5 @@ library TriangulationFast
     // and an angle-good mark is carried the same way, so BelowAngleKnown lifts only the
     // triangles that are neither refused nor known to meet the angle (chunk F4, 2026-10-21).
     RefineToSurfaceByInsertion(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
-    {
-        var planar = m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord;
-        var none = [0].Take(0);
-        var current = t;
-        var known = t.Triangles.Map(x => false);
-        var refused = t.Triangles.Map(x => false);
-        var good = t.Triangles.Map(x => false);
-        var pass = 0;
-        var changed = true;
-        while (pass < 40 && changed)
-        {
-            var surface = planar ? current.Triangles.Map(x => false) : m.NeedsRefinement(f, r, current, known, c);
-            var mid = m.SurfacePassLocal(f, r, chart, current, surface, c);
-            var carried = current.Triangles.CarriedMarks(refused, none, mid.Triangles);
-            var goodMid = current.Triangles.CarriedMarks(good, none, mid.Triangles);
-            var bad = m.BelowAngleKnown(f, mid, carried, goodMid);
-            var next = m.AnglePassLocal(f, r, chart, mid, bad, c);
-            refused = mid.Triangles.CarriedMarks(carried, bad, next.Triangles);
-            good = mid.Triangles.CarriedMarks(mid.AngleGoodMarks(carried, bad), none, next.Triangles);
-            known = KnownGood(current, surface, next);
-            changed = next.Points.Count > current.Points.Count;
-            current = next;
-            pass = pass + 1;
-        }
-        return current;
-    }
+        => m.RefineToSurfaceByInsertionBuilt(f, r, chart, t, c);
 }

@@ -1,7 +1,7 @@
 # perf-insertion: refinement passes over List builders, one surface evaluation per new point
 
 Ticket: TKT-383
-Status: ready: R1
+Status: merged: R1 (2026-10-21, into 05-face-meshing/triangulation-built.{types,library,laws}.plato; the local pass functions kept as the references the agreement laws compare against)
 
 ## Done
 - R1, this commit, about 0.9 h against 2 h expected: ranked candidate 22 of `docs/plans/step-mesher-complexity.md`.

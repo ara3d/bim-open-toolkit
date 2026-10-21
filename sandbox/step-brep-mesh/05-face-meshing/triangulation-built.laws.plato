@@ -62,7 +62,7 @@ library InsertionBuiltLaws
     // TryInsertion does, its writes give TryInsertion's triangles, and its neighbour writes give
     // the table NeighbourSlots builds from scratch; it evaluates the surface at most once, and
     // exactly once for a kept point.
-    Law_Perf_TrialAgrees(k: Integer): Boolean
+    Law_TrialAgreesWithTryInsertion(k: Integer): Boolean
         => EveryTriangulableFace(k, (m, f, r, chart) => m.TrialAgreesOn(f, r, chart, false) && m.TrialAgreesOn(f, r, chart, true));
 
     TrialAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, guarded: Boolean): Boolean
@@ -89,7 +89,7 @@ library InsertionBuiltLaws
     // SurfacePassBuilt gives SurfacePassLocal's triangulation, and the surface point of each of
     // its points, from every face's constrained Delaunay triangulation of sample k with the
     // triangles NeedsRefinement finds.
-    Law_Perf_SurfacePassBuiltAgrees(k: Integer): Boolean
+    Law_SurfacePassBuiltAgrees(k: Integer): Boolean
         => EveryTriangulableFace(k, (m, f, r, chart) => m.SurfacePassAgreesOn(f, r, chart));
 
     SurfacePassAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
@@ -105,7 +105,7 @@ library InsertionBuiltLaws
     // AnglePassBuilt gives AnglePassLocal's triangulation, and the surface point of each of its
     // points, from every face's constrained Delaunay triangulation of sample k with every
     // triangle below the angle.
-    Law_Perf_AnglePassBuiltAgrees(k: Integer): Boolean
+    Law_AnglePassBuiltAgrees(k: Integer): Boolean
         => EveryTriangulableFace(k, (m, f, r, chart) => m.AnglePassAgreesOn(f, r, chart));
 
     AnglePassAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
@@ -118,11 +118,6 @@ library InsertionBuiltLaws
             && m.HoldsItsPositions(f, built);
     }
 
-    // RefineToSurfaceByInsertionBuilt gives RefineToSurfaceByInsertion's triangulation, point for
-    // point and triangle for triangle, at every face of sample k.
-    Law_Perf_RefineBuiltAgrees(k: Integer): Boolean
-        => EveryTriangulableFace(k, (m, f, r, chart) => m.RefineBuiltAgreesOn(f, r, chart));
-
     RefineBuiltAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
     {
         var t = r.TriangulateRegionCdt(chart);
@@ -131,7 +126,7 @@ library InsertionBuiltLaws
 
     // The strip of the count witness at 32 points: the angle pass over builders agrees with
     // AnglePassLocal there too, so the witness measures the same insertions.
-    Law_Perf_StripPassAgrees(_: Integer): Boolean
+    Law_StripPassAgrees(_: Integer): Boolean
     {
         var m = BrepModel.Witness_UnitBox;
         var f = BrepFaceIndex(0);
