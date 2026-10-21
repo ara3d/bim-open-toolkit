@@ -9,14 +9,11 @@ library BrepCrossCheckingMasksLaws
 {
     // FacesWithElements flags exactly the faces HasMeshElements finds, for every face index from
     // 0 to n - 1.
-    Law_Perf_FacesWithElementsAgrees(mesh: ModelMesh, n: Integer): Boolean
+    Law_FacesWithElementsAgrees(mesh: ModelMesh, n: Integer): Boolean
     {
         var flags = mesh.FacesWithElements(n);
         return flags.Count == n.Max(0)
             && n.Max(0).Range.All(f => flags[f] == mesh.HasMeshElements(BrepFaceIndex(f)));
     }
 
-    // VolumeRoundoff about the bound origin equals VolumeRoundoff, bit for bit.
-    Law_Perf_VolumeRoundoffAboutAgrees(mesh: ModelMesh): Boolean
-        => mesh.VolumeRoundoffAbout(mesh.VolumeOrigin) == mesh.VolumeRoundoff;
 }

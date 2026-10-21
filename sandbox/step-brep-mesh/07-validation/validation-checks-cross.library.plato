@@ -33,7 +33,7 @@ library BrepCrossChecking
     // vertex indices, provenance and numbering are unchanged) and the shell's
     // elements with their corner attributes.
     RestrictedToShell(m: BrepModel, mesh: ModelMesh, s: ShellIndex): ModelMesh
-        => mesh.RestrictedToFaces(m.ShellFaces(s));
+        => m.RestrictedToShellByMask(mesh, s);
 
     // True when face f has at least one element in the mesh. A face of
     // positive area always has one; a face the mesher refused (a poly loop, a
@@ -51,13 +51,13 @@ library BrepCrossChecking
     // breaks them is reported by layer 6's structure checks
     // (ValidateModelMesh), not here.
     IsCompleteShellMesh(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
-        => mesh.IsWellFormed && m.ShellFaces(s).All(f => mesh.HasMeshElements(f));
+        => m.IsCompleteShellMeshGiven(mesh, s, mesh.FacesWithElements(m.Faces.Count));
 
     // The Euler characteristic V - E + F of the shell's mesh counting only
     // the vertices its elements reference (layer 6's
     // ReferencedEulerCharacteristic).
     ShellMeshEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Integer
-        => m.RestrictedToShell(mesh, s).ReferencedEulerCharacteristic;
+        => m.ShellMeshEulerByCounts(mesh, s);
 
     // The outer shell of a solid body; none for a shell set.
     OuterShellOf(body: BrepBody): ShellIndex
@@ -185,14 +185,12 @@ library BrepCrossChecking
     // The signed volume of the mesh of shell s (layer 6's SignedVolume of the
     // restriction, about the centre of the whole mesh's bounding box).
     ShellMeshVolume(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Number
-        => m.RestrictedToShell(mesh, s).SignedVolume;
+        => mesh.RestrictedVolumeCounted(m.ShellFaces(s)).Value;
 
     // The rounding bound of a signed volume: ResolutionAt of the sum of the
     // absolute volumes of the tetrahedra summed, the magnitude of the terms.
     VolumeRoundoff(mesh: ModelMesh): Number
-        => ResolutionAt(mesh.ElementCount.Range.Map(k => mesh.HasValidCorners(ElementIndex(k))
-            ? mesh.ElementTriangles(ElementIndex(k)).Map(t => Tetrahedron(mesh.VolumeOrigin, t.A, t.B, t.C).SignedVolume.Abs).SumOf
-            : 0.0).SumOf).Value;
+        => mesh.VolumeRoundoffAbout(mesh.VolumeOrigin);
 
     // True when shell s's mesh and shell t's mesh share no referenced vertex.
     ShareNoVertex(m: BrepModel, mesh: ModelMesh, s: ShellIndex, t: ShellIndex): Boolean

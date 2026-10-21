@@ -93,7 +93,7 @@ library ModelMeshMeasures
     // depend on the origin, and it is positive when the elements face out of the region they
     // enclose (theorem SignedVolumeSignIsOrientation).
     SignedVolume(mesh: ModelMesh): Number
-        => mesh.ElementCount.MapRange(k => mesh.ElementSignedVolume(ElementIndex(k), mesh.VolumeOrigin)).CompensatedSum;
+        => mesh.SignedVolumeAbout(mesh.VolumeOrigin);
 
     // The magnitude the signed volume's rounding scales with: over every flat triangle (a, b, c) of
     // ElementTriangles, the product |a - o| |b - o| |c - o| about the volume origin o, summed. Each
@@ -103,10 +103,7 @@ library ModelMeshMeasures
     // product of the lengths); divided by 6 and summed compensated, a signed volume errs by at most
     // about 8u times this magnitude. Precondition: mesh.HasAllValidCorners.
     VolumeRoundingMagnitude(mesh: ModelMesh): Number
-        => mesh.ElementCount.MapRange(k => mesh.ElementTriangles(ElementIndex(k))
-                .Map(t => (t.A - mesh.VolumeOrigin).Length * (t.B - mesh.VolumeOrigin).Length * (t.C - mesh.VolumeOrigin).Length)
-                .SumOf)
-            .CompensatedSum;
+        => mesh.VolumeRoundingMagnitudeAbout(mesh.VolumeOrigin);
 
     // The signed solid angle the triangle (a, b, c) subtends at q, in steradians, positive when q
     // lies on the side the triangle's right-hand-rule normal points away from; by the formula of
@@ -154,10 +151,7 @@ library ModelMeshMeasures
 
     // The signed volume of component c alone, about the same origin as the whole mesh's.
     SignedVolume(mesh: ModelMesh, comps: MeshComponents, c: MeshComponentIndex): Number
-        => mesh.ElementCount.MapRange(k => comps.ElementComponentOf(ElementIndex(k)).Value == c.Value
-                ? mesh.ElementSignedVolume(ElementIndex(k), mesh.VolumeOrigin)
-                : 0.0)
-            .CompensatedSum;
+        => mesh.SignedVolumeAbout(comps, c, mesh.VolumeOrigin);
 
     //==
     // # Corner angles and angle defects

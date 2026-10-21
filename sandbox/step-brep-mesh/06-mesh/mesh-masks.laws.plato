@@ -17,34 +17,8 @@ library ModelMeshMasksLaws
     //==
     // # Restriction
 
-    // ElementsOfFacesMasked keeps the elements ElementsOfFaces keeps, in the same order, for any
-    // mesh and any faces, negative and repeated indices included.
-    Law_Perf_ElementsOfFacesMaskedAgrees(mesh: ModelMesh, faces: Array<BrepFaceIndex>): Boolean
-        => mesh.ElementsOfFacesMasked(faces).Corresponds(mesh.ElementsOfFaces(faces), (a, b) => a.Value == b.Value);
-
-    // RestrictedToFacesCounted gives the mesh RestrictedToFaces gives: the same elements over the
-    // same vertices on the same faces, with the same corner attributes.
-    Law_Perf_RestrictedToFacesCountedAgrees(mesh: ModelMesh, faces: Array<BrepFaceIndex>): Boolean
-        => mesh.IsWellFormed ? mesh.RestrictedToFacesCounted(faces).Value.IsSameRestriction(mesh.RestrictedToFaces(faces)) : true;
-
     //==
     // # Volumes
-
-    // The volume sums about the bound origin equal the sums that evaluate it per element, bit for
-    // bit: the whole mesh, its rounding magnitude, and each component.
-    Law_Perf_VolumeAboutAgrees(mesh: ModelMesh): Boolean
-    {
-        if (!mesh.HasAllValidCorners)
-        {
-            return true;
-        }
-        var o = mesh.VolumeOrigin;
-        var comps = mesh.ComponentsOf;
-        return mesh.SignedVolumeAbout(o) == mesh.SignedVolume
-            && mesh.VolumeRoundingMagnitudeAbout(o) == mesh.VolumeRoundingMagnitude
-            && comps.ComponentCount.Range.All(c =>
-                mesh.SignedVolumeAbout(comps, MeshComponentIndex(c), o) == mesh.SignedVolume(comps, MeshComponentIndex(c)));
-    }
 
     //==
     // # Count witnesses

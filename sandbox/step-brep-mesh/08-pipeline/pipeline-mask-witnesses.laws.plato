@@ -31,28 +31,12 @@ library MaskWitnessLaws
 
     // The witness meshes are well formed and every shell's mesh is complete, so the agreement
     // laws below are over the meshes the shell laws read, not their vacuous case.
-    Law_Perf_MaskWitnessIsComplete(w: MaskMeshWitness): Boolean
+    Law_MaskWitnessIsComplete(w: MaskMeshWitness): Boolean
         => w.IsCheckable && w.Model.Shells.Count.Range.All(s => w.Model.IsCompleteShellMesh(w.Mesh, ShellIndex(s)));
-
-    // Every shell's restriction by mask is RestrictedToShell's mesh, element for element.
-    Law_Perf_RestrictedToShellByMaskAgrees(w: MaskMeshWitness): Boolean
-        => w.IsCheckable
-            ? w.Model.Shells.Count.Range.All(s =>
-                w.Model.RestrictedToShellByMask(w.Mesh, ShellIndex(s)).IsSameRestriction(w.Model.RestrictedToShell(w.Mesh, ShellIndex(s))))
-            : true;
-
-    // Restricting to every model face, and to each shell's faces, keeps the elements
-    // ElementsOfFaces keeps.
-    Law_Perf_ElementsOfFacesMaskedAgreesOnShells(w: MaskMeshWitness): Boolean
-        => w.IsCheckable
-            ? (w.Model.Shells.Count + 1).Range.All(s =>
-                w.Mesh.ElementsOfFacesMasked(w.FacesOfShellOrAll(s))
-                    .Corresponds(w.Mesh.ElementsOfFaces(w.FacesOfShellOrAll(s)), (a, b) => a.Value == b.Value))
-            : true;
 
     // IsCompleteShellMeshGiven with the faces flagged once gives IsCompleteShellMesh's verdict on
     // every shell, and FacesWithElements gives HasMeshElements on every face.
-    Law_Perf_IsCompleteShellMeshGivenAgrees(w: MaskMeshWitness): Boolean
+    Law_IsCompleteShellMeshGivenAgrees(w: MaskMeshWitness): Boolean
     {
         if (!w.IsCheckable)
         {
@@ -66,27 +50,12 @@ library MaskWitnessLaws
 
     // ShellMeshEulerByCounts is ShellMeshEuler on every shell: the ReferencedEulerCharacteristic
     // of the shell's restriction, which counts the referenced vertices through the components.
-    Law_Perf_ShellMeshEulerByCountsAgrees(w: MaskMeshWitness): Boolean
+    Law_ShellMeshEulerByCountsAgrees(w: MaskMeshWitness): Boolean
         => w.IsCheckable
             ? w.Model.Shells.Count.Range.All(s =>
                 w.Model.ShellMeshEulerByCounts(w.Mesh, ShellIndex(s))
                     == w.Model.RestrictedToShell(w.Mesh, ShellIndex(s)).ReferencedEulerCharacteristic)
             : true;
-
-    // The shell volumes about the bound origin, and the counted form, are ShellMeshVolume bit for
-    // bit; the roundoff about the bound origin is VolumeRoundoff bit for bit.
-    Law_Perf_ShellVolumesAboutAgree(w: MaskMeshWitness): Boolean
-    {
-        if (!w.IsCheckable)
-        {
-            return true;
-        }
-        var o = w.Mesh.VolumeOrigin;
-        return w.Model.Shells.Count.Range.All(s =>
-                w.Model.ShellMeshVolumeAbout(w.Mesh, ShellIndex(s), o) == w.Model.ShellMeshVolume(w.Mesh, ShellIndex(s))
-                && w.Mesh.RestrictedVolumeCounted(w.Model.ShellFaces(ShellIndex(s))).Value == w.Model.ShellMeshVolume(w.Mesh, ShellIndex(s)))
-            && w.Mesh.VolumeRoundoffAbout(o) == w.Mesh.VolumeRoundoff;
-    }
 
     //==
     // # Helpers

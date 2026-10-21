@@ -1,7 +1,7 @@
 # perf-masks: face masks for shell restriction, volumes about a bound origin (chunk M3)
 
 Ticket: TKT-368
-Status: ready: M3
+Status: merged: M3 (2026-10-21, into 06-mesh/mesh-masks.{library,laws}.plato, 07-validation/validation-checks-masks.{library,laws}.plato, 08-pipeline/pipeline-mask-witnesses.{types,laws}.plato)
 
 ## Done
 - M3, this commit, about 1 h against 2 h. Candidates 11 and layer 07 #8 of `docs/plans/step-mesher-complexity.md`.

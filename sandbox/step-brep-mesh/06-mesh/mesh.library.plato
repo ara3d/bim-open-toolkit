@@ -234,25 +234,14 @@ library ModelMeshes
 
     // The elements that approximate one of the given faces, in element order.
     ElementsOfFaces(mesh: ModelMesh, faces: Array<BrepFaceIndex>): Array<ElementIndex>
-        => mesh.ElementCount.MapRange(k => ElementIndex(k)).FlatMap(e => mesh.IsElementOfFaces(e, faces) ? [e] : []);
+        => mesh.ElementsOfFacesMasked(faces);
 
     // The mesh restricted to the elements of the given faces: their triangles and quads in element
     // order with their element faces and corner attributes; every position, the vertex provenance,
     // and the numbering unchanged. A valid ModelMesh whenever mesh is one. Precondition: every
     // element of mesh has valid corner attributes (the ModelMesh invariants).
     RestrictedToFaces(mesh: ModelMesh, faces: Array<BrepFaceIndex>): ModelMesh
-    {
-        var kept = mesh.ElementsOfFaces(faces);
-        return ModelMesh(
-            mesh.Positions,
-            kept.FlatMap(e => mesh.IsTriangle(e) ? [mesh.Triangles[e.Value]] : []),
-            kept.FlatMap(e => mesh.IsQuad(e) ? [mesh.Quads[e.Value - mesh.Triangles.Count]] : []),
-            kept.FlatMap(e => mesh.ElementArity(e).MapRange(s => mesh.CornerNormalAt(e, s))),
-            kept.FlatMap(e => mesh.ElementArity(e).MapRange(s => mesh.CornerUvAt(e, s))),
-            kept.Map(e => mesh.ElementFace[e]),
-            mesh.VertexProvenance,
-            mesh.Numbering);
-    }
+        => mesh.RestrictedToFacesCounted(faces).Value;
 
     //==
     // # Comparison
