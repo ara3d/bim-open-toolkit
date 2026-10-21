@@ -1,0 +1,25 @@
+//==
+// # A uniform grid of chart boxes (complexity sweep, chunk R4)
+//
+// The type TriangulateRegionCdtIndexed (triangulation-cdt-indexed.library.plato) looks items up
+// in: boundary points for the ear test, boundary segments for the bridge test. Layer 05.
+
+// A uniform grid over a face chart listing, for each cell, the items whose box covers it. An
+// item is a number the caller chose (a boundary point, a boundary segment). Cell (c, r), with
+// 0 <= c < Columns and 0 <= r < Rows, is cell number r * Columns + c; its items are Items from
+// position Starts[cell] up to, not including, Starts[cell + 1]. Cell (0, 0) has its low corner
+// at Origin and every cell has side Side. An item whose box is not finite, or covers more than
+// ChartGridWideCells cells, is in Everywhere instead and is a candidate for every query.
+// ItemCount is the number of items, 0 to ItemCount - 1.
+// Removes: the scan over every boundary point (IsEar) or segment (BridgeIsClear) per test.
+type ChartGrid
+{
+    Origin: Point2D;
+    Side: Number;
+    Columns: Integer;
+    Rows: Integer;
+    Starts: Array<Integer>;
+    Items: Array<Integer>;
+    Everywhere: Array<Integer>;
+    ItemCount: Integer;
+}
