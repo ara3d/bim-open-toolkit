@@ -172,6 +172,7 @@ Dispatch order: W0 first (supervisor, the same day); then wave A, every chunk wi
 
 | Chunk | Expected | Actual | Laws run at merge | Regressions | Types added | Lesson |
 |---|---|---|---|---|---|---|
+| G2 (TKT-359) | 1 h | 0.5 h | 51 (`FaceMeshingLaws`, `PipelineGuardsLaws`, the W0 laws: all pass) + 48 `StepToMeshLaws` at 10 s, verdict for verdict the post-G1 run | 0 | 0 (the staged `StatePair` deleted at merge) | Three `Witness_*` values of a pair type compared a staged refinement state with the library's once per sweep; layer 07 checks `IsDiscretizedFace` per mesh element (three sites), a candidate the readers missed |
 | G1 (TKT-358) | 1.5 h | 0.75 h | 67 (layer 04 blocks and the chunk: 65 pass, 2 baseline fails) + 48 `StepToMeshLaws` at 10 s (31 budget errors; 6 pass-to-error rerun at 120 s: 3 pass, 3 still over 120 s inside the untouched refinement loop under eight builders' load, control run on the committed library recorded in the log) | 0 | 0 | A per-size slope cannot pin "once per model": the exact count is its own law (`Law_DiscretizeAllScansTheModelOnce`); a law whose only parameter is `_: Integer` runs once, the cheap way to bind several tables |
 
 ## Log

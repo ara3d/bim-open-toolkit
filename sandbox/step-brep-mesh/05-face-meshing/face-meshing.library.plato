@@ -46,14 +46,12 @@ library FaceMeshing
     // edge the loop cites is intact with a discretization of at least two points: LoopToUv's
     // precondition.
     IsDiscretizedBound(m: BrepModel, b: FaceBound, d: EdgeDiscretizations): Boolean
-        => (m.IsLoopIntact(b.Loop) && m.Geometry.IsEveryIndexInRange)
-            ? m.LoopCoedges(b.Loop).All(c => m.IsEdgeIntact(c.Edge) && d.HasSample(c.Edge, 1))
-            : false;
+        => m.IsDiscretizedBoundIn(b, d, m.Geometry.IsEveryIndexInRange);
 
     // True when face f is intact and every bound of it is discretized: the precondition of
     // RegionOf and MeshFace.
     IsDiscretizedFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations): Boolean
-        => m.IsFaceIntact(f) ? m.Faces[f].Bounds.All(b => m.IsDiscretizedBound(b, d)) : false;
+        => m.IsDiscretizedFaceIn(f, d, m.Geometry.IsEveryIndexInRange);
 
     //==
     // # Criteria

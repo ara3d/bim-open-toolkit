@@ -1,7 +1,7 @@
 # perf-guards-face: the geometry arena checked once per model, not once per bound of every face
 
 Ticket: TKT-359
-Status: ready: G2
+Status: merged: G2 (2026-10-21, into 05-face-meshing/face-meshing-guards.library.plato and 08-pipeline/pipeline-guards-face.{library,laws}.plato)
 
 ## Done
 - G2, (this commit), about 0.6 h against 1 h expected: `IsDiscretizedBoundIn`, `IsDiscretizedFaceIn` (face-meshing-guards.library.plato, layer 05); `FaceOutcomeInRange`, `FaceOutcomes`, `FaceOutcomesCounted`, `InitialStateInRange`, `StepInRange` (pipeline-guards.library.plato, layer 08). Type added: `StatePair` (a state built by the library form and by the staged form), so the agreement law's meshed states are Witness_* values built once per sweep. Laws: `PipelineGuardsLaws` 7 `Law_Perf_*` plus `Law_WorkIsWithinSlope` over `Witness_FaceOutcomesWork`, all pass interpreted and compiled. Verdicts kept against verdicts-cpu64.tsv: `FaceMeshingLaws` 46 of 46 pass; `StepToMeshLaws.Law_OutcomesAreCurrent` pass (25 cases, budget 120); `BsplinePipelineLaws.Law_StateLaws` pass (196 cases, budget 400; at budget 20 and 120 it errors on time in case k = 0, inside the library's own B-spline MeshFace, before and after this chunk, since nothing is wired yet).

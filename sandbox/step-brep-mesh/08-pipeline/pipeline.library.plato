@@ -192,13 +192,7 @@ library StepToMesh
     // precondition); otherwise an empty mesh with an error at the face
     // (layer 5's UnmeshedOutcome).
     FaceOutcome(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, o: MeshingOptions, chosen: Array<Boolean>): FaceMeshOutcome
-        => !chosen.IsChosen(f)
-            ? f.UnmeshedOutcome("PIPELINE-FACE-EXCLUDED",
-                "This face was left out of the run; it has no mesh.")
-            : (m.IsDiscretizedFace(f, d)
-                ? m.MeshFace(f, d, o.Face)
-                : f.UnmeshedOutcome("PIPELINE-FACE-UNDISCRETIZED",
-                    "This face is not intact or cites an edge that has no discretization; it is not meshed."));
+        => m.FaceOutcomeInRange(f, d, o, chosen, m.Geometry.IsEveryIndexInRange);
 
     // Per face, true when the face is chosen and cites an edge marked in
     // changed: the faces a refinement step meshes again.
@@ -250,7 +244,7 @@ library StepToMesh
     InitialState(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): PipelineState
     {
         var d = m.DiscretizeAll(o.Face.Discretization, SegmentFloors.NoFloors);
-        var outcomes = m.Faces.Count.MapRange(k => m.FaceOutcome(BrepFaceIndex(k), d, o, chosen));
+        var outcomes = m.FaceOutcomes(d, o, chosen);
         return PipelineState(0, d, SegmentFloors.NoFloors, outcomes, outcomes.RequestsOf(chosen));
     }
 
@@ -267,8 +261,9 @@ library StepToMesh
     {
         var d = m.Refine(s.Discretizations, s.Pending, o.Face.Discretization);
         var remeshed = m.FacesTouching(chosen, d.ChangedEdges(s.Discretizations));
+        var arenaOk = m.Geometry.IsEveryIndexInRange;
         var outcomes = m.Faces.Count.MapRange(k =>
-            remeshed[k] ? m.FaceOutcome(BrepFaceIndex(k), d, o, chosen) : s.Outcomes[k]);
+            remeshed[k] ? m.FaceOutcomeInRange(BrepFaceIndex(k), d, o, chosen, arenaOk) : s.Outcomes[k]);
         return PipelineState(s.Round + 1, d, m.RaisedFloors(s.Floors, s.Pending), outcomes, outcomes.RequestsOf(remeshed));
     }
 

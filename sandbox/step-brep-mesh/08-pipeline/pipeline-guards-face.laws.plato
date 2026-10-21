@@ -1,0 +1,43 @@
+//==
+// # Face outcomes with the arena checked once: laws (complexity sweep, chunk G2)
+//
+// The count witness for FaceOutcomesCounted (read by layer 00's Law_WorkIsWithinSlope) and the
+// exact one-scan count (merged from chunk G2, 2026-10-21; the agreement of each staged form with
+// the library form it replaced was shown before wiring, over every model witness and three
+// refinement states).
+//
+// Sections, in order:
+//  - Count witness
+
+library PipelineGuardsLaws
+{
+    //==
+    // # Count witness
+
+    // The box family by face count: the unit box (6 faces) up to 6, the hollow box (12 faces,
+    // two shells) above.
+    GuardBoxWithFaces(n: Integer): BrepModel
+        => n <= 6 ? BrepModel.Witness_UnitBox : BrepModel.Witness_HollowBox;
+
+    // The arena scans of the face-outcome pass over the box with n faces, every face chosen and
+    // meshed under the witness options.
+    FaceOutcomesWork(n: Integer): WorkBudget
+    {
+        var m = n.GuardBoxWithFaces;
+        var o = MeshingOptions.WitnessOptions;
+        return m.FaceOutcomesCounted(m.DiscretizeAll(o.Face.Discretization, SegmentFloors.NoFloors), o, m.AllFaces).Work;
+    }
+
+    // The face-outcome pass scans the geometry arena (counted as Flips) at most once per face,
+    // at 6 and 12 faces; the pass in fact scans it once (Law_FaceOutcomesScanArenaOnce).
+    Witness_FaceOutcomesWork(_: WorkClaim): WorkClaim
+        => WorkClaim("FaceOutcomes: arena scans per face", WorkBudgetOf(0, 0, 1, 0), [6, 12], n => FaceOutcomesWork(n));
+
+    // The pass scans the arena exactly once, with no discretization (nothing meshed) on every
+    // model witness: the claim the per-face slope is too coarse to state.
+    Law_FaceOutcomesScanArenaOnce(m: BrepModel): Boolean
+    {
+        var o = MeshingOptions.WitnessOptions;
+        return m.FaceOutcomesCounted(m.NoDiscretizations, o, m.AllFaces).Work.Flips == 1;
+    }
+}

@@ -2,8 +2,8 @@
 // # Face outcomes with the arena checked once per model (complexity sweep, chunk G2)
 //
 // FaceOutcome asks IsDiscretizedFace per face, and that scanned the geometry arena once per
-// bound. FaceOutcomeInRange takes the scan's answer; FaceOutcomes, InitialStateInRange and
-// StepInRange scan once per pass and hand it to every face. FaceOutcomesCounted counts the arena
+// bound. FaceOutcomeInRange takes the scan's answer; FaceOutcomes (and InitialState and Step in
+// pipeline.library.plato) scan once per pass and hand it to every face. FaceOutcomesCounted counts the arena
 // scans its pass makes, as Flips, for the count witness in pipeline-guards.laws.plato.
 //
 // Sections, in order:
@@ -45,23 +45,4 @@ library PipelineGuards
 
     //==
     // # The refinement loop
-
-    // InitialState with the arena scanned once for every face, not once per bound.
-    InitialStateInRange(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): PipelineState
-    {
-        var d = m.DiscretizeAll(o.Face.Discretization, SegmentFloors.NoFloors);
-        var outcomes = m.FaceOutcomes(d, o, chosen);
-        return PipelineState(0, d, SegmentFloors.NoFloors, outcomes, outcomes.RequestsOf(chosen));
-    }
-
-    // Step with the arena scanned once per step for the faces it meshes again.
-    StepInRange(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>, s: PipelineState): PipelineState
-    {
-        var d = m.Refine(s.Discretizations, s.Pending, o.Face.Discretization);
-        var remeshed = m.FacesTouching(chosen, d.ChangedEdges(s.Discretizations));
-        var arenaOk = m.Geometry.IsEveryIndexInRange;
-        var outcomes = m.Faces.Count.MapRange(k =>
-            remeshed[k] ? m.FaceOutcomeInRange(BrepFaceIndex(k), d, o, chosen, arenaOk) : s.Outcomes[k]);
-        return PipelineState(s.Round + 1, d, m.RaisedFloors(s.Floors, s.Pending), outcomes, outcomes.RequestsOf(remeshed));
-    }
 }
