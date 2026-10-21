@@ -1,7 +1,7 @@
 # perf-tooling: the law runner meshes each witness once, names without models, stage dumps in one pass
 
 Ticket: TKT-396
-Status: ready: L7
+Status: merged: L7 (2026-10-21, into 08-pipeline/pipeline-run-states.library.plato and 09-tooling/tooling-law-runner-once.{types,library}.plato, tooling-law-runner-laws.types.plato, tooling-law-runner.laws.plato; the old run builders kept as the references)
 
 ## Done
 - L7, (this commit), about 1.6 h against 1.5 h expected. Types added: `CheckedWitness` (a model witness meshed once under the witness options, with the three Oracle validation reports the runs read, `ModelChecks`, `MeshChecks`, `CrossChecks`, and its expected failures), `HollowBoxVerdicts` (the three hollow-box verdicts of one drawn sample, from one mesh), and for the laws `CheckedWitnessPair` and `StageDumpPair`. L1's `MeshedWitness` is reused inside `CheckedWitness`, not duplicated.

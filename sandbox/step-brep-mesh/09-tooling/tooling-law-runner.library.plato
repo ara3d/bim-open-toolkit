@@ -62,7 +62,7 @@ library ToolingLawRunner
 
     // The name of positive witness k (k modulo 10, as WitnessAt reads it).
     WitnessName(k: Integer): String
-        => NamedModel.ModelWitnesses[((k % 10) + 10) % 10].Name;
+        => NamedModel.WitnessNames[((k % 10) + 10) % 10];
 
     // The number of positive witnesses the selector laws sweep.
     PositiveWitnessCount(_: NamedModel): Integer
@@ -102,8 +102,7 @@ library ToolingLawRunner
     // Every run from checks: each model witness's own laws and its meshed
     // laws, then each mesh witness's.
     CheckRuns(_: LawRun): Array<LawRun>
-        => NamedModel.ModelWitnesses.FlatMap(w => w.ModelRuns.Concatenate(w.MeshedRuns))
-            .Concatenate(NamedMesh.MeshWitnesses.FlatMap(w => w.MeshRuns));
+        => CheckRunsFrom(NamedModel.ModelWitnesses.Map(x => x.CheckedWitnessOf));
 
     //==
     // # Quantifiers
@@ -254,29 +253,7 @@ library ToolingLawRunner
 
     // The witness laws of 08-pipeline/pipeline-witnesses.laws.plato.
     PipelineWitnessRuns(_: LawRun): Array<LawRun>
-        => Flattened([
-            OverWitnesses("Law_WitnessMeshesOk", k => WitnessMeshesOkAt(k)),
-            OverWitnesses("Law_WitnessMeshCrossChecksClean", k => WitnessMeshCrossChecksCleanAt(k)),
-            OverWitnesses("Law_WitnessMeshValidatesClean", k => WitnessMeshValidatesCleanAt(k)),
-            [OverSamples("Law_HollowBoxVoidMeshVolumeNegative", "HollowBoxFamily",
-                i => HollowBoxVoidMeshVolumeNegativeAt(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
-             OverSamples("Law_HollowBoxOuterMeshVolumePositive", "HollowBoxFamily",
-                i => HollowBoxOuterMeshVolumePositiveAt(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
-             OverSamples("Law_HollowBoxMeshVolumeIsDifference", "HollowBoxFamily",
-                i => HollowBoxMeshVolumeIsDifferenceAt(HollowBoxDraw(i)[0], HollowBoxDraw(i)[1])),
-             Once("Law_PlantedBadFaceFailsSilently", "BoxWithPolyLoopSheet", BrepModel.PlantedBadFaceFailsSilentlyAt),
-             OverRange("Law_PlantedBadFaceLeavesOthersUnchanged", "BoxWithPolyLoopSheet",
-                BrepModel.Witness_BoxWithPolyLoopSheet.Faces.Count, g => PlantedBadFaceLeavesOthersUnchangedAt(g)),
-             Once("Law_PlantedBadFaceIsDiagnosed", "BoxWithPolyLoopSheet", BrepModel.PlantedBadFaceIsDiagnosedAt),
-             OverRange("Law_PlantedBadFaceErrorsStayInTheSheet", "BoxWithPolyLoopSheet",
-                BrepModel.Witness_BoxWithPolyLoopSheet.WitnessOutcome.Report.Diagnostics.Count,
-                k => PlantedBadFaceErrorsStayInTheSheetAt(k)),
-             Once("Law_PlantedBadFaceHasTwoErrors", "BoxWithPolyLoopSheet", BrepModel.PlantedBadFaceHasTwoErrorsAt),
-             NotRun("Law_WitnessRigidMotionMovesPositions", "needs drawn frames and re-meshes per vertex; run through ToolingGenerators' DrawMotion once meshing has bodies")],
-            OverWitnesses("Law_WitnessPowerOfTwoScalingKeepsConnectivity", k => WitnessPowerOfTwoScalingKeepsConnectivityAt(k, 1)),
-            [NotRun("Law_WitnessPowerOfTwoScalingScalesPositions", "re-meshes the witness for every vertex; sweep it when a run is cheap")],
-            OverWitnessEdges("Law_WitnessEdgeReversalPreservesMesh", (k, e) => WitnessEdgeReversalPreservesMeshAt(k, e)),
-            OverWitnesses("Law_WitnessShellReversalNegatesVolume", k => WitnessShellReversalNegatesVolumeAt(k))]);
+        => LawRun.PipelineWitnessRunsOnce;
 
     //==
     // # Layer 9: tooling
@@ -309,12 +286,7 @@ library ToolingLawRunner
     // Every run, under the backend the host names: the check runs, then the
     // selector laws layer by layer.
     LawReportOf(backend: String): LawReport
-        => LawReport(backend, Flattened([
-            LawRun.CheckRuns,
-            LawRun.DecodeWitnessRuns,
-            LawRun.ValidationWitnessRuns,
-            LawRun.PipelineWitnessRuns,
-            LawRun.ToolingRuns]));
+        => LawReportOnce(backend);
 
     // True when the run is a defect: a law failed that should hold, or a law
     // held that the witness was built to fail.

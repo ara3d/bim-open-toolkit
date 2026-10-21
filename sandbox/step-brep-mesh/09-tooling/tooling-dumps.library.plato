@@ -294,13 +294,7 @@ library ToolingDumps
     // final discretizations through layer 5's RegionOf, and the outcome.
     // States and Regions are empty when the run is refused.
     DumpStages(m: BrepModel, o: MeshingOptions): StageDump
-    {
-        var rounds = m.IsRunnable(o) ? m.FinalState(o, m.AllFaces).Round + 1 : 0;
-        var states = rounds.MapRange(k => m.StateAfter(o, m.AllFaces, k));
-        var regions = (states.Count == 0 ? 0 : m.Faces.Count).MapRange(f =>
-            m.RegionOf(BrepFaceIndex(f), states[states.Count - 1].Discretizations, o.Face));
-        return StageDump(m, o, states, regions, m.MeshModel(o));
-    }
+        => m.DumpStagesOnce(o);
 
     // Every stage of positive witness k under layer 8's witness options:
     // what the host's dump command runs for --witness k.

@@ -341,12 +341,7 @@ library StepToMesh
     // assembled mesh, the loop's findings and the validation at the options'
     // level, every finding located, and the rounds taken.
     RunOutcome(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>): MeshOutcome
-    {
-        var s = m.FinalState(o, chosen);
-        var mesh = m.AssembledMesh(s);
-        var report = m.LoopReport(o, chosen, s).Merge(m.Validated(mesh, o));
-        return MeshOutcomeOf(mesh, report.Located(Provenance.WholeInput), s.Round);
-    }
+        => m.RunOutcomeFrom(o, chosen, m.FinalState(o, chosen));
 
     //==
     // # Entry points

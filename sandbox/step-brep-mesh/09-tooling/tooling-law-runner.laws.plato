@@ -15,14 +15,14 @@
 //  - Stage dumps
 //  - Count witness
 
-library ToolingLawRunnerOnceLaws
+library ToolingLawRunnerLaws
 {
     //==
     // # Witness names
 
     // The names list ModelWitnesses' names in its order, and the name of positive witness k read
     // from it is WitnessName(k), negative k included.
-    Law_Perf_WitnessNamesAreModelWitnessNames(_: Integer): Boolean
+    Law_WitnessNamesAreModelWitnessNames(_: Integer): Boolean
         => NamedModel.WitnessNames.Corresponds(NamedModel.ModelWitnesses.Map(x => x.Name), (a, b) => a == b)
             && 12.Range.All(i => WitnessNameFromNames(i - 6) == WitnessName(i - 6));
 
@@ -38,7 +38,7 @@ library ToolingLawRunnerOnceLaws
 
     // The witness checked once holds what the separate runs computed, bit for bit: the same
     // outcome as MeshModel under the witness options, and the same three validation reports.
-    Law_Perf_CheckedWitnessIsSeparateRuns(p: CheckedWitnessPair): Boolean
+    Law_CheckedWitnessIsSeparateRuns(p: CheckedWitnessPair): Boolean
         => p.Once.Meshed.Name == p.Separately.Meshed.Name
             && p.Once.Meshed.Model.SameModel(p.Separately.Meshed.Model)
             && p.Once.Meshed.Outcome.SameMeshOutcome(p.Separately.Meshed.Outcome)
@@ -94,7 +94,7 @@ library ToolingLawRunnerOnceLaws
     // On the unit box the runner that meshes once makes the old runner's rows: the same laws,
     // witness names, stages, verdicts, measures and places, in the same order and number, and
     // every row holds.
-    Law_Perf_UnitBoxRunsAreTheOldRuns(p: CheckedWitnessPair): Boolean
+    Law_UnitBoxRunsAreTheOldRuns(p: CheckedWitnessPair): Boolean
     {
         var rows = p.Once.NewRowsOnWitnessZero;
         return rows.SameRuns(p.Separately.OldRowsOnWitnessZero)
@@ -104,7 +104,7 @@ library ToolingLawRunnerOnceLaws
 
     // The planted bad face's runs over the witness built once: five runs, every one held, the
     // face loop over every face and the finding loop over every finding of the report.
-    Law_Perf_PlantedBadFaceRunsHold(w: FailedFaceWitness): Boolean
+    Law_PlantedBadFaceRunsHold(w: FailedFaceWitness): Boolean
     {
         var rows = PlantedBadFaceRunsOf(w);
         return rows.Count == 5
@@ -114,7 +114,7 @@ library ToolingLawRunnerOnceLaws
 
     // The hollow box (2, 1) gives the three hollow-box verdicts from one unvalidated mesh, all
     // held, and a side pair outside the guard holds vacuously.
-    Law_Perf_HollowBoxVerdictsHold(_: Integer): Boolean
+    Law_HollowBoxVerdictsHold(_: Integer): Boolean
     {
         var v = HollowBoxVerdictsOf(2.0, 1.0);
         var outside = HollowBoxVerdictsOf(1.0, 2.0);
@@ -149,17 +149,10 @@ library ToolingLawRunnerOnceLaws
             && a.Outcomes.Corresponds(b.Outcomes, (x, y) => x.SameFaceMeshOutcome(y))
             && a.Pending.Corresponds(b.Pending, (x, y) => x == y);
 
-    // The dump built in one pass equals the replayed dump: the same states in the same order,
-    // one region per face, and the same outcome.
-    Law_Perf_DumpStagesOnceIsDumpStages(p: StageDumpPair): Boolean
-        => p.Once.States.Corresponds(p.Replayed.States, (x, y) => x.SameState(y))
-            && p.Once.Regions.Count == p.Replayed.Regions.Count
-            && p.Once.Outcome.SameMeshOutcome(p.Replayed.Outcome);
-
     // StatesOf gives one state per round from 0, the last terminal and the outcome's round. The
     // unit cylinder needs no refinement round, so this witness has one state: no witness the
     // library has refines in under 30 s interpreted (TRACK.md, Findings).
-    Law_Perf_StatesOfIsEveryRound(p: StageDumpPair): Boolean
+    Law_StatesOfIsEveryRound(p: StageDumpPair): Boolean
     {
         var states = p.Once.States;
         return states.Count >= 1
@@ -195,6 +188,6 @@ library ToolingLawRunnerOnceLaws
         => WorkClaim("PipelineWitnessRunsOnce: validated pipeline runs per witness", Flips(1), [8, 32], n => PipelineWitnessRunsWork(n));
 
     // Exactly one validated pipeline run per witness, at both sizes.
-    Law_Perf_PipelineWitnessRunsMeshOncePerWitness(_: Integer): Boolean
+    Law_PipelineWitnessRunsMeshOncePerWitness(_: Integer): Boolean
         => PipelineWitnessRunsWork(8).Flips == 8 && PipelineWitnessRunsWork(32).Flips == 32;
 }
