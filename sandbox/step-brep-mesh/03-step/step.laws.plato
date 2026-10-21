@@ -454,6 +454,125 @@ library StepReadingLaws
     Law_SurfaceClosureDecidedBySides(f: Part21File, k: Integer, which: SurfaceParameter): Boolean
         => Law_SurfaceClosureDecidedBySides(f.DecodeRaw(DecodePolicy.StandardPolicy), k, which);
 
+    // Closure decided without evaluation (TKT-348, chunk D1): every closure
+    // decision Reduced calls returns for every BrepCurve kind, a B-spline
+    // whose evaluation is unavailable included; a clamped B-spline's closure
+    // is its end control points' (laws in layer 8's
+    // pipeline-proofs-bsplines.laws.plato, over its curve fixtures); where
+    // the decision is made it is the one evaluation would give; and the
+    // reduction of a model with a B-spline edge returns, keeping an
+    // undecided edge and locating a diagnostic on it. The fixtures are
+    // step-raw-witnesses.library.plato's ClosureArena and the two raw cubes
+    // with a B-spline edge.
+
+    // For every curve of ClosureArena (every BrepCurve kind, with B-splines
+    // whose evaluation is unavailable), DecidesClosedByEnds and
+    // RunsBackToStartDecided return, and the decision is Undecided exactly
+    // for the curves listed in ArenaIsUndecided: a curve that reaches a
+    // B-spline other than through clamped ends. One case checks all 21.
+    Law_ClosureDecisionReturnsForEveryKind(_: Boolean): Boolean
+        => GeometrySet.ArenaCurves.All(c => c.ClosureDecisionReturns);
+
+    // Law_ClosureDecisionReturnsForEveryKind for one arena curve.
+    ClosureDecisionReturns(c: CurveIndex): Boolean
+    {
+        var g = GeometrySet.ClosureArena;
+        var tol = LengthTolerance.ArenaTolerance;
+        var decided = g.DecidesClosedByEnds(c, tol);
+        var runs = g.RunsBackToStartDecided(c, tol);
+        return decided.IsDecided == !c.Value.ArenaIsUndecided
+            && runs.IsDecided == !c.Value.ArenaIsUndecided
+            && (c.Value.ArenaIsUndecided ? true : runs.IsClosed == (decided.IsClosed || g.CurveAt(c).Domain(g).Periodicity.HasSeam));
+    }
+
+    // The decision is Closed exactly for the arena's curves listed in
+    // ArenaIsClosed, the unevaluable closed spline (11) among them.
+    Law_ClosureDecisionIsTheEnds(_: Boolean): Boolean
+        => GeometrySet.ArenaCurves.All(c => GeometrySet.ClosureArena.DecidesClosed(c, LengthTolerance.ArenaTolerance) == c.Value.ArenaIsClosed);
+
+    // Where the arena's curve can be evaluated and the decision is made, it
+    // is the evaluated one: the ends of the natural domain coincide within
+    // the tolerance (the decision before TKT-348), and RunsBackToStart is
+    // that or a seam. Reading the record changes no answer evaluation gave.
+    Law_DecisionAgreesWithEvaluation(_: Boolean): Boolean
+        => GeometrySet.ArenaCurves.All(c => c.DecisionAgreesWithEvaluation);
+
+    // Law_DecisionAgreesWithEvaluation for one arena curve; the evaluation
+    // runs only for a curve that can be evaluated.
+    DecisionAgreesWithEvaluation(c: CurveIndex): Boolean
+        => c.Value.ArenaIsUnevaluable || c.Value.ArenaIsUndecided ? true : c.DecidedClosureIsTheEvaluated;
+
+    // DecidesClosed and RunsBackToStart of arena curve c against evaluating
+    // both ends of its natural domain. Precondition: c can be evaluated.
+    DecidedClosureIsTheEvaluated(c: CurveIndex): Boolean
+    {
+        var g = GeometrySet.ClosureArena;
+        var tol = LengthTolerance.ArenaTolerance;
+        var d = g.CurveAt(c).Domain(g);
+        var evaluated = d.IsClosable ? g.EvaluatedEndsClosure(c, tol).IsClosed : false;
+        return g.DecidesClosed(c, tol) == evaluated
+            && g.RunsBackToStart(c, tol) == (d.Periodicity.HasSeam || evaluated);
+    }
+
+    // A curve is Undecided only when evaluating it reaches a B-spline, and
+    // ReachesSpline names the arena's curves that do.
+    Law_UndecidedOnlyWhenReachingSpline(_: Boolean): Boolean
+        => GeometrySet.ArenaCurves.All(c => c.UndecidedOnlyWhenReachingSpline);
+
+    // Law_UndecidedOnlyWhenReachingSpline for one arena curve.
+    UndecidedOnlyWhenReachingSpline(c: CurveIndex): Boolean
+    {
+        var g = GeometrySet.ClosureArena;
+        return g.ReachesSpline(c) == c.Value.ArenaReachesSpline
+            && (g.DecidesClosedByEnds(c, LengthTolerance.ArenaTolerance).IsDecided || g.ReachesSpline(c));
+    }
+
+    // PrepareModel returns for every raw model, the cubes with a B-spline
+    // edge included, with every index in range (layer 2's
+    // Law_IndicesInRange).
+    Law_PreparationReturns(raw: RawDecodedModel): Boolean
+        => raw.PrepareModel.Model.Law_IndicesInRange;
+
+    // Every edge whose closure is undecided at the prepared tolerances is
+    // kept (the edge count is the raw count less the dropped edges, which
+    // are never undecided), and has one EdgeClosureUndecided diagnostic at
+    // its instance measuring its curve's instance id; no other edge has one.
+    Law_UndecidedEdgesAreKeptAndDiagnosed(raw: RawDecodedModel, k: Integer): Boolean
+    {
+        var m = raw.Model;
+        if (k < 0 || k >= m.Edges.Count)
+        {
+            return true;
+        }
+        var prepared = raw.PrepareModel;
+        var tol = prepared.Model.Tolerances.Length;
+        var e = m.Edges[k];
+        var code = StepDiagnosticCode.EdgeClosureUndecided.CodeOf;
+        var undecided = !m.Geometry.RunsBackToStartDecided(e.Curve, tol).IsDecided;
+        var findings = prepared.Diagnostics.FlatMap(d => d.Code == code && d.Where == Provenance.AtInstance(raw.Sources.Edges[k].Instance) ? [d] : prepared.Diagnostics.Take(0));
+        return undecided
+            ? findings.Count == 1 && findings[0].Measure == raw.Sources.Curves[e.Curve.Value].Instance.Value.ToNumber
+                && prepared.Map.Repairs.All(r => r.Source.Instance != raw.Sources.Edges[k].Instance)
+            : findings.Count == 0;
+    }
+
+    // The two cube witnesses prepare as stated: the clamped one with no
+    // undecided diagnostic and the cube's edge count, the unclamped one with
+    // exactly one, at edge #53 measuring curve #33, and the same edge count.
+    Law_CubeWitnessesPrepareAsStated(_: Boolean): Boolean
+    {
+        var clamped = RawDecodedModel.Witness_RawCubeWithClampedSplineEdge.PrepareModel;
+        var unclamped = RawDecodedModel.Witness_RawCubeWithUnclampedSplineEdge.PrepareModel;
+        var code = StepDiagnosticCode.EdgeClosureUndecided.CodeOf;
+        var findings = unclamped.Diagnostics.FlatMap(d => d.Code == code ? [d] : unclamped.Diagnostics.Take(0));
+        return clamped.Model.Edges.Count == 12
+            && !clamped.Diagnostics.HasCode(StepDiagnosticCode.EdgeClosureUndecided)
+            && unclamped.Model.Edges.Count == 12
+            && findings.Count == 1
+            && findings[0].Where == Provenance.AtInstance(StepInstanceId(53))
+            && findings[0].Measure == 33.0;
+    }
+
     //==
     // # Copied flags and repairs
 

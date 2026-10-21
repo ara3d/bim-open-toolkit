@@ -65,6 +65,7 @@ library StepDiagnostics
             DuplicateVertexMerged => Diagnostic(Severity.Warning, "STEP-VERTEX-MERGED", "Two vertex_points of one loop joint or one edge coincide within the length tolerance and were merged. Measure is their distance.", where, measure);
             ClosedEdgeVerticesMerged => Diagnostic(Severity.Warning, "STEP-CLOSED-EDGE-VERTICES", "An edge on a closed curve has two distinct vertices at one point; they were merged. Measure is their distance.", where, measure);
             ZeroLengthEdgeDropped => Diagnostic(Severity.Warning, "STEP-ZERO-LENGTH-EDGE", "An edge on an open curve has coincident vertices; it was removed from its loops and its vertices merged.", where, measure);
+            EdgeClosureUndecided => Diagnostic(Severity.Warning, "STEP-EDGE-CLOSURE-UNDECIDED", "The closure of this edge's curve could not be decided from its record (a B-spline whose ends are not its control points); the edge was kept. Measure is the curve's instance id.", where, measure);
             NestedOrientedEdge => Diagnostic(Severity.Warning, "STEP-NESTED-ORIENTED-EDGE", "An oriented_edge names another oriented_edge (WR1); the senses were composed.", where, measure);
             TwoOuterBounds => Diagnostic(Severity.Warning, "STEP-TWO-OUTER-BOUNDS", "A face has more than one face_outer_bound (face WR2); no bound of it is marked outer.", where, measure);
             ClosedShellHasFreeEdges => Diagnostic(Severity.Warning, "STEP-OPEN-CLOSED-SHELL", "A closed_shell has edges used once; it is kept as declared closed. Measure is the count of such edges.", where, measure);
@@ -130,6 +131,7 @@ library StepDiagnostics
             DuplicateVertexMerged => StepFindingSubject.AboutInstance;
             ClosedEdgeVerticesMerged => StepFindingSubject.AboutInstance;
             ZeroLengthEdgeDropped => StepFindingSubject.AboutInstance;
+            EdgeClosureUndecided => StepFindingSubject.AboutInstance;
             NestedOrientedEdge => StepFindingSubject.AboutInstance;
             TwoOuterBounds => StepFindingSubject.AboutInstance;
             ClosedShellHasFreeEdges => StepFindingSubject.AboutInstance;

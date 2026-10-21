@@ -72,6 +72,15 @@ type DecidedSign
     = Decided(Value: Sign)
     | Undecided(Reason: UndecidedReason);
 
+// Closed or not, or why the question could not be settled from a curve's
+// record: a B-spline whose ends are not its control points cannot be
+// decided without evaluating it, and the STEP decoder must not evaluate a
+// B-spline (layer 3, "Closure at decode"). Removes: an exception out of
+// Reduced for one edge of the model (TKT-348).
+type DecidedClosure
+    = Decided(Value: Boolean)
+    | Undecided(Reason: UndecidedReason);
+
 //==
 // # Points and directions
 

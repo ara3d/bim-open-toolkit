@@ -4,10 +4,13 @@
 // Two laws per B-spline proof type of 01-geometry/geometry-proofs.types.plato,
 // over this layer's five curve fixtures (CurveFixture) and a sixth with a
 // negative weight, which is why they are layer 8's. The frame laws are layer
-// 1's (geometry-proofs.laws.plato).
+// 1's (geometry-proofs.laws.plato). The closure laws of layer 3's
+// EndsClosure (TKT-348) are here for the same reason: they run over the
+// curve fixtures plus layer 3's five closure splines.
 //
 // Sections, in order:
 //  - B-splines
+//  - Closure from clamped ends
 
 library StepToMeshProofsBSplinesLaws
 {
@@ -78,4 +81,51 @@ library StepToMeshProofsBSplinesLaws
                     <= ResolutionAt(4.0 * p.Data.ControlPoints.Reduce(0.0, (m, q) => m.Max(q.PositionVector.Length))).Value;
             Undecided(r) => true;
         };
+
+    //==
+    // # Closure from clamped ends
+
+    // A clamped B-spline's closure is decided, from its first and last
+    // control points: Closed exactly when they coincide within tol; an
+    // unclamped one is Undecided. Over the curve fixtures (all clamped) and
+    // layer 3's closure splines.
+    Law_ClampedSplineClosureIsItsEndControlPoints(k: Integer, tol: LengthTolerance): Boolean
+    {
+        var d = k.ClosureSplineFixture;
+        var decision = d.EndsClosure(tol);
+        return d.Basis.HasClampedEnds
+            ? decision.IsDecided && decision.IsClosed == d.ControlPoints.First.Coincident(d.ControlPoints.Last, tol)
+            : !decision.IsDecided;
+    }
+
+    // For a clamped B-spline that can be evaluated, the ends decision agrees
+    // with evaluation at the domain's ends (ISO 10303-42 4.5.34: a clamped
+    // spline interpolates its end control points).
+    Law_ClampedSplineEndsAreTheEvaluatedEnds(k: Integer, tol: LengthTolerance): Boolean
+    {
+        var d = k.FixtureIndex(Integer.CurveFixtureCount + 2).ClosureSplineFixture;
+        var dom = d.Basis.SplineDomain;
+        return d.Basis.HasClampedEnds
+            ? d.EndsClosure(tol).IsClosed == d.BSplinePoint(dom.Start).Coincident(d.BSplinePoint(dom.End), tol)
+            : true;
+    }
+
+    // The spline fixtures of the closure laws: the CurveFixtureCount curve
+    // fixtures, then layer 3's ClampedOpenSpline, ClampedClosedSpline,
+    // UnclampedSpline, UnevaluableClampedSpline and UnevaluableClosedSpline,
+    // by k modulo.
+    ClosureSplineFixture(k: Integer): BSplineCurveData
+    {
+        var n = Integer.CurveFixtureCount;
+        var i = k.FixtureIndex(n + 5);
+        return i < n
+            ? i.CurveFixture
+            : (i == n
+                ? BSplineCurveData.ClampedOpenSpline
+                : (i == n + 1
+                    ? BSplineCurveData.ClampedClosedSpline
+                    : (i == n + 2
+                        ? BSplineCurveData.UnclampedSpline
+                        : (i == n + 3 ? BSplineCurveData.UnevaluableClampedSpline : BSplineCurveData.UnevaluableClosedSpline))));
+    }
 }

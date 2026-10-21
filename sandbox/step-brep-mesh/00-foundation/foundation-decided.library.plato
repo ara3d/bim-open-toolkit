@@ -106,6 +106,24 @@ library BrepFoundationDecided
             Undecided(reason) => fallback;
         };
 
+    // True when d holds a closure decision.
+    IsDecided(d: DecidedClosure): Boolean
+        => match (d) {
+            Decided(value) => true;
+            Undecided(reason) => false;
+        };
+
+    // The decision d holds, or fallback when d is undecided.
+    ValueOr(d: DecidedClosure, fallback: Boolean): Boolean
+        => match (d) {
+            Decided(value) => value;
+            Undecided(reason) => fallback;
+        };
+
+    // True when d is decided closed; an undecided closure is not closed.
+    IsClosed(d: DecidedClosure): Boolean
+        => d.ValueOr(false);
+
     //==
     // # Points and directions
 

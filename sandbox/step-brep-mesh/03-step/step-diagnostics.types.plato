@@ -63,6 +63,7 @@ type StepDiagnosticCode
     | DuplicateVertexMerged
     | ClosedEdgeVerticesMerged
     | ZeroLengthEdgeDropped
+    | EdgeClosureUndecided
     | NestedOrientedEdge
     | TwoOuterBounds
     | ClosedShellHasFreeEdges

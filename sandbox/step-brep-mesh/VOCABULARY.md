@@ -195,7 +195,8 @@ layer's own and may change inside the layer.
   ToleranceExceeded(By: Measure) | Fails(Property: String)`; one sum `Decided(Value: T) |
   Undecided(Reason: UndecidedReason)` per payload: `DecidedNumber`, `DecidedAngle`, `DecidedLength`,
   `DecidedParameter`, `DecidedSign`, `DecidedUv`, `DecidedPoint`, `DecidedDirection`,
-  `DecidedFaceIndex`, `DecidedEdgeIndex`, `DecidedRange`, `DecidedRound`, each with `IsDecided` and
+  `DecidedFaceIndex`, `DecidedEdgeIndex`, `DecidedRange`, `DecidedRound`, `DecidedClosure`
+  (`IsClosed`: an undecided closure is not closed), each with `IsDecided` and
   `ValueOr(fallback)`; `KeepReason = MeetsCriteria | BelowMinLength | AtMinSegments | AtRoundLimit`;
   `TerminationCertificate { Work: WorkBudget; Decreased }`, built only by `CertifyRound(before, after)`,
   with `WorkTotal(WorkBudget)` and `IsTerminal`; `CaseNumber` per multi-case sum.
@@ -373,8 +374,11 @@ layer's own and may change inside the layer.
 - `DecodedModel { Model: BrepModel; Map: ProvenanceMap; Diagnostics: Array<Diagnostic>; ModelSize: Number; CoordinateExtent: Number }`,
   `DecodeBrep(file)` (`DecodeBrepWith(file, DecodePolicy.StandardPolicy)`),
   `DecodeBrepWith(file, policy)`.
-- Closure at decode: `DecidesClosed` (curve, surface direction), `ClosureMarks(g, tol)`,
-  `WithClosures(g, marks)`, `Law_ClosureMarksAreTheDecisions`; the mirror fold, `IsMirroredSource`.
+- Closure at decode: `DecidesClosed` (curve, surface direction), `DecidesClosedByEnds(g, c, tol)`
+  and `RunsBackToStartDecided(g, c, tol)` (a `DecidedClosure` read from the record, never by
+  evaluating a B-spline), `EndsClosure(data, tol)`, `ReachesSpline` (curve, pcurve, 2D curve,
+  surface), `ClosureMarks(g, tol)`, `WithClosures(g, marks)`, `Law_ClosureMarksAreTheDecisions`;
+  the mirror fold, `IsMirroredSource`.
 - Findings: `StepDiagnosticCode` (every code the layer writes), `Diagnose(code, where, measure)`,
   `StepFindingSubject = AboutInput | AboutInstance | AboutGeometry`, `SubjectOf`, `FitsSubject`,
   `PointsAtSubject`.
@@ -690,6 +694,14 @@ TYPE-CATALOG.md sections 13 and 15; the README lists the helpers. Blocks `BrepRe
 ## Changes to this contract
 
 Format: date, layer, old name, new name, reason.
+
+- 2026-10-21, 3, `StepDiagnosticCode` gains `EdgeClosureUndecided` (`STEP-EDGE-CLOSURE-UNDECIDED`,
+  Warning, `AboutInstance`; Measure the curve's instance id): `Reduced` keeps an edge whose
+  curve's closure it cannot decide without evaluating a B-spline and reports it (TKT-348, D1).
+- 2026-10-21, 0, (new) `DecidedClosure = Decided(Value: Boolean) | Undecided(Reason)`, with
+  `IsDecided`, `ValueOr`, `IsClosed`: the closure decision of `DecidesClosedByEnds` and
+  `RunsBackToStartDecided` (layer 3), `Undecided` for a curve that reaches a B-spline other than
+  through clamped ends (TKT-348, D1).
 
 - 2026-10-20, 2, (new) `ShellCountsDelta`, `WithDelta`, `CharacteristicDelta`: `ShellCounts` is
   non-negative, an Euler operator's change is signed; layer 10's `CountDelta` returns the delta

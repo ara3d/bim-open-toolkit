@@ -283,6 +283,26 @@ laws say a direction is `Closed` in `Domain` exactly when the decoder decided it
 curves get no `ClosedCurve2D` mark: a pcurve's range follows from its edge's (review F4b), and
 its closure from its surface's periodicity.
 
+**A curve's closure never evaluates a B-spline (TKT-348, 2026-10-21).** `Reduced` ran
+`DecidesClosed` on every edge's curve, which evaluated both ends; a host whose `BSplinePoint`
+had no body threw out of `Reduced`, and 72 of the 88 corpus files meshed nothing. Now
+`DecidesClosedByEnds` returns a `DecidedClosure` (layer 0) read from the record: a polyline's
+first and last points; a clamped B-spline's first and last control points, which the curve
+interpolates (P42 4.5.34), so `EndsClosure(data, tol)` needs no evaluation; a trim of such a
+spline over exactly its whole domain the same way; evaluated ends only for a kind that reaches no
+B-spline (`ReachesSpline`, through trims, composites, offsets and a surface curve's master
+pcurve). An unclamped B-spline, a trim over part of one, or a composite, offset or surface curve
+over one stays `Undecided`. `DecidesClosed` reads `Undecided` as not closed, so no mark is written
+for it; `Reduced` never drops an undecided edge, whatever its vertices, and records one
+`EdgeClosureUndecided` warning at the edge's instance with the curve's instance id as its
+measure. Laws: `Law_ClosureDecisionReturnsForEveryKind`, `Law_ClosureDecisionIsTheEnds`,
+`Law_DecisionAgreesWithEvaluation`, `Law_UndecidedOnlyWhenReachingSpline` over the 21-curve
+`ClosureArena` (B-splines with no weights included, which `BSplinePoint` cannot evaluate),
+`Law_PreparationReturns`, `Law_UndecidedEdgesAreKeptAndDiagnosed` and
+`Law_CubeWitnessesPrepareAsStated` over the raw cubes with a B-spline edge, and in layer 8
+`Law_ClampedSplineClosureIsItsEndControlPoints` and `Law_ClampedSplineEndsAreTheEvaluatedEnds`
+over its curve fixtures.
+
 ## Assemblies
 
 **Decision: one `BrepModel` per file, in the root occurrence's units, every placed copy of a

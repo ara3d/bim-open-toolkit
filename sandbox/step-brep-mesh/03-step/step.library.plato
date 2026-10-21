@@ -118,7 +118,12 @@ library StepReading
     // (ClosedEdgeVerticesMerged when an edge on a curve that runs back to
     // its start joined it, DuplicateVertexMerged otherwise; Measure the
     // distance to the vertex kept), then one per dropped edge
-    // (ZeroLengthEdgeDropped; Measure the distance between its raw ends).
+    // (ZeroLengthEdgeDropped; Measure the distance between its raw ends),
+    // then one per edge whose curve's closure could not be decided
+    // (EdgeClosureUndecided; Measure the curve's instance id). Such an edge
+    // is kept whatever its vertices: the decision never evaluates a
+    // B-spline (RunsBackToStartDecided, TKT-348), so a curve that reaches
+    // one other than through clamped ends stays Undecided.
     // The classes are transitive: a chain of joints each within the
     // tolerance can merge two vertices farther apart than it, which
     // Law_MergedVerticesCoincide would then report.
@@ -132,8 +137,10 @@ library StepReading
         var joints = candidates.FlatMap(p => p[0] != p[1] && m.Vertices[p[0]].Point.Coincident(m.Vertices[p[1]].Point, tol) ? [p] : candidates.Take(0));
         var roots = ClassRoots(n, joints.Map(p => p[0]), joints.Map(p => p[1]));
         var vertexAt = n.MapRange(v => roots[v] == v).Renumbering;
-        var closes = m.Edges.Map(e => g.RunsBackToStart(e.Curve, tol));
-        var dropped = m.Edges.Count.MapRange(e => roots[m.Edges[e].Start.Value] == roots[m.Edges[e].End.Value] && !closes[e]);
+        var decisions = m.Edges.Map(e => g.RunsBackToStartDecided(e.Curve, tol));
+        var closes = decisions.Map(d => d.IsClosed);
+        var undecided = decisions.Map(d => !d.IsDecided);
+        var dropped = m.Edges.Count.MapRange(e => roots[m.Edges[e].Start.Value] == roots[m.Edges[e].End.Value] && !closes[e] && !undecided[e]);
         var edgeAt = dropped.Map(d => !d).Renumbering;
         var closedJoin = new Buffer<Boolean>(n);
         var i = 0;
@@ -157,6 +164,7 @@ library StepReading
         var joinedByClosedEdge = closedJoin.Freeze();
         var merged = n.Range.FlatMap(k => roots[k] == k ? n.Range.Take(0) : [k]);
         var drops = m.Edges.Count.Range.FlatMap(k => dropped[k] ? [k] : m.Edges.Count.Range.Take(0));
+        var unsettled = m.Edges.Count.Range.FlatMap(k => undecided[k] ? [k] : m.Edges.Count.Range.Take(0));
         var mergeRepairs = merged.Map(k => RepairRecord(raw.Sources.Vertices[k], StepRepair.MergedInto(BrepVertexIndex(vertexAt[roots[k]]), BrepVertexIndex(k))));
         var dropRepairs = drops.Map(k => RepairRecord(raw.Sources.Edges[k], StepRepair.DroppedZeroLengthEdge(BrepEdgeIndex(k))));
         var mergeFindings = merged.Map(k => Diagnose(
@@ -167,6 +175,10 @@ library StepReading
             StepDiagnosticCode.ZeroLengthEdgeDropped,
             Provenance.AtInstance(raw.Sources.Edges[k].Instance),
             m.Vertices[m.Edges[k].Start.Value].Point.Distance(m.Vertices[m.Edges[k].End.Value].Point)));
+        var unsettledFindings = unsettled.Map(k => Diagnose(
+            StepDiagnosticCode.EdgeClosureUndecided,
+            Provenance.AtInstance(raw.Sources.Edges[k].Instance),
+            raw.Sources.Curves[m.Edges[k].Curve.Value].Instance.Value.ToNumber));
         var vertices = n.Range.FlatMap(k => roots[k] == k ? [m.Vertices[k]] : m.Vertices.Take(0));
         var edges = drops.Count == 0 && merged.Count == 0 ? m.Edges
             : m.Edges.Count.Range.FlatMap(k => dropped[k] ? m.Edges.Take(0)
@@ -187,7 +199,7 @@ library StepReading
             raw.Units,
             raw.LengthFactor,
             raw.AngleFactor,
-            raw.Diagnostics.Concatenate(mergeFindings).Concatenate(dropFindings));
+            raw.Diagnostics.Concatenate(mergeFindings).Concatenate(dropFindings).Concatenate(unsettledFindings));
     }
 
     // The vertex pairs a merge may join, each as [a, b]: every edge's two
@@ -202,12 +214,21 @@ library StepReading
     LoopJoints(m: BrepModel, coedges: Array<Coedge>): Array<Array<Integer>>
         => coedges.Count.MapRange(i => [m.EndVertex(coedges[i]).Value, m.StartVertex(coedges[(i + 1) % coedges.Count]).Value]);
 
-    // True when curve c runs back to its start, so an edge on it whose two
-    // vertices coincide is a whole closed edge, not one of zero length: its
-    // family wraps (a circle, an ellipse) or the decode closes it
-    // (DecidesClosed, at the same tolerance).
+    // Whether curve c runs back to its start, so an edge on it whose two
+    // vertices coincide is a whole closed edge, not one of zero length:
+    // Decided(true) when its family wraps (a circle, an ellipse), else the
+    // decode's decision from its record (DecidesClosedByEnds, at the same
+    // tolerance), which is Undecided for a curve that reaches a B-spline
+    // other than through clamped ends.
+    RunsBackToStartDecided(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): DecidedClosure
+        => g.CurveAt(c).Domain(g).Periodicity.HasSeam
+            ? DecidedClosure.Decided(true)
+            : g.DecidesClosedByEnds(c, tol);
+
+    // RunsBackToStartDecided as a Boolean: an undecided curve does not run
+    // back to its start (Reduced keeps its edge and reports it instead).
     RunsBackToStart(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): Boolean
-        => g.CurveAt(c).Domain(g).Periodicity.HasSeam || g.DecidesClosed(c, tol);
+        => g.RunsBackToStartDecided(c, tol).IsClosed;
 
     // Each item's position among the kept items (keep[k] true), -1 for an
     // item not kept: the renumbering of a table that drops rows.
@@ -467,20 +488,165 @@ library StepReading
     // README, "Closure at decode". The decision is made on the record's own
     // (natural) domain, which ignores the arena's closure marks, and written
     // into the arena as layer 1's ClosureMarks; layer 1's Domain then reports
-    // a marked direction as Closed(range length) (WithClosure).
+    // a marked direction as Closed(range length) (WithClosure). A curve's
+    // decision never evaluates a B-spline (TKT-348): a clamped B-spline's
+    // ends are its first and last control points (ISO 10303-42 4.5.34), so
+    // its closure is read from its record; a curve that would reach a
+    // B-spline any other way is Undecided, which DecidesClosed reads as not
+    // closed and Reduced reports as EdgeClosureUndecided.
 
     // True when the natural domain can be closed by a mark: it neither wraps
     // nor has a seam already, and its range is bounded.
     IsClosable(d: CurveDomain): Boolean
         => !d.Periodicity.HasSeam && d.ParameterLength.IsFinite;
 
-    // The decode's decision for curve c: its natural domain is closable and
-    // its two ends coincide within the length tolerance.
+    // The decode's decision for curve c as a Boolean: DecidesClosedByEnds
+    // when it is decided, not closed when it is not (no mark is written for
+    // a curve whose closure could not be settled).
     DecidesClosed(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): Boolean
+        => g.DecidesClosedByEnds(c, tol).IsClosed;
+
+    // The decode's decision for curve c without evaluating a B-spline: not
+    // closed when its natural domain is not closable (a line, a circle);
+    // otherwise by its record: a polyline's first and last points, a clamped
+    // B-spline's end control points, a trim of such a spline over its whole
+    // domain, and evaluated ends for every other kind that reaches no
+    // B-spline. Undecided only when settling it would evaluate a B-spline.
+    DecidesClosedByEnds(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): DecidedClosure
+        => g.CurveAt(c).Domain(g).IsClosable
+            ? g.CurveAt(c).ClosableEndsClosure(g, c, tol)
+            : DecidedClosure.Decided(false);
+
+    // DecidesClosedByEnds for a record whose domain is closable (the
+    // interpreter matches only on a parameter or a call, not a local).
+    ClosableEndsClosure(curve: BrepCurve, g: GeometrySet, c: CurveIndex, tol: LengthTolerance): DecidedClosure
+        => match (curve)
+        {
+            Line(origin, velocity) => DecidedClosure.Decided(false);
+            Circle(placement, radius) => DecidedClosure.Decided(false);
+            Ellipse(placement, semiAxis1, semiAxis2) => DecidedClosure.Decided(false);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => DecidedClosure.Decided(false);
+            Parabola(placement, focalDistance) => DecidedClosure.Decided(false);
+            Polyline(points) => DecidedClosure.Decided(points.First.Coincident(points.Last, tol));
+            BSpline(data) => data.EndsClosure(tol);
+            Trimmed(basis, range, sameSense) => g.TrimmedEndsClosure(c, basis, range, tol);
+            Composite(segments) => g.GuardedEndsClosure(c, tol);
+            Offset(basis, distance, reference) => g.GuardedEndsClosure(c, tol);
+            OnSurface(spaceCurve, supports, master) => g.GuardedEndsClosure(c, tol);
+        };
+
+    // A B-spline's closure from its record alone: with clamped knots its
+    // ends are its first and last control points, so it is closed exactly
+    // when they coincide within tol (weights do not move a clamped end);
+    // otherwise its ends are interior to the control polygon and the
+    // decision is Undecided. Precondition: at least one control point.
+    EndsClosure(d: BSplineCurveData, tol: LengthTolerance): DecidedClosure
+        => d.Basis.HasClampedEnds
+            ? DecidedClosure.Decided(d.ControlPoints.First.Coincident(d.ControlPoints.Last, tol))
+            : DecidedClosure.UndecidedSplineClosure;
+
+    // A trimmed curve's closure from its record: a trim of a clamped
+    // B-spline over exactly its whole domain has the spline's ends (the
+    // parameters are copied from the file, so the comparison is exact); any
+    // other trim that reaches a spline is Undecided; a trim of anything else
+    // compares its evaluated ends. Precondition: the trim's domain is closable.
+    TrimmedEndsClosure(g: GeometrySet, c: CurveIndex, basis: CurveIndex, range: NumberInterval, tol: LengthTolerance): DecidedClosure
+        => match (g.CurveAt(basis))
+        {
+            Line(origin, velocity) => g.EvaluatedEndsClosure(c, tol);
+            Circle(placement, radius) => g.EvaluatedEndsClosure(c, tol);
+            Ellipse(placement, semiAxis1, semiAxis2) => g.EvaluatedEndsClosure(c, tol);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => g.EvaluatedEndsClosure(c, tol);
+            Parabola(placement, focalDistance) => g.EvaluatedEndsClosure(c, tol);
+            Polyline(points) => g.EvaluatedEndsClosure(c, tol);
+            BSpline(data) => range.Start == data.Basis.SplineDomain.Start && range.End == data.Basis.SplineDomain.End
+                ? data.EndsClosure(tol)
+                : DecidedClosure.UndecidedSplineClosure;
+            Trimmed(innerBasis, innerRange, sameSense) => g.GuardedEndsClosure(c, tol);
+            Composite(segments) => g.GuardedEndsClosure(c, tol);
+            Offset(innerBasis, distance, reference) => g.GuardedEndsClosure(c, tol);
+            OnSurface(spaceCurve, supports, master) => g.GuardedEndsClosure(c, tol);
+        };
+
+    // Closure for a kind whose ends are only known by evaluation: Undecided
+    // when evaluating c would reach a B-spline, else the evaluated ends.
+    GuardedEndsClosure(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): DecidedClosure
+        => g.ReachesSpline(c)
+            ? DecidedClosure.UndecidedSplineClosure
+            : g.EvaluatedEndsClosure(c, tol);
+
+    // Closure by evaluating both ends of c's natural domain. Precondition:
+    // the domain is closable and c reaches no B-spline.
+    EvaluatedEndsClosure(g: GeometrySet, c: CurveIndex, tol: LengthTolerance): DecidedClosure
     {
         var d = g.CurveAt(c).Domain(g);
-        return d.IsClosable ? g.Eval(c, d.Range.Start).Coincident(g.Eval(c, d.Range.End), tol) : false;
+        return DecidedClosure.Decided(g.Eval(c, d.Range.Start).Coincident(g.Eval(c, d.Range.End), tol));
     }
+
+    // The undecided closure of a curve that reaches a B-spline: its ends are
+    // not its control points, so settling it would evaluate the spline.
+    UndecidedSplineClosure(_: DecidedClosure): DecidedClosure
+        => DecidedClosure.Undecided(UndecidedReason.NotApplicable("B-spline ends need evaluation"));
+
+    // True when evaluating curve c reaches a B-spline curve or surface: the
+    // record is a B-spline, or it refers to one through a trim, a composite
+    // segment, an offset basis, or a surface curve's master pcurve (its 2D
+    // curve or its surface).
+    ReachesSpline(g: GeometrySet, c: CurveIndex): Boolean
+        => match (g.CurveAt(c))
+        {
+            Line(origin, velocity) => false;
+            Circle(placement, radius) => false;
+            Ellipse(placement, semiAxis1, semiAxis2) => false;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => false;
+            Parabola(placement, focalDistance) => false;
+            Polyline(points) => false;
+            BSpline(data) => true;
+            Trimmed(basis, range, sameSense) => g.ReachesSpline(basis);
+            Composite(segments) => segments.Any(s => g.ReachesSpline(s.Curve));
+            Offset(basis, distance, reference) => g.ReachesSpline(basis);
+            OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
+                ? g.ReachesSpline(spaceCurve)
+                : g.ReachesSpline(supports.MasterPcurve(master));
+        };
+
+    // True when evaluating pcurve p reaches a B-spline: its 2D curve or its
+    // surface does.
+    ReachesSpline(g: GeometrySet, p: PcurveIndex): Boolean
+        => g.ReachesSpline(g.PcurveAt(p).Curve) || g.ReachesSpline(g.PcurveAt(p).Surface);
+
+    // True when evaluating parameter-plane curve c reaches a B-spline.
+    ReachesSpline(g: GeometrySet, c: Curve2DIndex): Boolean
+        => match (g.Curve2DAt(c))
+        {
+            Line(origin, velocity) => false;
+            Circle(placement, radius) => false;
+            Ellipse(placement, semiAxis1, semiAxis2) => false;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => false;
+            Parabola(placement, focalDistance) => false;
+            Polyline(points) => false;
+            BSpline(data) => true;
+            Trimmed(basis, range, sameSense) => g.ReachesSpline(basis);
+            Composite(segments) => segments.Any(s => g.ReachesSpline(s.Curve));
+            Offset(basis, distance) => g.ReachesSpline(basis);
+        };
+
+    // True when evaluating surface s reaches a B-spline: the record is one,
+    // or its profile, basis, or trimmed basis reaches one.
+    ReachesSpline(g: GeometrySet, s: SurfaceIndex): Boolean
+        => match (g.SurfaceAt(s))
+        {
+            Plane(placement) => false;
+            Cylinder(placement, radius) => false;
+            Cone(placement, radius, semiAngle) => false;
+            Sphere(placement, radius) => false;
+            Torus(placement, majorRadius, minorRadius, part) => false;
+            Revolution(profile, axis) => g.ReachesSpline(profile);
+            LinearExtrusion(profile, extrusion) => g.ReachesSpline(profile);
+            BSpline(data) => true;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.ReachesSpline(basis);
+            Offset(basis, distance) => g.ReachesSpline(basis);
+        };
 
     // The decode's decision for surface s in one parameter: the natural
     // domain in that parameter is closable and the two opposite sides are the
