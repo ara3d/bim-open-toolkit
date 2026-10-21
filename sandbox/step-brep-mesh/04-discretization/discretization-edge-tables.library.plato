@@ -99,7 +99,7 @@ library EdgeTabledDiscretizing
 
     // Layer 4's DiscretizeAll (and DiscretizeAllIndexed) with the tables built once per model.
     DiscretizeAllTabled(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
-        => m.DiscretizeAllTabledCounted(c, floors).Value;
+        => m.DiscretizeAllRanged(c, floors);
 
     //==
     // # Refinement
@@ -112,17 +112,7 @@ library EdgeTabledDiscretizing
     // Layer 4's Refine with the edge-to-face table built once for the call, not once per
     // requested edge.
     RefineTabled(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria): EdgeDiscretizations
-    {
-        var t = m.EdgeFaceTable;
-        return EdgeDiscretizations(d.ByEdge.Map(old =>
-            requests.IsRequested(old.Edge)
-                ? t.RefineEdgeIn(
-                    m,
-                    old,
-                    c.WithChordal(requests.RequestedChordal(old.Edge, c.Chordal)),
-                    requests.RequestedSegments(old.Edge))
-                : old));
-    }
+        => m.RefineRanged(d, requests, c);
 
     //==
     // # Findings
@@ -146,10 +136,7 @@ library EdgeTabledDiscretizing
 
     // The findings of one entry with its edge's images computed once from the table built from m.
     EdgeFindingsIn(t: EdgeFaceTable, m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria): Array<Diagnostic>
-    {
-        var all = t.EdgeImagesIn(m, d.Edge);
-        return m.EdgeFindingsFrom(d, c, all, m.UsableImagesFrom(d.Edge, c, all));
-    }
+        => t.EdgeFindingsRangedIn(m, d, c);
 
     // Termination's DiscretizationFindings with the edge-to-face table built once for the call
     // and each edge's images computed once, where the reference computes them twice per edge.

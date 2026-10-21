@@ -183,20 +183,13 @@ library EdgeDiscretizingLaws
     // validation can measure on any polyline; this one is what `Discretize` promises, and a
     // sampled check can miss a bump between its samples. A library law.
     Law_CertifiedSagittaWithinChordal(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, i: Integer): Boolean
-        => m.IsEvaluableSegment(d, i)
-            ? (m.Sagitta(d.Edge, d.Parameters[i].Min(d.Parameters[i + 1]), d.Parameters[i].Max(d.Parameters[i + 1]))
-                    <= c.EffectiveChordal(m.Tolerances) + m.Tolerances.Length.Value
-                || m.IsAtLengthFloor(d, c, i))
-            : true;
+        => m.IsEvaluableSegment(d, i) ? m.CertifiedSagittaHolds(d, c, i) : true;
 
     // Segment i's chord stays within half the effective angular bound of the curve's tangent at
     // the sampled interior points, widened by the angle tolerance. Covers single-segment edges
     // and end segments, which have no turning angle.
     Law_TangentDeviationWithinHalfAngular(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, plan: SamplePlan, i: Integer): Boolean
-        => m.IsEvaluableSegment(d, i)
-            ? (m.TangentDeviation(d, plan, i) <= c.EffectiveAngular * 0.5 + m.Tolerances.Angle.Value
-                || m.IsAtLengthFloor(d, c, i))
-            : true;
+        => m.IsEvaluableSegment(d, i) ? m.TangentDeviationHolds(d, c, plan, i) : true;
 
     // The turning angle at interior point i is at most the effective angular bound, widened by
     // the angle tolerance, unless point i is a seed (where the curve itself may turn) or a segment
@@ -211,10 +204,7 @@ library EdgeDiscretizingLaws
 
     // Segment i's chord is no longer than the length limit, widened by the length tolerance.
     Law_SegmentWithinMaxLength(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, i: Integer): Boolean
-        => m.IsEvaluableSegment(d, i)
-            ? ((d.SegmentLength(i) - m.Tolerances.Length.Value).IsWithinLimit(c.MaxLength)
-                || m.IsAtLengthFloor(d, c, i))
-            : true;
+        => m.IsEvaluableSegment(d, i) ? m.SegmentMaxLengthHolds(d, c, i) : true;
 
     // A chord shorter than the effective minimum length (less the length tolerance) was forced:
     // the segment is a whole seed span (which covers an edge shorter than the minimum), or the
@@ -288,14 +278,7 @@ library EdgeDiscretizingLaws
     // within the effective chordal bound of the segment's 3D chord, widened by twice the length
     // tolerance (the image's end points map up to that far from the chord's).
     Law_ImageChordWithinChordal(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, img: EdgeImage, plan: SamplePlan, i: Integer): Boolean
-    {
-        var ok = m.IsEvaluableSegment(d, i) && m.IsImageEvaluable(img);
-        var deviations = ok ? m.ImageChordDeviations(d, img, plan) : 0.MapRange(j => 0.0);
-        return (ok ? deviations.IsValidIndex(i) : false)
-            ? (deviations[i] <= c.EffectiveChordal(m.Tolerances) + 2.0 * m.Tolerances.Length.Value
-                || m.IsAtLengthFloor(d, c, i))
-            : true;
-    }
+        => (m.IsEvaluableSegment(d, i) && m.IsImageEvaluable(img)) ? m.ImageChordHolds(d, c, img, plan, i) : true;
 
     //==
     // # Reversal and sharing

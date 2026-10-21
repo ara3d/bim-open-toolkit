@@ -107,11 +107,7 @@ library EdgeDiscretizing
     // The discretization can be evaluated against the model: its edge is evaluable, its arrays
     // have one entry per sample and at least two, and every parameter lies in the edge domain.
     IsEvaluable(m: BrepModel, d: EdgeDiscretization): Boolean
-        => m.IsEdgeEvaluable(d.Edge)
-            ? (d.Parameters.Count == d.Points.Count
-                && d.Parameters.Count >= 2
-                && d.Parameters.All(t => m.EdgeDomain(d.Edge).Range.Contains(t)))
-            : false;
+        => m.IsEdgeEvaluable(d.Edge) ? d.IsEvaluableGiven(m.EdgeDomain(d.Edge).Range) : false;
 
     // The point of the edge's curve at parameter t. t is first moved into the curve's range by
     // whole periods (layer 0's `Wrap`): an edge on a `Closed` curve may cross the join, and a
@@ -801,7 +797,7 @@ library EdgeDiscretizing
     // image chord, each widened as in the laws or at the floor. `RefineEdge` then splits nothing
     // for the criteria, and only the count pass can add points.
     MeetsCriteria(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria): Boolean
-        => m.IsEvaluable(d) ? m.SegmentsMeetCriteriaOn(d, c, m.EdgeImages(d.Edge)) : false;
+        => m.MeetsCriteriaRanged(d, c);
 
     // True when segment i meets every criterion the bisection tests, each widened as in its law
     // or escaped at the length floor: the per-segment test of `MeetsCriteria`, and the test by

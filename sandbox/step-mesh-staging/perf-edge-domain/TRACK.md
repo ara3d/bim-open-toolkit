@@ -1,7 +1,7 @@
 # perf-edge-domain: each edge's domain computed once per edge
 
 Ticket: TKT-365
-Status: ready: E2
+Status: merged: E2 (2026-10-21, into 02-topology/topology-edge-domain.library.plato, 04-discretization/discretization-edge-domain.library.plato, 08-pipeline/pipeline-edge-domain.laws.plato; the pipeline path and the four segment laws wired, the per-helper wirings left as references and filed as debt)
 
 ## Files
 

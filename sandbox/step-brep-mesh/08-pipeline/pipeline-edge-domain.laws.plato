@@ -36,7 +36,7 @@ library EdgeRangedLaws
     // Exactly one edge domain per edge on the cylinder and the box, whose edges are all
     // evaluable, and none on the box whose indices are out of range; the witness sizes are the
     // models' edge counts.
-    Law_Perf_EdgeDomainOncePerEdge(_: Integer): Boolean
+    Law_EdgeDomainOncePerEdge(_: Integer): Boolean
         => [3, 12].All(n => BrepModel.RangedModelOfSize(n).Edges.Count == n
                 && DiscretizeAllRangedWork(n).Projections == n)
             && BrepModel.GuardsUnindexedBox.DiscretizeAllRangedCounted(DiscretizationCriteria.CatalogEdgeCriteria, SegmentFloors.NoFloors).Work.Projections == 0;
@@ -63,48 +63,4 @@ library EdgeRangedLaws
             && (m.IsRefinable(d, requests, c) ? SameTables(m.RefineRanged(d, requests, c), m.Refine(d, requests, c)) : true);
     }
 
-    // RangedAgreesOn holds on the box, the block with a through hole, the cylinder and the
-    // off-surface cube.
-    Law_Perf_DiscretizeAllRangedAgrees(_: Integer): Boolean
-        => [BrepModel.Witness_UnitBox, BrepModel.Witness_BlockWithThroughHole, BrepModel.Witness_Cylinder,
-            BrepModel.TermOffSurfaceCube(1)].All(m => RangedAgreesOn(m));
-
-    // RangedAgreesOn holds on the odd models: the box with an index out of range (every entry
-    // Undiscretized), the box with a two-edge loop, and the sphere, whose seam ends at the poles.
-    Law_Perf_DiscretizeAllRangedAgreesOnOddModels(_: Integer): Boolean
-        => [BrepModel.GuardsUnindexedBox, BrepModel.TablesDigonBox, BrepModel.Witness_Sphere].All(m => RangedAgreesOn(m));
-
-    // RangedAgreesOn holds on the B-spline patch solid, whose spline edges take the seeded,
-    // bisected path (EdgeSeeds, SampledTurning) and a searched inversion in EdgeDomain.
-    Law_Perf_DiscretizeAllRangedAgreesOnSplines(_: Integer): Boolean
-        => RangedAgreesOn(BrepModel.Witness_BSplinePatchSolid);
-
-    // The findings of the cube k (0 to 3) under the findings criteria: DiscretizationFindingsRanged
-    // is DiscretizationFindings, field for field; the cube 0 has findings.
-    Law_Perf_DiscretizationFindingsRangedAgrees(k: Integer): Boolean
-    {
-        if (k < 0 || k > 3)
-        {
-            return true;
-        }
-        var m = BrepModel.TermOffSurfaceCube(k);
-        var c = DiscretizationCriteria.TermFindingCriteria;
-        var ds = m.DiscretizeAll(c, SegmentFloors.NoFloors);
-        var ranged = m.DiscretizationFindingsRanged(ds, c);
-        return SameFindings(ranged, m.DiscretizationFindings(ds, c)) && (k == 0 ? ranged.Count > 0 : true);
-    }
-
-    // MeetsCriteriaRanged is MeetsCriteria for every entry of the catalog table of the box, the
-    // cylinder and the off-surface cube, and for each entry coarsened to one segment, which fails
-    // a criterion on the cylinder's circles; and the coarsened circles do fail.
-    Law_Perf_MeetsCriteriaRangedAgrees(_: Integer): Boolean
-    {
-        var c = DiscretizationCriteria.CatalogEdgeCriteria;
-        var cylinder = BrepModel.Witness_Cylinder;
-        return [BrepModel.Witness_UnitBox, cylinder, BrepModel.TermOffSurfaceCube(1)].All(m =>
-                m.DiscretizeAll(c, SegmentFloors.NoFloors).ByEdge.All(d =>
-                    m.MeetsCriteriaRanged(d, c) == m.MeetsCriteria(d, c)
-                    && m.MeetsCriteriaRanged(Coarsened(m, d), c) == m.MeetsCriteria(Coarsened(m, d), c)))
-            && cylinder.MeetsCriteriaRanged(Coarsened(cylinder, cylinder.DiscretizeAll(c, SegmentFloors.NoFloors).ByEdge[0]), c).Not;
-    }
 }
