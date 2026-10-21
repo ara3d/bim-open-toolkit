@@ -1,7 +1,7 @@
 # perf-collide: colliding boundary segments found once, on a uniform grid
 
 Ticket: TKT-361
-Status: ready: F2
+Status: merged: F2 (2026-10-21, into 05-face-meshing/uv-collide.{types,library}.plato, face-meshing-collide.library.plato and 08-pipeline/pipeline-collide.laws.plato; EdgeCollides deleted)
 
 ## Done
 - F2, (this commit), about 1.5 h against 2 h expected: `CollidingSegments(r, tol)` and its counted

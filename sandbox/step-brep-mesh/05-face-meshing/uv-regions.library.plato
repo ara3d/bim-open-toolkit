@@ -879,8 +879,7 @@ library UvRegions
     // True when every loop is simple and no two loops meet: no boundary segment collides. O(n^2)
     // as written; a sweep is the implementation.
     IsSimpleRegion(r: UvRegion, tol: UvTolerance): Boolean
-        => r.NumberOfLoops.Range.All(k => r.LoopAt(k).Points.Count.Range.All(i =>
-            r.SegmentCollides(tol, k, i).Not));
+        => r.IsSimpleRegionIndexed(tol);
 
     // True when uv is inside the closed loop by the even-odd rule; false for fewer than three
     // points.
@@ -1044,18 +1043,11 @@ library UvRegions
     IsSegmentOn(r: UvRegion, m: BrepModel, d: EdgeDiscretizations, e: BrepEdgeIndex, k: Integer, i: Integer): Boolean
         => m.IsDiscretizationSegment(d, e, r.LoopAt(k).Sources[i], r.LoopAt(k).Sources.AtModulo(i + 1));
 
-    // True when some boundary segment on edge e collides with another boundary segment.
-    EdgeCollides(m: BrepModel, d: EdgeDiscretizations, r: UvRegion, tol: UvTolerance, e: BrepEdgeIndex): Boolean
-        => r.NumberOfLoops.Range.Any(k => r.LoopAt(k).Points.Count.Range.Any(i =>
-            r.IsSegmentOn(m, d, e, k, i) && r.SegmentCollides(tol, k, i)));
-
     // The blocking requests for face f's region: a LoopSelfIntersects request for every edge with
     // a colliding segment. Empty for a simple region; empty also for a region that is not simple
     // only because synthetic segments collide, which MeshFace diagnoses as an error.
     SelfIntersectionRequests(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, tol: UvTolerance): Array<EdgeRefinementRequest>
-        => m.FaceEdges(f).FlatMap(e => m.EdgeCollides(d, r, tol, e)
-            ? [EdgeRefinementRequest(e, RefinementReason.LoopSelfIntersects, m.TighterChordal(d, e), 0)]
-            : EdgeRefinementRequest.NoRequests);
+        => m.SelfIntersectionRequestsFrom(f, d, r, r.CollidingSegments(tol));
 
     // How far the surface, along the straight parameter segment of boundary segment i of loop k,
     // strays from the 3D chord between the segment's shared end points: layer 04's

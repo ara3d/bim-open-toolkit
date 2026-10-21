@@ -919,18 +919,7 @@ library FaceMeshing
     // Face f's region meshed, or refused: a region that is not simple gets an empty mesh and the
     // blocking requests with their diagnostics, or one face error when no model edge is to blame.
     MeshRegion(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): FaceMeshOutcome
-    {
-        var raw = m.UnorientedRegionOf(f, d, c);
-        var r = m.OrientRegion(f, raw);
-        var chart = m.ChartOf(f, r);
-        var blocking = m.SelfIntersectionRequests(f, d, r, m.RegionTolerance(f, chart));
-        return r.IsSimpleRegion(m.RegionTolerance(f, chart))
-            ? m.MeshedOutcome(f, d, raw, r, chart, c)
-            : (blocking.Count > 0
-                ? FaceMeshOutcome(EmptyFaceMesh(f), blocking, blocking.Map(q => q.RequestDiagnostic))
-                : f.UnmeshedOutcome("FACE-REGION-NOT-SIMPLE",
-                    "Synthetic seam or pole segments of this face collide in parameter space; the face is not meshed."));
-    }
+        => m.MeshRegionBody(f, d, c);
 
     // Face f meshed under criteria c, its edges discretized as d: the layer's entry point. A face
     // with a poly loop is not meshed (version 1); otherwise MeshRegion.

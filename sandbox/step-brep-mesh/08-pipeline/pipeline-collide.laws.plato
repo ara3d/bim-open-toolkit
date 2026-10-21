@@ -110,7 +110,7 @@ library UvRegionCollisionLaws
 
     // On every shape, CollidingSegments gives SegmentCollides's flags, IsSimpleRegionIndexed gives
     // IsSimpleRegion's answer, and the answer is the one the shape was built to have.
-    Law_Perf_CollidingSegmentsAgrees(n: Integer): Boolean
+    Law_CollidingSegmentsAgrees(n: Integer): Boolean
     {
         var shapes = UvRegion.PerfCollideShapes;
         var i = ((n % shapes.Count) + shapes.Count) % shapes.Count;
@@ -126,7 +126,7 @@ library UvRegionCollisionLaws
     // On layer 07's catalog loops (the inputs of Law_SimpleUvLoopIffSimpleRegion) and catalog
     // region, at generated positions and tolerances, CollidingSegments gives SegmentCollides's
     // flags and IsSimpleRegionIndexed gives IsSimpleRegion's answer.
-    Law_Perf_CollidingSegmentsAgreesOnCatalog(k: Integer, x: Number, y: Number, tol: UvTolerance): Boolean
+    Law_CollidingSegmentsAgreesOnCatalog(k: Integer, x: Number, y: Number, tol: UvTolerance): Boolean
     {
         var loop = UvRegion(CatalogLoopAt(k, x, y), [CatalogLoopAt(k, x, y)].Take(0));
         var region = CatalogRegionAt(x, y, 1.0);
@@ -138,7 +138,7 @@ library UvRegionCollisionLaws
 
     // The grid visits fewer pairs than the all-pairs form on the 128-segment polygon, and visits
     // no pair at all on a region of one point (a single segment from the point to itself).
-    Law_Perf_CollidingSegmentsVisitsFewerPairs(_: Boolean): Boolean
+    Law_CollidingSegmentsVisitsFewerPairs(_: Boolean): Boolean
         => CollidingWork(128).Insertions < 128 * 128
             && PerfCollideRegionOf([UvCoordinate(1.0, 1.0)]).CollidingSegmentsCounted(PerfCollideTolerance(0.001)).Work.Insertions == 0;
 
@@ -167,7 +167,7 @@ library UvRegionCollisionLaws
 
     // On every face of every model witness that has a region, discretized at a hundredth of the
     // model's size, the grid agrees with the all-pairs functions (FaceCollisionsAgree).
-    Law_Perf_CollidingSegmentsAgreesOnModel(m: BrepModel): Boolean
+    Law_CollidingSegmentsAgreesOnModel(m: BrepModel): Boolean
     {
         var o = m.RelativeMeshingOptions(0.01);
         var d = m.DiscretizeAll(o.Face.Discretization, SegmentFloors.NoFloors);
@@ -175,17 +175,4 @@ library UvRegionCollisionLaws
             m.CanRegion(BrepFaceIndex(k), d, o.Face) ? m.FaceCollisionsAgree(BrepFaceIndex(k), d, o.Face) : true);
     }
 
-    // On face n of the unit box (out-of-range n holds vacuously), MeshRegionBody gives
-    // MeshRegion's outcome, meshed.
-    Law_Perf_MeshRegionBodyAgrees(n: Integer): Boolean
-    {
-        var m = BrepModel.Witness_UnitBox;
-        var o = m.RelativeMeshingOptions(0.01);
-        var d = m.DiscretizeAll(o.Face.Discretization, SegmentFloors.NoFloors);
-        return (n >= 0 && n < m.Faces.Count)
-            ? (m.CanRegion(BrepFaceIndex(n), d, o.Face)
-                ? m.MeshRegionBody(BrepFaceIndex(n), d, o.Face).SameFaceMeshOutcome(m.MeshRegion(BrepFaceIndex(n), d, o.Face))
-                : true)
-            : true;
-    }
 }
