@@ -361,5 +361,5 @@ library TriangulationFast
     // and an angle-good mark is carried the same way, so BelowAngleKnown lifts only the
     // triangles that are neither refused nor known to meet the angle (chunk F4, 2026-10-21).
     RefineToSurfaceByInsertion(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
-        => m.RefineToSurfaceByInsertionBuilt(f, r, chart, t, c);
+        => m.RefineToSurfaceByInsertionIndexed(f, r, chart, t, c);
 }

@@ -512,7 +512,7 @@ library TriangulationCdtIndexed
         var seed = r.CdtSeedIndexedCounted(points);
         var pointHoles = r.Holes.Count.Range.FlatMap(h =>
             r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : [h].Take(0));
-        var triangles = r.Delaunayed(points, pointHoles.Reduce(seed.Value, (ts, p) => ts.WithPointInserted(p, points)));
+        var triangles = r.NextBoundaryTable.DelaunayedIndexed(points, pointHoles.Reduce(seed.Value, (ts, p) => ts.WithPointInserted(p, points)));
         return Counted(UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0)), seed.Work);
     }
 

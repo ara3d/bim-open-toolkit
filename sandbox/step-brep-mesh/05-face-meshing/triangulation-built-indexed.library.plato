@@ -261,7 +261,7 @@ library TriangulationBuiltIndexed
         while (pass < 40 && changed)
         {
             var now = current.Triangulation;
-            var surface = planar ? now.Triangles.Map(z => false) : m.NeedsRefinement(f, r, now, known, c);
+            var surface = planar ? now.Triangles.Map(z => false) : m.NeedsRefinementCached(f, r, current, known, c);
             var mid = m.SurfacePassIndexed(f, x, chart, least, current, surface);
             var carried = now.Triangles.CarriedMarks(refused, none, mid.Triangulation.Triangles);
             var goodMid = now.Triangles.CarriedMarks(good, none, mid.Triangulation.Triangles);

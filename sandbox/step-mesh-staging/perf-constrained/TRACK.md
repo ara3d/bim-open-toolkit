@@ -1,7 +1,7 @@
 # perf-constrained: boundary questions by table and grid, the in-circle test without allocation
 
 Ticket: TKT-385
-Status: ready: R3
+Status: merged: R3 (2026-10-21, into 05-face-meshing/uv-boundary-index.{types,library,laws}.plato and triangulation-built-indexed.library.plato; the indexed loop takes R2's cached refinement test; InCircleOf kept as the agreement reference)
 
 ## Done
 - R3, (this commit), about 1.5 h against 2 h expected: ranked candidate 28 of

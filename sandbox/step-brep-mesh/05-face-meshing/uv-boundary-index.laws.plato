@@ -111,12 +111,12 @@ library BoundaryIndexLaws
     // On every triangulated witness, IsConstrainedIn and IsBoundarySegmentBody agree with the
     // originals at the sides of the constrained and the refined triangulation and along the
     // boundary.
-    Law_Perf_IsConstrainedInAgrees(w: TriangulatedWitness): Boolean
+    Law_IsConstrainedInAgrees(w: TriangulatedWitness): Boolean
         => w.Region.ConstrainedAgreesOn(w.Cdt) && w.Region.ConstrainedAgreesOn(w.Refined);
 
     // On star case k % 5 (holes and a point hole) at every pair of indices; on jagged case k
     // along the boundary and at its triangulation's sides.
-    Law_Perf_IsConstrainedInAgreesOnStars(k: Integer): Boolean
+    Law_IsConstrainedInAgreesOnStars(k: Integer): Boolean
         => StarCase(k % 5).ConstrainedAgreesOnEveryPair
             && JaggedCase(k).ConstrainedAgreesOn(JaggedCase(k).TriangulateRegionCdt(PlaneChart(0)));
 
@@ -141,7 +141,7 @@ library BoundaryIndexLaws
     // On every triangulated witness, under the face's region tolerance, IsStrictlyInsideIndexed
     // agrees with IsStrictlyInside at the refined triangulation's points, centroids and side
     // midpoints and at the points near the boundary.
-    Law_Perf_IsStrictlyInsideIndexedAgrees(w: TriangulatedWitness): Boolean
+    Law_IsStrictlyInsideIndexedAgrees(w: TriangulatedWitness): Boolean
     {
         var tol = w.Model.RegionTolerance(w.Face, w.Chart);
         return w.Region.InsideAgreesAt(tol, w.Region.InsideProbes(tol, w.Refined));
@@ -151,7 +151,7 @@ library BoundaryIndexLaws
     // over the region's box and beyond it and at the points near the boundary (the triangulation
     // probes are the witness law's; the reference scans every segment per probe). Also under a
     // zero tolerance, where the index is not usable and the region's own test answers.
-    Law_Perf_IsStrictlyInsideIndexedAgreesOnStars(k: Integer): Boolean
+    Law_IsStrictlyInsideIndexedAgreesOnStars(k: Integer): Boolean
     {
         var tol = PlaneTolerance(0);
         var star = StarCase(k % 3);
@@ -162,7 +162,7 @@ library BoundaryIndexLaws
 
     // On jagged case k % 4 under PlaneTolerance: at an 11 x 11 lattice and at the points near
     // the boundary.
-    Law_Perf_IsStrictlyInsideIndexedAgreesOnJagged(k: Integer): Boolean
+    Law_IsStrictlyInsideIndexedAgreesOnJagged(k: Integer): Boolean
         => JaggedCase(k % 4).InsideAgreesAt(PlaneTolerance(0), Lattice(11, -2.3, 2.3).Concatenate(JaggedCase(k % 4).NearBoundary(PlaneTolerance(0))));
 
     //==
@@ -175,7 +175,7 @@ library BoundaryIndexLaws
     // For every one of the 256 index quadruples over four points (repeats included),
     // InCircleOfSorted is InCircleOf exactly; and InCircleOfFourSorted is InCircleOfFour on the
     // same quadruple with the indices renamed 11, 4, 23, 7 (another order).
-    Law_Perf_InCircleOfSortedAgrees(a: Point2D, b: Point2D, c: Point2D, d: Point2D): Boolean
+    Law_InCircleOfSortedAgrees(a: Point2D, b: Point2D, c: Point2D, d: Point2D): Boolean
     {
         var points = [a, b, c, d];
         var ids = [11, 4, 23, 7];
@@ -204,12 +204,12 @@ library BoundaryIndexLaws
 
     // On every triangulated witness, the flips with the table give the witness's constrained
     // triangulation, field for field.
-    Law_Perf_DelaunayedIndexedAgrees(w: TriangulatedWitness): Boolean
+    Law_DelaunayedIndexedAgrees(w: TriangulatedWitness): Boolean
         => SameTriangulation(w.Cdt, w.Region.CdtWithIndexedFlips(w.Chart));
 
     // On star case k and jagged case k, the flips with the table give TriangulateRegionCdt's
     // triangulation.
-    Law_Perf_DelaunayedIndexedAgreesOnStars(k: Integer): Boolean
+    Law_DelaunayedIndexedAgreesOnStars(k: Integer): Boolean
         => SameTriangulation(StarCase(k).TriangulateRegionCdt(PlaneChart(0)), StarCase(k).CdtWithIndexedFlips(PlaneChart(0)))
             && SameTriangulation(JaggedCase(k).TriangulateRegionCdt(PlaneChart(0)), JaggedCase(k).CdtWithIndexedFlips(PlaneChart(0)));
 
@@ -228,13 +228,13 @@ library BoundaryIndexLaws
 
     // On every triangulated witness, the split sides agree on the constrained and the refined
     // triangulation.
-    Law_Perf_SplitSideSlotIndexedAgrees(w: TriangulatedWitness): Boolean
+    Law_SplitSideSlotIndexedAgrees(w: TriangulatedWitness): Boolean
         => w.Region.SplitSidesAgreeOn(w.Chart, w.Cdt) && w.Region.SplitSidesAgreeOn(w.Chart, w.Refined);
 
     // On every triangulated witness, the refinement over the indexed boundary is the witness's
     // refined triangulation (RefineToSurfaceByInsertion's), point for point and triangle for
     // triangle: the same insertions in the same order.
-    Law_Perf_RefineIndexedAgrees(w: TriangulatedWitness): Boolean
+    Law_RefineIndexedAgrees(w: TriangulatedWitness): Boolean
         => SameTriangulation(w.Refined, w.Model.RefineToSurfaceByInsertionIndexed(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0)));
 
     // On the unit box's plane face 0 with region r moved into the unit square, the refinement
@@ -253,14 +253,14 @@ library BoundaryIndexLaws
     // On star case k % 5 as a region of the unit box's plane face 0, the refinement over the
     // indexed boundary is RefineToSurfaceByInsertion's. The angle pass tries points near every
     // hole.
-    Law_Perf_RefineIndexedAgreesOnStars(k: Integer): Boolean
+    Law_RefineIndexedAgreesOnStars(k: Integer): Boolean
         => RefineIndexedAgreesOnPlane(StarCase(k % 5));
 
     // The count witnesses' 13-hole region, built once: IsConstrainedIn agrees along its boundary
     // and at its triangulation's sides, the flips with the table give TriangulateRegionCdt's
     // triangulation, and on the unit box's plane face 0 the refinement over the indexed boundary
     // is RefineToSurfaceByInsertion's.
-    Law_Perf_ThirteenHolesAgree(_: Integer): Boolean
+    Law_ThirteenHolesAgree(_: Integer): Boolean
     {
         var r = HolesRegion(13);
         var t = r.TriangulateRegionCdt(PlaneChart(0));
