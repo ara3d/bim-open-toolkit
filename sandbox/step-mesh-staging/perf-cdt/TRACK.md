@@ -1,7 +1,7 @@
 # perf-cdt: the constrained Delaunay seed without quadratic scans
 
 Ticket: TKT-386
-Status: ready: R4
+Status: merged: R4 (2026-10-21, into 05-face-meshing/triangulation-cdt-indexed.{types,library,laws}.plato; HoleBridged, EarClipped and IsEar kept as the laws' reference)
 
 ## Done
 - R4, (this commit), about 1.3 h against 2 h expected: `TriangulateRegionCdtIndexed(r, chart)` and

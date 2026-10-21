@@ -103,17 +103,5 @@ library TriangulationCdt
     // after) flipped by UvDelaunay's Delaunayed. Every boundary point kept in BoundaryPoints order, every
     // triangle positive in the chart, every boundary segment a side, no point added, no quads.
     TriangulateRegionCdt(r: UvRegion, chart: FaceChart): UvTriangulation
-    {
-        var points = r.BoundaryPoints.Map(uv => chart.ChartPoint(uv));
-        var outer = r.Outer.Points.Count.Range;
-        var holes = r.Holes.Count.Range.FlatMap(h =>
-            r.Holes[h].Points.Count >= 3 ? [h] : [h].Take(0));
-        var bySide = holes.Sort((a, b) => r.HoleRightmost(points, a) >= r.HoleRightmost(points, b));
-        var ring = bySide.Reduce(outer, (current, h) => current.HoleBridged(r.HoleRing(h), points, r.AllRingSegments(points)));
-        var clipped = ring.EarClipped(points);
-        var pointHoles = r.Holes.Count.Range.FlatMap(h =>
-            r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : [h].Take(0));
-        var triangles = r.Delaunayed(points, pointHoles.Reduce(clipped, (ts, p) => ts.WithPointInserted(p, points)));
-        return UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
-    }
+        => r.TriangulateRegionCdtIndexedCounted(chart).Value;
 }

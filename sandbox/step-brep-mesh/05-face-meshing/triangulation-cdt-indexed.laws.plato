@@ -122,26 +122,26 @@ library TriangulationCdtIndexedLaws
 
     // On every triangulated witness (each face of the triangulation laws' six sample models),
     // the staged triangulation is the witness's Cdt, field for field, with its ring and seed.
-    Law_Perf_TriangulateRegionCdtIndexedAgrees(w: TriangulatedWitness): Boolean
+    Law_TriangulateRegionCdtIndexedAgrees(w: TriangulatedWitness): Boolean
         => w.Region.CdtSeedAgreesOn(w.Chart) && SameTriangulation(w.Cdt, w.Region.TriangulateRegionCdtIndexed(w.Chart));
 
     // On star case k, the staged triangulation, ring and seed are TriangulateRegionCdt's.
-    Law_Perf_TriangulateRegionCdtIndexedAgreesOnStars(k: Integer): Boolean
+    Law_TriangulateRegionCdtIndexedAgreesOnStars(k: Integer): Boolean
         => StarCase(k).CdtIndexedAgreesOn(PlaneChart(0));
 
     // On jagged case k, the staged triangulation, ring and seed are TriangulateRegionCdt's.
-    Law_Perf_TriangulateRegionCdtIndexedAgreesOnJagged(k: Integer): Boolean
+    Law_TriangulateRegionCdtIndexedAgreesOnJagged(k: Integer): Boolean
         => JaggedCase(k).CdtIndexedAgreesOn(PlaneChart(0));
 
     // On the polygon whose ear order needs the watch lists, the staged triangulation, ring and
     // seed are TriangulateRegionCdt's.
-    Law_Perf_TriangulateRegionCdtIndexedAgreesWhenWoken(_: Integer): Boolean
+    Law_TriangulateRegionCdtIndexedAgreesWhenWoken(_: Integer): Boolean
         => WatchedCase(0).CdtIndexedAgreesOn(PlaneChart(0));
 
     // The star cases reach the heap: on star case 4 there are more ear tests than ring slots,
     // so some slot behind the frontier is tested again, and the agreement laws exercise more
     // than one pass of the frontier.
-    Law_Perf_StarCasesRetestSlots(_: Integer): Boolean
+    Law_StarCasesRetestSlots(_: Integer): Boolean
     {
         var r = StarCase(4);
         var points = r.BoundaryPoints.Map(uv => PlaneChart(0).ChartPoint(uv));
