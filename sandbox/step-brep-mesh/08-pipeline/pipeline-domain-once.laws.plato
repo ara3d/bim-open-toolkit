@@ -55,21 +55,6 @@ library FaceMeshingDomainOnceLaws
             && (r.IsSimpleRegionIndexed(tol) ? true : m.MeshRegionOnce(f, d, c).SameFaceMeshOutcome(m.MeshRegion(f, d, c)));
     }
 
-    // On every face of every model witness that can be regioned under the witness options, the
-    // domain-once forms agree with the library (FaceDomainOnceAgrees).
-    Law_Perf_DomainOnceAgreesOnModel(m: BrepModel): Boolean
-    {
-        var c = MeshingOptions.WitnessOptions.Face;
-        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
-        return m.Faces.Count.Range.All(k =>
-            m.CanRegion(BrepFaceIndex(k), d, c) ? m.FaceDomainOnceAgrees(BrepFaceIndex(k), d, c) : true);
-    }
-
-    // MeshRegionOnce meshes simple regions as MeshRegion does: every face of the unit box and of
-    // the cylinder (witnesses 0 and 1), meshed by both.
-    Law_Perf_MeshRegionOnceAgreesOnSimpleFaces(_: Boolean): Boolean
-        => [0, 1].All(k => BrepModel.WitnessAt(k).MeshRegionOnceAgreesOnEveryFace);
-
     // On every face of m that can be regioned under the witness options, MeshRegionOnce gives
     // MeshRegion's outcome.
     MeshRegionOnceAgreesOnEveryFace(m: BrepModel): Boolean
@@ -79,19 +64,6 @@ library FaceMeshingDomainOnceLaws
         return m.Faces.Count.Range.All(k => m.CanRegion(BrepFaceIndex(k), d, c)
             ? m.MeshRegionOnce(BrepFaceIndex(k), d, c).SameFaceMeshOutcome(m.MeshRegion(BrepFaceIndex(k), d, c))
             : true);
-    }
-
-    // Some witness boundary point lies on a collapsed line, so the agreement reaches IsOnLineIn:
-    // the sphere's faces (witness 2), whose loops touch the poles.
-    Law_Perf_DomainOnceReachesCollapsedLines(_: Boolean): Boolean
-    {
-        var m = BrepModel.WitnessAt(2);
-        var c = MeshingOptions.WitnessOptions.Face;
-        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
-        return m.Faces.Count.Range.Any(k => m.CanRegion(BrepFaceIndex(k), d, c)
-            ? m.MeshedBounds(BrepFaceIndex(k)).Any(b => m.LoopToUv(BrepFaceIndex(k), b, d).Points.Any(uv =>
-                m.IsOnCollapsedLine(BrepFaceIndex(k), uv)))
-            : false);
     }
 
     //==
@@ -108,7 +80,7 @@ library FaceMeshingDomainOnceLaws
 
     // Unwrapping a face's loops builds its surface domain exactly once, for one or three loops
     // of 8 or 64 points: never once per point, as IsOnLine and PointTolerance did.
-    Law_Perf_UnwrapBuildsTheDomainOncePerFace(_: Boolean): Boolean
+    Law_UnwrapBuildsTheDomainOncePerFace(_: Boolean): Boolean
         => UnwrapDomainBuilds(1, 8) == 1 && UnwrapDomainBuilds(3, 8) == 1
             && UnwrapDomainBuilds(1, 64) == 1 && UnwrapDomainBuilds(3, 64) == 1;
 

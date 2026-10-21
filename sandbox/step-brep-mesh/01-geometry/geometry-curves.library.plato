@@ -98,7 +98,7 @@ library BrepGeometryCurves
             Polyline(points) => points.PolylinePoint(t);
             BSpline(data) => data.BSplinePoint(t);
             Trimmed(basis, range, sameSense) => g.Eval(basis, g.BasisParameter(basis, range, sameSense, t));
-            Composite(segments) => g.Eval(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Composite(segments) => g.CompositeEval(segments, t);
             Offset(basis, distance, reference) => g.Eval(basis, t) + reference.Vector.Cross(g.Derivative(basis, t)).Normalize * distance;
             OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
                 ? g.Eval(spaceCurve, t)
@@ -126,8 +126,7 @@ library BrepGeometryCurves
             Polyline(points) => points.PolylineChord(t);
             BSpline(data) => data.BSplineDerivative(t, 1);
             Trimmed(basis, range, sameSense) => g.Derivative(basis, g.BasisParameter(basis, range, sameSense, t)) * sameSense.SenseSign;
-            Composite(segments) => g.Derivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t))
-                * segments[g.CompositeSegmentAt(segments, t)].SameSense.SenseSign;
+            Composite(segments) => g.CompositeDerivative(segments, t);
             Offset(basis, distance, reference) => g.Derivative(basis, t)
                 + UnitVectorDerivative(reference.Vector.Cross(g.Derivative(basis, t)), reference.Vector.Cross(g.SecondDerivative(basis, t))) * distance;
             OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
@@ -152,7 +151,7 @@ library BrepGeometryCurves
             Polyline(points) => Vector3D(0.0, 0.0, 0.0);
             BSpline(data) => data.BSplineDerivative(t, 2);
             Trimmed(basis, range, sameSense) => g.SecondDerivative(basis, g.BasisParameter(basis, range, sameSense, t));
-            Composite(segments) => g.SecondDerivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Composite(segments) => g.CompositeSecondDerivative(segments, t);
             Offset(basis, distance, reference) => g.OffsetSecondDerivative(basis, distance, reference, t);
             OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
                 ? g.SecondDerivative(spaceCurve, t)
@@ -383,7 +382,7 @@ library BrepGeometryCurves
             Polyline(points) => points.Reduce(0.0, (m, p) => m.Max(p.PositionVector.Length));
             BSpline(data) => data.ControlPoints.Reduce(0.0, (m, p) => m.Max(p.PositionVector.Length)) * data.Weights.WeightRatio;
             Trimmed(basis, range, sameSense) => g.EvaluationMagnitude(basis, g.BasisParameter(basis, range, sameSense, t));
-            Composite(segments) => g.EvaluationMagnitude(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Composite(segments) => g.CompositeEvaluationMagnitude(segments, t);
             Offset(basis, distance, reference) => g.EvaluationMagnitude(basis, t) + distance.Abs;
             OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
                 ? g.EvaluationMagnitude(spaceCurve, t)
@@ -585,7 +584,7 @@ library BrepGeometryCurves
             Polyline(points) => points.PolylinePoint(t);
             BSpline(data) => data.BSplinePoint(t);
             Trimmed(basis, range, sameSense) => g.Eval(basis, g.BasisParameter(basis, range, sameSense, t));
-            Composite(segments) => g.Eval(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Composite(segments) => g.CompositeEval(segments, t);
             Offset(basis, distance) => g.Eval(basis, t) + g.Derivative(basis, t).Normalize.Perp * distance;
         };
 
@@ -605,8 +604,7 @@ library BrepGeometryCurves
             Polyline(points) => points.PolylineChord(t);
             BSpline(data) => data.BSplineDerivative(t, 1);
             Trimmed(basis, range, sameSense) => g.Derivative(basis, g.BasisParameter(basis, range, sameSense, t)) * sameSense.SenseSign;
-            Composite(segments) => g.Derivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t))
-                * segments[g.CompositeSegmentAt(segments, t)].SameSense.SenseSign;
+            Composite(segments) => g.CompositeDerivative(segments, t);
             Offset(basis, distance) => g.Derivative(basis, t)
                 + UnitVectorDerivative(g.Derivative(basis, t), g.SecondDerivative(basis, t)).Perp * distance;
         };
@@ -627,7 +625,7 @@ library BrepGeometryCurves
             Polyline(points) => Vector2D(0.0, 0.0);
             BSpline(data) => data.BSplineDerivative(t, 2);
             Trimmed(basis, range, sameSense) => g.SecondDerivative(basis, g.BasisParameter(basis, range, sameSense, t));
-            Composite(segments) => g.SecondDerivative(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Composite(segments) => g.CompositeSecondDerivative(segments, t);
             Offset(basis, distance) => g.OffsetSecondDerivative(basis, distance, t);
         };
 
@@ -674,7 +672,7 @@ library BrepGeometryCurves
             Polyline(points) => points.Reduce(0.0, (m, p) => m.Max(p.UvMagnitude));
             BSpline(data) => data.ControlPoints.Reduce(0.0, (m, p) => m.Max(p.UvMagnitude)) * data.Weights.WeightRatio;
             Trimmed(basis, range, sameSense) => g.EvaluationMagnitude(basis, g.BasisParameter(basis, range, sameSense, t));
-            Composite(segments) => g.EvaluationMagnitude(segments[g.CompositeSegmentAt(segments, t)].Curve, g.CompositeLocal(segments, t));
+            Composite(segments) => g.CompositeEvaluationMagnitude(segments, t);
             Offset(basis, distance) => g.EvaluationMagnitude(basis, t) + distance.Abs;
         };
 

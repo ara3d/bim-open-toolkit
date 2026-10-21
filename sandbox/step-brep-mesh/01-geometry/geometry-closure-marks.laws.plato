@@ -109,27 +109,27 @@ library BrepGeometryClosureMarksLaws
     // # Sorted marks
 
     // Every witness model's closure marks are in ClosureMarks's order (MarksAreSorted).
-    Law_Perf_ClosureMarksAreSorted(m: BrepModel): Boolean
+    Law_ClosureMarksAreSorted(m: BrepModel): Boolean
         => m.Geometry.ClosuresAreSorted;
 
     // Every decoded witness's closure marks are in ClosureMarks's order.
-    Law_Perf_ClosureMarksAreSorted(r: RawDecodedModel): Boolean
+    Law_ClosureMarksAreSorted(r: RawDecodedModel): Boolean
         => r.Model.Geometry.ClosuresAreSorted;
 
     // Every witness arena's closure marks are in ClosureMarks's order.
-    Law_Perf_ClosureMarksAreSorted(g: GeometrySet): Boolean
+    Law_ClosureMarksAreSorted(g: GeometrySet): Boolean
         => g.ClosuresAreSorted;
 
     // The decode's decisions come out sorted: on each decoded witness, and on the marked
     // catalog, whose closed polyline, trimmed and composite curves and closed spline surface
     // give marks of several kinds.
-    Law_Perf_ClosureMarkDecisionsAreSorted(r: RawDecodedModel): Boolean
+    Law_ClosureMarkDecisionsAreSorted(r: RawDecodedModel): Boolean
         => r.Model.Geometry.ClosureMarks(r.Model.Tolerances).MarksAreSorted
             && MarkedCatalogArena(0).ClosureMarks(Tolerances.Witness_Tolerances).MarksAreSorted;
 
     // The synthetic marks are sorted, and marks out of order are seen to be: the test is not
     // vacuous.
-    Law_Perf_MarksAreSortedSeesOrder(_: Boolean): Boolean
+    Law_MarksAreSortedSeesOrder(_: Boolean): Boolean
         => [0, 1, 2, 4, 16, 33].All(k => SyntheticMarks(k).MarksAreSorted)
             && ![SyntheticMark(3, 0), SyntheticMark(0, 0)].MarksAreSorted
             && ![SyntheticMark(0, 4), SyntheticMark(0, 2)].MarksAreSorted
@@ -146,22 +146,9 @@ library BrepGeometryClosureMarksLaws
             : (rank == 2 ? g.IsMarkedClosedSorted(SurfaceIndex(q), SurfaceParameter.ParameterU) == g.IsMarkedClosed(SurfaceIndex(q), SurfaceParameter.ParameterU)
             : g.IsMarkedClosedSorted(SurfaceIndex(q), SurfaceParameter.ParameterV) == g.IsMarkedClosed(SurfaceIndex(q), SurfaceParameter.ParameterV)));
 
-    // On 0, 1, 2, 3, 5, 16 and 33 synthetic marks, the binary search gives the scan's answer for
-    // every kind and every index from -1 to 2 k + 1: each mark, each gap, both ends.
-    Law_Perf_IsMarkedClosedSortedAgrees(_: Boolean): Boolean
-        => [0, 1, 2, 3, 5, 16, 33].All(k => 4.Range.All(rank =>
-            (2 * k + 3).Range.All(q => SortedAgreesAt(SyntheticMarkedArena(k), rank, q - 1))));
-
-    // On both arenas, the binary search gives the scan's answer for every record and direction.
-    Law_Perf_IsMarkedClosedSortedAgreesOnArenas(_: Boolean): Boolean
-        => PerfClosureArenas(0).All(g =>
-            g.Curves.Count.Range.All(q => SortedAgreesAt(g, 0, q))
-                && g.Curves2D.Count.Range.All(q => SortedAgreesAt(g, 1, q))
-                && g.Surfaces.Count.Range.All(q => SortedAgreesAt(g, 2, q) && SortedAgreesAt(g, 3, q)));
-
     // The marked catalog reaches a found mark of every kind, so the agreement is not only on
     // absent marks.
-    Law_Perf_MarkedCatalogFindsMarks(_: Boolean): Boolean
+    Law_MarkedCatalogFindsMarks(_: Boolean): Boolean
     {
         var g = MarkedCatalogArena(0);
         return g.IsMarkedClosedSorted(CurveIndex(6)) && g.IsMarkedClosedSorted(Curve2DIndex(0))
@@ -172,16 +159,6 @@ library BrepGeometryClosureMarksLaws
 
     //==
     // # Domains and trimmed parameters once
-
-    // DomainOnce gives Domain for every surface of both arenas, and the curve domains built with
-    // the binary search give Domain for every curve.
-    Law_Perf_DomainOnceAgrees(_: Boolean): Boolean
-        => PerfClosureArenas(0).All(g =>
-            g.Surfaces.Count.Range.All(s => SameSurfaceDomain(g.DomainOnce(SurfaceIndex(s)), g.Domain(SurfaceIndex(s))))
-                && g.Curves.Count.Range.All(c => SameCurveDomain(
-                    g.CurveAt(CurveIndex(c)).Domain(g).WithClosure(g.IsMarkedClosedSorted(CurveIndex(c))), g.Domain(CurveIndex(c))))
-                && g.Curves2D.Count.Range.All(c => SameCurveDomain(
-                    g.Curve2DAt(Curve2DIndex(c)).Domain(g).WithClosure(g.IsMarkedClosedSorted(Curve2DIndex(c))), g.Domain(Curve2DIndex(c)))));
 
     // The fraction i / (n - 1) of the way along range r, for i of n.
     GridAt(r: NumberInterval, n: Integer, i: Integer): Number
@@ -204,16 +181,6 @@ library BrepGeometryClosureMarksLaws
                 g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv));
             Offset(basis, distance) => true;
         };
-
-    // On every rectangular trimmed surface of both arenas (the sphere piece, and the closed
-    // spline trimmed across its join), TrimmedToBasisOnce gives TrimmedToBasis on an 11 by 11
-    // grid over the piece's domain.
-    Law_Perf_TrimmedToBasisOnceAgrees(_: Boolean): Boolean
-        => PerfClosureArenas(0).All(g => g.Surfaces.Count.Range.All(s =>
-            11.Range.All(i => 11.Range.All(j =>
-                TrimmedOnceAgreesAt(g, g.SurfaceAt(SurfaceIndex(s)), UvCoordinate(
-                    GridAt(g.Domain(SurfaceIndex(s)).U.Range.FiniteOr(4.0), 11, i),
-                    GridAt(g.Domain(SurfaceIndex(s)).V.Range.FiniteOr(4.0), 11, j)))))));
 
     // r itself when both ends are finite; [-h, h] otherwise.
     FiniteOr(r: NumberInterval, h: Number): NumberInterval
@@ -300,14 +267,6 @@ library BrepGeometryClosureMarksLaws
             ? true
             : 25.Range.All(i => CompositeOnceAgreesAt2D(g, c, g.Curve2DAt(c).SegmentsOfComposite2D, GridAt(g.Domain(c).Range, 25, i)));
 
-    // On every composite of both arenas (the catalog's one-segment composite, the marked
-    // catalog's three-segment space composite across a closed join, and its parameter-plane
-    // composite), the composite functions agree with the library at 25 parameters.
-    Law_Perf_CompositePlaceAgrees(_: Boolean): Boolean
-        => PerfClosureArenas(0).All(g =>
-            g.Curves.Count.Range.All(c => CompositeOnceAgrees(g, CurveIndex(c)))
-                && g.Curves2D.Count.Range.All(c => CompositeOnceAgrees2D(g, Curve2DIndex(c))));
-
     //==
     // # Count witness
 
@@ -334,7 +293,7 @@ library BrepGeometryClosureMarksLaws
     }
 
     // A lookup among K marks compares at most 2 log2(K) + 2 of them, at K from 1 to 256.
-    Law_Perf_MarkLookupIsLogarithmic(_: Boolean): Boolean
+    Law_MarkLookupIsLogarithmic(_: Boolean): Boolean
         => [1, 2, 3, 4, 7, 16, 100, 256].All(k => MarkLookupComparisons(k) <= 2 * FloorLog2(k) + 2);
 
     // The marks one lookup compares, as Insertions, at k marks.

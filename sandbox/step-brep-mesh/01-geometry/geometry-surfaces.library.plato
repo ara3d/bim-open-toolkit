@@ -36,9 +36,7 @@ library BrepGeometrySurfaces
     // cone's v covers both nappes, so its apex is an interior collapsed line
     // (CollapsedAt), not a side.
     Domain(g: GeometrySet, s: SurfaceIndex): SurfaceDomain
-        => SurfaceDomain(
-            g.SurfaceAt(s).Domain(g).U.WithClosure(g.IsMarkedClosed(s, SurfaceParameter.ParameterU)),
-            g.SurfaceAt(s).Domain(g).V.WithClosure(g.IsMarkedClosed(s, SurfaceParameter.ParameterV)));
+        => g.DomainOnce(s);
 
     // Domain for one record of the arena g, which holds the entries it references.
     Domain(surface: BrepSurface, g: GeometrySet): SurfaceDomain
@@ -693,8 +691,7 @@ library BrepGeometrySurfaces
     // into the basis's range where the basis is closed but not periodic, as
     // BasisParameter for trimmed curves.
     TrimmedToBasis(g: GeometrySet, basis: SurfaceIndex, uRange: NumberInterval, vRange: NumberInterval, uSense: Boolean, vSense: Boolean, uv: UvCoordinate): UvCoordinate
-        => UvCoordinate(g.Domain(basis).U.IntoRange(uRange.SensedParameter(uSense, uv.U)),
-            g.Domain(basis).V.IntoRange(vRange.SensedParameter(vSense, uv.V)));
+        => g.TrimmedToBasisOnce(basis, uRange, vRange, uSense, vSense, uv);
 
     // The values within range r, ends included up to the tolerance, as
     // distances along a run of r in the given sense: a basis's collapsed lines

@@ -1,7 +1,7 @@
 # perf-closure-marks: closure marks by binary search, domains and region tolerance once (chunk I5)
 
 Ticket: TKT-382
-Status: ready: I5
+Status: merged: I5 (2026-10-21, into 01-geometry/geometry-closure-marks.{types,library,laws}.plato, 05-face-meshing/face-meshing-domain-once.library.plato, 08-pipeline/pipeline-domain-once.laws.plato; contract request accepted: IsWellFormed requires sorted closure marks; the R1 tolerance handoff left as debt)
 
 ## Done
 - I5, this commit, about 1.5 h against 2 h. Candidate 26 of `docs/plans/step-mesher-complexity.md`.

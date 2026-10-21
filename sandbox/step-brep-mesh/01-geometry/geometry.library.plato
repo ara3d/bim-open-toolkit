@@ -170,15 +170,15 @@ library BrepGeometry
 
     // True when layer 3 marked curve c closed.
     IsMarkedClosed(g: GeometrySet, c: CurveIndex): Boolean
-        => g.Closures.Any(mark => mark.MarksCurve(c));
+        => g.IsMarkedClosedSorted(c);
 
     // True when layer 3 marked parameter-plane curve c closed.
     IsMarkedClosed(g: GeometrySet, c: Curve2DIndex): Boolean
-        => g.Closures.Any(mark => mark.MarksCurve(c));
+        => g.IsMarkedClosedSorted(c);
 
     // True when layer 3 marked surface s closed in the given parameter.
     IsMarkedClosed(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter): Boolean
-        => g.Closures.Any(mark => mark.MarksSurface(s, which));
+        => g.IsMarkedClosedSorted(s, which);
 
     // True when the mark names curve c.
     MarksCurve(mark: ClosureMark, c: CurveIndex): Boolean
@@ -406,7 +406,8 @@ library BrepGeometry
             && g.Surfaces.All(surface => surface.HasEvaluableShape)
             && g.Curves.Count.Range.All(i => g.IsAcyclicFrom(CurveIndex(i)))
             && g.Curves2D.Count.Range.All(i => g.IsAcyclicFrom(Curve2DIndex(i)))
-            && g.Surfaces.Count.Range.All(i => g.IsAcyclicFrom(SurfaceIndex(i)));
+            && g.Surfaces.Count.Range.All(i => g.IsAcyclicFrom(SurfaceIndex(i)))
+            && g.ClosuresAreSorted;
 
     // True when curve c of g may be evaluated: the arena is well formed and c
     // is in range. The guard of every law that evaluates a curve.
