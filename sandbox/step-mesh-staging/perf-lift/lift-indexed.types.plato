@@ -1,0 +1,52 @@
+//==
+// # Lifting by source key: types (complexity sweep, chunk F3)
+//
+// Sections, in order:
+//  - Source keys
+//  - Lift cases
+
+//==
+// # Source keys
+
+// The key under which IdentifiedSources identifies a parameter-space point's source: two
+// sources are identified exactly when both are keyed (Kind != 0) and their keys are equal
+// (Law_Perf_SourceKeyMatchesIdentification). Kind 1 a model vertex (Major its index), 2 an
+// edge sample (Major the edge, Minor the sample), 3 a seam-cut point (Major 1 for a cut across
+// u, 0 across v; Minor its index), 4 a pole-segment point (Major the side's number); 0 an
+// interior point, identified with nothing. Removes: the comparison of every pair of points to
+// find the classes Lift numbers.
+type SourceKey
+    implements IValue
+{
+    Kind: Integer;
+    Major: Integer;
+    Minor: Integer;
+}
+
+//==
+// # Lift cases
+
+// A branch of Lift a case can reach: a point of a synthetic seam cut, of a pole segment, or
+// inside the region; two points lifted to one local vertex; a triangle dropped; a quad turned
+// into a triangle.
+type LiftBranch
+    = SeamCuts
+    | PoleSegments
+    | InteriorPoints
+    | IdentifiedPoints
+    | DroppedTriangles
+    | CollapsedQuads;
+
+// One witness model's triangulable faces, triangulated once, for the laws that compare
+// LiftIndexed with Lift: Faces[i] has triangulation Triangulations[i] under Discretizations.
+// Reaches lists the branches of Lift the case is known to reach, so the cases together are
+// shown to reach every branch (Law_Perf_LiftCaseReachesItsBranches).
+type LiftCase
+{
+    Name: String;
+    Model: BrepModel;
+    Discretizations: EdgeDiscretizations;
+    Faces: Array<BrepFaceIndex>;
+    Triangulations: Array<UvTriangulation>;
+    Reaches: Array<LiftBranch>;
+}

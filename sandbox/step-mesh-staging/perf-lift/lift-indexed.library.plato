@@ -1,0 +1,164 @@
+//==
+// # Lifting by source key (complexity sweep, chunk F3)
+//
+// LiftIndexed replaces Lift (face-meshing.library.plato), which compared every pair of points
+// with IdentifiedSources and allocated a range per pair (O(N^3) writes), then searched the
+// class firsts once per point (PositionOfItem, O(N^2)). Here only boundary points are keyed
+// (SourceKeyOf), the keyed points are sorted by key (a stable merge sort, so each run of equal
+// keys starts at its smallest point), each point's class root is the first point of its run,
+// and local vertices are numbered by a running counter in point order, as LiftTableOf numbers
+// them: O(N + B log B) for N points of which B are keyed. A position is evaluated on the surface
+// only for a source SharedPosition does not copy. The result is Lift's, field for field
+// (Law_Perf_LiftIndexedAgrees). At merge Lift becomes => LiftCounted(m, f, d, t).Value.
+//
+// Sections, in order:
+//  - Source keys
+//  - Lifting
+
+library FaceMeshingLiftIndexed
+{
+    //==
+    // # Source keys
+
+    // The number of a side of the parameter rectangle: UMin 0, UMax 1, VMin 2, VMax 3.
+    SideNumber(side: DomainSide): Integer
+        => match (side) {
+            UMin => 0;
+            UMax => 1;
+            VMin => 2;
+            VMax => 3;
+        };
+
+    // The key of source s: equal keys of kind other than 0 exactly when IdentifiedSources holds.
+    SourceKeyOf(s: UvPointSource): SourceKey
+        => match (s) {
+            FromVertex(v) => SourceKey(1, v.Value, 0);
+            FromEdge(e, k) => SourceKey(2, e.Value, k.Value);
+            SeamCut(side, k) => SourceKey(3, side.IsUSide ? 1 : 0, k);
+            Pole(side, k) => SourceKey(4, side.SideNumber, 0);
+            Interior => SourceKey(0, 0, 0);
+        };
+
+    // True when key k can identify its point with another: every source but an interior one.
+    IsKeyed(k: SourceKey): Boolean
+        => k.Kind != 0;
+
+    // The lexicographic order of keys: kind, then major, then minor.
+    KeyAtMost(a: SourceKey, b: SourceKey): Boolean
+        => a.Kind != b.Kind ? a.Kind < b.Kind : (a.Major != b.Major ? a.Major < b.Major : a.Minor <= b.Minor);
+
+    // True when two keys are equal in every field.
+    SameKey(a: SourceKey, b: SourceKey): Boolean
+        => a.Kind == b.Kind && a.Major == b.Major && a.Minor == b.Minor;
+
+    // True when SharedPosition copies the position of a point with source s (a model vertex or an
+    // edge sample) and so ignores the surface point it is given.
+    IsCopiedSource(s: UvPointSource): Boolean
+        => match (s) {
+            FromVertex(v) => true;
+            FromEdge(e, k) => true;
+            SeamCut(side, k) => false;
+            Pole(side, k) => false;
+            Interior => false;
+        };
+
+    // The number of merging passes Sorting.SortedIndices makes over n items: the doublings of a
+    // run width from 1 until it reaches n.
+    MergePasses(n: Integer): Integer
+    {
+        var width = 1;
+        var passes = 0;
+        while (width < n)
+        {
+            width = width + width;
+            passes = passes + 1;
+        }
+        return passes;
+    }
+
+    //==
+    // # Lifting
+
+    // Lift with the classes found by key: the same face mesh.
+    LiftIndexed(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, t: UvTriangulation): FaceMesh
+        => m.LiftCounted(f, d, t).Value;
+
+    // LiftIndexed with its work counted. Insertions: the keys made (N), the keyed points copied
+    // out (B), the merge sort's copies (B to fill its index, B per pass, B to map the result),
+    // the comparisons of neighbouring keys in sorted order (B - 1), the numbering pass (N), the
+    // class firsts lifted (one per local vertex) and the elements filtered (triangles and quads).
+    // Evaluations: one normal per point and one surface point per local vertex whose source is
+    // not copied.
+    LiftCounted(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, t: UvTriangulation): Counted<FaceMesh>
+    {
+        var n = t.Points.Count;
+        var keys = n.MapRange(i => t.Sources[i].SourceKeyOf);
+        var keyedBuffer = new Buffer<Integer>(n);
+        var keyedCount = 0;
+        var i = 0;
+        while (i < n)
+        {
+            if (keys[i].IsKeyed)
+            {
+                keyedBuffer = keyedBuffer.Set(keyedCount, i);
+                keyedCount = keyedCount + 1;
+            }
+            i = i + 1;
+        }
+        var keyed = keyedBuffer.Freeze().Take(keyedCount);
+        var order = keyed.Sort((a, b) => keys[a].KeyAtMost(keys[b]));
+        var root = new Buffer<Integer>(n);
+        var j = 0;
+        while (j < n)
+        {
+            root = root.Set(j, j);
+            j = j + 1;
+        }
+        var p = 1;
+        while (p < order.Count)
+        {
+            if (keys[order[p]].SameKey(keys[order[p - 1]]))
+            {
+                root = root.Set(order[p], root.At(order[p - 1]));
+            }
+            p = p + 1;
+        }
+        var number = new Buffer<Integer>(n);
+        var firstBuffer = new Buffer<Integer>(n);
+        var next = 0;
+        var q = 0;
+        while (q < n)
+        {
+            if (root.At(q) == q)
+            {
+                number = number.Set(q, next);
+                firstBuffer = firstBuffer.Set(next, q);
+                next = next + 1;
+            }
+            else
+            {
+                number = number.Set(q, number.At(root.At(q)));
+            }
+            q = q + 1;
+        }
+        var firsts = firstBuffer.Freeze().Take(next);
+        var local = number.Freeze().Map(v => VertexIndex(v));
+        var s = m.SurfaceOf(f);
+        var mesh = FaceMesh(
+            f,
+            t.Points,
+            t.Sources,
+            local,
+            firsts.Map(k => m.SharedPosition(d, t.Sources[k],
+                t.Sources[k].IsCopiedSource ? Point3D(0.0, 0.0, 0.0) : m.Geometry.Eval(s, t.Points[k]))),
+            t.Points.Map(uv => m.LiftNormal(f, uv)),
+            t.Triangles.FlatMap(x => x.DistinctlyLifted(local) ? [x] : t.Triangles.Take(0))
+                .Concatenate(t.Quads.FlatMap(x => x.CollapsedToTriangle(local))),
+            t.Quads.FlatMap(x => x.DistinctlyLifted(local) ? [x] : t.Quads.Take(0)),
+            firsts.Map(k => d.ProvenanceOfSource(f, t.Sources[k], t.Points[k])));
+        var evaluated = firsts.Reduce(0, (c, k) => t.Sources[k].IsCopiedSource ? c : c + 1);
+        var insertions = n + keyedCount + keyedCount * (MergePasses(keyedCount) + 2) + (keyedCount - 1).Max(0)
+            + n + next + t.Triangles.Count + t.Quads.Count;
+        return Counted(mesh, WorkBudget(n + evaluated, insertions, 0, 0));
+    }
+}

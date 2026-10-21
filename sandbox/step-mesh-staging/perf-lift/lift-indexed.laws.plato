@@ -1,0 +1,229 @@
+//==
+// # Lifting by source key: laws (complexity sweep, chunk F3)
+//
+// LiftIndexed agrees with Lift field for field on every triangulable face of layer 7's ten
+// witness models and the hemispheres, triangulated once per sweep as LiftCase witnesses under
+// the witness options: unrefined (every seam and pole identification, cheap on every model), on
+// a quad grid where one is built (cylinder, sphere, cone, hemispheres: collapsed quads), and
+// refined on the box and cylinder (interior points). Each case lists the branches of Lift it
+// reaches and a law checks them, so the agreement is not vacuous. Source keys match
+// IdentifiedSources on a list of sources that covers every case and every near miss. The count
+// witness lifts the unit box's bottom face, its boundary discretized into n points and
+// triangulated without refinement, at n = 32 and 128.
+//
+// Sections, in order:
+//  - Lift cases
+//  - Agreement
+//  - Source keys
+//  - Work
+
+library FaceMeshingLiftIndexedLaws
+{
+    //==
+    // # Lift cases
+
+    // The face criteria the cases are meshed with: the witness options' (layer 8), with quad
+    // grids preferred or not.
+    LiftCaseCriteria(quads: Boolean): FaceMeshingCriteria
+        => FaceMeshingCriteria(MeshingOptions.WitnessOptions.Face.Discretization,
+            MeshingOptions.WitnessOptions.Face.SurfaceChordal,
+            MeshingOptions.WitnessOptions.Face.SurfaceAngular,
+            quads);
+
+    // How a case triangulates its faces.
+    //   0: the constrained triangulation of the region's boundary points, unrefined: every seam
+    //      and pole identification, no interior point, cheap on every witness.
+    //   1: the quad grid where QuadGridIfRectangular builds one, else as 0: collapsed quads.
+    //   2: FaceTriangulation, refined to the surface: interior points (cheap witnesses only).
+    CaseTriangulation(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria, how: Integer): UvTriangulation
+        => how == 2 ? m.FaceTriangulation(f, d, c) : m.GridOrCdt(f, d, m.RegionOf(f, d, c), c);
+
+    // The quad grid of region r when the criteria prefer quads and one is built, else its
+    // unrefined constrained triangulation.
+    GridOrCdt(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, c: FaceMeshingCriteria): UvTriangulation
+        => match (m.FaceQuadGrid(f, d, r, c)) {
+            NoGrid => r.TriangulateRegionCdt(m.ChartOf(f, r));
+            CountsDiffer(floors) => r.TriangulateRegionCdt(m.ChartOf(f, r));
+            Grid(mesh) => mesh;
+        };
+
+    // Witness model k's triangulable faces, triangulated as `how` says.
+    LiftCaseAt(name: String, k: Integer, how: Integer, reaches: Array<LiftBranch>): LiftCase
+        => LiftCaseOf(name, BrepModel.WitnessAt(k), how, reaches);
+
+    // Model m's triangulable faces, triangulated as `how` says.
+    LiftCaseOf(name: String, m: BrepModel, how: Integer, reaches: Array<LiftBranch>): LiftCase
+    {
+        var c = LiftCaseCriteria(how == 1);
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        var faces = m.Faces.Count.Range.FlatMap(i =>
+            m.CanTriangulateFace(BrepFaceIndex(i), d, c) ? [BrepFaceIndex(i)] : [BrepFaceIndex(i)].Take(0));
+        return LiftCase(name, m, d, faces, faces.Map(f => m.CaseTriangulation(f, d, c, how)), reaches);
+    }
+
+    // No branch beyond the plain one.
+    NoBranches(_: LiftBranch): Array<LiftBranch>
+        => [LiftBranch.SeamCuts].Take(0);
+
+    Witness_UnitBoxLift(_: LiftCase): LiftCase
+        => LiftCaseAt("UnitBox", 0, 0, LiftBranch.NoBranches);
+    Witness_CylinderLift(_: LiftCase): LiftCase
+        => LiftCaseAt("Cylinder", 1, 0, [LiftBranch.IdentifiedPoints]);
+    Witness_SphereLift(_: LiftCase): LiftCase
+        => LiftCaseAt("Sphere", 2, 0, [LiftBranch.IdentifiedPoints, LiftBranch.DroppedTriangles]);
+    Witness_TorusLift(_: LiftCase): LiftCase
+        => LiftCaseAt("Torus", 3, 0, [LiftBranch.IdentifiedPoints]);
+    Witness_ConeLift(_: LiftCase): LiftCase
+        => LiftCaseAt("Cone", 4, 0, [LiftBranch.IdentifiedPoints]);
+    Witness_BlockWithThroughHoleLift(_: LiftCase): LiftCase
+        => LiftCaseAt("BlockWithThroughHole", 5, 0, LiftBranch.NoBranches);
+    Witness_HollowBoxLift(_: LiftCase): LiftCase
+        => LiftCaseAt("HollowBox", 6, 0, LiftBranch.NoBranches);
+    Witness_BSplinePatchSolidLift(_: LiftCase): LiftCase
+        => LiftCaseAt("BSplinePatchSolid", 7, 0, LiftBranch.NoBranches);
+    Witness_QuarterCylinderLift(_: LiftCase): LiftCase
+        => LiftCaseAt("QuarterCylinder", 8, 0, LiftBranch.NoBranches);
+    Witness_SphereByPoleLoopsLift(_: LiftCase): LiftCase
+        => LiftCaseAt("SphereByPoleLoops", 9, 0, [LiftBranch.SeamCuts, LiftBranch.IdentifiedPoints]);
+    Witness_CylinderQuadsLift(_: LiftCase): LiftCase
+        => LiftCaseAt("CylinderQuads", 1, 1, [LiftBranch.IdentifiedPoints]);
+    Witness_SphereQuadsLift(_: LiftCase): LiftCase
+        => LiftCaseAt("SphereQuads", 2, 1, [LiftBranch.IdentifiedPoints]);
+    Witness_ConeQuadsLift(_: LiftCase): LiftCase
+        => LiftCaseAt("ConeQuads", 4, 1, [LiftBranch.IdentifiedPoints]);
+    Witness_UnitBoxRefinedLift(_: LiftCase): LiftCase
+        => LiftCaseAt("UnitBoxRefined", 0, 2, LiftBranch.NoBranches);
+    Witness_CylinderRefinedLift(_: LiftCase): LiftCase
+        => LiftCaseAt("CylinderRefined", 1, 2, [LiftBranch.InteriorPoints, LiftBranch.IdentifiedPoints]);
+    Witness_HemispheresLift(_: LiftCase): LiftCase
+        => LiftCaseOf("Hemispheres", BrepModel.Witness_Hemispheres(1.0), 0,
+            [LiftBranch.PoleSegments, LiftBranch.IdentifiedPoints, LiftBranch.DroppedTriangles]);
+    Witness_HemispheresQuadsLift(_: LiftCase): LiftCase
+        => LiftCaseOf("HemispheresQuads", BrepModel.Witness_Hemispheres(1.0), 1, [LiftBranch.CollapsedQuads]);
+
+    //==
+    // # Agreement
+
+    // True when two arrays of parameter points are identical.
+    SameUvPoints(a: Array<UvCoordinate>, b: Array<UvCoordinate>): Boolean
+        => a.Count == b.Count && a.Count.Range.All(i => a[i].U == b[i].U && a[i].V == b[i].V);
+
+    // True when two arrays of positions are identical.
+    SamePositions(a: Array<Point3D>, b: Array<Point3D>): Boolean
+        => a.Count == b.Count && a.Count.Range.All(i => a[i].X == b[i].X && a[i].Y == b[i].Y && a[i].Z == b[i].Z);
+
+    // True when two arrays of normals are identical.
+    SameNormals(a: Array<Direction3D>, b: Array<Direction3D>): Boolean
+        => a.Count == b.Count && a.Count.Range.All(i =>
+            a[i].Vector.X == b[i].Vector.X && a[i].Vector.Y == b[i].Vector.Y && a[i].Vector.Z == b[i].Vector.Z);
+
+    // True when two face meshes are identical in every field.
+    SameFaceMesh(a: FaceMesh, b: FaceMesh): Boolean
+        => a.Face == b.Face
+            && SameUvPoints(a.UvPoints, b.UvPoints)
+            && a.Sources.Count == b.Sources.Count && a.Sources.Count.Range.All(i => a.Sources[i] == b.Sources[i])
+            && a.LocalVertex.Count == b.LocalVertex.Count && a.LocalVertex.Count.Range.All(i => a.LocalVertex[i] == b.LocalVertex[i])
+            && SamePositions(a.Positions, b.Positions)
+            && SameNormals(a.Normals, b.Normals)
+            && a.Triangles.Count == b.Triangles.Count && a.Triangles.Count.Range.All(i => a.Triangles[i] == b.Triangles[i])
+            && a.Quads.Count == b.Quads.Count && a.Quads.Count.Range.All(i => a.Quads[i] == b.Quads[i])
+            && a.Provenance.Count == b.Provenance.Count && a.Provenance.Count.Range.All(i => a.Provenance[i] == b.Provenance[i]);
+
+    // LiftIndexed gives Lift's face mesh, field for field, on every triangulated face of the case.
+    Law_Perf_LiftIndexedAgrees(w: LiftCase): Boolean
+        => w.Faces.Count.Range.All(i => SameFaceMesh(
+            w.Model.Lift(w.Faces[i], w.Discretizations, w.Triangulations[i]),
+            w.Model.LiftIndexed(w.Faces[i], w.Discretizations, w.Triangulations[i])));
+
+    // True when some face of case w has a point whose source key is of the given kind
+    // (SourceKey: 0 interior, 3 seam cut, 4 pole).
+    HasSourceKind(w: LiftCase, kind: Integer): Boolean
+        => w.Triangulations.Any(t => t.Sources.Any(s => s.SourceKeyOf.Kind == kind));
+
+    // True when some face of case w lifts two points to one local vertex.
+    IdentifiesPoints(w: LiftCase): Boolean
+        => w.Faces.Count.Range.Any(i =>
+            w.Model.LiftIndexed(w.Faces[i], w.Discretizations, w.Triangulations[i]).Positions.Count
+                < w.Triangulations[i].Points.Count);
+
+    // True when some face of case w has a triangle Lift drops.
+    DropsTriangles(w: LiftCase): Boolean
+        => w.Triangulations.Any(t => t.CollapsedTriangleCount > 0);
+
+    // True when some face of case w has a quad Lift turns into a triangle.
+    CollapsesQuads(w: LiftCase): Boolean
+        => w.Triangulations.Any(t => t.CollapsedQuadCount > 0);
+
+    // True when case w reaches branch b of Lift.
+    ReachesBranch(w: LiftCase, b: LiftBranch): Boolean
+        => match (b) {
+            SeamCuts => w.HasSourceKind(3);
+            PoleSegments => w.HasSourceKind(4);
+            InteriorPoints => w.HasSourceKind(0);
+            IdentifiedPoints => w.IdentifiesPoints;
+            DroppedTriangles => w.DropsTriangles;
+            CollapsedQuads => w.CollapsesQuads;
+        };
+
+    // Every case reaches the branches it lists; together the cases list every branch
+    // (SphereByPoleLoops seam cuts, Hemispheres pole segments, CylinderRefined interior points,
+    // HemispheresQuads collapsed quads, Sphere dropped triangles), so Law_Perf_LiftIndexedAgrees
+    // compares every branch of the lift.
+    Law_Perf_LiftCaseReachesItsBranches(w: LiftCase): Boolean
+        => w.Reaches.All(b => w.ReachesBranch(b));
+
+    //==
+    // # Source keys
+
+    // Source k of a list that meets every case of UvPointSource and its near misses: two copies
+    // of a vertex and of an edge sample, a neighbouring vertex and sample, both copies of a seam
+    // cut across u and one across v at the same index, two points of one pole segment and one of
+    // the opposite pole, and interior points. k is reduced modulo the count.
+    SourceSample(k: Integer): UvPointSource
+    {
+        var i = ((k % 14) + 14) % 14;
+        return i == 0 ? UvPointSource.FromVertex(BrepVertexIndex(3))
+            : (i == 1 ? UvPointSource.FromVertex(BrepVertexIndex(3))
+            : (i == 2 ? UvPointSource.FromVertex(BrepVertexIndex(4))
+            : (i == 3 ? UvPointSource.FromEdge(BrepEdgeIndex(2), EdgeSampleIndex(5))
+            : (i == 4 ? UvPointSource.FromEdge(BrepEdgeIndex(2), EdgeSampleIndex(6))
+            : (i == 5 ? UvPointSource.FromEdge(BrepEdgeIndex(3), EdgeSampleIndex(5))
+            : (i == 6 ? UvPointSource.SeamCut(DomainSide.UMin, 2)
+            : (i == 7 ? UvPointSource.SeamCut(DomainSide.UMax, 2)
+            : (i == 8 ? UvPointSource.SeamCut(DomainSide.VMin, 2)
+            : (i == 9 ? UvPointSource.SeamCut(DomainSide.UMax, 3)
+            : (i == 10 ? UvPointSource.Pole(DomainSide.VMax, 1)
+            : (i == 11 ? UvPointSource.Pole(DomainSide.VMax, 4)
+            : (i == 12 ? UvPointSource.Pole(DomainSide.VMin, 1)
+            : UvPointSource.Interior))))))))))));
+    }
+
+    // Two sources are identified exactly when both are keyed and their keys are equal: the
+    // grouping LiftIndexed makes is IdentifiedSources' relation. The runner exhausts both
+    // Integers (-1 to 12), so every pair of the sample list is met.
+    Law_Perf_SourceKeyMatchesIdentification(a: Integer, b: Integer): Boolean
+        => IdentifiedSources(SourceSample(a), SourceSample(b))
+            == (SourceSample(a).SourceKeyOf.IsKeyed && SourceSample(a).SourceKeyOf.SameKey(SourceSample(b).SourceKeyOf));
+
+    //==
+    // # Work
+
+    // The unit box's bottom face with each of its four edges discretized into n / 4 segments (a
+    // segment floor on every edge), so its boundary has n points, triangulated without refinement
+    // (TriangulateRegionCdt): n points, all keyed, none identified. LiftCounted's work on it.
+    LiftWork(n: Integer): WorkBudget
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var f = BrepFaceIndex(0);
+        var c = LiftCaseCriteria(false);
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors(m.Edges.Count.MapRange(e => n / 4)));
+        var r = m.RegionOf(f, d, c);
+        return m.LiftCounted(f, d, r.TriangulateRegionCdt(m.ChartOf(f, r))).Work;
+    }
+
+    // LiftIndexed copies and compares at most 16 items per point (n log n for the sort of the
+    // keyed boundary points, 7 passes at 128) and evaluates at most two surface quantities per
+    // point (its normal, and its position when the source is not copied), at 32 and 128 points.
+    Witness_LiftWork(_: WorkClaim): WorkClaim
+        => WorkClaim("LiftIndexed: copies and comparisons per point", Insertions(16).Add(Evaluations(2)), [32, 128], n => LiftWork(n));
+}
