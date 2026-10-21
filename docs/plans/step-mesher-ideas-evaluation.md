@@ -93,6 +93,9 @@ Numbered from 19, recorded as they come up during the evaluation.
 
 | # | Idea | Came from | Status |
 |---|---|---|---|
+| 19 | Instance-aware meshing: mesh each source face once and place each occurrence by its `StepSource.Occurrence`, no fingerprint needed. Run F found 192,457 decoded faces but 118,182 source faces over the corpus: the 74,275 copies are 38.6% of faces and 16.8% of the cost proxy. Needs a spike that decode-time folding of mirrored occurrences and the whole-model tolerance do not make copies differ | run F (idea 14) | recorded; evaluated under 14's verdict |
+| 20 | Hybrid: the faces that repeat most are four-line rectangles and two-arc cylinder strips, which approach 1's fast paths (ideas 2, 3) mesh in microseconds, so the fast paths cover most count-based repeats with no cache | run F | recorded; folds into 2 and 3 |
+| 21 | Corpus hygiene: six files are exact duplicate exports of another (AP203/AP214 pairs of LEA-M8F, MAX, SAM, ZOE_S-LGA51; SARA-G3xx-02 against SARA-N2; two M2-JODY-W377), so per-file averages double-count them; name them in the corpus runner | run F | recorded; one line in the corpus runner's README when it lands (TKT-313) |
 
 ## Results
 
@@ -101,6 +104,20 @@ Each run pastes its section here: method, numbers, verdict (yes, no, maybe), eff
 ### Step 0: baseline on the regenerated library
 
 (pending)
+
+### Run F: idea 14, geometry repeats (spike, 2 h box, throwaway program over the decoder)
+
+Method (ran): a console program against the committed decoder (`StepModel`, `DecodeRaw`; `PrepareModel` not needed, so all 88 files decode; the corpus pass took 20 s). Fingerprint per face: surface kind, loop count, per loop the rotation-normalised sequence of (curve kind, edge length quantised to 1e-4 of the bounding-box diagonal, circle radius the same way); dihedral angles skipped. Cost proxy: edge count squared. Units: 18 files with diagonals over 1,000 taken as micrometres (`LengthFactor` is 1 in every file).
+
+Numbers: within one file a cache would skip 84% of source faces by count but only 23% of the cost proxy (33% of the proxy sits in repeated faces); across the corpus 36 to 40% of the proxy is saved (45 to 51% in repeats), half of it from re-exports and variants of one product. 74% of the proxy sits in 111 faces with 80 or more edges, 76% of whose cost is unique. The faces that repeat most are four-line rectangles and two-arc cylinder strips. Instancing is separate from fingerprinting: 192,457 decoded faces against 118,182 source faces (idea 19).
+
+Verdict: **maybe**, between the plan's lines (over 50% by cost is a yes, under 20% a no). Owner decision 4 stays at its default, no.
+
+Effort: an in-memory within-file cache in the host, 3 to 5 days; a certified cache in Plato with a persistent store, 1.5 to 3 weeks (registration, provenance re-basing, edge agreement with neighbours that are not cached, a tolerance-equality law because placed copies are not bitwise equal).
+
+Payoff: shrinks as the algorithmic ideas land: at the 0.4 ms per face target a cache saves about 35 s over the whole corpus.
+
+Would change it: to yes if TKT-349's fix leaves face time superlinear in edge count, or the owner's workload re-meshes product families; to no if step 0's measured time share of repeated faces is under 20%.
 
 ## Final table
 
