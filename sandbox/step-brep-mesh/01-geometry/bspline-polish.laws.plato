@@ -53,7 +53,7 @@ library PolishCachedLaws
 
     // A B-spline fixture's first jet is its Eval, PartialU and PartialV,
     // bit for bit, anywhere in the domain.
-    Law_Perf_BSplineSurfaceFirstJetAgrees(k: Integer, u: Number, v: Number): Boolean
+    Law_BSplineSurfaceFirstJetAgrees(k: Integer, u: Number, v: Number): Boolean
     {
         var g = k.SurfaceFixtureSet;
         var s = SurfaceIndex(0);
@@ -63,7 +63,7 @@ library PolishCachedLaws
 
     // Every surface's first jet is its Eval, PartialU and PartialV, bit for
     // bit: a B-spline, a trimmed B-spline with one sense reversed, a sphere.
-    Law_Perf_FirstJetAgrees(k: Integer, u: Number, v: Number): Boolean
+    Law_FirstJetAgrees(k: Integer, u: Number, v: Number): Boolean
     {
         var g = k.PerfJetSet;
         return 3.Range.All(i => g.SurfaceAt(SurfaceIndex(i)).FirstJet(g, g.PerfUvIn(SurfaceIndex(i), u, v))
@@ -73,7 +73,7 @@ library PolishCachedLaws
     // The B-spline jet reads the (p_u + 1)(p_v + 1) controls of one span
     // once, whatever the size of the net, and its counted form has the
     // plain form's value.
-    Law_Perf_SurfaceFirstJetReadsLocalNetOnce(k: Integer, u: Number, v: Number): Boolean
+    Law_SurfaceFirstJetReadsLocalNetOnce(k: Integer, u: Number, v: Number): Boolean
     {
         var d = k.SurfaceFixture;
         var uv = k.SurfaceFixtureSet.PerfUvIn(SurfaceIndex(0), u, v);
@@ -83,26 +83,13 @@ library PolishCachedLaws
             && counted.Value == d.BSplineSurfaceFirstJet(uv);
     }
 
-    // The B-spline arms of NormalOr and AreaElement read from the jet are
-    // the library's, bit for bit (the merge wires them so).
-    Law_Perf_NormalAndAreaFromJetAgree(k: Integer, u: Number, v: Number): Boolean
-    {
-        var g = k.SurfaceFixtureSet;
-        var s = SurfaceIndex(0);
-        var uv = g.PerfUvIn(s, u, v);
-        var fallback = Direction3D(Vector3D(0.0, 0.0, 1.0));
-        var j = k.SurfaceFixture.BSplineSurfaceFirstJet(uv);
-        return j.PartialsCross.TryFromVector(fallback) == g.NormalOr(s, uv, fallback)
-            && j.PartialsCross.Length == g.AreaElement(s, uv);
-    }
-
     //==
     // # Steps and polish
 
     // The Gauss-Newton and projected steps from the jet are
     // GaussNewtonStep's and ProjectedStep's, bit for bit, for any point and
     // any step, on all three surfaces of the jet arena.
-    Law_Perf_StepsFromJetAgree(k: Integer, u: Number, v: Number, p: Point3D, du: Number, dv: Number): Boolean
+    Law_StepsFromJetAgree(k: Integer, u: Number, v: Number, p: Point3D, du: Number, dv: Number): Boolean
     {
         var g = k.PerfJetSet;
         return 3.Range.All(i => g.PerfStepsAgree(SurfaceIndex(i), g.PerfUvIn(SurfaceIndex(i), u, v), p, Vector2D(du, dv)));
@@ -118,33 +105,6 @@ library PolishCachedLaws
             && j.ProjectedStepAt(p, uv, step, w) == surface.ProjectedStep(g, p, uv, step, w);
     }
 
-    // From any seed toward any surface point, inside ProjectNearBySearch's
-    // window and radius, the cached polish is PolishProjection's answer bit
-    // for bit, after the same number of iterations.
-    Law_Perf_PolishProjectionCachedAgrees(k: Integer, u0: Number, v0: Number, u1: Number, v1: Number): Boolean
-    {
-        var g = k.SurfaceFixtureSet;
-        var s = SurfaceIndex(0);
-        var surface = g.SurfaceAt(s);
-        var d = g.Domain(s);
-        var seed = g.PerfUvIn(s, u0, v0);
-        var p = g.Eval(s, g.PerfUvIn(s, u1, v1));
-        var w = SurfaceWindow(d.U.NearWindow(seed.U), d.V.NearWindow(seed.V));
-        var radius = Vector2D(d.U.NearStep(w.U), d.V.NearStep(w.V));
-        var run = surface.PolishRunCached(g, p, seed, w, radius, Integer.PolishIterations);
-        return run.Uv == surface.PolishProjection(g, p, seed, w, radius)
-            && run.Iterations == surface.PolishProjectionCounted(g, p, seed, w, radius).Work.Evaluations;
-    }
-
-    // From any start toward any point of space, over the whole domain with
-    // a quarter of it as the radius, on the B-spline and its trimmed copy,
-    // the cached polish is PolishProjection's answer bit for bit.
-    Law_Perf_PolishProjectionCachedAgreesOffSurface(k: Integer, p: Point3D, u: Number, v: Number): Boolean
-    {
-        var g = k.PerfJetSet;
-        return 2.Range.All(i => g.PerfPolishAgrees(SurfaceIndex(i), p, g.PerfUvIn(SurfaceIndex(i), u, v)));
-    }
-
     // PerfPolishAgrees for one surface from one start.
     PerfPolishAgrees(g: GeometrySet, s: SurfaceIndex, p: Point3D, start: UvCoordinate): Boolean
     {
@@ -157,7 +117,7 @@ library PolishCachedLaws
     // Every iteration of the cached polish makes two surface evaluations
     // (one first jet, one point) and one more per halving, on any start
     // and point, on all three surfaces of the jet arena.
-    Law_Perf_PolishEvaluationsAreTwoPlusHalvings(k: Integer, p: Point3D, u: Number, v: Number): Boolean
+    Law_PolishEvaluationsAreTwoPlusHalvings(k: Integer, p: Point3D, u: Number, v: Number): Boolean
     {
         var g = k.PerfJetSet;
         return 3.Range.All(i => g.PerfPolishCostsTwoPlusHalvings(SurfaceIndex(i), p, g.PerfUvIn(SurfaceIndex(i), u, v)));
@@ -177,7 +137,7 @@ library PolishCachedLaws
     // jet arena of fixture 2 toward points well off it, with the whole
     // domain as the radius, some iteration halves its step, and the cost
     // there is still two evaluations plus one per halving.
-    Law_Perf_PolishHalvingsAreReached(_: Integer): Boolean
+    Law_PolishHalvingsAreReached(_: Integer): Boolean
     {
         var g = 2.PerfJetSet;
         var runs = 3.Range.FlatMap(i => [0.0, 1.0].FlatMap(f => [Point3D(0.0, 0.0, 0.0), Point3D(3.0, -2.0, 5.0), Point3D(0.5, 0.5, -4.0)].Map(p =>
@@ -212,7 +172,7 @@ library PolishCachedLaws
 
     // The witness's run takes exactly its limit in iterations, at both
     // sizes, so the claim's size is the iteration count.
-    Law_Perf_PolishWitnessRunsToItsLimit(_: Integer): Boolean
+    Law_PolishWitnessRunsToItsLimit(_: Integer): Boolean
     {
         var g = 0.SurfaceFixtureSet;
         var s = SurfaceIndex(0);

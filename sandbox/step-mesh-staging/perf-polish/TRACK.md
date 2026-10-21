@@ -1,7 +1,7 @@
 # perf-polish: one first jet per polish iteration, one span lookup per B-spline jet
 
 Ticket: TKT-381
-Status: ready: I4
+Status: merged: I4 (2026-10-21, into 01-geometry/bspline-polish.{types,library,laws}.plato; PolishProjectionCounted runs the cached loop, the B-spline arms of NormalOr and AreaElement read one jet)
 
 ## Done
 - I4, (this commit), about 0.6 h against 2 h expected. Ranked candidate 25.

@@ -36,29 +36,8 @@ library BsplineInverseAlong
     // loop, the same answer.
     PolishProjectionCounted(surface: BrepSurface, g: GeometrySet, p: Point3D, start: UvCoordinate, w: SurfaceWindow, radius: Vector2D): Counted<UvCoordinate>
     {
-        var uv = start.ClampInto(w);
-        var n = 0;
-        var moving = true;
-        while (moving && n < Integer.PolishIterations)
-        {
-            var here = surface.Eval(g, uv).Distance(p);
-            var slack = ResolutionAt(surface.Eval(g, uv).PositionVector.Length + p.PositionVector.Length).Value;
-            var step = surface.GaussNewtonStep(g, p, uv).Limited(radius);
-            var next = surface.ProjectedStep(g, p, uv, step, w);
-            var halvings = 0;
-            while (halvings < 12 && surface.Eval(g, next).Distance(p) > here + slack)
-            {
-                step = step * 0.5;
-                next = surface.ProjectedStep(g, p, uv, step, w);
-                halvings = halvings + 1;
-            }
-            moving = surface.Eval(g, next).Distance(p) <= here + slack
-                && ((next.U - uv.U).Abs > ResolutionAt(uv.U.Abs + w.U.End.Abs.Min(w.U.Start.Abs)).Value
-                    || (next.V - uv.V).Abs > ResolutionAt(uv.V.Abs + w.V.End.Abs.Min(w.V.Start.Abs)).Value);
-            uv = surface.Eval(g, next).Distance(p) <= here + slack ? next : uv;
-            n = n + 1;
-        }
-        return Counted(uv, Evaluations(n));
+        var run = surface.PolishRunCached(g, p, start, w, radius, Integer.PolishIterations);
+        return Counted(run.Uv, Evaluations(run.Iterations));
     }
 
     // ProjectNearBySearchBody with its polish iterations counted as

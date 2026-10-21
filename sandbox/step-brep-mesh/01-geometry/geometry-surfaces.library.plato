@@ -180,7 +180,7 @@ library BrepGeometrySurfaces
             Torus(placement, major, minor, part) => TorusNormalOr(placement, major, minor, part, uv, fallback);
             Revolution(profile, axis) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
             LinearExtrusion(profile, extrusion) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
-            BSpline(data) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).TryFromVector(fallback);
+            BSpline(data) => data.BSplineSurfaceFirstJet(uv).PartialsCross.TryFromVector(fallback);
             RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => uSense == vSense
                 ? g.NormalOr(basis, g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv), fallback)
                 : Direction3D(g.NormalOr(basis, g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv), fallback).Vector * (-1.0));
@@ -232,7 +232,7 @@ library BrepGeometrySurfaces
             Torus(placement, major, minor, part) => (minor * (major + minor * uv.V.Cos)).Abs;
             Revolution(profile, axis) => axis.Direction.Vector.Cross(g.Eval(profile, uv.V) - axis.Origin).Cross(g.Derivative(profile, uv.V)).Length;
             LinearExtrusion(profile, extrusion) => g.Derivative(profile, uv.U).Cross(extrusion).Length;
-            BSpline(data) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).Length;
+            BSpline(data) => data.BSplineSurfaceFirstJet(uv).PartialsCross.Length;
             RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.AreaElement(basis, g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv));
             Offset(basis, distance) => surface.PartialU(g, uv).Cross(surface.PartialV(g, uv)).Length;
         };
