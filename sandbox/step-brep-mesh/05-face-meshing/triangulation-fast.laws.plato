@@ -28,8 +28,12 @@ library TriangulationFastLaws
         var after = m.TryInsertion(f, r, chart, t.Points, points, t.Triangles, nb, 0, uv, least, false);
         return after.Count == t.Triangles.Count
             ? true
-            : UpdatedNeighbours(t.Triangles, nb, after, t.Points.Count, points.WalkTo(t.Triangles, nb, 0, chart.ChartPoint(uv))) == NeighbourSlots(after, t.Points.Count + 1);
+            : SameSlots(UpdatedNeighbours(t.Triangles, nb, after, t.Points.Count, points.WalkTo(t.Triangles, nb, 0, chart.ChartPoint(uv))), NeighbourSlots(after, t.Points.Count + 1));
     }
+
+    // Whether two neighbour tables are equal slot by slot (layer 6's IsSameIntegers is above this layer).
+    SameSlots(a: Array<Integer>, b: Array<Integer>): Boolean
+        => a.Count == b.Count && a.Count.MapRange(k => a[k] == b[k]).All(x => x);
 
     // UpdatedTableIsTable at every face of sample k.
     Law_UpdatedNeighboursAreTheTable(k: Integer): Boolean
