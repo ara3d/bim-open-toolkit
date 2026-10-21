@@ -1,0 +1,31 @@
+//==
+// # Model mesh incidence, meshed witnesses: laws (complexity sweep, chunk M2)
+//
+// Layer 08: the indexed components and counts of 06-mesh agree with their references on two
+// models meshed by the pipeline, each meshed once per sweep as a witness.
+//
+// Sections, in order:
+//  - Witnesses
+//  - Agreement
+
+library ModelMeshIncidenceWitnessLaws
+{
+    //==
+    // # Witnesses
+
+    // The block with a through hole (one torus), meshed once per sweep.
+    Witness_IncidenceTorus(_: IncidenceMeshWitness): IncidenceMeshWitness
+        => IncidenceMeshWitness("BlockWithThroughHole", BrepModel.Witness_BlockWithThroughHole.WitnessMesh);
+
+    // The hollow box (two spheres), meshed once per sweep.
+    Witness_IncidenceSpheres(_: IncidenceMeshWitness): IncidenceMeshWitness
+        => IncidenceMeshWitness("HollowBox", BrepModel.Witness_HollowBox.WitnessMesh);
+
+    //==
+    // # Agreement
+
+    // The indexed components and counts equal the reference on both meshed witnesses (and on
+    // the generated cases the runner adds).
+    Law_Perf_IndexedFormsAgreeOnMeshedWitnesses(w: IncidenceMeshWitness): Boolean
+        => w.Mesh.IndexedFormsAgree;
+}

@@ -1,0 +1,22 @@
+//==
+// # Model mesh incidence: types (complexity sweep, chunk M2)
+//
+// Sections, in order:
+//  - Vertex-to-element incidence
+
+//==
+// # Vertex-to-element incidence
+
+// The elements at each vertex of a ModelMesh, in compressed rows: row v is
+// Elements[Offsets[v]] up to Elements[Offsets[v + 1]], the elements with a corner at v in
+// increasing order, once each; a corner that names no position is in no row. Offsets has one
+// entry per vertex plus one, starts at 0 and ends at Elements.Count. The stdlib's
+// JaggedArray<ElementIndex> holds the same data, but the C# writer emits no member for a library
+// function whose first parameter is an instance of a generic type, so the row accessors need a
+// concrete receiver. Removes: the scan of every element per vertex in ComponentsOf and LinkEdges.
+type VertexIncidence
+    implements IValue
+{
+    Offsets: Array<Integer>;
+    Elements: Array<ElementIndex>;
+}
