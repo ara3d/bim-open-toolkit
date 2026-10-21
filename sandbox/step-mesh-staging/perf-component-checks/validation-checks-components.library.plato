@@ -1,0 +1,221 @@
+//==
+// # BrepCheckingComponents (complexity sweep, chunk V6)
+//
+// The component checks of 07-validation/validation-checks-mesh.library.plato
+// over tables built once per report (MeshComponentTables, 06-mesh), and the
+// Structure family of ModelMeshReport built from them. The library's checks
+// evaluate a layer 6 law per element, vertex or component, and each law case
+// rebuilds ComponentsOf, EdgeTableOf or ComponentCountsOf (candidate 16 of
+// docs/plans/step-mesher-complexity.md). Every check here returns the
+// library check's Check field for field (Identical): same law name, same
+// samples in the same order, so the same first failing sample.
+//
+// Check_ComponentRootIsItsLowestElementLinear replaces an N x N grid by one
+// sample per element. The grid's sample (r, e) fails exactly when r is a root
+// and e is an element below r in r's component, and its provenance is
+// AtElement(r) whatever e is. So row r of the grid holds exactly when r is
+// not a root or is the lowest element of its component; the grid fails
+// exactly when some root is not the lowest element of its component; and
+// since the fold keeps the first failing sample in row-major order, the
+// grid's result is the failing check at the smallest such root, which is
+// also the first failing sample of the per-element check, with the same
+// provenance. When every sample holds, both folds keep their seed. So the
+// two are Identical (Law_Perf_RootIsLowestLinearAgrees).
+//
+// Sections, in order:
+//  - Per-element component checks
+//  - Pinched vertices
+//  - Per-component checks
+//  - Coincident vertices
+//  - The Structure family of ModelMeshReport
+//  - Helpers
+
+library BrepCheckingComponents
+{
+    //==
+    // # Per-element component checks
+
+    // Check_ComponentParentIsInItsComponent over comps = mesh.ComponentsOf.
+    Check_ComponentParentIsInItsComponentWithComponents(mesh: ModelMesh, comps: MeshComponents): Check
+        => mesh.CheckMeshElements("Law_ComponentParentIsInItsComponent", e => mesh.ComponentParentIsInItsComponentGiven(comps, e));
+
+    // Check_ComponentParentIsOneShallower over comps = mesh.ComponentsOf.
+    Check_ComponentParentIsOneShallowerWithComponents(mesh: ModelMesh, comps: MeshComponents): Check
+        => mesh.CheckMeshElements("Law_ComponentParentIsOneShallower", e => mesh.ComponentParentIsOneShallowerGiven(comps, e));
+
+    // Check_ComponentParentSharesAVertex over comps = mesh.ComponentsOf.
+    Check_ComponentParentSharesAVertexWithComponents(mesh: ModelMesh, comps: MeshComponents): Check
+        => mesh.CheckMeshElements("Law_ComponentParentSharesAVertex", e => mesh.ComponentParentSharesAVertexGiven(comps, e));
+
+    // Check_ComponentRootHasDepthZero over comps = mesh.ComponentsOf.
+    Check_ComponentRootHasDepthZeroWithComponents(mesh: ModelMesh, comps: MeshComponents): Check
+        => mesh.CheckMeshElements("Law_ComponentRootHasDepthZero", e => mesh.ComponentRootHasDepthZeroGiven(comps, e));
+
+    // Check_ComponentsAreNumberedByRoot over comps = mesh.ComponentsOf, each
+    // root's RootsBelow read from the root tables instead of counted.
+    // Precondition: roots is ComponentRootTablesOf(mesh, comps).
+    Check_ComponentsAreNumberedByRootWithComponents(mesh: ModelMesh, comps: MeshComponents, roots: ComponentRootTables): Check
+        => mesh.CheckMeshElements("Law_ComponentsAreNumberedByRoot", r => mesh.ComponentsAreNumberedByRootGiven(comps, roots, r));
+
+    // Check_ComponentRootIsItsLowestElement as one sample per element, the
+    // grid's row r folded into the sample r (header): Identical to the grid
+    // over comps = mesh.ComponentsOf, linear where the grid is quadratic.
+    // Precondition: roots is ComponentRootTablesOf(mesh, comps).
+    Check_ComponentRootIsItsLowestElementLinear(mesh: ModelMesh, comps: MeshComponents, roots: ComponentRootTables): Check
+        => mesh.CheckMeshElements("Law_ComponentRootIsItsLowestElement", r => mesh.ComponentRootIsLowestGiven(comps, roots, r));
+
+    // Check_ComponentCountIsRootCount over comps = mesh.ComponentsOf.
+    Check_ComponentCountIsRootCountWithComponents(mesh: ModelMesh, comps: MeshComponents): Check
+        => CheckOnce("Law_ComponentCountIsRootCount", comps.ComponentCountIsRootCountGiven);
+
+    //==
+    // # Pinched vertices
+
+    // Check_ClosedMeshHasNoPinchedVertex given whether the mesh is closed and
+    // its incidence: the check of no sample when it is not closed, which is
+    // what the library's fold of samples that all hold returns. Precondition:
+    // incidence is mesh.VertexElementIncidence.
+    Check_ClosedMeshHasNoPinchedVertexGiven(mesh: ModelMesh, closed: Boolean, incidence: VertexIncidence): Check
+        => closed
+            ? mesh.CheckMeshVertices("Law_ClosedMeshHasNoPinchedVertex", v => mesh.ClosedMeshHasNoPinchedVertexGiven(closed, incidence, v))
+            : NoSampleCheck("Law_ClosedMeshHasNoPinchedVertex");
+
+    // Check_ClosedMeshHasNoPinchedVertex with IsClosed computed once and the
+    // incidence built once, where the library's rebuilds the edge table and
+    // scans every element per vertex.
+    Check_ClosedMeshHasNoPinchedVertexHoisted(mesh: ModelMesh): Check
+        => mesh.Check_ClosedMeshHasNoPinchedVertexGiven(mesh.IsClosed, mesh.VertexElementIncidence);
+
+    // Check_ClosedMeshHasNoPinchedVertex over the tables of the mesh.
+    Check_ClosedMeshHasNoPinchedVertexWithTables(mesh: ModelMesh, tables: MeshComponentTables): Check
+        => mesh.Check_ClosedMeshHasNoPinchedVertexGiven(tables.Edges.IsClosed, tables.Incidence);
+
+    //==
+    // # Per-component checks
+
+    // Check_ClosedOrientedSurfaceHasGenus over the tables of the mesh.
+    Check_ClosedOrientedSurfaceHasGenusWithTables(mesh: ModelMesh, tables: MeshComponentTables): Check
+        => tables.Components.CheckComponentsGiven("Law_ClosedOrientedSurfaceHasGenus",
+            c => c.CountsIn(tables.Counts).ClosedOrientedSurfaceHasGenusGiven(tables.MeshIsWellFormed));
+
+    // Check_OrientedSurfaceWithBoundaryHasGenus over the tables of the mesh.
+    Check_OrientedSurfaceWithBoundaryHasGenusWithTables(mesh: ModelMesh, tables: MeshComponentTables): Check
+        => tables.Components.CheckComponentsGiven("Law_OrientedSurfaceWithBoundaryHasGenus",
+            c => c.CountsIn(tables.Counts).OrientedSurfaceWithBoundaryHasGenusGiven);
+
+    // Check_AngleDefectSumIsTwoPiTimesEuler over the tables of the mesh.
+    Check_AngleDefectSumIsTwoPiTimesEulerWithTables(mesh: ModelMesh, tables: MeshComponentTables): Check
+        => tables.Components.CheckComponentsGiven("Law_AngleDefectSumIsTwoPiTimesEuler",
+            c => mesh.AngleDefectSumIsTwoPiTimesEulerGiven(tables.Components, c.CountsIn(tables.Counts), tables.CornersAreValid, c));
+
+    // Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects over the tables of
+    // the mesh.
+    Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefectsWithTables(mesh: ModelMesh, tables: MeshComponentTables): Check
+        => tables.Components.CheckComponentsGiven("Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects",
+            c => mesh.AngleDefectSumIsTwoPiTimesEulerPlusQuadDefectsGiven(tables.Components, c.CountsIn(tables.Counts), tables.CornersAreValid, c));
+
+    //==
+    // # Coincident vertices
+
+    // Check_VerticesOfOneComponentAreApart over comps = mesh.ComponentsOf,
+    // with the reported pairs listed once, where the library's lists them
+    // three times per pair and its law rebuilds ComponentsOf three times.
+    Check_VerticesOfOneComponentAreApartWithComponents(mesh: ModelMesh, comps: MeshComponents, t: Tolerances): Check
+    {
+        var pairs = mesh.CoincidentVertexPairs(comps, t.Length);
+        return CheckAll("VerticesOfOneComponentAreApart", pairs.Count,
+            k => mesh.VerticesOfOneComponentAreApartGiven(comps, pairs[k].A, pairs[k].B, t.Length),
+            k => AtMeshVertex(pairs[k].A.Value));
+    }
+
+    //==
+    // # The Structure family of ModelMeshReport
+
+    // ModelMeshReport's Structure family with its work counted: the same
+    // checks in the same order with the same messages, the component checks
+    // reading one MeshComponentTables. Flips is the number of ComponentsOf
+    // builds, one per report. Insertions is the element visits of the
+    // component checks: the root tables' pass, one per element, and one per
+    // element for each of the six per-element component checks above, so 7
+    // per element on a mesh's own components. The per-component angle-defect
+    // sums still read every element once per component (not counted here).
+    ModelMeshStructureReportCounted(mesh: ModelMesh, t: Tolerances): Counted<Report>
+    {
+        var built = mesh.MeshComponentTablesCounted;
+        var tables = built.Value;
+        var comps = tables.Components;
+        var report = MergeAll([
+            ExactReport(mesh.Check_ElementFaceHasOneEntryPerElement,
+                "Element face has one entry per element does not hold."),
+            ExactReport(mesh.Check_CornerNormalsHaveOneEntryPerCorner,
+                "Corner normals have one entry per corner does not hold."),
+            ExactReport(mesh.Check_CornerUvsHaveOneEntryPerCorner,
+                "Corner uvs have one entry per corner does not hold."),
+            ExactReport(mesh.Check_VertexProvenanceHasOneEntryPerVertex,
+                "Vertex provenance has one entry per vertex does not hold."),
+            ExactReport(mesh.Check_ElementCornersInRange,
+                "Element corners in range does not hold."),
+            ExactReport(mesh.Check_VertexProvenanceMatchesNumbering,
+                "Vertex provenance matches numbering does not hold."),
+            ExactReport(mesh.Check_EdgeRunsFollowModelVertices,
+                "Edge runs follow model vertices does not hold."),
+            ExactReport(mesh.Check_FaceRunsFollowEdgeRuns,
+                "Face runs follow edge runs does not hold."),
+            ExactReport(mesh.Check_EdgeRunHasNonNegativeLength,
+                "Edge run has non negative length does not hold."),
+            ExactReport(mesh.Check_FaceRunHasNonNegativeLength,
+                "Face run has non negative length does not hold."),
+            ExactReport(mesh.Check_NumberingCoversPositions,
+                "Numbering covers positions does not hold."),
+            ExactReport(mesh.Check_ClosedMeshHasNoPinchedVertexWithTables(tables),
+                "Closed mesh has no pinched vertex does not hold."),
+            ExactReport(mesh.Check_OrientedSurfaceWithBoundaryHasGenusWithTables(tables),
+                "A component with boundary has no genus: 2 - chi - B is odd or negative."),
+            ExactReport(mesh.Check_ComponentCountIsRootCountWithComponents(comps),
+                "Component count is root count does not hold."),
+            ExactReport(mesh.Check_ComponentParentIsInItsComponentWithComponents(comps),
+                "Component parent is in its component does not hold."),
+            ExactReport(mesh.Check_ComponentParentIsOneShallowerWithComponents(comps),
+                "Component parent is one shallower does not hold."),
+            ExactReport(mesh.Check_ComponentParentSharesAVertexWithComponents(comps),
+                "Component parent shares a vertex does not hold."),
+            ExactReport(mesh.Check_ComponentRootHasDepthZeroWithComponents(comps),
+                "Component root has depth zero does not hold."),
+            ExactReport(mesh.Check_ComponentsAreNumberedByRootWithComponents(comps, tables.Roots),
+                "Components are numbered by root does not hold."),
+            ExactReport(mesh.Check_ComponentRootIsItsLowestElementLinear(comps, tables.Roots),
+                "Component root is its lowest element does not hold."),
+            ExactReport(mesh.Check_ClosedOrientedSurfaceHasGenusWithTables(tables),
+                "Closed oriented surface has genus does not hold."),
+            ExactReport(mesh.Check_ElementHasNoRepeatedCorner,
+                "Element has no repeated corner does not hold."),
+            ExactReport(mesh.Check_ElementIsNotFolded,
+                "Element is not folded does not hold."),
+            ExactReport(mesh.Check_QuadIsConvex,
+                "Quad is convex does not hold."),
+            ExactReport(mesh.Check_TriangleAngleSumIsPi,
+                "Triangle angle sum is pi does not hold."),
+            ExactReport(mesh.Check_AngleDefectSumIsTwoPiTimesEulerWithTables(tables),
+                "Angle defect sum is two pi times Euler does not hold."),
+            ExactReport(mesh.Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefectsWithTables(tables),
+                "Angle defect sum is two pi times Euler plus quad defects does not hold."),
+            ExactReport(mesh.Check_ElementIsNotDegenerate(t),
+                "Element is not degenerate does not hold."),
+            ExactReport(mesh.Check_VerticesOfOneComponentAreApartWithComponents(comps, t),
+                "Vertices of one component are apart does not hold.")]);
+        return Counted(report, Add(built.Work, Insertions(6 * mesh.ElementCount)));
+    }
+
+    // ModelMeshReport's Structure family, the component checks reading one
+    // MeshComponentTables.
+    ModelMeshStructureReport(mesh: ModelMesh, t: Tolerances): Report
+        => mesh.ModelMeshStructureReportCounted(t).Value;
+
+    //==
+    // # Helpers
+
+    // An exact law at every component of comps: CheckComponents with the
+    // component count read from the table given, not from a rebuilt one.
+    CheckComponentsGiven(comps: MeshComponents, law: String, holds: Function1<MeshComponentIndex, Boolean>): Check
+        => CheckAll(law, comps.ComponentCount, c => holds(MeshComponentIndex(c)), c => Provenance.WholeInput);
+}

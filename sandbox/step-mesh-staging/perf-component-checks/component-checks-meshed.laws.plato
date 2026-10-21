@@ -1,0 +1,15 @@
+//==
+// # Component checks on meshed witnesses: laws (complexity sweep, chunk V6)
+//
+// The Structure report of validation-checks-components.library.plato is Identical to
+// ModelMeshReport's Structure family on the mesh of every MeshedWitness, read from the witness the
+// runner built once per sweep, with the witness model's tolerances. Placed in 08-pipeline at merge,
+// beside the MeshedWitness laws, since the witnesses mesh BrepModels.
+
+library ComponentChecksMeshedLaws
+{
+    // The Structure report agrees with ModelMeshReport's on a real mesh, with one ComponentsOf
+    // build.
+    Law_Perf_MeshedStructureReportAgrees(w: MeshedWitness): Boolean
+        => w.Outcome.Mesh.StructureReportAgreesOn(w.Model.Tolerances);
+}

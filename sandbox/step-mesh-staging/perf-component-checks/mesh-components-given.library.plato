@@ -1,0 +1,224 @@
+//==
+// # Model mesh components given: functions (complexity sweep, chunk V6)
+//
+// The component, pinch, genus, angle-defect and coincidence laws of 06-mesh/mesh-topology.laws.plato
+// and mesh-measures.laws.plato, each written over tables its caller builds once (the components,
+// the per-component counts, the incidence, the root tables) instead of rebuilding ComponentsOf,
+// EdgeTableOf or ComponentCountsOf several times per case (docs/plans/step-mesher-complexity.md,
+// candidate 16). Each <Law>Given is its law's expression with mesh.ComponentsOf, mesh.CountsOf(c),
+// mesh.IsClosed, mesh.IsWellFormed or mesh.HasAllValidCorners replaced by the value passed in, so
+// with those values it returns what the law returns. At merge each law delegates to its Given form
+// (TRACK.md).
+//
+// Sections, in order:
+//  - Root tables
+//  - The tables of a mesh
+//  - Components
+//  - Pinched vertices
+//  - Genus and angle defects
+//  - Coincident vertices
+
+library ModelMeshComponentsGiven
+{
+    //==
+    // # Root tables
+
+    // ComponentRootTablesOf with its work counted: Insertions is the number of passes of its one
+    // loop, the larger of the element count and comps' parent count, so one per element on a
+    // table ComponentsOf built.
+    ComponentRootTablesCounted(mesh: ModelMesh, comps: MeshComponents): Counted<ComponentRootTables>
+    {
+        var elementCount = mesh.ElementCount;
+        var parentCount = comps.ElementParent.Count;
+        var size = comps.ComponentCount.Max(0).Min(elementCount);
+        var lowest = new Buffer<Integer>(size.Max(1));
+        var x = 0;
+        while (x < size)
+        {
+            lowest = lowest.Set(x, -1);
+            x = x + 1;
+        }
+        var below = new Buffer<Integer>(parentCount + 1);
+        below = below.Set(0, 0);
+        var passes = 0;
+        var i = 0;
+        while (i < elementCount.Max(parentCount))
+        {
+            if (i < elementCount)
+            {
+                var c = comps.ElementComponentOf(ElementIndex(i)).Value;
+                if (c >= 0 && c < size)
+                {
+                    if (lowest.At(c) < 0)
+                    {
+                        lowest = lowest.Set(c, i);
+                    }
+                }
+            }
+            if (i < parentCount)
+            {
+                below = below.Set(i + 1, below.At(i) + (comps.IsComponentRoot(ElementIndex(i)) ? 1 : 0));
+            }
+            passes = passes + 1;
+            i = i + 1;
+        }
+        return Counted(ComponentRootTables(lowest.Freeze().Take(size), below.Freeze()), Insertions(passes));
+    }
+
+    // The root tables of comps over the mesh's elements (ComponentRootTables): the lowest element
+    // of each component and the running count of roots, in one pass.
+    ComponentRootTablesOf(mesh: ModelMesh, comps: MeshComponents): ComponentRootTables
+        => mesh.ComponentRootTablesCounted(comps).Value;
+
+    // RootsBelow(comps, e) read from the table: the number of roots among the elements below e.
+    // Precondition: roots is ComponentRootTablesOf(mesh, comps).
+    RootsBelowAt(roots: ComponentRootTables, e: ElementIndex): Integer
+        => roots.RootsBelow[e.Value.Max(0).Min(roots.RootsBelow.Count - 1)];
+
+    // Whether no element below r has component value x: from the table when x has an entry, by a
+    // scan of the elements below r otherwise (a component value ComponentsOf never gives).
+    // Precondition: roots is ComponentRootTablesOf(mesh, comps), r names an element, and x is r's
+    // component value, so r is among the elements with value x.
+    NoElementBelowIn(roots: ComponentRootTables, comps: MeshComponents, x: Integer, r: ElementIndex): Boolean
+        => (x >= 0 && x < roots.LowestElement.Count)
+            ? (roots.LowestElement[x] < 0 || roots.LowestElement[x] >= r.Value)
+            : r.Value.Range.All(e => comps.ElementComponentOf(ElementIndex(e)).Value != x);
+
+    //==
+    // # The tables of a mesh
+
+    // MeshComponentTablesOf with its work counted: Flips is the number of ComponentsOf builds, one,
+    // over the incidence built here; Insertions is the root tables' pass. The incidence, the edge
+    // table and the per-component counts are also built once each.
+    MeshComponentTablesCounted(mesh: ModelMesh): Counted<MeshComponentTables>
+    {
+        var incidence = mesh.VertexElementIncidence;
+        var comps = mesh.ComponentsOfIndexed(incidence);
+        var edges = mesh.EdgeTableOf;
+        var roots = mesh.ComponentRootTablesCounted(comps);
+        return Counted(
+            MeshComponentTables(incidence, comps, edges, mesh.ComponentCountsOfIndexed(edges, comps, incidence),
+                roots.Value, mesh.IsWellFormed, mesh.HasAllValidCorners),
+            Add(Flips(1), roots.Work));
+    }
+
+    // The tables every component check reads, built once: the incidence, ComponentsOf over it,
+    // EdgeTableOf, ComponentCountsOf, the root tables, IsWellFormed and HasAllValidCorners.
+    MeshComponentTablesOf(mesh: ModelMesh): MeshComponentTables
+        => mesh.MeshComponentTablesCounted.Value;
+
+    //==
+    // # Components
+
+    // Law_ComponentParentIsInItsComponent with comps for mesh.ComponentsOf.
+    ComponentParentIsInItsComponentGiven(mesh: ModelMesh, comps: MeshComponents, e: ElementIndex): Boolean
+        => mesh.IsElementInRange(e)
+            ? (mesh.IsElementInRange(comps.ElementParentOf(e))
+                ? comps.ElementComponentOf(comps.ElementParentOf(e)).Value == comps.ElementComponentOf(e).Value
+                : false)
+            : true;
+
+    // Law_ComponentParentSharesAVertex with comps for mesh.ComponentsOf.
+    ComponentParentSharesAVertexGiven(mesh: ModelMesh, comps: MeshComponents, e: ElementIndex): Boolean
+        => (mesh.IsElementInRange(e) ? comps.IsComponentRoot(e).Not : false)
+            ? mesh.SharesAVertex(e, comps.ElementParentOf(e))
+            : true;
+
+    // Law_ComponentRootHasDepthZero with comps for mesh.ComponentsOf.
+    ComponentRootHasDepthZeroGiven(mesh: ModelMesh, comps: MeshComponents, e: ElementIndex): Boolean
+        => mesh.IsElementInRange(e)
+            ? comps.IsComponentRoot(e) == (comps.ElementDepthOf(e) == 0)
+            : true;
+
+    // Law_ComponentParentIsOneShallower with comps for mesh.ComponentsOf.
+    ComponentParentIsOneShallowerGiven(mesh: ModelMesh, comps: MeshComponents, e: ElementIndex): Boolean
+        => (mesh.IsElementInRange(e) ? comps.IsComponentRoot(e).Not : false)
+            ? comps.ElementDepthOf(comps.ElementParentOf(e)) + 1 == comps.ElementDepthOf(e)
+            : true;
+
+    // Law_ComponentRootIsItsLowestElement at the pair (r, e) with comps for mesh.ComponentsOf.
+    ComponentRootIsItsLowestElementGiven(mesh: ModelMesh, comps: MeshComponents, r: ElementIndex, e: ElementIndex): Boolean
+        => ((mesh.IsElementInRange(r) && mesh.IsElementInRange(e)) ? comps.IsComponentRoot(r) : false)
+            ? (comps.ElementComponentOf(r).Value == comps.ElementComponentOf(e).Value ? r.Value <= e.Value : true)
+            : true;
+
+    // Law_ComponentRootIsItsLowestElement at r and every e at once: false exactly when r is a root
+    // and some element below r has r's component value, which is when the pair law fails at (r, e)
+    // for some e. Constant time per r once the root tables exist. Precondition: roots is
+    // ComponentRootTablesOf(mesh, comps).
+    ComponentRootIsLowestGiven(mesh: ModelMesh, comps: MeshComponents, roots: ComponentRootTables, r: ElementIndex): Boolean
+        => (mesh.IsElementInRange(r) ? comps.IsComponentRoot(r) : false)
+            ? roots.NoElementBelowIn(comps, comps.ElementComponentOf(r).Value, r)
+            : true;
+
+    // Law_ComponentCountIsRootCount with comps for mesh.ComponentsOf.
+    ComponentCountIsRootCountGiven(comps: MeshComponents): Boolean
+        => comps.ComponentCount == comps.RootCount;
+
+    // Law_ComponentsAreNumberedByRoot with comps for mesh.ComponentsOf and RootsBelow read from the
+    // root tables. Precondition: roots is ComponentRootTablesOf(mesh, comps).
+    ComponentsAreNumberedByRootGiven(mesh: ModelMesh, comps: MeshComponents, roots: ComponentRootTables, r: ElementIndex): Boolean
+        => (mesh.IsElementInRange(r) ? comps.IsComponentRoot(r) : false)
+            ? comps.ElementComponentOf(r).Value == roots.RootsBelowAt(r)
+            : true;
+
+    //==
+    // # Pinched vertices
+
+    // Law_ClosedMeshHasNoPinchedVertex with closed for mesh.IsClosed and the pinch test read from
+    // the incidence (IsPinchedVertexIndexed, equal to IsPinchedVertex at every v). Precondition:
+    // incidence is mesh.VertexElementIncidence.
+    ClosedMeshHasNoPinchedVertexGiven(mesh: ModelMesh, closed: Boolean, incidence: VertexIncidence, v: VertexIndex): Boolean
+        => (mesh.Positions.IsValidIndex(v) ? closed : false) ? mesh.IsPinchedVertexIndexed(incidence, v).Not : true;
+
+    //==
+    // # Genus and angle defects
+
+    // CountsOf's lookup in a counts array: entry c, NoCells when c names none. CountsOf(mesh, c) is
+    // c.CountsIn(mesh.ComponentCountsOf(mesh.EdgeTableOf, mesh.ComponentsOf)).
+    CountsIn(c: MeshComponentIndex, counts: Array<MeshComponentCounts>): MeshComponentCounts
+        => counts.IsValidIndex(c) ? counts[c] : MeshComponentCounts.NoCells;
+
+    // Law_ClosedOrientedSurfaceHasGenus with k for mesh.CountsOf(c) and wellFormed for
+    // mesh.IsWellFormed.
+    ClosedOrientedSurfaceHasGenusGiven(k: MeshComponentCounts, wellFormed: Boolean): Boolean
+        => wellFormed
+            ? ((k.IsClosed && k.IsConsistentlyOriented && k.IsSurface) ? k.HasGenus : true)
+            : true;
+
+    // Law_OrientedSurfaceWithBoundaryHasGenus with k for mesh.CountsOf(c).
+    OrientedSurfaceWithBoundaryHasGenusGiven(k: MeshComponentCounts): Boolean
+        => (k.BoundaryEdges > 0 && k.IsConsistentlyOriented && k.IsSurface) ? k.HasGenus : true;
+
+    // Law_AngleDefectSumIsTwoPiTimesEuler with comps for mesh.ComponentsOf, k for mesh.CountsOf(c)
+    // and cornersValid for mesh.HasAllValidCorners.
+    AngleDefectSumIsTwoPiTimesEulerGiven(mesh: ModelMesh, comps: MeshComponents, k: MeshComponentCounts,
+        cornersValid: Boolean, c: MeshComponentIndex): Boolean
+        => (cornersValid && k.IsClosed && k.Quads == 0 && k.Vertices > 0)
+            ? (mesh.AngleDefectSum(comps, c).Radians - Number.Tau * k.EulerCharacteristic.ToNumber).Abs
+                <= DefectSumResolution(k.Vertices, 0, 3 * k.Triangles)
+            : true;
+
+    // Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects with comps for mesh.ComponentsOf, k for
+    // mesh.CountsOf(c) and cornersValid for mesh.HasAllValidCorners.
+    AngleDefectSumIsTwoPiTimesEulerPlusQuadDefectsGiven(mesh: ModelMesh, comps: MeshComponents, k: MeshComponentCounts,
+        cornersValid: Boolean, c: MeshComponentIndex): Boolean
+        => (cornersValid && k.IsClosed && k.Vertices > 0)
+            ? (mesh.AngleDefectSum(comps, c).Radians
+                    - mesh.QuadAngleDefectSum(comps, c).Radians
+                    - Number.Tau * k.EulerCharacteristic.ToNumber).Abs
+                <= DefectSumResolution(k.Vertices, k.Quads, 3 * k.Triangles + 4 * k.Quads)
+            : true;
+
+    //==
+    // # Coincident vertices
+
+    // VerticesOfOneComponentAreApart with comps for mesh.ComponentsOf.
+    VerticesOfOneComponentAreApartGiven(mesh: ModelMesh, comps: MeshComponents, a: VertexIndex, b: VertexIndex,
+        tol: LengthTolerance): Boolean
+        => (mesh.Positions.IsValidIndex(a) && mesh.Positions.IsValidIndex(b) && a.Value != b.Value
+                && comps.VertexComponentOf(a).Value >= 0
+                && comps.VertexComponentOf(a).Value == comps.VertexComponentOf(b).Value)
+            ? mesh.Positions[a].Distance(mesh.Positions[b]) > tol.Value
+            : true;
+}
