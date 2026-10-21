@@ -143,7 +143,7 @@ library FaceMeshingDomainOnce
     // MeshedOutcome with the region tolerance given to the refinement.
     MeshedOutcomeIn(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, raw: UvRegion, r: UvRegion, chart: FaceChart, tol: UvTolerance, c: FaceMeshingCriteria): FaceMeshOutcome
     {
-        var grid = m.FaceQuadGrid(f, d, r, c);
+        var grid = m.FaceQuadGridIn(f, d, r, tol, c);
         var t = m.GridOrTrianglesIn(f, r, chart, tol, grid, c);
         var advisory = m.CoarseSegmentRequests(f, d, r, c).Concatenate(m.QuadCountRequests(d, grid, c));
         return FaceMeshOutcome(m.Lift(f, d, t), advisory,

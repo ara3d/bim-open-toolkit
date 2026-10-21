@@ -40,13 +40,13 @@ library ChartCutLaws
 
     // On every triangulated witness face, ChartOfBody2 is the reference and the witness's chart
     // (built by ChartOf).
-    Law_Perf_ChartOfBody2Agrees(w: TriangulatedWitness): Boolean
+    Law_ChartOfBody2Agrees(w: TriangulatedWitness): Boolean
         => w.Model.ChartAgreesOn(w.Face, w.Region) && SameChart(w.Model.ChartOfBody2(w.Face, w.Region), w.Chart);
 
     // On every face of every positive witness model that can be regioned under the witness
     // options, ChartOfBody2 is the reference on the face's region and on the empty region (no
     // boundary point: an infinite box, every speed the floor).
-    Law_Perf_ChartOfBody2AgreesOnWitnesses(_: Boolean): Boolean
+    Law_ChartOfBody2AgreesOnWitnesses(_: Boolean): Boolean
         => BrepModel.WitnessCount.Range.All(k => ChartAgreesOnWitness(k));
 
     // ChartOfBody2 is the reference on every face of positive witness model k, as above.
@@ -63,7 +63,7 @@ library ChartCutLaws
     // MeanSpeedBoth evaluates one partial per sample, 126 per face, on every triangulated
     // witness face (none of whose surfaces has a collapsed line). MeanSpeed evaluated both
     // partials at each of its 63 samples, twice: 252.
-    Law_Perf_MeanSpeedBothEvaluates126(w: TriangulatedWitness): Boolean
+    Law_MeanSpeedBothEvaluates126(w: TriangulatedWitness): Boolean
     {
         var work = w.Model.MeanSpeedBothCounted(w.Face, w.Region).Work;
         return w.Model.CollapsedLineCount(w.Face) == 0
@@ -74,7 +74,7 @@ library ChartCutLaws
     // samples on them (the ParameterV set runs from pole to pole), so the agreement laws reach
     // the collapsed-line tests: the work is the kept samples' partials and two per sample per
     // line, fewer than 126 + 4 x 126 when a sample is dropped.
-    Law_Perf_MeanSpeedBothSkipsPoles(_: Boolean): Boolean
+    Law_MeanSpeedBothSkipsPoles(_: Boolean): Boolean
     {
         var m = BrepModel.WitnessAt(2);
         var c = MeshingOptions.WitnessOptions.Face;
@@ -105,14 +105,9 @@ library ChartCutLaws
             };
         };
 
-    // QuadSidesIn with the region tolerance from the witness's chart is QuadSidesOf, on every
-    // triangulated witness face.
-    Law_Perf_QuadSidesInAgrees(w: TriangulatedWitness): Boolean
-        => SameQuadSides(w.Region.QuadSidesIn(w.Model.RegionTolerance(w.Face, w.Chart)), w.Model.QuadSidesOf(w.Face, w.Region));
-
     // Some triangulated witness face is four-sided, so the agreement law compares corners: the
     // unit box's first face.
-    Law_Perf_QuadSidesInFindsFourSides(w: TriangulatedWitness): Boolean
+    Law_QuadSidesInFindsFourSides(w: TriangulatedWitness): Boolean
         => (w.Sample == 0 && w.Face.Value == 0)
             ? HasFourCorners(w.Region.QuadSidesIn(w.Model.RegionTolerance(w.Face, w.Chart)))
             : true;
@@ -142,13 +137,13 @@ library ChartCutLaws
 
     // CutSegmentCountFast gives CutSegmentCount's n for the cut from a to b on face f.
     CutAgrees(m: BrepModel, f: Integer, a: UvCoordinate, b: UvCoordinate, c: FaceMeshingCriteria): Boolean
-        => m.CutSegmentCountFast(BrepFaceIndex(f), a, b, c) == m.CutSegmentCount(BrepFaceIndex(f), a, b, c);
+        => m.CutSegmentCountFast(BrepFaceIndex(f), a, b, c) == m.CutSegmentCountByScan(BrepFaceIndex(f), a, b, c);
 
     // On the unit cylinder's side: a whole period at four chordal bounds (the last one capped at
     // 64), under two turn bounds (30 degrees, which 12 steps meet only up to rounding, and 31), with a chordal bound past the diameter and a length limit (the
     // one-step cut, Findings), with a minimum length that stops the search, under the witness
     // options; along the ruling under two length limits; a helix.
-    Law_Perf_CutSegmentCountFastAgreesOnCylinder(_: Boolean): Boolean
+    Law_CutSegmentCountFastAgreesOnCylinder(_: Boolean): Boolean
     {
         var m = BrepModel.WitnessAt(1);
         var a = UvCoordinate(0.0, 0.5);
@@ -171,7 +166,7 @@ library ChartCutLaws
     // The cylinder cases reach every way the search stops: the turn bound of 31 degrees at 12 steps, the
     // one-step cut, the minimum length before the chordal bound is met, a length limit at 4
     // steps, the cap at 64.
-    Law_Perf_CutSegmentCountFastStopsEveryWay(_: Boolean): Boolean
+    Law_CutSegmentCountFastStopsEveryWay(_: Boolean): Boolean
     {
         var m = BrepModel.WitnessAt(1);
         var f = BrepFaceIndex(0);
@@ -189,7 +184,7 @@ library ChartCutLaws
     // On the torus (2, 1/2), the sphere, the cone and the B-spline patch: whole periods in u and
     // v and diagonals on the torus, a meridian through both poles and the equator on the sphere,
     // a parallel and a ruling to the apex on the cone, a diagonal and a mid line on the patch.
-    Law_Perf_CutSegmentCountFastAgreesOnCurvedFaces(_: Boolean): Boolean
+    Law_CutSegmentCountFastAgreesOnCurvedFaces(_: Boolean): Boolean
     {
         var torus = BrepModel.WitnessAt(3);
         var sphere = BrepModel.WitnessAt(2);
@@ -242,7 +237,7 @@ library ChartCutLaws
 
     // The circle cuts of the count witness take the step counts they are built for, and
     // CutSegmentCount agrees, so the witness measures a search of the size it names.
-    Law_Perf_CircleCutsTakeTheirSteps(_: Boolean): Boolean
+    Law_CircleCutsTakeTheirSteps(_: Boolean): Boolean
     {
         var m = BrepModel.WitnessAt(1);
         var a = UvCoordinate(0.0, 0.5);

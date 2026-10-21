@@ -468,7 +468,12 @@ library UvRegions
     // shortest step is at least the effective minimum length. Cut points are
     // boundary points, so refinement can add none later: this is their one
     // sampling (the reason RegionOf takes the criteria).
+    // The cut's segment count (CutSegmentCountFast, uv-regions-cut-count.library.plato: the same
+    // linear search with each grid point evaluated once; the scan below is its reference).
     CutSegmentCount(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, c: FaceMeshingCriteria): Integer
+        => m.CutSegmentCountFast(f, a, b, c);
+
+    CutSegmentCountByScan(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, c: FaceMeshingCriteria): Integer
     {
         var n = 1;
         while (n < 64 && m.CutStepsMeetCriteria(f, a, b, n, c).Not && m.ShortestCutStep(f, a, b, n + 1) >= c.Discretization.EffectiveMinLength(m.Tolerances))
@@ -546,7 +551,7 @@ library UvRegions
 
     // Face f's chart for region r: mirrored by FaceNormalSign, scaled by the mean speeds.
     ChartOf(m: BrepModel, f: BrepFaceIndex, r: UvRegion): FaceChart
-        => FaceChart(m.IsChartMirrored(f) ? Parity.Odd : Parity.Even, m.MeanSpeed(f, r, SurfaceParameter.ParameterU), m.MeanSpeed(f, r, SurfaceParameter.ParameterV));
+        => m.ChartOfBody2(f, r);
 
     // Chunk A body, from the contract MeanSpeed: the mean of |PartialU|
     // (ParameterU) or |PartialV| at twenty-one points along each of three
@@ -1078,15 +1083,7 @@ library UvRegions
     // side is one carrier (SideIsOneCarrier): one coedge, seam use, seam cut
     // or pole segment.
     QuadSidesOf(m: BrepModel, f: BrepFaceIndex, r: UvRegion): QuadSides
-    {
-        var tol = m.RegionTolerance(f, m.ChartOf(f, r));
-        var n = r.Outer.Points.Count;
-        var classes = n.MapRange(i => r.Outer.Points[i].StepClass(r.Outer.Points.AtModulo(i + 1), tol));
-        var corners = n.Range.FlatMap(i => classes[i] != classes[(i + n - 1) % n] ? [VertexIndex(i)] : [VertexIndex(i)].Take(0));
-        return (r.Holes.IsEmpty && n >= 4 && classes.All(x => x != 0) && corners.Count == 4)
-            ? (4.Range.All(k => r.SideIsOneCarrier(corners, k)) ? QuadSides.FourSided(corners) : QuadSides.NotFourSided)
-            : QuadSides.NotFourSided;
-    }
+        => r.QuadSidesIn(m.RegionTolerance(f, m.ChartOf(f, r)));
 
     // The class of the step from a to b: 1 when it runs along u (v constant within the
     // tolerance), 2 along v, 0 neither (or a step shorter than the tolerance both ways).

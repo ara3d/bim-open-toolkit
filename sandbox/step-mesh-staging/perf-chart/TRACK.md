@@ -1,7 +1,7 @@
 # perf-chart: cut step counts with each step point evaluated once; a face chart from one pass over both sample sets
 
 Ticket: TKT-389
-Status: ready: R7
+Status: merged: R7 (2026-10-21, into 05-face-meshing/uv-regions-cut-count.library.plato, face-meshing-chart-speeds.{types,library}.plato, 08-pipeline/pipeline-chart-cut.laws.plato; the scan kept as CutSegmentCountByScan)
 
 ## Files
 
