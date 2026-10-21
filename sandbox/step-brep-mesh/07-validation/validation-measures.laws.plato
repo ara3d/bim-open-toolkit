@@ -8,17 +8,7 @@
 // meshed pairs.
 //
 // Sections, in order:
-//  - The count witness
-
-library check it replaces, field for field (Identical): the topology
-// checks over the runner's models and plans, the cross checks over the
-// runner's (model, mesh) pairs and over the CrossCheckPair witnesses, each
-// meshed once per sweep.
-//
-// Sections, in order:
 //  - Count witness
-//  - Topology checks agree
-//  - Cross checks agree
 
 library MeasuresGivenLaws
 {
@@ -37,11 +27,5 @@ library MeasuresGivenLaws
     // three per sample, 2 x plan.Count x 3 per edge.
     Witness_EdgeOnSurfaceCheckWork(_: WorkClaim): WorkClaim
         => WorkClaim("Check_EdgeLiesOnAdjacentSurfaces: whole-model scans per edge", Flips(2), [12, 24], n => EdgeOnSurfaceCheckWork(n));
-
-    //==
-    // # Topology checks agree
-
-    //==
-    // # Cross checks agree
 
 }
