@@ -1,7 +1,7 @@
 # perf-sites: the finding sites of pcurves and 2D curves as tables built once per check
 
 Ticket: TKT-371
-Status: ready: V3
+Status: merged: V3 (2026-10-21, into 07-validation/validation-checks-sites.library.plato and validation-sites.laws.plato; the two inline table bindings in the hoisted checks left as debt)
 
 ## Files
 

@@ -79,21 +79,11 @@ library BrepCheckingSamplers
 
     // CheckCurve2DSamples with ok given.
     CheckCurve2DSamplesGiven(m: BrepModel, ok: Boolean, plan: SamplePlan, law: String, holds: Function2<Curve2DIndex, Number, Boolean>): Check
-    {
-        var samples = m.Curve2DSampleTable(ok, plan);
-        return CheckGrid(law, m.Geometry.Curves2D.Count, plan.Count,
-            (c, j) => holds(Curve2DIndex(c), samples[c][j]),
-            (c, j) => m.Curve2DSite(Curve2DIndex(c)));
-    }
+        => m.CheckCurve2DSamplesIndexed(ok, plan, law, holds);
 
     // CheckPcurveSamples with ok given.
     CheckPcurveSamplesGiven(m: BrepModel, ok: Boolean, plan: SamplePlan, law: String, holds: Function2<PcurveIndex, Number, Boolean>): Check
-    {
-        var samples = m.PcurveSampleTable(ok, plan);
-        return CheckGrid(law, m.Geometry.Pcurves.Count, plan.Count,
-            (p, j) => holds(PcurveIndex(p), samples[p][j]),
-            (p, j) => m.PcurveSite(PcurveIndex(p)));
-    }
+        => m.CheckPcurveSamplesIndexed(ok, plan, law, holds);
 
     // CheckCurveSupportSamples with ok given.
     CheckCurveSupportSamplesGiven(m: BrepModel, ok: Boolean, plan: SamplePlan, law: String, holds: Function3<CurveIndex, Number, Integer, Boolean>): Check

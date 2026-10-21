@@ -70,11 +70,11 @@ library BrepCheckingSitesLaws
     }
 
     // The tables agree on every arena case.
-    Law_Perf_SiteTablesAgree(a: ArenaCase): Boolean
+    Law_SiteTablesAgree(a: ArenaCase): Boolean
         => a.Model.SiteTablesAgree;
 
     // The tables agree on positive witness k.
-    Law_Perf_SiteTablesAgreeOnWitness(k: Integer): Boolean
+    Law_SiteTablesAgreeOnWitness(k: Integer): Boolean
         => BrepModel.WitnessAt(k).SiteTablesAgree;
 
     // The shared-pcurve box reaches every branch the tables choose between:
@@ -83,7 +83,7 @@ library BrepCheckingSitesLaws
     // at its first pcurve's edge, and a 2D curve at the whole input; and the
     // synthetic laws of the agreement laws below fail on it, so the
     // provenance of a failing entry is compared.
-    Law_Perf_SharedPcurvesBoxReachesEveryBranch(_: ArenaCase): Boolean
+    Law_SharedPcurvesBoxReachesEveryBranch(_: ArenaCase): Boolean
     {
         var m = BrepModel.Witness_UnitBox.WithSharedPcurves;
         var pcurves = m.PcurveSiteTable;
@@ -108,48 +108,6 @@ library BrepCheckingSitesLaws
     // provenance is compared) and, for the two whole-entry checks, on a
     // library law.
 
-    // CheckPcurvesIndexed is CheckPcurves.
-    Law_Perf_CheckPcurvesIndexedAgrees(a: ArenaCase): Boolean
-    {
-        var m = a.Model;
-        return m.CheckPcurvesIndexed("Law_Synthetic", p => p.Value % 2 == 0)
-                .Identical(m.CheckPcurves("Law_Synthetic", p => p.Value % 2 == 0))
-            && m.CheckPcurvesIndexed("Law_PcurveReferencesInRange", p => Law_PcurveReferencesInRange(m.Geometry, p))
-                .Identical(m.CheckPcurves("Law_PcurveReferencesInRange", p => Law_PcurveReferencesInRange(m.Geometry, p)));
-    }
-
-    // CheckCurves2DIndexed is CheckCurves2D.
-    Law_Perf_CheckCurves2DIndexedAgrees(a: ArenaCase): Boolean
-    {
-        var m = a.Model;
-        return m.CheckCurves2DIndexed("Law_Synthetic", c => c.Value % 2 == 0)
-                .Identical(m.CheckCurves2D("Law_Synthetic", c => c.Value % 2 == 0))
-            && m.CheckCurves2DIndexed("Law_Curve2DReferencesInRange", c => Law_Curve2DReferencesInRange(m.Geometry, c))
-                .Identical(m.CheckCurves2D("Law_Curve2DReferencesInRange", c => Law_Curve2DReferencesInRange(m.Geometry, c)));
-    }
-
-    // CheckPcurveSamplesIndexed is CheckPcurveSamplesGiven, with ok as
-    // IsWellFormed says and with ok false, on a synthetic law failing at
-    // every sample of an odd pcurve.
-    Law_Perf_CheckPcurveSamplesIndexedAgrees(a: ArenaCase): Boolean
-    {
-        var m = a.Model;
-        var ok = m.Geometry.IsWellFormed;
-        return [ok, false].All(given =>
-            m.CheckPcurveSamplesIndexed(given, SamplePlan.CheckPlan, "Law_Synthetic", (p, t) => p.Value % 2 == 0)
-                .Identical(m.CheckPcurveSamplesGiven(given, SamplePlan.CheckPlan, "Law_Synthetic", (p, t) => p.Value % 2 == 0)));
-    }
-
-    // CheckCurve2DSamplesIndexed is CheckCurve2DSamplesGiven.
-    Law_Perf_CheckCurve2DSamplesIndexedAgrees(a: ArenaCase): Boolean
-    {
-        var m = a.Model;
-        var ok = m.Geometry.IsWellFormed;
-        return [ok, false].All(given =>
-            m.CheckCurve2DSamplesIndexed(given, SamplePlan.CheckPlan, "Law_Synthetic", (c, t) => c.Value % 2 == 0)
-                .Identical(m.CheckCurve2DSamplesGiven(given, SamplePlan.CheckPlan, "Law_Synthetic", (c, t) => c.Value % 2 == 0)));
-    }
-
     //==
     // # Count witness
 
@@ -173,11 +131,11 @@ library BrepCheckingSitesLaws
         => WorkClaim("PcurveSiteTable: edges and pcurves visited per E + P", Insertions(1), [3, 13, 20, 32], n => PcurveSiteTableWork(n));
 
     // The family's sizes are its members' E + P.
-    Law_Perf_SiteFamilySizes(_: ArenaCase): Boolean
+    Law_SiteFamilySizes(_: ArenaCase): Boolean
         => [3, 13, 20, 32].All(n => n.SiteFamilyModel.Edges.Count + n.SiteFamilyModel.Geometry.Pcurves.Count == n);
 
     // The table visits exactly E + P on every arena case: one scan of the
     // edges per check.
-    Law_Perf_PcurveSiteTableVisitsEachEdgeOnce(a: ArenaCase): Boolean
+    Law_PcurveSiteTableVisitsEachEdgeOnce(a: ArenaCase): Boolean
         => a.Model.PcurveSiteTableCounted.Work == Insertions(a.Model.Edges.Count + a.Model.Geometry.Pcurves.Count);
 }

@@ -311,11 +311,11 @@ library BrepCheckingCommon
 
     // An exact law at every parameter-plane curve.
     CheckCurves2D(m: BrepModel, law: String, holds: Function1<Curve2DIndex, Boolean>): Check
-        => CheckAll(law, m.Geometry.Curves2D.Count, i => holds(Curve2DIndex(i)), i => m.Curve2DSite(Curve2DIndex(i)));
+        => m.CheckCurves2DIndexed(law, holds);
 
     // An exact law at every pcurve.
     CheckPcurves(m: BrepModel, law: String, holds: Function1<PcurveIndex, Boolean>): Check
-        => CheckAll(law, m.Geometry.Pcurves.Count, i => holds(PcurveIndex(i)), i => m.PcurveSite(PcurveIndex(i)));
+        => m.CheckPcurvesIndexed(law, holds);
 
     // An exact law at every surface.
     CheckSurfaces(m: BrepModel, law: String, holds: Function1<SurfaceIndex, Boolean>): Check
