@@ -1,0 +1,108 @@
+//==
+// # Pieces of a graph by union-find: functions (complexity sweep, chunk V7, TKT-375)
+//
+// PieceCount (06-mesh/mesh-topology.library.plato) propagates labels for one round per vertex,
+// each round visiting every edge for every end with a linear FirstPositionOf inside: O(B^4) on
+// the B boundary edges of a component (docs/plans/step-mesher-complexity.md, candidate 34).
+// PieceCountByUnionFind gives the same count: the ends sorted once to number the distinct
+// vertices densely, then one union per edge over a forest with union by size and path halving.
+// O(B log B) for the sort, near-linear after it.
+//
+// Sections, in order:
+//  - The reference
+//  - Union-find
+
+library ModelMeshPiecesUnionFind
+{
+    //==
+    // # The reference
+
+    // The body PieceCount had before chunk V7, kept as the reference the agreement laws compare
+    // with: label propagation over DistinctEnds, one round per vertex.
+    PieceCountByLabels(edges: Array<VertexPair>): Integer
+    {
+        var ends = edges.DistinctEnds;
+        var labels = PieceLabels(edges, ends, ends.Count.MapRange(i => i), ends.Count);
+        return ends.Count.MapRange(i => labels[i] == i).CountTrue;
+    }
+
+    //==
+    // # Union-find
+
+    // PieceCountByUnionFind with its work counted: Insertions is the number of union and find
+    // steps, one for each parent link a find follows and one for each link a union writes. The
+    // sort that numbers the ends and the pass that initialises the forest are not counted.
+    PieceCountByUnionFindCounted(edges: Array<VertexPair>): Counted<Integer>
+    {
+        var ends = edges.FlatMap(p => [p.A.Value, p.B.Value]);
+        var order = ends.SortedIndices((a, b) => a <= b);
+        var ids = new Buffer<Integer>(ends.Count);
+        var distinct = 0;
+        var k = 0;
+        while (k < order.Count)
+        {
+            if (k > 0)
+            {
+                if (ends[order[k]] != ends[order[k - 1]])
+                {
+                    distinct = distinct + 1;
+                }
+            }
+            ids = ids.Set(order[k], distinct);
+            k = k + 1;
+        }
+        var vertexCount = ends.Count == 0 ? 0 : distinct + 1;
+        var parent = new Buffer<Integer>(vertexCount);
+        var size = new Buffer<Integer>(vertexCount);
+        var v = 0;
+        while (v < vertexCount)
+        {
+            parent = parent.Set(v, v);
+            size = size.Set(v, 1);
+            v = v + 1;
+        }
+        var pieces = vertexCount;
+        var steps = 0;
+        var e = 0;
+        while (e < edges.Count)
+        {
+            var x = ids.At(2 * e);
+            while (parent.At(x) != x)
+            {
+                parent = parent.Set(x, parent.At(parent.At(x)));
+                x = parent.At(x);
+                steps = steps + 1;
+            }
+            var y = ids.At(2 * e + 1);
+            while (parent.At(y) != y)
+            {
+                parent = parent.Set(y, parent.At(parent.At(y)));
+                y = parent.At(y);
+                steps = steps + 1;
+            }
+            if (x != y)
+            {
+                steps = steps + 1;
+                pieces = pieces - 1;
+                if (size.At(x) < size.At(y))
+                {
+                    parent = parent.Set(x, y);
+                    size = size.Set(y, size.At(x) + size.At(y));
+                }
+                else
+                {
+                    parent = parent.Set(y, x);
+                    size = size.Set(x, size.At(x) + size.At(y));
+                }
+            }
+            e = e + 1;
+        }
+        return Counted(pieces, Insertions(steps));
+    }
+
+    // The number of connected pieces of the graph whose edges are given (its vertices are the
+    // edges' ends, so it has no isolated vertex; a pair with equal ends is a loop): PieceCount's
+    // contract, by union-find.
+    PieceCountByUnionFind(edges: Array<VertexPair>): Integer
+        => edges.PieceCountByUnionFindCounted.Value;
+}

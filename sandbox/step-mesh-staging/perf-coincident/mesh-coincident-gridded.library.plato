@@ -1,0 +1,183 @@
+//==
+// # Coincident vertex pairs on a grid: functions (complexity sweep, chunk V7, TKT-375)
+//
+// CoincidentVertexPairs (06-mesh/mesh-measures.library.plato) tests every pair of vertices,
+// O(V^2) (docs/plans/step-mesher-complexity.md, candidate 32). CoincidentVertexPairsGridded gives
+// the same array in the same order from a uniform grid: the vertices sorted by cell, each one
+// compared only with the vertices of the 27 cells around its own, found by binary search, then
+// the pairs sorted. O(V log V) plus the candidates visited, which is linear when the cells are
+// sparse.
+//
+// Output order, the reference's: CoincidentVertexPairsPairwise visits a in increasing order and,
+// for each, b in increasing order, so its pairs are strictly increasing lexicographically by
+// (A, B). The grid finds the same set and sorts it by IsLexicographicallyAtMost; the pairs are
+// distinct, so the order is that one.
+//
+// Same set, why: a pair the reference reports has computed Distance <= tol, so each coordinate
+// differs by at most tol (1 + 4 eps). The cell side is 2 tol, so the exact quotients differ by
+// at most about 0.5, and each computed quotient is within 1e14 * 1.2e-16 of the exact one while
+// its magnitude is below CoincidenceCellBound: the floors differ by at most 1 and the pair lies
+// in neighbouring cells. A side of tol, the plan's wording, would leave a pair exactly tol apart
+// open to a rounding that puts it two cells apart. Where the grid cannot be exact (a tolerance
+// that is not positive and finite, or a vertex beyond the bound) the pairwise form runs. A vertex
+// with a non-finite coordinate is never within tol of another (its distance is NaN or
+// infinite), so it is left out of the grid, as is a vertex in no component.
+//
+// Sections, in order:
+//  - The reference
+//  - Cells
+//  - The grid
+
+library ModelMeshCoincidentGridded
+{
+    //==
+    // # The reference
+
+    // The body CoincidentVertexPairs had before chunk V7, kept as the reference the agreement laws
+    // compare with and as the fallback where the grid cannot be exact: every pair (a, b), a < b,
+    // of referenced vertices in one component within the tolerance, in lexicographic order by
+    // construction (a outer, b inner). Quadratic.
+    CoincidentVertexPairsPairwise(mesh: ModelMesh, comps: MeshComponents, tol: LengthTolerance): Array<VertexPair>
+    {
+        var n = mesh.Positions.Count;
+        return n.Range.FlatMap(a => n.Range.FlatMap(b =>
+            (a < b
+                ? (comps.VertexComponentOf(VertexIndex(a)).Value >= 0
+                    ? (comps.VertexComponentOf(VertexIndex(a)).Value == comps.VertexComponentOf(VertexIndex(b)).Value
+                        ? mesh.Positions[a].Distance(mesh.Positions[b]) <= tol.Value
+                        : false)
+                    : false)
+                : false)
+                ? [VertexPair(VertexIndex(a), VertexIndex(b))]
+                : [VertexPair(VertexIndex(0), VertexIndex(0))].Take(0)));
+    }
+
+    //==
+    // # Cells
+
+    // The side of a grid cell for tolerance tol: twice the tolerance (see the file comment).
+    CoincidenceCellSide(tol: LengthTolerance): Number
+        => 2.0 * tol.Value;
+
+    // The cell of side s holding point p.
+    CoincidenceCellOf(p: Point3D, s: Number): CoincidenceCell
+        => CoincidenceCell((p.X / s).Floor, (p.Y / s).Floor, (p.Z / s).Floor);
+
+    // The largest cell coordinate magnitude at which a computed quotient is within 0.012 of the
+    // exact one, so that neighbouring cells hold every coincident pair.
+    CoincidenceCellBound(_: CoincidenceCell): Number
+        => 1.0e14;
+
+    // Whether every coordinate of c is below the bound in magnitude; false for a NaN or an
+    // infinite coordinate.
+    IsExactCoincidenceCell(c: CoincidenceCell): Boolean
+        => c.X.Abs < CoincidenceCell.CoincidenceCellBound
+            && c.Y.Abs < CoincidenceCell.CoincidenceCellBound
+            && c.Z.Abs < CoincidenceCell.CoincidenceCellBound;
+
+    // Whether cell a comes before cell b, or equals it, ordered by X, then Y, then Z.
+    CoincidenceCellAtMost(a: CoincidenceCell, b: CoincidenceCell): Boolean
+        => a.X < b.X ? true
+            : (a.X > b.X ? false
+            : (a.Y < b.Y ? true
+            : (a.Y > b.Y ? false
+            : a.Z <= b.Z)));
+
+    // Whether vertex v can be in a coincident pair: it lies in a component and its position is
+    // finite. Precondition: v is a position index of mesh.
+    IsCoincidenceCandidate(mesh: ModelMesh, comps: MeshComponents, v: Integer): Boolean
+        => comps.VertexComponentOf(VertexIndex(v)).Value >= 0
+            && mesh.Positions[v].X.IsFinite && mesh.Positions[v].Y.IsFinite && mesh.Positions[v].Z.IsFinite;
+
+    // The first position k of order whose cell, cells[order[k]], is at least key; order.Count
+    // when there is none. Precondition: order is sorted by CoincidenceCellAtMost on cells.
+    FirstCellAtLeast(order: Array<Integer>, cells: Array<CoincidenceCell>, key: CoincidenceCell): Integer
+    {
+        var lo = 0;
+        var hi = order.Count;
+        while (lo < hi)
+        {
+            var mid = (lo + hi) / 2;
+            if (key.CoincidenceCellAtMost(cells[order[mid]]))
+            {
+                hi = mid;
+            }
+            else
+            {
+                lo = mid + 1;
+            }
+        }
+        return lo;
+    }
+
+    //==
+    // # The grid
+
+    // CoincidentVertexPairsGridded with its work counted: Insertions is the number of candidates
+    // visited, one for each candidate b in the 27 cells around each candidate a (a itself
+    // included), whether or not the pair is then tested. The binary searches, 9 per candidate,
+    // and the two sorts are not counted. The pairwise fallback counts V^2.
+    CoincidentVertexPairsGriddedCounted(mesh: ModelMesh, comps: MeshComponents, tol: LengthTolerance): Counted<Array<VertexPair>>
+    {
+        var n = mesh.Positions.Count;
+        var side = tol.CoincidenceCellSide;
+        var candidates = n.Range.FlatMap(v => mesh.IsCoincidenceCandidate(comps, v) ? [v] : n.Range.Take(0));
+        var cells = n.MapRange(v => mesh.Positions[v].CoincidenceCellOf(side));
+        var exact = (side > 0.0 && side.IsFinite) ? candidates.All(v => cells[v].IsExactCoincidenceCell) : false;
+        return exact
+            ? mesh.GriddedPairsCounted(comps, tol, cells, candidates.Sort((a, b) => cells[a].CoincidenceCellAtMost(cells[b])))
+            : Counted(mesh.CoincidentVertexPairsPairwise(comps, tol), Insertions(n * n));
+    }
+
+    // The pairs among the candidates in order, each compared with the candidates of the 27 cells
+    // around it; counted as CoincidentVertexPairsGriddedCounted states. Precondition: order holds
+    // the candidates, sorted by CoincidenceCellAtMost on cells, and every one of their cells is
+    // exact.
+    GriddedPairsCounted(mesh: ModelMesh, comps: MeshComponents, tol: LengthTolerance,
+        cells: Array<CoincidenceCell>, order: Array<Integer>): Counted<Array<VertexPair>>
+    {
+        var pairs = new List<VertexPair>();
+        var visits = 0;
+        var i = 0;
+        while (i < order.Count)
+        {
+            var a = order[i];
+            var home = cells[a];
+            var d = 0;
+            while (d < 9)
+            {
+                var x = home.X + (d % 3 - 1).ToNumber;
+                var y = home.Y + (d / 3 - 1).ToNumber;
+                var last = CoincidenceCell(x, y, home.Z + 1.0);
+                var k = order.FirstCellAtLeast(cells, CoincidenceCell(x, y, home.Z - 1.0));
+                var going = k < order.Count ? cells[order[k]].CoincidenceCellAtMost(last) : false;
+                while (going)
+                {
+                    var b = order[k];
+                    visits = visits + 1;
+                    if (a < b)
+                    {
+                        if (comps.VertexComponentOf(VertexIndex(a)).Value == comps.VertexComponentOf(VertexIndex(b)).Value)
+                        {
+                            if (mesh.Positions[a].Distance(mesh.Positions[b]) <= tol.Value)
+                            {
+                                pairs = pairs.Add(VertexPair(VertexIndex(a), VertexIndex(b)));
+                            }
+                        }
+                    }
+                    k = k + 1;
+                    going = k < order.Count ? cells[order[k]].CoincidenceCellAtMost(last) : false;
+                }
+                d = d + 1;
+            }
+            i = i + 1;
+        }
+        var found = pairs.Freeze();
+        return Counted(found.Sort((p, q) => p.IsLexicographicallyAtMost(q)), Insertions(visits));
+    }
+
+    // Every pair (a, b), a < b, of referenced vertices in one component within the tolerance, in
+    // lexicographic order: CoincidentVertexPairsPairwise's array, from the grid.
+    CoincidentVertexPairsGridded(mesh: ModelMesh, comps: MeshComponents, tol: LengthTolerance): Array<VertexPair>
+        => mesh.CoincidentVertexPairsGriddedCounted(comps, tol).Value;
+}

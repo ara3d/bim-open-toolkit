@@ -1,0 +1,201 @@
+//==
+// # Coincident vertex pairs on a grid, pieces by union-find: laws (complexity sweep, chunk V7, TKT-375)
+//
+// CoincidentVertexPairsGridded gives CoincidentVertexPairsPairwise's array, element by element,
+// on generated meshes and tolerances, on the meshes of every MeshedWitness at several
+// tolerances, and on a vertex cloud with planted coincident pairs; PieceCountByUnionFind gives
+// PieceCountByLabels's count on generated edge lists, on vertex links and component boundaries of
+// generated meshes, on the open meshes cut from every MeshedWitness, and on interleaved cycles.
+// Two count witnesses show both linear in their size.
+//
+// Sections, in order:
+//  - Families
+//  - Comparisons
+//  - Agreement: coincident pairs
+//  - Agreement: pieces
+//  - Count witnesses
+
+library ModelMeshCoincidentGriddedLaws
+{
+    //==
+    // # Families
+
+    // The fractional part of x.
+    CloudFraction(x: Number): Number
+        => x - x.Floor;
+
+    // Point k of the R3 low-discrepancy sequence in the unit cube (steps the inverse powers of
+    // the plastic-like constant 1.2207440846): spread evenly, so few points are close.
+    CloudPoint(k: Integer): Point3D
+        => Point3D(CloudFraction(0.5 + 0.8191725134 * k.ToNumber),
+            CloudFraction(0.5 + 0.6710436067 * k.ToNumber),
+            CloudFraction(0.5 + 0.5497004779 * k.ToNumber));
+
+    // A mesh of the given positions with no element.
+    PointCloudMesh(positions: Array<Point3D>): ModelMesh
+        => IncidenceTestMesh(positions, [Tri(0, 1, 2)].Take(0),
+            [QuadFace(VertexIndex(0), VertexIndex(1), VertexIndex(2), VertexIndex(3))].Take(0));
+
+    // Components for n vertices with no element: vertex v in component v mod 3, so a pair is
+    // reported only between vertices whose numbers agree mod 3.
+    AlternatingComponents(n: Integer): MeshComponents
+        => MeshComponents(0.MapRange(k => MeshComponentIndex(0)),
+            n.MapRange(v => MeshComponentIndex(v % 3)),
+            3,
+            0.MapRange(k => ElementIndex(0)),
+            0.MapRange(k => 0));
+
+    // n cloud points, then planted points: for each j below n / 3, a point offset from cloud
+    // point 3 j by 0.6 tol along x, by 0.5 tol along each axis (0.87 tol away), or by 1.2 tol
+    // along z (too far), as j mod 3 is 0, 1 or 2; and last a pair exactly tol apart along x
+    // straddling a cell boundary of side 2 tol, three numbers apart with two far points between.
+    // With n a multiple of 3 and AlternatingComponents, the first kind shares its partner's
+    // component, the second does not, and the last pair does.
+    PlantedCloud(n: Integer, tol: Number): Array<Point3D>
+    {
+        var cloud = n.MapRange(k => CloudPoint(k));
+        var planted = (n / 3).MapRange(j => j % 3 == 0
+            ? cloud[3 * j] + Vector3D(0.6 * tol, 0.0, 0.0)
+            : (j % 3 == 1
+                ? cloud[3 * j] + Vector3D(0.5 * tol, 0.5 * tol, 0.5 * tol)
+                : cloud[3 * j] + Vector3D(0.0, 0.0, 1.2 * tol)));
+        var edge = 2.0 * tol * 7.0;
+        return cloud.Concatenate(planted).Concatenate([Point3D(edge, 0.25, 0.25), Point3D(-1.0, -1.0, -1.0), Point3D(-2.0, -2.0, -2.0), Point3D(edge - tol, 0.25, 0.25)]);
+    }
+
+    // m cycles of l vertices each, their edges interleaved (edge e is edge e / m of cycle e mod
+    // m) and their vertex numbers scattered (37 v mod 1009, distinct while m l <= 1009), so the
+    // union-find forest grows several trees at once.
+    InterleavedCycles(m: Integer, l: Integer): Array<VertexPair>
+        => (m * l).MapRange(e => VertexPair(
+            VertexIndex((((e % m) * l + e / m) * 37) % 1009),
+            VertexIndex((((e % m) * l + (e / m + 1) % l) * 37) % 1009)));
+
+    //==
+    // # Comparisons
+
+    // Whether two pair arrays hold the same pairs in the same order.
+    SamePairs(a: Array<VertexPair>, b: Array<VertexPair>): Boolean
+        => a.Count == b.Count
+            ? a.Count.Range.All(i => a[i].A.Value == b[i].A.Value && a[i].B.Value == b[i].B.Value)
+            : false;
+
+    // Whether the grid gives the pairwise array for mesh, comps and tol.
+    GriddedAgrees(mesh: ModelMesh, comps: MeshComponents, tol: LengthTolerance): Boolean
+        => SamePairs(mesh.CoincidentVertexPairsGridded(comps, tol), mesh.CoincidentVertexPairsPairwise(comps, tol));
+
+    // Whether union-find gives the label count for edges.
+    PiecesAgree(edges: Array<VertexPair>): Boolean
+        => edges.PieceCountByUnionFind == edges.PieceCountByLabels;
+
+    // Whether union-find gives the label count on the boundary of every component of mesh and on
+    // the link of every vertex.
+    PiecesAgreeOnMesh(mesh: ModelMesh): Boolean
+    {
+        var t = mesh.EdgeTableOf;
+        var comps = mesh.ComponentsOf;
+        return comps.ComponentCount.Range.All(c => PiecesAgree(t.BoundaryEdgesOf(comps, MeshComponentIndex(c))))
+            && mesh.Positions.Count.Range.All(v => PiecesAgree(mesh.LinkEdges(VertexIndex(v))));
+    }
+
+    //==
+    // # Agreement: coincident pairs
+
+    // On every generated mesh and tolerance, zero and negative ones included (the pairwise
+    // fallback), the grid gives the pairwise array.
+    Law_Perf_CoincidentVertexPairsGriddedAgrees(mesh: ModelMesh, tol: LengthTolerance): Boolean
+        => mesh.GriddedAgrees(mesh.ComponentsOf, tol);
+
+    // On the mesh of every meshed witness, at its model's length tolerance and at four larger
+    // ones that pair many vertices, the grid gives the pairwise array; at 1.5 the array is not
+    // empty, so the agreement is not vacuous.
+    Law_Perf_CoincidentVertexPairsGriddedAgreesOnWitnesses(w: MeshedWitness): Boolean
+    {
+        var mesh = w.Outcome.Mesh;
+        var comps = mesh.ComponentsOf;
+        var tols = [w.Model.Tolerances.Length, LengthTolerance(0.25), LengthTolerance(0.5), LengthTolerance(1.0), LengthTolerance(1.5)];
+        return tols.All(tol => mesh.GriddedAgrees(comps, tol))
+            && mesh.CoincidentVertexPairsGridded(comps, LengthTolerance(1.5)).Count > 0;
+    }
+
+    // On a cloud of 48 + 3 |k| points with planted pairs, three components alternating, at
+    // tolerance 0.01 (1 + |k| mod 4), the grid gives the pairwise array, and it is not empty.
+    Law_Perf_CoincidentVertexPairsGriddedAgreesOnPlantedCloud(k: Integer): Boolean
+    {
+        var tol = 0.01 * (1 + k.Abs % 4).ToNumber;
+        var points = PlantedCloud(48 + 3 * k.Abs, tol);
+        var mesh = PointCloudMesh(points);
+        var comps = AlternatingComponents(points.Count);
+        return mesh.GriddedAgrees(comps, LengthTolerance(tol))
+            && mesh.CoincidentVertexPairsGridded(comps, LengthTolerance(tol)).Count > 0;
+    }
+
+    // Far from the origin, where a cell coordinate passes CoincidenceCellBound, the pairwise
+    // fallback runs and the arrays agree.
+    Law_Perf_CoincidentVertexPairsGriddedAgreesFarOut(k: Integer): Boolean
+    {
+        var points = PlantedCloud(12, 0.01).Map(p => p + Vector3D(1.0e13 * (1 + k.Abs).ToNumber, 0.0, 0.0));
+        var mesh = PointCloudMesh(points);
+        return mesh.GriddedAgrees(AlternatingComponents(points.Count), LengthTolerance(1.0e-3));
+    }
+
+    //==
+    // # Agreement: pieces
+
+    // On every generated edge list, union-find gives the label count.
+    Law_Perf_PieceCountByUnionFindAgrees(edges: Array<VertexPair>): Boolean
+        => PiecesAgree(edges);
+
+    // On every generated mesh, union-find gives the label count on each component's boundary
+    // edges and each vertex's link.
+    Law_Perf_PieceCountByUnionFindAgreesOnMesh(mesh: ModelMesh): Boolean
+        => mesh.PiecesAgreeOnMesh;
+
+    // On the open meshes cut from every meshed witness (its first one, two and three faces) and
+    // on the whole mesh, union-find gives the label count; the cut meshes have boundary.
+    Law_Perf_PieceCountByUnionFindAgreesOnWitnesses(w: MeshedWitness): Boolean
+    {
+        var mesh = w.Outcome.Mesh;
+        var cuts = [1, 2, 3].Map(f => mesh.RestrictedToFaces(f.MapRange(i => BrepFaceIndex(i))));
+        return mesh.PiecesAgreeOnMesh
+            && cuts.All(cut => cut.PiecesAgreeOnMesh && cut.IsClosed.Not);
+    }
+
+    // On 1 + |k| mod 4 interleaved cycles of 3 + |k| mod 5 vertices, union-find gives the label
+    // count, which is the number of cycles.
+    Law_Perf_PieceCountByUnionFindAgreesOnCycles(k: Integer): Boolean
+    {
+        var m = 1 + k.Abs % 4;
+        var edges = InterleavedCycles(m, 3 + k.Abs % 5);
+        return PiecesAgree(edges) && edges.PieceCountByUnionFind == m;
+    }
+
+    //==
+    // # Count witnesses
+
+    // The candidates CoincidentVertexPairsGriddedCounted visits on n cloud points, three components
+    // alternating, at tolerance 0.025.
+    CoincidentCloudWork(n: Integer): WorkBudget
+        => PointCloudMesh(n.MapRange(k => CloudPoint(k)))
+            .CoincidentVertexPairsGriddedCounted(AlternatingComponents(n), LengthTolerance(0.025)).Work;
+
+    // The grid visits at most 27 candidates per vertex (Insertions count candidates visited in
+    // the 27 cells around each vertex, itself included), on clouds of 256 and 2048 points in the
+    // unit cube at tolerance 0.025 (cells of side 0.05), where a vertex has a few others in its
+    // 27 cells and fewer within the tolerance; measured about 6.3 per vertex at 2048 on
+    // 2026-10-21. The pairwise form tests V^2 pairs.
+    Witness_CoincidentVertexPairsGriddedWork(_: WorkClaim): WorkClaim
+        => WorkClaim("CoincidentVertexPairsGridded: candidates visited per vertex", Insertions(27), [256, 2048], n => CoincidentCloudWork(n));
+
+    // The union and find steps of PieceCountByUnionFindCounted on four interleaved cycles of
+    // n / 4 vertices, n edges.
+    PieceCountWork(n: Integer): WorkBudget
+        => InterleavedCycles(4, n / 4).PieceCountByUnionFindCounted.Work;
+
+    // Union-find takes at most 4 steps per edge (Insertions count parent links followed by a
+    // find and links written by a union), on four interleaved cycles of 32 and 256 edges. The
+    // label propagation reads B edges for each of B ends in each of B rounds, with a linear search
+    // inside. Measured 53 to 56 steps at 32 edges and 481 to 512 at 256 on 2026-10-21.
+    Witness_PieceCountByUnionFindWork(_: WorkClaim): WorkClaim
+        => WorkClaim("PieceCountByUnionFind: union and find steps per edge", Insertions(4), [32, 256], n => PieceCountWork(n));
+}
