@@ -1,0 +1,230 @@
+//==
+// # Inverse evaluation along a run of points (complexity sweep, chunk I3)
+//
+// Layer 1's Project and pcurve ClosestParameter run a global search per
+// point: a grid over every smooth patch with every grid minimum polished, or
+// a sample of every piece with every sampled minimum polished. Layers 2 and 4
+// call them for every sample of an edge, though each sample lies next to the
+// one before. ProjectAlong and ClosestParametersAlong search globally for the
+// first point only and seed each later point with the answer before it,
+// falling back to the global search when the seeded answer lies farther than
+// the length tolerance from its point.
+//
+// When the answer differs from the global one: the seeded search stops at the
+// local minimum the previous answer leads to, and that answer is kept only
+// when its point lies within tol of the input point. The global minimum's
+// distance is at least 0, so a kept answer is never farther from its point
+// than the global one's by more than tol; every other answer is the global
+// one. On a surface or pcurve that passes within tol of a point once, the two
+// searches reach the same minimum and differ by the polish's rounding; where
+// it passes within tol twice (a seam, a pole, a surface folding back), the
+// seeded answer is the copy continuous with its neighbours and the global one
+// the tie the search order picks.
+//
+// Sections, in order:
+//  - Surfaces: polish and seeded search, counted
+//  - Surfaces along a run of points
+//  - Pcurves: seeded search
+//  - Pcurves along a run of points
+
+library BsplineInverseAlong
+{
+    //==
+    // # Surfaces: polish and seeded search, counted
+
+    // PolishProjection with its iterations counted as Evaluations: the same
+    // loop, the same answer.
+    PolishProjectionCounted(surface: BrepSurface, g: GeometrySet, p: Point3D, start: UvCoordinate, w: SurfaceWindow, radius: Vector2D): Counted<UvCoordinate>
+    {
+        var uv = start.ClampInto(w);
+        var n = 0;
+        var moving = true;
+        while (moving && n < Integer.PolishIterations)
+        {
+            var here = surface.Eval(g, uv).Distance(p);
+            var slack = ResolutionAt(surface.Eval(g, uv).PositionVector.Length + p.PositionVector.Length).Value;
+            var step = surface.GaussNewtonStep(g, p, uv).Limited(radius);
+            var next = surface.ProjectedStep(g, p, uv, step, w);
+            var halvings = 0;
+            while (halvings < 12 && surface.Eval(g, next).Distance(p) > here + slack)
+            {
+                step = step * 0.5;
+                next = surface.ProjectedStep(g, p, uv, step, w);
+                halvings = halvings + 1;
+            }
+            moving = surface.Eval(g, next).Distance(p) <= here + slack
+                && ((next.U - uv.U).Abs > ResolutionAt(uv.U.Abs + w.U.End.Abs.Min(w.U.Start.Abs)).Value
+                    || (next.V - uv.V).Abs > ResolutionAt(uv.V.Abs + w.V.End.Abs.Min(w.V.Start.Abs)).Value);
+            uv = surface.Eval(g, next).Distance(p) <= here + slack ? next : uv;
+            n = n + 1;
+        }
+        return Counted(uv, Evaluations(n));
+    }
+
+    // ProjectNearBySearchBody with its polish iterations counted as
+    // Evaluations: the same window, radius and seed rule, the same answer.
+    ProjectNearBySearchCounted(surface: BrepSurface, g: GeometrySet, p: Point3D, seed: UvCoordinate): Counted<UvCoordinate>
+    {
+        var d = surface.Domain(g);
+        var w = SurfaceWindow(d.U.NearWindow(seed.U), d.V.NearWindow(seed.V));
+        var radius = Vector2D(d.U.NearStep(w.U), d.V.NearStep(w.V));
+        var polished = surface.PolishProjectionCounted(g, p, seed, w, radius);
+        var uv = polished.Value;
+        var here = surface.Eval(g, uv);
+        var slack = ResolutionAt(here.PositionVector.Length).Value;
+        return Counted(UvCoordinate(
+            surface.Eval(g, UvCoordinate(seed.U, uv.V)).Distance(here) <= slack ? seed.U : uv.U,
+            surface.Eval(g, UvCoordinate(uv.U, seed.V)).Distance(here) <= slack ? seed.V : uv.V), polished.Work);
+    }
+
+    //==
+    // # Surfaces along a run of points
+
+    // Project of every point of a run whose consecutive points are close (the
+    // samples of an edge): see the file header for when an answer differs
+    // from Project's and by how much at most. Each answer is in Project's
+    // form: periodic coordinates wrapped, a coordinate the point does not
+    // determine at the window's start. Closed-form surfaces map Project.
+    ProjectAlong(g: GeometrySet, s: SurfaceIndex, points: Array<Point3D>, tol: LengthTolerance): Array<UvCoordinate>
+        => g.ProjectAlongCounted(s, points, tol).Value;
+
+    // ProjectAlong with its work: Flips counts the global searches (Project
+    // calls on a surface without a closed form), Evaluations the polish
+    // iterations of the seeded searches. A closed-form surface counts none.
+    ProjectAlongCounted(g: GeometrySet, s: SurfaceIndex, points: Array<Point3D>, tol: LengthTolerance): Counted<Array<UvCoordinate>>
+        => g.HasClosedFormProjection(s)
+            ? Counted(points.Map(p => g.Project(s, p)), Evaluations(0))
+            : g.SurfaceAt(s).ProjectAlongBySearchCounted(g, s, points, tol);
+
+    // The seeded run on a surface without a closed form: Project for the
+    // first point; then ProjectNearBySearch seeded with the previous point's
+    // raw answer (its periodic copy and free coordinate, so continuity
+    // carries across a seam or a pole), kept in Project's form when its
+    // point lies within tol of the input point, else Project.
+    ProjectAlongBySearchCounted(surface: BrepSurface, g: GeometrySet, s: SurfaceIndex, points: Array<Point3D>, tol: LengthTolerance): Counted<Array<UvCoordinate>>
+    {
+        var d = surface.Domain(g);
+        var answers = new List<UvCoordinate>();
+        var seed = UvCoordinate(0.0, 0.0);
+        var searches = 0;
+        var iterations = 0;
+        var i = 0;
+        while (i < points.Count)
+        {
+            var near = i == 0 ? Counted(seed, Evaluations(0)) : surface.ProjectNearBySearchCounted(g, points[i], seed);
+            var kept = i == 0 ? false : surface.Eval(g, near.Value).Distance(points[i]) <= tol.Value;
+            var answer = kept ? surface.StartWhereFree(g, near.Value, d).WrapSeams(d) : g.Project(s, points[i]);
+            answers = answers.Add(answer);
+            seed = kept ? near.Value : answer;
+            searches = searches + (kept ? 0 : 1);
+            iterations = iterations + near.Work.Evaluations;
+            i = i + 1;
+        }
+        return Counted(answers.Freeze(), WorkBudgetOf(iterations, 0, searches, 0));
+    }
+
+    //==
+    // # Pcurves: seeded search
+
+    // The domain the pcurve searches cover: [0, T) as a periodic domain when
+    // its space point repeats with parameter period T on a domain that does
+    // not say so, else the pcurve's domain (PcurveClosestParameterBySearchBody's rule).
+    PcurveSearchDomain(g: GeometrySet, p: PcurveIndex): CurveDomain
+        => g.PcurveParameterPeriod(p) > 0.0 && !g.Domain(p).Periodicity.IsPeriodic
+            ? CurveDomain(NumberInterval(0.0, g.PcurveParameterPeriod(p)), Periodicity.Periodic(g.PcurveParameterPeriod(p)))
+            : g.Domain(p);
+
+    // t in the canonical form of MinimizeOverDomain: wrapped into the window
+    // on a domain with a seam, and the range start when that is as close to
+    // p as t's point to rounding (the join).
+    CanonicalOnDomain(eval: Function1<Number, Point3D>, p: Point3D, d: CurveDomain, t: Number): Number
+    {
+        var wrapped = d.HasSeam ? d.Wrap(t) : t;
+        return d.HasSeam && eval(d.Range.Start).Distance(p) <= eval(wrapped).Distance(p) + ResolutionAt(eval(wrapped).PositionVector.Length + p.PositionVector.Length).Value
+            ? d.Range.Start
+            : wrapped;
+    }
+
+    // The local minimizer of |X(t) - p| inside window w that the seed's
+    // descent reaches: from the seed, step downhill (the slope's sign says
+    // which way), starting at twice the Newton step and doubling, until the
+    // slope changes sign or the step reaches w's end; then regula falsi on
+    // the last bracket (PolishRoot). The window's end when the slope never
+    // changes sign before it; the seed when the slope there is exactly 0.
+    NearestMinimizerFrom(eval: Function1<Number, Point3D>, deriv: Function1<Number, Vector3D>, p: Point3D, w: NumberInterval, seed: Number): Number
+    {
+        var t0 = seed.Clamp(w.Start, w.End);
+        var f0 = DistanceSlope(eval, deriv, p, t0);
+        var forward = f0 < 0.0;
+        var speed = deriv(t0).LengthSquared;
+        var step = (speed > 0.0 ? 2.0 * f0.Abs / speed : 0.0).Max(ResolutionAt(t0.Abs).Value).Max(Number.SmallestNormal);
+        var a = t0;
+        var b = (forward ? t0 + step : t0 - step).Clamp(w.Start, w.End);
+        var fb = DistanceSlope(eval, deriv, p, b);
+        var n = 0;
+        while (n < 100 && f0 != 0.0 && (forward ? fb < 0.0 : fb > 0.0) && b != (forward ? w.End : w.Start))
+        {
+            a = b;
+            step = step * 2.0;
+            b = (forward ? t0 + step : t0 - step).Clamp(w.Start, w.End);
+            fb = DistanceSlope(eval, deriv, p, b);
+            n = n + 1;
+        }
+        return f0 == 0.0
+            ? t0
+            : ((forward ? fb < 0.0 : fb > 0.0) || fb == 0.0
+                ? b
+                : (forward ? PolishRoot(eval, deriv, p, a, b) : PolishRoot(eval, deriv, p, b, a)));
+    }
+
+    // The parameter of pcurve p's space point nearest to q in the
+    // neighbourhood of seed: the local minimizer the seed's descent reaches
+    // inside a quarter period either side of it (the whole range on a
+    // domain without a seam), in ClosestParameter's canonical form. Not a
+    // global minimizer: ClosestParametersAlong checks it.
+    ClosestParameterNear(g: GeometrySet, p: PcurveIndex, q: Point3D, seed: Number): Number
+    {
+        var d = g.PcurveSearchDomain(p);
+        var t = NearestMinimizerFrom(x => g.Eval(p, x), x => g.Derivative(p, x), q, d.NearWindow(seed), seed);
+        return CanonicalOnDomain(x => g.Eval(p, x), q, d, t);
+    }
+
+    //==
+    // # Pcurves along a run of points
+
+    // ClosestParameter on pcurve p of every point of a run whose consecutive
+    // points are close: see the file header for when an answer differs from
+    // ClosestParameter's and by how much at most. A straight pcurve maps its
+    // closed form.
+    ClosestParametersAlong(g: GeometrySet, p: PcurveIndex, points: Array<Point3D>, tol: LengthTolerance): Array<Number>
+        => g.ClosestParametersAlongCounted(p, points, tol).Value;
+
+    // ClosestParametersAlong with its global searches counted as Flips.
+    ClosestParametersAlongCounted(g: GeometrySet, p: PcurveIndex, points: Array<Point3D>, tol: LengthTolerance): Counted<Array<Number>>
+        => g.IsStraightPcurve(p)
+            ? Counted(points.Map(q => g.ClosestParameter(p, q)), Evaluations(0))
+            : g.ClosestParametersAlongBySearchCounted(p, points, tol);
+
+    // The seeded run on a pcurve without a closed form: ClosestParameter for
+    // the first point; then ClosestParameterNear seeded with the previous
+    // answer, kept when its point lies within tol of the input point, else
+    // ClosestParameter.
+    ClosestParametersAlongBySearchCounted(g: GeometrySet, p: PcurveIndex, points: Array<Point3D>, tol: LengthTolerance): Counted<Array<Number>>
+    {
+        var answers = new List<Number>();
+        var seed = 0.0;
+        var searches = 0;
+        var i = 0;
+        while (i < points.Count)
+        {
+            var near = i == 0 ? seed : g.ClosestParameterNear(p, points[i], seed);
+            var kept = i == 0 ? false : g.Eval(p, near).Distance(points[i]) <= tol.Value;
+            var answer = kept ? near : g.ClosestParameter(p, points[i]);
+            answers = answers.Add(answer);
+            seed = answer;
+            searches = searches + (kept ? 0 : 1);
+            i = i + 1;
+        }
+        return Counted(answers.Freeze(), Flips(searches));
+    }
+}
