@@ -1,0 +1,57 @@
+//==
+// # Shell meshes by face mask (complexity sweep, chunk M3)
+//
+// Layer 07 replacements for the mesh of one shell and the measures read from it
+// (docs/plans/step-mesher-complexity.md, candidate 11 and layer 07's #8). RestrictedToShell
+// compares every element with every face of the shell; IsCompleteShellMesh scans every element
+// once per face of the shell; ShellMeshEuler builds the components of the restriction only to
+// count its unreferenced vertices; VolumeRoundoff evaluates VolumeOrigin three times per
+// triangle. Here the shell's faces are a mask (layer 06's FaceMask), the faces with elements are
+// flagged in one pass (FacesWithElements), the referenced vertices are counted from the corners,
+// and the origin is a parameter. Each function returns exactly what the function it replaces
+// returns.
+//
+// Sections, in order:
+//  - The mesh of one shell
+//  - Volumes about a bound origin
+
+library BrepCrossCheckingMasks
+{
+    //==
+    // # The mesh of one shell
+
+    // RestrictedToShell by a mask over the model's faces: the same mesh.
+    RestrictedToShellByMask(m: BrepModel, mesh: ModelMesh, s: ShellIndex): ModelMesh
+        => mesh.RestrictedToFacesByMask(FaceMask(m.ShellFaces(s), m.Faces.Count), m.ShellFaces(s));
+
+    // IsCompleteShellMesh given withElements, FacesWithElements(mesh, m.Faces.Count), computed
+    // once per mesh: the same verdict without a scan of the elements per face.
+    IsCompleteShellMeshGiven(m: BrepModel, mesh: ModelMesh, s: ShellIndex, withElements: Array<Boolean>): Boolean
+        => mesh.IsWellFormed
+            && m.ShellFaces(s).All(f => (f.Value >= 0 && f.Value < withElements.Count) ? withElements[f.Value] : false);
+
+    // ShellMeshEuler from the counts: the vertices the shell's elements reference, minus the
+    // edges of its edge table, plus its elements. The same number as ReferencedEulerCharacteristic
+    // of the restriction, which subtracts from every position the vertices its components leave
+    // unassigned, the same vertices as those no in-range corner names; no components are built.
+    ShellMeshEulerByCounts(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Integer
+    {
+        var r = m.RestrictedToShellByMask(mesh, s);
+        return r.ReferencedVertexCount - r.EdgeTableOf.CountEdges + r.ElementCount;
+    }
+
+    //==
+    // # Volumes about a bound origin
+
+    // VolumeRoundoff about origin o: the same terms summed in the same order. With o =
+    // mesh.VolumeOrigin it is VolumeRoundoff, bit for bit.
+    VolumeRoundoffAbout(mesh: ModelMesh, o: Point3D): Number
+        => ResolutionAt(mesh.ElementCount.Range.Map(k => mesh.HasValidCorners(ElementIndex(k))
+            ? mesh.ElementTriangles(ElementIndex(k)).Map(t => Tetrahedron(o, t.A, t.B, t.C).SignedVolume.Abs).SumOf
+            : 0.0).SumOf).Value;
+
+    // ShellMeshVolume about origin o. The restriction keeps every position, so its VolumeOrigin is
+    // the whole mesh's: with o = mesh.VolumeOrigin it is ShellMeshVolume, bit for bit.
+    ShellMeshVolumeAbout(m: BrepModel, mesh: ModelMesh, s: ShellIndex, o: Point3D): Number
+        => m.RestrictedToShellByMask(mesh, s).SignedVolumeAbout(o);
+}

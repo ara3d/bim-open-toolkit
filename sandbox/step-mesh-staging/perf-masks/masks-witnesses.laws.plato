@@ -1,0 +1,102 @@
+//==
+// # Shell meshes by face mask: laws over meshed witnesses (complexity sweep, chunk M3)
+//
+// The replacements of mesh-masks.library.plato and validation-checks-masks.library.plato agree
+// exactly with the functions they replace on the unit box and the hollow box, each meshed once
+// per sweep. The count witnesses are in mesh-masks.laws.plato, over literal meshes: a count
+// witness that read these values would mesh both boxes again on the compiled backend, once per
+// size.
+//
+// Sections, in order:
+//  - Witnesses
+//  - Agreement
+//  - Helpers
+
+library MaskWitnessLaws
+{
+    //==
+    // # Witnesses
+
+    // The unit box: one shell of 6 faces.
+    Witness_UnitBoxMasks(_: MaskMeshWitness): MaskMeshWitness
+        => MaskMeshWitness("unit box", BrepModel.Witness_UnitBox, BrepModel.Witness_UnitBox.WitnessMesh);
+
+    // The cube of side 2 around a unit cubic void: two shells of 6 faces, the void's faces
+    // pointing into the void.
+    Witness_HollowBoxMasks(_: MaskMeshWitness): MaskMeshWitness
+        => MaskMeshWitness("hollow box", BrepModel.Witness_HollowBox, BrepModel.Witness_HollowBox.WitnessMesh);
+
+    //==
+    // # Agreement
+
+    // The witness meshes are well formed and every shell's mesh is complete, so the agreement
+    // laws below are over the meshes the shell laws read, not their vacuous case.
+    Law_Perf_MaskWitnessIsComplete(w: MaskMeshWitness): Boolean
+        => w.IsCheckable && w.Model.Shells.Count.Range.All(s => w.Model.IsCompleteShellMesh(w.Mesh, ShellIndex(s)));
+
+    // Every shell's restriction by mask is RestrictedToShell's mesh, element for element.
+    Law_Perf_RestrictedToShellByMaskAgrees(w: MaskMeshWitness): Boolean
+        => w.IsCheckable
+            ? w.Model.Shells.Count.Range.All(s =>
+                w.Model.RestrictedToShellByMask(w.Mesh, ShellIndex(s)).IsSameRestriction(w.Model.RestrictedToShell(w.Mesh, ShellIndex(s))))
+            : true;
+
+    // Restricting to every model face, and to each shell's faces, keeps the elements
+    // ElementsOfFaces keeps.
+    Law_Perf_ElementsOfFacesMaskedAgreesOnShells(w: MaskMeshWitness): Boolean
+        => w.IsCheckable
+            ? (w.Model.Shells.Count + 1).Range.All(s =>
+                w.Mesh.ElementsOfFacesMasked(w.FacesOfShellOrAll(s))
+                    .Corresponds(w.Mesh.ElementsOfFaces(w.FacesOfShellOrAll(s)), (a, b) => a.Value == b.Value))
+            : true;
+
+    // IsCompleteShellMeshGiven with the faces flagged once gives IsCompleteShellMesh's verdict on
+    // every shell, and FacesWithElements gives HasMeshElements on every face.
+    Law_Perf_IsCompleteShellMeshGivenAgrees(w: MaskMeshWitness): Boolean
+    {
+        if (!w.IsCheckable)
+        {
+            return true;
+        }
+        var flags = w.Mesh.FacesWithElements(w.Model.Faces.Count);
+        return w.Model.Shells.Count.Range.All(s =>
+                w.Model.IsCompleteShellMeshGiven(w.Mesh, ShellIndex(s), flags) == w.Model.IsCompleteShellMesh(w.Mesh, ShellIndex(s)))
+            && w.Model.Faces.Count.Range.All(f => flags[f] == w.Mesh.HasMeshElements(BrepFaceIndex(f)));
+    }
+
+    // ShellMeshEulerByCounts is ShellMeshEuler on every shell: the ReferencedEulerCharacteristic
+    // of the shell's restriction, which counts the referenced vertices through the components.
+    Law_Perf_ShellMeshEulerByCountsAgrees(w: MaskMeshWitness): Boolean
+        => w.IsCheckable
+            ? w.Model.Shells.Count.Range.All(s =>
+                w.Model.ShellMeshEulerByCounts(w.Mesh, ShellIndex(s))
+                    == w.Model.RestrictedToShell(w.Mesh, ShellIndex(s)).ReferencedEulerCharacteristic)
+            : true;
+
+    // The shell volumes about the bound origin, and the counted form, are ShellMeshVolume bit for
+    // bit; the roundoff about the bound origin is VolumeRoundoff bit for bit.
+    Law_Perf_ShellVolumesAboutAgree(w: MaskMeshWitness): Boolean
+    {
+        if (!w.IsCheckable)
+        {
+            return true;
+        }
+        var o = w.Mesh.VolumeOrigin;
+        return w.Model.Shells.Count.Range.All(s =>
+                w.Model.ShellMeshVolumeAbout(w.Mesh, ShellIndex(s), o) == w.Model.ShellMeshVolume(w.Mesh, ShellIndex(s))
+                && w.Mesh.RestrictedVolumeCounted(w.Model.ShellFaces(ShellIndex(s))).Value == w.Model.ShellMeshVolume(w.Mesh, ShellIndex(s)))
+            && w.Mesh.VolumeRoundoffAbout(o) == w.Mesh.VolumeRoundoff;
+    }
+
+    //==
+    // # Helpers
+
+    // Whether the witness's model has every index in range and its mesh meets the ModelMesh
+    // invariants: the preconditions of RestrictedToShell and the volume sums.
+    IsCheckable(w: MaskMeshWitness): Boolean
+        => w.Model.IsEveryIndexInRange ? w.Mesh.IsWellFormed : false;
+
+    // The faces of shell s of the witness's model; every model face when s is the shell count.
+    FacesOfShellOrAll(w: MaskMeshWitness, s: Integer): Array<BrepFaceIndex>
+        => s < w.Model.Shells.Count ? w.Model.ShellFaces(ShellIndex(s)) : w.Model.Faces.Count.MapRange(f => BrepFaceIndex(f));
+}

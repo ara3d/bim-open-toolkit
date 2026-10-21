@@ -1,0 +1,196 @@
+//==
+// # Face masks and volumes about a bound origin (complexity sweep, chunk M3)
+//
+// Layer 06 replacements for the restriction to a set of faces and the signed volume sums
+// (docs/plans/step-mesher-complexity.md, candidate 11). The restriction in mesh.library.plato
+// compares every element's face with every given face, O(T x faces); here the given faces are
+// written once into a mask indexed by face, and each element reads the mask once, O(T + F). The
+// volume sums in mesh-measures.library.plato evaluate VolumeOrigin, a pass over every position,
+// inside the per-element lambda, O(T V); here the origin is a parameter, bound once by the
+// caller. Each function returns exactly what the function it replaces returns: the same elements
+// in the same order, and the same volume terms summed in the same order about the same origin.
+//
+// Sections, in order:
+//  - Face masks
+//  - Restriction by mask
+//  - Faces with elements
+//  - Volumes about a bound origin
+
+library ModelMeshMasks
+{
+    //==
+    // # Face masks
+
+    // One flag per face index from 0 to faceCount - 1, true for the indices faces names. An entry
+    // of faces outside that range sets nothing.
+    FaceMask(faces: Array<BrepFaceIndex>, faceCount: Integer): Array<Boolean>
+    {
+        var mask = new Buffer<Boolean>(faceCount.Max(1));
+        var i = 0;
+        while (i < faceCount)
+        {
+            mask = mask.Set(i, false);
+            i = i + 1;
+        }
+        var k = 0;
+        while (k < faces.Count)
+        {
+            var f = faces[k].Value;
+            if (f >= 0 && f < faceCount)
+            {
+                mask = mask.Set(f, true);
+            }
+            k = k + 1;
+        }
+        return mask.Freeze().Take(faceCount.Max(0));
+    }
+
+    // One more than the largest face index an element of the mesh names; 0 when none is
+    // non-negative. A mask of this length holds every face an element can name.
+    FaceSpan(mesh: ModelMesh): Integer
+        => mesh.ElementFace.Reduce(0, (n, f) => n.Max(f.Value + 1));
+
+    //==
+    // # Restriction by mask
+
+    // ElementsOfFaceMask with its work counted: Insertions is the number of element-face
+    // comparisons, one mask read per element with a face entry, plus one per entry of faces for
+    // an element whose face the mask cannot hold (a negative index, which only an ill-formed mesh
+    // has). An element is kept when the mask marks its face, or, for a face outside the mask,
+    // when faces names it: the reference's comparison, so the result is ElementsOfFaces's for
+    // every mesh. Precondition: mask is FaceMask(faces, n) for some n.
+    ElementsOfFaceMaskCounted(mesh: ModelMesh, mask: Array<Boolean>, faces: Array<BrepFaceIndex>): Counted<Array<ElementIndex>>
+    {
+        var kept = new List<ElementIndex>();
+        var compared = 0;
+        var count = mesh.ElementCount.Min(mesh.ElementFace.Count);
+        var e = 0;
+        while (e < count)
+        {
+            var face = mesh.ElementFace[e].Value;
+            if (face >= 0 && face < mask.Count)
+            {
+                compared = compared + 1;
+                if (mask[face])
+                {
+                    kept = kept.Add(ElementIndex(e));
+                }
+            }
+            else
+            {
+                compared = compared + faces.Count;
+                if (faces.Any(f => f.Value == face))
+                {
+                    kept = kept.Add(ElementIndex(e));
+                }
+            }
+            e = e + 1;
+        }
+        return Counted(kept.Freeze(), Insertions(compared));
+    }
+
+    // The elements whose face the mask marks (or faces names, for a face outside the mask), in
+    // element order. Precondition: mask is FaceMask(faces, n) for some n.
+    ElementsOfFaceMask(mesh: ModelMesh, mask: Array<Boolean>, faces: Array<BrepFaceIndex>): Array<ElementIndex>
+        => mesh.ElementsOfFaceMaskCounted(mask, faces).Value;
+
+    // The replacement for ElementsOfFaces: the same elements, in element order, by a mask over
+    // the faces the mesh's elements name.
+    ElementsOfFacesMasked(mesh: ModelMesh, faces: Array<BrepFaceIndex>): Array<ElementIndex>
+        => mesh.ElementsOfFaceMask(FaceMask(faces, mesh.FaceSpan), faces);
+
+    // The mesh restricted to the given elements: RestrictedToFaces's body, with the kept elements
+    // supplied. Their triangles and quads in the given order with their element faces and corner
+    // attributes; every position, the vertex provenance, and the numbering unchanged.
+    // Precondition: every kept element has valid corner attributes (the ModelMesh invariants).
+    RestrictedToElements(mesh: ModelMesh, kept: Array<ElementIndex>): ModelMesh
+        => ModelMesh(
+            mesh.Positions,
+            kept.FlatMap(e => mesh.IsTriangle(e) ? [mesh.Triangles[e.Value]] : []),
+            kept.FlatMap(e => mesh.IsQuad(e) ? [mesh.Quads[e.Value - mesh.Triangles.Count]] : []),
+            kept.FlatMap(e => mesh.ElementArity(e).MapRange(s => mesh.CornerNormalAt(e, s))),
+            kept.FlatMap(e => mesh.ElementArity(e).MapRange(s => mesh.CornerUvAt(e, s))),
+            kept.Map(e => mesh.ElementFace[e]),
+            mesh.VertexProvenance,
+            mesh.Numbering);
+
+    // The mesh restricted to the elements whose face the mask marks (or faces names, for a face
+    // outside the mask). Precondition: mask is FaceMask(faces, n) for some n.
+    RestrictedToFacesByMask(mesh: ModelMesh, mask: Array<Boolean>, faces: Array<BrepFaceIndex>): ModelMesh
+        => mesh.RestrictedToElements(mesh.ElementsOfFaceMask(mask, faces));
+
+    // RestrictedToFaces with its work counted, Insertions throughout: the mask entries written
+    // (FaceSpan cleared, then one visit per entry of faces) plus the element-face comparisons; at
+    // most 2(T + F) on a mesh whose element faces name model faces 0 to F - 1.
+    RestrictedToFacesCounted(mesh: ModelMesh, faces: Array<BrepFaceIndex>): Counted<ModelMesh>
+    {
+        var span = mesh.FaceSpan;
+        var kept = mesh.ElementsOfFaceMaskCounted(FaceMask(faces, span), faces);
+        return Counted(mesh.RestrictedToElements(kept.Value), Add(Insertions(span + faces.Count), kept.Work));
+    }
+
+    //==
+    // # Faces with elements
+
+    // One flag per face index from 0 to faceCount - 1, true when some entry of ElementFace names
+    // it: HasMeshElements of every face in one pass over the elements.
+    FacesWithElements(mesh: ModelMesh, faceCount: Integer): Array<Boolean>
+    {
+        var seen = new Buffer<Boolean>(faceCount.Max(1));
+        var i = 0;
+        while (i < faceCount)
+        {
+            seen = seen.Set(i, false);
+            i = i + 1;
+        }
+        var e = 0;
+        while (e < mesh.ElementFace.Count)
+        {
+            var f = mesh.ElementFace[e].Value;
+            if (f >= 0 && f < faceCount)
+            {
+                seen = seen.Set(f, true);
+            }
+            e = e + 1;
+        }
+        return seen.Freeze().Take(faceCount.Max(0));
+    }
+
+    //==
+    // # Volumes about a bound origin
+
+    // SignedVolume about origin o: the same terms summed in the same order. With o =
+    // mesh.VolumeOrigin it is SignedVolume, bit for bit.
+    SignedVolumeAbout(mesh: ModelMesh, o: Point3D): Number
+        => mesh.ElementCount.MapRange(k => mesh.ElementSignedVolume(ElementIndex(k), o)).CompensatedSum;
+
+    // VolumeRoundingMagnitude about origin o. With o = mesh.VolumeOrigin it is
+    // VolumeRoundingMagnitude, bit for bit. Precondition: mesh.HasAllValidCorners.
+    VolumeRoundingMagnitudeAbout(mesh: ModelMesh, o: Point3D): Number
+        => mesh.ElementCount.MapRange(k => mesh.ElementTriangles(ElementIndex(k))
+                .Map(t => (t.A - o).Length * (t.B - o).Length * (t.C - o).Length)
+                .SumOf)
+            .CompensatedSum;
+
+    // The signed volume of component c alone about origin o. With o = mesh.VolumeOrigin it is
+    // SignedVolume(mesh, comps, c), bit for bit.
+    SignedVolumeAbout(mesh: ModelMesh, comps: MeshComponents, c: MeshComponentIndex, o: Point3D): Number
+        => mesh.ElementCount.MapRange(k => comps.ElementComponentOf(ElementIndex(k)).Value == c.Value
+                ? mesh.ElementSignedVolume(ElementIndex(k), o)
+                : 0.0)
+            .CompensatedSum;
+
+    // The signed volume of the mesh restricted to the given faces, about the whole mesh's
+    // VolumeOrigin, with its work counted, Insertions throughout: one position read for the
+    // origin, computed once, then the restriction's work (RestrictedToFacesCounted), then one term
+    // per kept element; at most 2(T + F + V) on a mesh whose element faces name faces 0 to F - 1.
+    // The restriction keeps every position, so its VolumeOrigin is the whole mesh's and the value
+    // is RestrictedToFaces(faces).SignedVolume, bit for bit.
+    RestrictedVolumeCounted(mesh: ModelMesh, faces: Array<BrepFaceIndex>): Counted<Number>
+    {
+        var o = mesh.VolumeOrigin;
+        var r = mesh.RestrictedToFacesCounted(faces);
+        return Counted(r.Value.SignedVolumeAbout(o),
+            Add(Insertions(mesh.Positions.Count + r.Value.ElementCount), r.Work));
+    }
+}

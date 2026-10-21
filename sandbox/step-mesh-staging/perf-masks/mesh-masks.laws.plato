@@ -1,0 +1,98 @@
+//==
+// # Face masks and volumes about a bound origin: laws (complexity sweep, chunk M3)
+//
+// The replacements of mesh-masks.library.plato agree exactly with the layer 06 functions they
+// replace, on every mesh the runner generates and on the shared meshed witnesses of
+// masks-witnesses.laws.plato; and the restriction's and the restricted volume's work are linear
+// in the mesh. Law_WorkIsWithinSlope (layer 00) reads the two count witnesses.
+//
+// Sections, in order:
+//  - Restriction
+//  - Volumes
+//  - Count witnesses
+//  - Helpers
+
+library ModelMeshMasksLaws
+{
+    //==
+    // # Restriction
+
+    // ElementsOfFacesMasked keeps the elements ElementsOfFaces keeps, in the same order, for any
+    // mesh and any faces, negative and repeated indices included.
+    Law_Perf_ElementsOfFacesMaskedAgrees(mesh: ModelMesh, faces: Array<BrepFaceIndex>): Boolean
+        => mesh.ElementsOfFacesMasked(faces).Corresponds(mesh.ElementsOfFaces(faces), (a, b) => a.Value == b.Value);
+
+    // RestrictedToFacesCounted gives the mesh RestrictedToFaces gives: the same elements over the
+    // same vertices on the same faces, with the same corner attributes.
+    Law_Perf_RestrictedToFacesCountedAgrees(mesh: ModelMesh, faces: Array<BrepFaceIndex>): Boolean
+        => mesh.IsWellFormed ? mesh.RestrictedToFacesCounted(faces).Value.IsSameRestriction(mesh.RestrictedToFaces(faces)) : true;
+
+    //==
+    // # Volumes
+
+    // The volume sums about the bound origin equal the sums that evaluate it per element, bit for
+    // bit: the whole mesh, its rounding magnitude, and each component.
+    Law_Perf_VolumeAboutAgrees(mesh: ModelMesh): Boolean
+    {
+        if (!mesh.HasAllValidCorners)
+        {
+            return true;
+        }
+        var o = mesh.VolumeOrigin;
+        var comps = mesh.ComponentsOf;
+        return mesh.SignedVolumeAbout(o) == mesh.SignedVolume
+            && mesh.VolumeRoundingMagnitudeAbout(o) == mesh.VolumeRoundingMagnitude
+            && comps.ComponentCount.Range.All(c =>
+                mesh.SignedVolumeAbout(comps, MeshComponentIndex(c), o) == mesh.SignedVolume(comps, MeshComponentIndex(c)));
+    }
+
+    //==
+    // # Count witnesses
+
+    // A closed fan of k triangles (layer 06's IncidenceTestFan: V = k + 1, T = k) with triangles
+    // 2j and 2j + 1 on face j: F = k / 2 for even k.
+    MaskTestFan(k: Integer): ModelMesh
+    {
+        var fan = IncidenceTestFan(k);
+        return (fan.Positions, fan.Triangles, fan.Quads, fan.CornerNormals, fan.CornerUvs,
+            k.MapRange(i => BrepFaceIndex(i / 2)), fan.VertexProvenance, fan.Numbering);
+    }
+
+    // The first half of the faces of MaskTestFan(k): faces 0 to k / 4 - 1.
+    MaskTestFaces(k: Integer): Array<BrepFaceIndex>
+        => (k / 4).MapRange(f => BrepFaceIndex(f));
+
+    // The restriction's work on the fan whose size T + F is n (n = 3k / 2).
+    RestrictionWorkAt(n: Integer): WorkBudget
+        => MaskTestFan(2 * n / 3).RestrictedToFacesCounted(MaskTestFaces(2 * n / 3)).Work;
+
+    // RestrictedToFacesCounted clears a mask over the faces, marks the given faces in it and reads
+    // it once per element, counted as Insertions: at most two per unit of T + F, on fans of 16 and
+    // 128 triangles restricted to half their faces (measured 1.75k). The reference compared each
+    // element with each given face, k^2 / 4, which exceeds the slope at 128.
+    Witness_RestrictedToFacesWork(_: WorkClaim): WorkClaim
+        => WorkClaim("RestrictedToFaces: mask entries and element-face comparisons per unit of T + F", Insertions(2),
+            [24, 192], n => RestrictionWorkAt(n));
+
+    // The restricted volume's work on the fan whose size T + F + V is n (n = 5k / 2 + 1).
+    RestrictedVolumeWorkAt(n: Integer): WorkBudget
+        => MaskTestFan(2 * (n - 1) / 5).RestrictedVolumeCounted(MaskTestFaces(2 * (n - 1) / 5)).Work;
+
+    // RestrictedVolumeCounted reads every position once for the origin, computed once, then
+    // restricts and sums one term per kept element, counted as Insertions: at most two per unit
+    // of T + F + V, on the same fans (measured 3.25k + 1). The reference evaluated the origin once
+    // per element, a pass over every position each time, k (k + 1) reads.
+    Witness_RestrictedVolumeWork(_: WorkClaim): WorkClaim
+        => WorkClaim("Restricted SignedVolume: origin reads, restriction, terms per unit of T + F + V", Insertions(2),
+            [41, 321], n => RestrictedVolumeWorkAt(n));
+
+    //==
+    // # Helpers
+
+    // Whether a and b are the same restriction of one mesh: the same connectivity and the same
+    // corner normals and uvs, entry by entry.
+    IsSameRestriction(a: ModelMesh, b: ModelMesh): Boolean
+        => a.SameConnectivity(b)
+            && a.CornerNormals.Corresponds(b.CornerNormals, (x, y) => x.Vector == y.Vector)
+            && a.CornerUvs.Corresponds(b.CornerUvs, (x, y) => x.U == y.U && x.V == y.V);
+}
