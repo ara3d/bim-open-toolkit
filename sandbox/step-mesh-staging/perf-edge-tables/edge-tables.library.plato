@@ -1,0 +1,178 @@
+//==
+// # Edge-to-face table and two-edge-loop flags: functions (complexity sweep, chunk E1)
+//
+// Ranked candidate 4 of docs/plans/step-mesher-complexity.md: layer 2's FacesOfEdge scans every
+// face's coedges, and layer 4 asks it three to five times per edge and, through EdgeImages, once
+// per segment; IsInTwoEdgeLoop scans every loop per edge. Here both answers are built for the
+// whole model in one pass each, O(F + C) for F faces and C coedges, and read per edge in time
+// proportional to the answer. Each reader returns what its reference form returns: FacesOfEdgeIn
+// is FacesOfEdge, TwoEdgeLoopEdges(m)[e] is IsInTwoEdgeLoop(m, e), for every edge in range.
+//
+// Sections, in order:
+//  - The edge-to-face table
+//  - Two-edge loops
+
+library BrepEdgeTables
+{
+    //==
+    // # The edge-to-face table
+
+    // EdgeFaceTable with its work counted: Insertions is the number of faces and coedges visited
+    // by the one pass over faces, bounds and loops, plus two per (edge, face) pair for the
+    // counting sort that groups the pairs by edge, so at most F + 3C. The pass visits faces in
+    // increasing order and records a pair only when the face is not already the last one
+    // recorded for that edge, so a face that cites an edge twice (a seam) enters its row once;
+    // the sort is stable, so each row keeps increasing face order.
+    EdgeFaceTableCounted(m: BrepModel): Counted<EdgeFaceTable>
+    {
+        var edgeCount = m.Edges.Count;
+        var faceCount = m.Faces.Count;
+        var last = new Buffer<Integer>(edgeCount.Max(1));
+        var i = 0;
+        while (i < edgeCount)
+        {
+            last = last.Set(i, -1);
+            i = i + 1;
+        }
+        var pairEdges = new List<Integer>();
+        var pairFaces = new List<Integer>();
+        var visits = 0;
+        var f = 0;
+        while (f < faceCount)
+        {
+            visits = visits + 1;
+            var bounds = m.Faces[f].Bounds;
+            var b = 0;
+            while (b < bounds.Count)
+            {
+                if (m.IsLoopInRange(bounds[b].Loop))
+                {
+                    var coedges = m.Loops[bounds[b].Loop].CoedgesOf;
+                    var k = 0;
+                    while (k < coedges.Count)
+                    {
+                        visits = visits + 1;
+                        var e = coedges[k].Edge.Value;
+                        if (e >= 0 && e < edgeCount)
+                        {
+                            if (last.At(e) != f)
+                            {
+                                last = last.Set(e, f);
+                                pairEdges = pairEdges.Add(e);
+                                pairFaces = pairFaces.Add(f);
+                            }
+                        }
+                        k = k + 1;
+                    }
+                }
+                b = b + 1;
+            }
+            f = f + 1;
+        }
+        var es = pairEdges.Freeze();
+        var fs = pairFaces.Freeze();
+        var offsets = new Buffer<Integer>(edgeCount + 1);
+        var r = 0;
+        while (r <= edgeCount)
+        {
+            offsets = offsets.Set(r, 0);
+            r = r + 1;
+        }
+        var p = 0;
+        while (p < es.Count)
+        {
+            offsets = offsets.Set(es[p] + 1, offsets.At(es[p] + 1) + 1);
+            p = p + 1;
+        }
+        var s = 0;
+        while (s < edgeCount)
+        {
+            offsets = offsets.Set(s + 1, offsets.At(s + 1) + offsets.At(s));
+            s = s + 1;
+        }
+        var starts = offsets.Freeze();
+        var cursor = new Buffer<Integer>(edgeCount.Max(1));
+        var j = 0;
+        while (j < edgeCount)
+        {
+            cursor = cursor.Set(j, starts[j]);
+            j = j + 1;
+        }
+        var items = new Buffer<Integer>(es.Count.Max(1));
+        var q = 0;
+        while (q < es.Count)
+        {
+            items = items.Set(cursor.At(es[q]), fs[q]);
+            cursor = cursor.Set(es[q], cursor.At(es[q]) + 1);
+            q = q + 1;
+        }
+        var values = items.Freeze();
+        return Counted(
+            EdgeFaceTable(starts, es.Count.MapRange(k => BrepFaceIndex(values[k]))),
+            Insertions(visits + 2 * es.Count));
+    }
+
+    // The faces of every edge of the model: row e lists the faces whose bounds cite edge e, in
+    // increasing order, once each.
+    EdgeFaceTable(m: BrepModel): EdgeFaceTable
+        => m.EdgeFaceTableCounted.Value;
+
+    // Whether e names a row of the table.
+    HasEdgeRow(t: EdgeFaceTable, e: BrepEdgeIndex): Boolean
+        => e.Value >= 0 && e.Value < t.Offsets.Count - 1;
+
+    // The number of faces citing edge e; 0 when e names no row.
+    FaceCountOf(t: EdgeFaceTable, e: BrepEdgeIndex): Integer
+        => t.HasEdgeRow(e) ? t.Offsets[e.Value + 1] - t.Offsets[e.Value] : 0;
+
+    // The faces whose bounds cite edge e, each once, in face order: layer 2's FacesOfEdge(m, e)
+    // for the model the table was built from, read from row e. Empty when e names no row.
+    FacesOfEdgeIn(t: EdgeFaceTable, e: BrepEdgeIndex): Array<BrepFaceIndex>
+        => t.FaceCountOf(e).MapRange(k => t.Faces[t.Offsets[e.Value] + k]);
+
+    //==
+    // # Two-edge loops
+
+    // TwoEdgeLoopEdges with its work counted: Insertions is the number of loops visited plus the
+    // coedges of the two-coedge loops read, so at most L + C.
+    TwoEdgeLoopEdgesCounted(m: BrepModel): Counted<Array<Boolean>>
+    {
+        var edgeCount = m.Edges.Count;
+        var flags = new Buffer<Boolean>(edgeCount.Max(1));
+        var i = 0;
+        while (i < edgeCount)
+        {
+            flags = flags.Set(i, false);
+            i = i + 1;
+        }
+        var visits = 0;
+        var l = 0;
+        while (l < m.Loops.Count)
+        {
+            visits = visits + 1;
+            var coedges = m.Loops[l].CoedgesOf;
+            if (coedges.Count == 2)
+            {
+                var k = 0;
+                while (k < 2)
+                {
+                    visits = visits + 1;
+                    var e = coedges[k].Edge.Value;
+                    if (e >= 0 && e < edgeCount)
+                    {
+                        flags = flags.Set(e, true);
+                    }
+                    k = k + 1;
+                }
+            }
+            l = l + 1;
+        }
+        var marked = flags.Freeze();
+        return Counted(edgeCount.MapRange(k => marked[k]), Insertions(visits));
+    }
+
+    // One flag per edge of the model: whether an edge loop of exactly two coedges cites it.
+    // Entry e is layer 4's IsInTwoEdgeLoop(m, e).
+    TwoEdgeLoopEdges(m: BrepModel): Array<Boolean>
+        => m.TwoEdgeLoopEdgesCounted.Value;
+}

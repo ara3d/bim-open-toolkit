@@ -1,0 +1,181 @@
+//==
+// # Edge tables: laws (complexity sweep, chunk E1)
+//
+// The count witness for DiscretizeAllTabledCounted, and the laws that every tabled form returns
+// what its reference returns: the table's rows are FacesOfEdge, the flags are IsInTwoEdgeLoop,
+// and the table, the refinement, the findings and MeetsCriteria are the reference's, bit for bit.
+// Layer 8: the laws use layer 7's witnesses and layer 8's CatalogEdgeCriteria, GuardsUnindexedBox
+// and SameTables (chunk G1).
+//
+// Sections, in order:
+//  - Witness
+//  - Odd models
+//  - The tables
+//  - Discretization
+
+library EdgeTablesLaws
+{
+    //==
+    // # Witness
+
+    // The model of size n, its edge count plus its coedge count: the unit box (12 + 24 = 36) up
+    // to 36, the 3 x 3 x 1 block with a square through hole (24 + 48 = 72) above.
+    TablesModelOfSize(_: BrepModel, n: Integer): BrepModel
+        => n <= 36 ? BrepModel.Witness_UnitBox : BrepModel.Witness_BlockWithThroughHole;
+
+    // The coedges the faces of m cite through their bounds.
+    CitedCoedgeCount(m: BrepModel): Integer
+        => m.Faces.Reduce(0, (n, f) => f.Bounds.Reduce(n, (k, b) => m.IsLoopInRange(b.Loop) ? k + m.Loops[b.Loop].CoedgeCount : k));
+
+    // The work DiscretizeAllTabledCounted counts on the model of size n.
+    DiscretizeAllTabledWork(n: Integer): WorkBudget
+        => BrepModel.TablesModelOfSize(n).DiscretizeAllTabledCounted(DiscretizationCriteria.CatalogEdgeCriteria, SegmentFloors.NoFloors).Work;
+
+    // DiscretizeAll visits faces, loops and coedges (Insertions) at most four times per edge
+    // plus coedge, and scans the model's indices (Flips) once, at sizes 36 and 72. The reference
+    // scans every face's coedges per edge, E C visits: 288 on the box, already above 4 x 36.
+    Witness_DiscretizeAllTabledWork(_: WorkClaim): WorkClaim
+        => WorkClaim("DiscretizeAll: faces and coedges visited per edge plus coedge", Insertions(4).Add(Flips(1)), [36, 72], n => DiscretizeAllTabledWork(n));
+
+    // The witness's sizes are its models' edge counts plus coedge counts.
+    Law_Perf_TablesWitnessSizes(_: Integer): Boolean
+        => [36, 72].All(n => BrepModel.TablesModelOfSize(n).Edges.Count + BrepModel.TablesModelOfSize(n).CitedCoedgeCount == n);
+
+    //==
+    // # Odd models
+
+    // The unit box with face 0 bounded by a loop of two coedges, edges 3 and 2: both edges are in
+    // a two-edge loop. No Witness_ prefix, so the runner does not feed it to every BrepModel law.
+    TablesDigonBox(_: BrepModel): BrepModel
+    {
+        var u = BrepModel.Witness_UnitBox;
+        var loops = u.Loops.Count.MapRange(i => i == 0 ? BrepLoop.EdgeLoop([CoedgeOf(3, false), CoedgeOf(2, false)]) : u.Loops[i]);
+        return BrepModel(u.Geometry, u.Vertices, u.Edges, loops, u.Faces, u.Shells, u.Bodies, u.Tolerances, u.Unit);
+    }
+
+    // The unit box with the cases a table must skip or merge: face 0 has a second bound naming a
+    // loop out of range; loop 1 cites edge 99 (out of range) and edge 4 a second time (a seam
+    // face cites its edge twice); a seventh loop, cited by no face, has two coedges on edge 8 and
+    // edge 42. Its indices are out of range, so every edge is Undiscretized.
+    TablesStrayBox(_: BrepModel): BrepModel
+    {
+        var u = BrepModel.Witness_UnitBox;
+        var loops = u.Loops.Count.MapRange(i => i == 1
+            ? BrepLoop.EdgeLoop([CoedgeOf(4, true), CoedgeOf(5, true), CoedgeOf(6, true), CoedgeOf(7, true), CoedgeOf(99, true), CoedgeOf(4, false)])
+            : u.Loops[i]).Concatenate([BrepLoop.EdgeLoop([CoedgeOf(8, true), CoedgeOf(42, true)])]);
+        var faces = u.Faces.Count.MapRange(i => i == 0
+            ? BrepFace(u.Faces[0].Surface, u.Faces[0].SameSense, u.Faces[0].Bounds.Concatenate([FaceBound(BrepLoopIndex(99), true, false)]))
+            : u.Faces[i]);
+        return BrepModel(u.Geometry, u.Vertices, u.Edges, loops, faces, u.Shells, u.Bodies, u.Tolerances, u.Unit);
+    }
+
+    //==
+    // # The tables
+
+    // The same faces in the same order.
+    SameFaces(a: Array<BrepFaceIndex>, b: Array<BrepFaceIndex>): Boolean
+        => a.Count == b.Count ? a.Count.Range.All(k => a[k] == b[k]) : false;
+
+    // On m: one row and one flag per edge, row e is FacesOfEdge(m, e) and flag e is
+    // IsInTwoEdgeLoop(m, e).
+    TablesAgreeOn(m: BrepModel): Boolean
+    {
+        var t = m.EdgeFaceTable;
+        var two = m.TwoEdgeLoopEdges;
+        return t.Offsets.Count == m.Edges.Count + 1
+            && two.Count == m.Edges.Count
+            && m.Edges.Count.Range.All(i =>
+                SameFaces(t.FacesOfEdgeIn(BrepEdgeIndex(i)), m.FacesOfEdge(BrepEdgeIndex(i)))
+                && two[i] == m.IsInTwoEdgeLoop(BrepEdgeIndex(i)));
+    }
+
+    // The tables agree with their references on every witness model. Exact.
+    Law_Perf_EdgeTablesAgree(m: BrepModel): Boolean
+        => TablesAgreeOn(m);
+
+    // The tables agree on the digon box and the stray box, and the cases they were built for
+    // occur: edges 2 and 3 of the digon box and edge 8 of the stray box are flagged, edge 4 of
+    // the stray box lists face 1 once, and an edge out of range has no faces.
+    Law_Perf_EdgeTablesAgreeOnOddModels(_: Integer): Boolean
+    {
+        var digon = BrepModel.TablesDigonBox;
+        var stray = BrepModel.TablesStrayBox;
+        var t = stray.EdgeFaceTable;
+        return TablesAgreeOn(digon) && TablesAgreeOn(stray)
+            && digon.TwoEdgeLoopEdges[2] && digon.TwoEdgeLoopEdges[3]
+            && stray.TwoEdgeLoopEdges[8]
+            && t.FacesOfEdgeIn(BrepEdgeIndex(4)).Count == 2
+            && t.FacesOfEdgeIn(BrepEdgeIndex(99)).Count == 0;
+    }
+
+    //==
+    // # Discretization
+
+    // On m under the catalog criteria: DiscretizeAllTabled is DiscretizeAll, and RefineTabled is
+    // Refine for one request that tightens the chordal bound and one that raises the count,
+    // where Refine's precondition IsRefinable holds (it fails where an entry is Undiscretized).
+    DiscretizationAgreesOn(m: BrepModel): Boolean
+    {
+        var c = DiscretizationCriteria.CatalogEdgeCriteria;
+        var d = m.DiscretizeAll(c, SegmentFloors.NoFloors);
+        var requests = [
+            EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.TooCoarseInParameterSpace, c.Chordal * 0.25, 0),
+            EdgeRefinementRequest(BrepEdgeIndex(2), RefinementReason.QuadCountMismatch, c.Chordal, 5)];
+        return SameTables(m.DiscretizeAllTabled(c, SegmentFloors.NoFloors), d)
+            && (m.IsRefinable(d, requests, c) ? SameTables(m.RefineTabled(d, requests, c), m.Refine(d, requests, c)) : true);
+    }
+
+    // DiscretizationAgreesOn holds on the box, the block with a hole, the cylinder, the
+    // off-surface cube, the box with an index out of range, the digon box and the stray box; on
+    // the digon box edges 2 and 3 have the two-edge-loop floor.
+    Law_Perf_DiscretizeAllTabledAgrees(_: Integer): Boolean
+    {
+        var digon = BrepModel.TablesDigonBox.DiscretizeAllTabled(DiscretizationCriteria.CatalogEdgeCriteria, SegmentFloors.NoFloors);
+        return [BrepModel.Witness_UnitBox, BrepModel.Witness_BlockWithThroughHole, BrepModel.Witness_Cylinder,
+                BrepModel.TermOffSurfaceCube(1), BrepModel.GuardsUnindexedBox, BrepModel.TablesDigonBox, BrepModel.TablesStrayBox]
+                .All(m => DiscretizationAgreesOn(m))
+            && digon.ByEdge[2].SegmentCount >= 2 && digon.ByEdge[3].SegmentCount >= 2;
+    }
+
+    // The same findings, field for field.
+    SameFindings(a: Array<Diagnostic>, b: Array<Diagnostic>): Boolean
+        => a.Count == b.Count
+            ? a.Count.Range.All(k => a[k].Severity == b[k].Severity && a[k].Code == b[k].Code
+                && a[k].Message == b[k].Message && a[k].Where == b[k].Where && a[k].Measure == b[k].Measure)
+            : false;
+
+    // DiscretizationFindingsTabled is DiscretizationFindings on the off-surface cubes k 0 to 3
+    // at the findings criteria, over the table DiscretizeAll makes; the cube k 0 has findings.
+    Law_Perf_DiscretizationFindingsTabledAgrees(k: Integer): Boolean
+    {
+        if (k < 0 || k > 3)
+        {
+            return true;
+        }
+        var m = BrepModel.TermOffSurfaceCube(k);
+        var c = DiscretizationCriteria.TermFindingCriteria;
+        var ds = m.DiscretizeAll(c, SegmentFloors.NoFloors);
+        var tabled = m.DiscretizationFindingsTabled(ds, c);
+        return SameFindings(tabled, m.DiscretizationFindings(ds, c)) && (k == 0 ? tabled.Count > 0 : true);
+    }
+
+    // MeetsCriteria is SegmentsMeetCriteriaOn over the edge's images, computed once, for every
+    // entry of the catalog table of the box, the cylinder and the off-surface cube, and for each
+    // entry coarsened to one segment, which fails a criterion on the cylinder's circles.
+    Law_Perf_MeetsCriteriaOnceAgrees(_: Integer): Boolean
+        => [BrepModel.Witness_UnitBox, BrepModel.Witness_Cylinder, BrepModel.TermOffSurfaceCube(1)].All(m =>
+            m.DiscretizeAll(DiscretizationCriteria.CatalogEdgeCriteria, SegmentFloors.NoFloors).ByEdge.All(d =>
+                MeetsOnceAgreesOn(m, d) && MeetsOnceAgreesOn(m, Coarsened(m, d))));
+
+    // d with its interior parameters dropped: one segment over the whole domain.
+    Coarsened(m: BrepModel, d: EdgeDiscretization): EdgeDiscretization
+        => d.IsDiscretized ? m.DiscretizationAt(d.Edge, [d.Parameters.First, d.Parameters.Last]) : d;
+
+    // MeetsCriteria(m, d, c) under the catalog criteria, against its once-per-edge form.
+    MeetsOnceAgreesOn(m: BrepModel, d: EdgeDiscretization): Boolean
+    {
+        var c = DiscretizationCriteria.CatalogEdgeCriteria;
+        var once = m.IsEvaluable(d) ? m.SegmentsMeetCriteriaOn(d, c, m.EdgeImages(d.Edge)) : false;
+        return once == m.MeetsCriteria(d, c);
+    }
+}

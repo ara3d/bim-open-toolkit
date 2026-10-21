@@ -1,0 +1,170 @@
+//==
+// # Edge discretization over the edge tables (complexity sweep, chunk E1)
+//
+// Layer 4's per-edge work asks layer 2's FacesOfEdge, a scan of every face's coedges, through
+// EdgeImages: in UsableImages, in EdgeFindingsOn, and once per segment in MeetsCriteria; and
+// MinimumSegmentCount asks IsInTwoEdgeLoop, a scan of every loop. E edges over C coedges cost
+// O(E C) several times per edge. Here the table and the whole-model passes build the edge-to-face
+// table and the two-edge-loop flags (edge-tables.library.plato) once per model and pass them
+// down, and an edge's images are computed once and handed to every test that reads them. Every
+// result is the reference form's, bit for bit: the faces come in the same order, so the images,
+// the usable images and every test over them are the same.
+//
+// Sections, in order:
+//  - Images from the table
+//  - One edge
+//  - Every edge
+//  - Refinement
+//  - Findings
+//  - Tests over given images
+
+library EdgeTabledDiscretizing
+{
+    //==
+    // # Images from the table
+
+    // Layer 4's EdgeImages(m, e) with the faces read from the table built from m: for every face
+    // citing e, in face order, its images of e.
+    EdgeImagesIn(t: EdgeFaceTable, m: BrepModel, e: BrepEdgeIndex): Array<EdgeImage>
+        => t.FacesOfEdgeIn(e).FlatMap(f => m.ImagesOnFace(e, f));
+
+    // Termination's UsableImages(m, e, c) with every image of the edge given: the evaluable ones
+    // the edge lies on, in the given order. UsableImages(m, e, c) is
+    // m.UsableImagesFrom(e, c, m.EdgeImages(e)).
+    UsableImagesFrom(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, all: Array<EdgeImage>): Array<EdgeImage>
+        => all.FlatMap(img => (m.IsImageEvaluable(img) ? m.IsOffSurface(e, img, c).Not : false) ? [img] : all.Take(0));
+
+    //==
+    // # One edge
+
+    // Layer 4's MinimumSegmentCount with the two-edge-loop answer given:
+    // MinimumSegmentCount(m, e, c, floors) is
+    // m.MinimumSegmentCountGiven(e, c, floors, m.IsInTwoEdgeLoop(e)).
+    MinimumSegmentCountGiven(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors, inTwoEdgeLoop: Boolean): Integer
+        => m.IsDegenerateEdge(e)
+            ? 1
+            : floors.FloorOf(e)
+                .Max(m.IsClosedRegularEdge(e) ? c.ClosedEdgeMinimum : 1)
+                .Max(inTwoEdgeLoop ? 2 : 1)
+                .Max(m.TurnFloor(e));
+
+    // Termination's DiscretizeBoundedOn with the least count given:
+    // DiscretizeBoundedOn(m, e, c, floors, images) is
+    // m.DiscretizeBoundedOnIndexed(e, c, m.MinimumSegmentCount(e, c, floors), images).
+    DiscretizeBoundedOnIndexed(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, least: Integer, images: Array<EdgeImage>): EdgeDiscretization
+    {
+        var range = m.EdgeDomain(e).Range;
+        var conic = m.ConicSegmentCount(e, c, least);
+        var parameters = m.IsDegenerateEdge(e)
+            ? [range.Start, range.End]
+            : (conic > 0
+                ? range.Samples(m.RaisedForImagesBounded(e, c, conic, m.ConicSegmentCap(e, c, least), images) + 1)
+                : m.RaisedToCount(m.BisectedParametersOn(e, c, images), least));
+        return m.DiscretizationAt(e, parameters);
+    }
+
+    // Layer 4's Discretize(m, e, c, floors) with the faces of e read from t and its two-edge-loop
+    // flag from twoEdgeLoop, both built from m. Precondition: e names an edge of m.
+    DiscretizeTabled(m: BrepModel, t: EdgeFaceTable, twoEdgeLoop: Array<Boolean>, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretization
+        => m.DiscretizeBoundedOnIndexed(
+            e,
+            c,
+            m.MinimumSegmentCountGiven(e, c, floors, twoEdgeLoop[e.Value]),
+            m.UsableImagesFrom(e, c, t.EdgeImagesIn(m, e)));
+
+    //==
+    // # Every edge
+
+    // Layer 4's DiscretizeAll with Law_IndicesInRange asked once (chunk G1) and the edge-to-face
+    // table and two-edge-loop flags built once. Work: the table's and the flags' Insertions, plus
+    // one per face read from a row (each discretized edge reads its row once), so O(F + L + C)
+    // where the reference visits every face's coedges several times per edge; and one Flips for
+    // the whole-model index scan, as in G1's DiscretizeAllCounted. The entries are DiscretizeAll's,
+    // bit for bit.
+    DiscretizeAllTabledCounted(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): Counted<EdgeDiscretizations>
+    {
+        var inRange = m.Law_IndicesInRange;
+        var faces = m.EdgeFaceTableCounted;
+        var loops = m.TwoEdgeLoopEdgesCounted;
+        var t = faces.Value;
+        var two = loops.Value;
+        var accepted = m.Edges.Count.MapRange(i => inRange ? m.CanDiscretizeInRange(BrepEdgeIndex(i), c) : false);
+        var table = EdgeDiscretizations(m.Edges.Count.MapRange(i =>
+            accepted[i]
+                ? m.DiscretizeTabled(t, two, BrepEdgeIndex(i), c, floors)
+                : Undiscretized(BrepEdgeIndex(i))));
+        var reads = m.Edges.Count.Range.Reduce(0, (n, i) => accepted[i] ? n + t.FaceCountOf(BrepEdgeIndex(i)) : n);
+        return Counted(table, faces.Work.Add(loops.Work).Add(Insertions(reads)).Add(Flips(1)));
+    }
+
+    // Layer 4's DiscretizeAll (and DiscretizeAllIndexed) with the tables built once per model.
+    DiscretizeAllTabled(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
+        => m.DiscretizeAllTabledCounted(c, floors).Value;
+
+    //==
+    // # Refinement
+
+    // Layer 4's RefineEdge(m, d, c, segments) with the faces of d's edge read from t, built from
+    // m.
+    RefineEdgeIn(t: EdgeFaceTable, m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, segments: Integer): EdgeDiscretization
+        => m.RefineEdgeBoundedOn(d, c, segments, m.UsableImagesFrom(d.Edge, c, t.EdgeImagesIn(m, d.Edge)));
+
+    // Layer 4's Refine with the edge-to-face table built once for the call, not once per
+    // requested edge.
+    RefineTabled(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria): EdgeDiscretizations
+    {
+        var t = m.EdgeFaceTable;
+        return EdgeDiscretizations(d.ByEdge.Map(old =>
+            requests.IsRequested(old.Edge)
+                ? t.RefineEdgeIn(
+                    m,
+                    old,
+                    c.WithChordal(requests.RequestedChordal(old.Edge, c.Chordal)),
+                    requests.RequestedSegments(old.Edge))
+                : old));
+    }
+
+    //==
+    // # Findings
+
+    // Termination's EdgeFindingsOn with every image of the edge given as well as the usable ones:
+    // EdgeFindingsOn(m, d, c, images) is m.EdgeFindingsFrom(d, c, m.EdgeImages(d.Edge), images).
+    EdgeFindingsFrom(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, all: Array<EdgeImage>, images: Array<EdgeImage>): Array<Diagnostic>
+    {
+        if (m.IsEvaluable(d).Not)
+        {
+            return Diagnostic.NoDiagnostics;
+        }
+        var probe = m.GapProbe(d.Edge);
+        var offSurface = all.FlatMap(img => m.IsOffSurface(d.Edge, img, c)
+            ? [OffSurfaceEdge(d.Edge, m.ImageGap(probe, img))]
+            : Diagnostic.NoDiagnostics);
+        var failing = d.SegmentCount.Range.Reduce(0, (n, i) =>
+            (m.IsAtLengthFloor(d, c, i) ? m.SegmentFailsOn(d.Edge, c, d.Parameters[i], d.Parameters[i + 1], images) : false) ? n + 1 : n);
+        return failing > 0 ? offSurface.Concatenate([NotConvergedEdge(d.Edge, failing)]) : offSurface;
+    }
+
+    // The findings of one entry with its edge's images computed once from the table built from m.
+    EdgeFindingsIn(t: EdgeFaceTable, m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria): Array<Diagnostic>
+    {
+        var all = t.EdgeImagesIn(m, d.Edge);
+        return m.EdgeFindingsFrom(d, c, all, m.UsableImagesFrom(d.Edge, c, all));
+    }
+
+    // Termination's DiscretizationFindings with the edge-to-face table built once for the call
+    // and each edge's images computed once, where the reference computes them twice per edge.
+    DiscretizationFindingsTabled(m: BrepModel, ds: EdgeDiscretizations, c: DiscretizationCriteria): Array<Diagnostic>
+    {
+        var t = m.EdgeFaceTable;
+        return ds.ByEdge.FlatMap(d => t.EdgeFindingsIn(m, d, c));
+    }
+
+    //==
+    // # Tests over given images
+
+    // Layer 4's MeetsCriteria for an evaluable d with the images of its edge given, so they are
+    // computed once per edge, not once per segment: MeetsCriteria(m, d, c) is
+    // m.IsEvaluable(d) ? m.SegmentsMeetCriteriaOn(d, c, m.EdgeImages(d.Edge)) : false.
+    SegmentsMeetCriteriaOn(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria, images: Array<EdgeImage>): Boolean
+        => d.SegmentCount.MapRange(i => m.SegmentMeetsCriteriaOn(d, c, i, images)).All(x => x);
+}
