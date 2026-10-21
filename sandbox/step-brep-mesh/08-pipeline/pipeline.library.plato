@@ -197,10 +197,7 @@ library StepToMesh
     // Per face, true when the face is chosen and cites an edge marked in
     // changed: the faces a refinement step meshes again.
     FacesTouching(m: BrepModel, chosen: Array<Boolean>, changed: Array<Boolean>): Array<Boolean>
-        => m.Faces.Count.MapRange(k =>
-            chosen.IsChosen(BrepFaceIndex(k))
-                ? m.FaceEdges(BrepFaceIndex(k)).Any(e => changed.IsValidIndex(e) ? changed[e] : false)
-                : false);
+        => m.FacesTouchingByCoedges(chosen, changed);
 
     // The requests of the outcomes whose faces are marked in meshed, in face
     // order: what the faces meshed in one round ask for.

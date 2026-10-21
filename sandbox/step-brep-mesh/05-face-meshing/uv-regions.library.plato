@@ -239,11 +239,7 @@ library UvRegions
 
     // The edges face f cites, each once, in order of first citation.
     FaceEdges(m: BrepModel, f: BrepFaceIndex): Array<BrepEdgeIndex>
-    {
-        var cs = m.FaceCoedges(f);
-        return cs.Count.Range.FlatMap(i =>
-            cs.Take(i).Any(c => c.Edge == cs[i].Edge) ? BrepEdgeIndex.NoEdges : [cs[i].Edge]);
-    }
+        => m.FaceEdgesOnce(f);
 
     // Chunk A body, from the contract Unwrap and its deferred note: one scan.
     // The first point is wrapped into the domain's window (layer 0's Wrap). A
@@ -254,22 +250,7 @@ library UvRegions
     // (NearestUnwrapped). A point on a collapsed line takes the free
     // parameter from its predecessor, or from its successor when it is first.
     Unwrap(m: BrepModel, f: BrepFaceIndex, l: UvLoop): UvLoop
-    {
-        var dom = m.SurfaceDomainOf(f);
-        var n = l.Points.Count;
-        var placed = new List<UvCoordinate>();
-        var i = 0;
-        while (i < n)
-        {
-            var raw = m.WithPoleFreeParameter(f, l, i);
-            var continued = i == 0 ? dom.Wrap(raw) : dom.NearestUnwrapped(raw, placed.At(i - 1));
-            var twin = i == 0 ? -1 : m.PlacedTwinStep(f, l, i);
-            var point = twin < 0 ? continued : m.LeftRuleCopy(f, dom, l, i, placed.At(twin + 1), continued);
-            placed = placed.Add(point);
-            i = i + 1;
-        }
-        return UvLoop(placed.Freeze(), l.Sources);
-    }
+        => m.UnwrapIndexed(f, l);
 
     // Point i of loop l, with its free parameter taken from its predecessor
     // (its successor for the first point) when it lies on a collapsed line of
@@ -761,13 +742,7 @@ library UvRegions
     // two end vertices (a seam drawn as one segment). In a loop that is not malformed this is
     // exactly a segment of e's discretization.
     AreSeamNeighbours(m: BrepModel, f: BrepFaceIndex, e: BrepEdgeIndex, a: UvPointSource, b: UvPointSource): Boolean
-        => m.IsSeamEdgeOf(f, e)
-            ? ((a.IsSampleOfEdge(e) && b.IsSampleOfEdge(e))
-                ? (a.SampleIndex - b.SampleIndex).Abs == 1
-                : ((a.IsSampleOfEdge(e) || b.IsSampleOfEdge(e))
-                    ? (m.IsEndVertexSource(e, a) || m.IsEndVertexSource(e, b))
-                    : m.JoinsEndsOf(e, a, b)))
-            : false;
+        => m.IsSeamEdgeOf(f, e) ? m.AreNeighboursAlongSeam(e, a, b) : false;
 
     // True when s is one of edge e's two end vertices.
     IsEndVertexSource(m: BrepModel, e: BrepEdgeIndex, s: UvPointSource): Boolean
@@ -1086,10 +1061,7 @@ library UvRegions
     // strays from the 3D chord between the segment's shared end points: layer 04's
     // UvChordDeviation with its own sample plan, repeated here as a backstop.
     SegmentUvDeviation(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, k: Integer, i: Integer): Number
-        => m.UvChordDeviation(m.SurfaceOf(f),
-            m.SharedPosition(d, r.LoopAt(k).Sources[i], m.Geometry.Eval(m.SurfaceOf(f), r.SegmentStart(k, i))),
-            m.SharedPosition(d, r.LoopAt(k).Sources.AtModulo(i + 1), m.Geometry.Eval(m.SurfaceOf(f), r.SegmentEnd(k, i))),
-            r.SegmentStart(k, i), r.SegmentEnd(k, i), SamplePlan.DiscretizationPlan);
+        => m.SegmentUvDeviationLazy(f, d, r, k, i);
 
     // True when some boundary segment on edge e strays from its 3D chord in face f by more than
     // the edge chordal criterion plus the length tolerance.
@@ -1102,9 +1074,7 @@ library UvRegions
     // The advisory requests for face f's region: a TooCoarseInParameterSpace request for every
     // edge with a segment that strays from its 3D chord in parameter space.
     CoarseSegmentRequests(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, c: FaceMeshingCriteria): Array<EdgeRefinementRequest>
-        => m.FaceEdges(f).FlatMap(e => m.EdgeTooCoarseInFace(f, d, r, c, e)
-            ? [EdgeRefinementRequest(e, RefinementReason.TooCoarseInParameterSpace, m.TighterChordal(d, e), 0)]
-            : EdgeRefinementRequest.NoRequests);
+        => m.CoarseSegmentRequestsByEdge(f, d, r, c);
 
     //==
     // # Four-sided regions

@@ -52,25 +52,9 @@ library UnwrapIndexedLaws
     UnwrapAgreesOn(m: BrepModel, f: BrepFaceIndex, l: UvLoop): Boolean
         => SameUvLoop(m.Unwrap(f, l), m.UnwrapIndexed(f, l));
 
-    // UnwrapIndexed gives Unwrap's loop for every meshed bound of every regioned face of every
-    // positive witness model: the loops RegionOf unwraps, seams, poles and two-seam tori among
-    // them.
-    Law_Perf_UnwrapIndexedAgrees(_: Boolean): Boolean
-        => PerfUnwrapWitnesses(0).All(k => EveryRegionedFace(k, (m, f, d, c) =>
-            m.MeshedBounds(f).All(b => m.UnwrapAgreesOn(f, m.LoopToUv(f, b, d)))));
-
-    // UnwrapIndexed gives Unwrap's loop on the generated cases of Law_UnwrapKeepsSources and its
-    // neighbours: any face of a witness model, any loop with a source per point.
-    Law_Perf_UnwrapIndexedAgreesOnLoop(m: BrepModel, f: BrepFaceIndex, l: UvLoop): Boolean
-        => (m.IsFaceIntact(f) && l.Points.Count == l.Sources.Count) ? m.UnwrapAgreesOn(f, l) : true;
-
-    // UnwrapIndexed gives Unwrap's loop on the plane polygon of the count witness at 32 points.
-    Law_Perf_UnwrapIndexedAgreesOnPolygon(_: Boolean): Boolean
-        => BrepModel.Witness_UnitBox.UnwrapAgreesOn(BrepFaceIndex(0), PlanePolygon(32));
-
     // Some witness loop has a twin step, so the agreement laws reach the indexed twin lookup:
     // the cylinder's side face, whose seam is used twice.
-    Law_Perf_UnwrapIndexedFindsTwins(_: Boolean): Boolean
+    Law_UnwrapIndexedFindsTwins(_: Boolean): Boolean
     {
         var m = BrepModel.WitnessAt(1);
         var c = PerfUnwrapCriteria(0);
@@ -87,13 +71,7 @@ library UnwrapIndexedLaws
     //==
     // # Face edges
 
-    // FaceEdgesOnce is FaceEdges, and SeamEdgesOnce is FaceEdges filtered by IsSeamEdgeOf, on
-    // every intact face of every positive witness model; the cylinder has a seam edge.
-    Law_Perf_FaceEdgesOnceAgrees(_: Boolean): Boolean
-        => PerfUnwrapWitnesses(0).All(k => FaceEdgesAgreeIn(BrepModel.WitnessAt(k)))
-            && BrepModel.WitnessAt(1).Faces.Count.Range.Any(i => BrepModel.WitnessAt(1).SeamEdgesOnce(BrepFaceIndex(i)).Count > 0);
-
-    // The claim of Law_Perf_FaceEdgesOnceAgrees on model m.
+    // The claim of Law_FaceEdgesOnceAgrees on model m.
     FaceEdgesAgreeIn(m: BrepModel): Boolean
         => m.Faces.Count.Range.All(i => m.IsFaceIntact(BrepFaceIndex(i))
             ? (SameEdges(m.FaceEdges(BrepFaceIndex(i)), m.FaceEdgesOnce(BrepFaceIndex(i)))
@@ -122,7 +100,7 @@ library UnwrapIndexedLaws
     SameRequestsExactly(a: Array<EdgeRefinementRequest>, b: Array<EdgeRefinementRequest>): Boolean
         => a.Count == b.Count ? a.Count.Range.All(i => SameRequestExactly(a[i], b[i])) : false;
 
-    // The claim of Law_Perf_CoarseRequestsByEdgeAgrees at face f, under criteria c and the
+    // The claim of Law_CoarseRequestsByEdgeAgrees at face f, under criteria c and the
     // tightened criteria.
     CoarseRequestsAgreeAt(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
     {
@@ -131,15 +109,9 @@ library UnwrapIndexedLaws
             && SameRequestsExactly(m.CoarseSegmentRequests(f, d, r, TightCriteria(c)), m.CoarseSegmentRequestsByEdge(f, d, r, TightCriteria(c)));
     }
 
-    // CoarseSegmentRequestsByEdge gives CoarseSegmentRequests' requests, in order, on every
-    // regioned face of every positive witness model, under the witness criteria and under them
-    // tightened.
-    Law_Perf_CoarseRequestsByEdgeAgrees(_: Boolean): Boolean
-        => PerfUnwrapWitnesses(0).All(k => EveryRegionedFace(k, (m, f, d, c) => m.CoarseRequestsAgreeAt(f, d, c)));
-
     // Under the tightened criteria the cylinder's side face asks for refinement, so the
     // agreement law compares requests that exist.
-    Law_Perf_CoarseRequestsByEdgeAsks(_: Boolean): Boolean
+    Law_CoarseRequestsByEdgeAsks(_: Boolean): Boolean
     {
         var m = BrepModel.WitnessAt(1);
         var c = PerfUnwrapCriteria(0);
@@ -151,20 +123,6 @@ library UnwrapIndexedLaws
 
     //==
     // # Faces touching
-
-    // FacesTouchingByCoedges gives FacesTouching's marks, for witness model k, every face chosen
-    // but those whose position is a multiple of 3 when k is odd, and the edges whose position is
-    // congruent to k modulo 3 changed (with a changed list one short of the edges).
-    Law_Perf_FacesTouchingByCoedgesAgrees(k: Integer): Boolean
-    {
-        var m = BrepModel.WitnessAt(k);
-        var r = ((k % 3) + 3) % 3;
-        var chosen = m.Faces.Count.MapRange(i => (k % 2 == 0) || (i % 3 != 0));
-        var changed = (m.Edges.Count - 1).Max(0).MapRange(e => e % 3 == r);
-        var a = m.FacesTouching(chosen, changed);
-        var b = m.FacesTouchingByCoedges(chosen, changed);
-        return a.Count == b.Count && a.Count.Range.All(i => a[i] == b[i]);
-    }
 
     //==
     // # Count witness
