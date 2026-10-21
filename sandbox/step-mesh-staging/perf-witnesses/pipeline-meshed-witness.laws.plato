@@ -1,0 +1,274 @@
+//==
+// # Laws over meshed witnesses (complexity sweep, chunk L1)
+//
+// The laws of pipeline-witnesses.laws.plato restated over MeshedWitness and FailedFaceWitness
+// (pipeline-meshed-witness.types.plato): each reads the mesh and report the runner built once per
+// sweep and never calls MeshModel, WitnessOutcome or WitnessMesh. A law about one model runs over
+// every witness and states its claim on the one whose model is that model (SameModel), so it shares
+// the runner's value instead of meshing its own. A metamorphic law keeps the witness as the
+// unperturbed run and builds only the perturbed run, without validation (UnvalidatedMesh). At merge
+// each Law_Perf_<X> replaces Law_<X> of StepToMeshWitnessesLaws (TRACK.md).
+//
+// Sections, in order:
+//  - The witness lists
+//  - Positive witnesses: meshed
+//  - The planted bad face
+//  - Metamorphic relations
+//  - Unvalidated meshes
+
+library StepToMeshMeshedWitnessesLaws
+{
+    //==
+    // # The witness lists
+
+    // Holds for every case: the runner reports how many cases it ran, which is the number of
+    // MeshedWitness witnesses when the type is not generatable (the probe of TRACK.md).
+    Law_Perf_MeshedWitnessCasesAreTheWitnesses(w: MeshedWitness): Boolean
+        => true;
+
+    // Holds for every case; the same probe for FailedFaceWitness.
+    Law_Perf_FailedFaceWitnessCasesAreTheWitnesses(w: FailedFaceWitness): Boolean
+        => true;
+
+    //==
+    // # Positive witnesses: meshed
+
+    // Witness w meshes with Ok: no Error in the meshing or in the validation the pipeline runs at
+    // the Oracle level.
+    Law_Perf_WitnessMeshesOk(w: MeshedWitness): Boolean
+        => w.Outcome.Ok;
+
+    // The mesh of witness w passes CrossCheck at the Oracle level with the criteria it was made
+    // with.
+    Law_Perf_WitnessMeshCrossChecksClean(w: MeshedWitness): Boolean
+        => w.Model.CrossCheck(w.Outcome.Mesh, ConformanceLevel.Oracle, MeshingOptions.WitnessOptions.Face).IsClean;
+
+    // The mesh of witness w passes ValidateModelMesh at the Oracle level with the witness's
+    // tolerances and the witness options' quality thresholds. MeshModel ran that validation:
+    // Validated (pipeline.library.plato) merges ValidateModelMesh(m.Tolerances, o.Quality, o.Level)
+    // into the outcome's report, the witness options' level is Oracle, and a merged report is clean
+    // only when each part is. So the claim is read from the report, not computed a second time
+    // (about 5 s compiled per witness).
+    Law_Perf_WitnessMeshValidatesClean(w: MeshedWitness): Boolean
+        => MeshingOptions.WitnessOptions.Level == ConformanceLevel.Oracle && w.Outcome.Report.IsClean;
+
+    // The unit box meshes as chunk A states (TASKS.md): 8 vertices and 12 triangles, no quad,
+    // closed, consistently oriented, Euler characteristic 2, signed volume 1 within the mesh's
+    // volume rounding, no refinement round, Ok.
+    Law_Perf_UnitBoxMeshesAsStated(w: MeshedWitness): Boolean
+        => w.Model.SameModel(BrepModel.Witness_UnitBox) ? w.Outcome.IsUnitBoxOutcome : true;
+
+    // The claim of Law_Perf_UnitBoxMeshesAsStated on an outcome.
+    IsUnitBoxOutcome(outcome: MeshOutcome): Boolean
+    {
+        var mesh = outcome.Mesh;
+        return mesh.Positions.Count == 8 && mesh.Triangles.Count == 12 && mesh.Quads.Count == 0
+            && mesh.IsClosed && mesh.IsConsistentlyOriented && mesh.EulerCharacteristic == 2
+            && (mesh.SignedVolume - 1.0).Abs <= mesh.VolumeRoundoff
+            && outcome.Rounds == 0 && outcome.Ok;
+    }
+
+    // The hollow box's outer side, as Witness_HollowBoxMeshed builds it.
+    HollowBoxOuterSide(_: MeshedWitness): Number
+        => 2.0;
+
+    // The hollow box's void side, as Witness_HollowBoxMeshed builds it.
+    HollowBoxVoidSide(_: MeshedWitness): Number
+        => 1.0;
+
+    // True when w is the hollow box of the two sides above.
+    IsHollowBoxWitness(w: MeshedWitness): Boolean
+        => w.Model.SameModel(BrepModel.Witness_HollowBox(MeshedWitness.HollowBoxOuterSide, MeshedWitness.HollowBoxVoidSide));
+
+    // After meshing the hollow box, the void's mesh encloses a negative volume beyond its rounding.
+    Law_Perf_HollowBoxVoidMeshVolumeNegative(w: MeshedWitness): Boolean
+        => w.IsHollowBoxWitness
+            ? w.Model.ShellMeshVolume(w.Outcome.Mesh, ShellIndex(1)) < 0.0 - w.Outcome.Mesh.VolumeRoundoff
+            : true;
+
+    // After meshing the hollow box, the outer shell's mesh encloses a positive volume beyond its
+    // rounding.
+    Law_Perf_HollowBoxOuterMeshVolumePositive(w: MeshedWitness): Boolean
+        => w.IsHollowBoxWitness
+            ? w.Model.ShellMeshVolume(w.Outcome.Mesh, ShellIndex(0)) > w.Outcome.Mesh.VolumeRoundoff
+            : true;
+
+    // The hollow box's meshed solid volume is a^3 - b^3: every face is planar and bounded by
+    // lines, so the mesh is exact up to rounding.
+    Law_Perf_HollowBoxMeshVolumeIsDifference(w: MeshedWitness): Boolean
+    {
+        if (!w.IsHollowBoxWitness)
+        {
+            return true;
+        }
+        var a = MeshedWitness.HollowBoxOuterSide;
+        var b = MeshedWitness.HollowBoxVoidSide;
+        return (w.Model.BodyMeshVolume(w.Outcome.Mesh, BodyIndex(0)) - (a * a * a - b * b * b)).Abs
+            <= 2.0 * w.Outcome.Mesh.VolumeRoundoff;
+    }
+
+    // The block with a square through hole meshes to one component, closed, consistently
+    // oriented and unpinched, of Euler characteristic 0: a torus, genus 1, as its B-rep's reduced
+    // counts say (chunk G).
+    Law_Perf_BlockWithHoleMeshIsOneTorus(w: MeshedWitness): Boolean
+        => w.Model.SameModel(BrepModel.Witness_BlockWithThroughHole) ? w.Outcome.Mesh.IsOneTorus : true;
+
+    // The claim of Law_Perf_BlockWithHoleMeshIsOneTorus on a mesh.
+    IsOneTorus(mesh: ModelMesh): Boolean
+    {
+        var c = mesh.CountsOf(MeshComponentIndex(0));
+        return mesh.ComponentsOf.ComponentCount == 1
+            && c.IsClosed && c.IsConsistentlyOriented && c.PinchedVertices == 0 && c.EulerCharacteristic == 0;
+    }
+
+    // The hollow box meshes to two components, the outer shell and the void, each closed,
+    // consistently oriented and unpinched, of Euler characteristic 2: two spheres, the void's
+    // sharing no vertex with the outer's (chunk G).
+    Law_Perf_HollowBoxMeshIsTwoSpheres(w: MeshedWitness): Boolean
+        => w.IsHollowBoxWitness ? w.Outcome.Mesh.IsTwoSpheres : true;
+
+    // The claim of Law_Perf_HollowBoxMeshIsTwoSpheres on a mesh.
+    IsTwoSpheres(mesh: ModelMesh): Boolean
+        => mesh.ComponentsOf.ComponentCount == 2
+            && 2.MapRange(k => mesh.CountsOf(MeshComponentIndex(k))).All(c =>
+                c.IsClosed && c.IsConsistentlyOriented && c.PinchedVertices == 0 && c.EulerCharacteristic == 2);
+
+    //==
+    // # The planted bad face
+    //
+    // Witness_PlantedBadFaceRun: a valid model whose face 6 the mesher refuses. These laws make
+    // Law_FailedFaceLeavesOthersUnchanged non-vacuous and fix the face's expected diagnostics.
+
+    // The planted face fails silently, the hypothesis of Law_FailedFaceLeavesOthersUnchanged: its
+    // final mesh is empty and it holds no request.
+    Law_Perf_PlantedBadFaceFailsSilently(w: FailedFaceWitness): Boolean
+        => w.Final.Outcomes[w.Face].Mesh.IsEmptyFaceMesh && w.Final.Outcomes[w.Face].Requests.Count == 0;
+
+    // Leaving the planted face out of the run or keeping it gives face g the same final mesh, bit
+    // for bit: Law_FailedFaceLeavesOthersUnchanged at the planted face, over the witness's states.
+    Law_Perf_PlantedBadFaceLeavesOthersUnchanged(w: FailedFaceWitness, g: Integer): Boolean
+    {
+        var m = w.Meshed.Model;
+        var face = BrepFaceIndex(g);
+        if (!(m.IsRunnable(MeshingOptions.WitnessOptions) && m.IsFaceInRange(w.Face) && m.IsFaceInRange(face)))
+        {
+            return true;
+        }
+        return w.Face == face ? true : m.SilentFaceLeavesFaceUnchanged(w.Face, face, w.Initial, w.Final, w.Dropped);
+    }
+
+    // The conclusion of Law_FailedFaceLeavesOthersUnchanged once its guards hold, over the three
+    // states it compares: when face f of the run over every face (first state first, final state
+    // kept) ends empty, with no request, and with every edge as first discretized, face g's final
+    // mesh in kept is bit-identical to its final mesh in dropped, the run without f.
+    SilentFaceLeavesFaceUnchanged(m: BrepModel, f: BrepFaceIndex, g: BrepFaceIndex,
+            first: PipelineState, kept: PipelineState, dropped: PipelineState): Boolean
+    {
+        var silent = kept.Outcomes[f].Mesh.IsEmptyFaceMesh
+            && kept.Outcomes[f].Requests.Count == 0
+            && m.FaceEdges(f).All(e => kept.Discretizations.ByEdge[e].SameDiscretization(first.Discretizations.ByEdge[e]));
+        return silent ? kept.Outcomes[g].Mesh.SameFaceMesh(dropped.Outcomes[g].Mesh) : true;
+    }
+
+    // Meshing the model is not Ok, and the planted face carries an Error.
+    Law_Perf_PlantedBadFaceIsDiagnosed(w: FailedFaceWitness): Boolean
+        => w.Meshed.Outcome.Ok.Not
+            && w.Meshed.Outcome.Report.Diagnostics.Any(d =>
+                d.Severity.IsError && d.Where == Provenance.KernelFace(w.Face));
+
+    // Every Error of the run is about the sheet: the failure stays where it is, and the box
+    // beside it is clean. Over every finding of the report, not only the first thirteen the
+    // runner's Integer range reached.
+    Law_Perf_PlantedBadFaceErrorsStayInTheSheet(w: FailedFaceWitness): Boolean
+        => w.Meshed.Outcome.Report.Diagnostics.All(d => d.Severity.IsError ? d.Where.IsAboutPlantedSheet : true);
+
+    // At the planted face the run has exactly two Errors, layer 5's FACE-POLY-LOOP and the cross
+    // check EveryFaceIsMeshed, as Witness_BoxWithPolyLoopSheet states.
+    Law_Perf_PlantedBadFaceHasTwoErrors(w: FailedFaceWitness): Boolean
+        => w.Meshed.Outcome.Report.Diagnostics.Reduce(0, (n, d) =>
+            (d.Severity.IsError ? d.Where == Provenance.KernelFace(w.Face) : false) ? n + 1 : n) == 2;
+
+    //==
+    // # Metamorphic relations
+    //
+    // Layer 8's metamorphic laws (pipeline.laws.plato) at each witness: the witness is the run
+    // before, and only the run after the perturbation is built. Only exact relations are laws
+    // (README decision 11).
+
+    // Moving witness w rigidly by a frame moves every mesh vertex with it, when the two meshes
+    // have the same connectivity.
+    Law_Perf_WitnessRigidMotionMovesPositions(w: MeshedWitness, motion: Frame3D): Boolean
+    {
+        var m = w.Model;
+        var o = MeshingOptions.WitnessOptions;
+        if (!(m.IsRunnable(o) && motion.IsOrthonormalWithin(m.Tolerances.Angle)))
+        {
+            return true;
+        }
+        var before = w.Outcome.Mesh;
+        var after = m.RigidlyMoved(motion).UnvalidatedMesh(o);
+        return before.SameConnectivity(after)
+            ? before.Positions.Corresponds(after.Positions, (p, q) => motion.PointInFrame(p).Coincident(q, m.Tolerances.Length))
+            : true;
+    }
+
+    // The mesh of witness w's model and the witness options both scaled by 2^e.
+    ScaledMesh(w: MeshedWitness, e: Integer): ModelMesh
+        => w.Model.ScaledBy(PowerOfTwoValue(e)).UnvalidatedMesh(MeshingOptions.WitnessOptions.ScaledBy(PowerOfTwoValue(e)));
+
+    // Scaling witness w and the length criteria by 2^e keeps the mesh's connectivity, over the
+    // exponents the law admits.
+    Law_Perf_WitnessPowerOfTwoScalingKeepsConnectivity(w: MeshedWitness, e: Integer): Boolean
+        => (w.Model.IsRunnable(MeshingOptions.WitnessOptions) && e.Abs <= 64)
+            ? w.Outcome.Mesh.SameConnectivity(w.ScaledMesh(e))
+            : true;
+
+    // Scaling witness w by 2^e scales every mesh vertex's position by 2^e exactly, when the two
+    // runs give the same connectivity.
+    Law_Perf_WitnessPowerOfTwoScalingScalesPositions(w: MeshedWitness, e: Integer): Boolean
+    {
+        if (!(w.Model.IsRunnable(MeshingOptions.WitnessOptions) && e.Abs <= 64))
+        {
+            return true;
+        }
+        var factor = PowerOfTwoValue(e);
+        var before = w.Outcome.Mesh;
+        var after = w.ScaledMesh(e);
+        return before.SameConnectivity(after)
+            ? before.Positions.Corresponds(after.Positions, (p, q) => p.ScaledPoint(factor).IsIdenticalPoint(q))
+            : true;
+    }
+
+    // Reversing edge e of witness w gives the same mesh, bit for bit.
+    Law_Perf_WitnessEdgeReversalPreservesMesh(w: MeshedWitness, e: Integer): Boolean
+        => (w.Model.IsRunnable(MeshingOptions.WitnessOptions) && w.Model.IsEdgeInRange(BrepEdgeIndex(e)))
+            ? w.Model.WithEdgeReversed(BrepEdgeIndex(e)).UnvalidatedMesh(MeshingOptions.WitnessOptions).SameModelMesh(w.Outcome.Mesh)
+            : true;
+
+    // Reversing every face of witness w negates its mesh's signed volume, within the length
+    // tolerance times the area.
+    Law_Perf_WitnessShellReversalNegatesVolume(w: MeshedWitness): Boolean
+    {
+        var m = w.Model;
+        if (!m.IsRunnable(MeshingOptions.WitnessOptions))
+        {
+            return true;
+        }
+        var before = w.Outcome.Mesh;
+        var after = m.WithEveryFaceReversed.UnvalidatedMesh(MeshingOptions.WitnessOptions);
+        return (before.SignedVolume + after.SignedVolume).Abs <= m.Tolerances.Length.Value * before.Area;
+    }
+
+    //==
+    // # Unvalidated meshes
+
+    // WitnessMeshUnvalidated gives the mesh MeshModel gives, bit for bit, on every witness: the
+    // laws above may read it for the perturbed run.
+    Law_Perf_UnvalidatedMeshIsMeshModels(w: MeshedWitness): Boolean
+        => w.Model.WitnessMeshUnvalidated.SameModelMesh(w.Outcome.Mesh);
+
+    // The same on the planted face's witness, without a second run: its final state assembled is
+    // the mesh of its outcome.
+    Law_Perf_PlantedUnvalidatedMeshIsMeshModels(w: FailedFaceWitness): Boolean
+        => w.Meshed.Model.AssembledMesh(w.Final).SameModelMesh(w.Meshed.Outcome.Mesh);
+}
