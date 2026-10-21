@@ -1,0 +1,91 @@
+//==
+// # Edge guards without the whole-model check: laws (complexity sweep, chunk G1)
+//
+// The count witness for DiscretizeAllCounted, and agreement of each staged function with the
+// library function it replaces, so the edge laws of layers 4 and 8 keep their verdicts once the
+// merge wires these in.
+//
+// Sections, in order:
+//  - Witness
+//  - Agreement
+
+library EdgeGuardsLaws
+{
+    //==
+    // # Witness
+
+    // The model with n edges: the unit box (12 edges) for n up to 12, the 3 x 3 x 1 block with
+    // a square through hole (24 edges) above.
+    GuardsModelOfSize(_: BrepModel, n: Integer): BrepModel
+        => n <= 12 ? BrepModel.Witness_UnitBox : BrepModel.Witness_BlockWithThroughHole;
+
+    // The whole-model scans DiscretizeAllCounted makes on the model with n edges.
+    DiscretizeAllWork(n: Integer): WorkBudget
+        => BrepModel.GuardsModelOfSize(n).DiscretizeAllCounted(DiscretizationCriteria.CatalogEdgeCriteria, SegmentFloors.NoFloors).Work;
+
+    // DiscretizeAll scans the whole model (Law_IndicesInRange) at most once per edge, counted as
+    // Flips, at 12 and 24 edges. The fixed function makes one scan; the old one made one per edge.
+    Witness_DiscretizeAllIndexedWork(_: WorkClaim): WorkClaim
+        => WorkClaim("DiscretizeAll: whole-model scans per edge", Flips(1), [12, 24], n => DiscretizeAllWork(n));
+
+    // The unit box with its body naming a shell that does not exist: every edge is evaluable,
+    // but Law_IndicesInRange fails, so CanDiscretize rejects every edge. No Witness_ prefix, so
+    // the runner does not feed it to every BrepModel law.
+    GuardsUnindexedBox(_: BrepModel): BrepModel
+    {
+        var u = BrepModel.Witness_UnitBox;
+        return BrepModel(u.Geometry, u.Vertices, u.Edges, u.Loops, u.Faces, u.Shells,
+            [BrepBody.ManifoldSolid(ShellIndex(5))], u.Tolerances, u.Unit);
+    }
+
+    //==
+    // # Agreement
+
+    // CanDiscretize is the in-range guard behind the whole-model check. Exact.
+    Law_Perf_CanDiscretizeInRangeAgrees(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria): Boolean
+        => (m.Law_IndicesInRange ? m.CanDiscretizeInRange(e, c) : false) == m.CanDiscretize(e, c);
+
+    // The two tables are the same entry for entry, bit for bit.
+    SameTables(a: EdgeDiscretizations, b: EdgeDiscretizations): Boolean
+        => a.ByEdge.Count == b.ByEdge.Count
+            ? a.ByEdge.Count.MapRange(i => a.ByEdge[i].SameDiscretization(b.ByEdge[i])).All(x => x)
+            : false;
+
+    // The two finding lists are the same, in the same order.
+    SameDiagnostics(a: Array<Diagnostic>, b: Array<Diagnostic>): Boolean
+        => a.Count == b.Count
+            ? a.Count.MapRange(i => a[i].Identical(b[i])).All(x => x)
+            : false;
+
+    // On one model: DiscretizeAllIndexed equals DiscretizeAll and DiscretizeAllBounded under the
+    // catalog criteria, and its count is one scan. Each table is built once.
+    IndexedAgreesOn(m: BrepModel): Boolean
+    {
+        var c = DiscretizationCriteria.CatalogEdgeCriteria;
+        var counted = m.DiscretizeAllCounted(c, SegmentFloors.NoFloors);
+        return SameTables(counted.Value, m.DiscretizeAll(c, SegmentFloors.NoFloors))
+            && SameTables(counted.Value, m.DiscretizeAllBounded(c, SegmentFloors.NoFloors))
+            && counted.Work.Flips == 1;
+    }
+
+    // IndexedAgreesOn holds on the box, the block with a hole, the cylinder, the cylinder
+    // off-surface cube and the box with an index out of range. Exact.
+    Law_Perf_DiscretizeAllIndexedAgrees(_: Integer): Boolean
+        => [BrepModel.Witness_UnitBox, BrepModel.Witness_BlockWithThroughHole, BrepModel.Witness_Cylinder,
+            BrepModel.TermOffSurfaceCube(1), BrepModel.GuardsUnindexedBox].All(m => IndexedAgreesOn(m));
+
+    // EdgeDiagnosticsInRange equals EdgeDiagnostics under the witness options on every witness
+    // model. Exact.
+    Law_Perf_EdgeDiagnosticsInRangeAgrees(m: BrepModel): Boolean
+        => SameDiagnostics(m.EdgeDiagnosticsInRange(MeshingOptions.WitnessOptions), m.EdgeDiagnostics(MeshingOptions.WitnessOptions));
+
+    // The same on the box with an index out of range, which no Witness_ model is: one finding
+    // per edge. Exact.
+    Law_Perf_EdgeDiagnosticsInRangeAgreesUnindexed(_: Integer): Boolean
+    {
+        var m = BrepModel.GuardsUnindexedBox;
+        var o = MeshingOptions.WitnessOptions;
+        var staged = m.EdgeDiagnosticsInRange(o);
+        return SameDiagnostics(staged, m.EdgeDiagnostics(o)) && staged.Count == m.Edges.Count;
+    }
+}
