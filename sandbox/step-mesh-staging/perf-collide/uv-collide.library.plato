@@ -1,0 +1,275 @@
+//==
+// # Colliding boundary segments on a uniform grid (complexity sweep, chunk F2)
+//
+// IsSimpleRegion asks SegmentCollides of every boundary segment, and SegmentCollides tests the
+// segment against every other one: O(B^2) pair tests. SelfIntersectionRequests asks
+// SegmentCollides again for every face edge (EdgeCollides evaluates both sides of its &&), and
+// MeshRegion built those requests before it knew whether the region was simple: O(E B^2) per
+// face. Here the colliding segments are found once, as one flag per segment, by a uniform
+// grid: each segment's box (in tolerance units, grown by one unit) is entered in every cell it
+// covers, and only two segments that share a cell are tested, with the same predicate
+// (SegmentsSeparated) in the same two orders SegmentCollides uses, so the flags are exactly
+// SegmentCollides's answers. IsSimpleRegionIndexed and SelfIntersectionRequestsFrom read the
+// flags; MeshRegionBody (face-meshing-collide.library.plato) builds requests only for a region
+// that is not simple.
+//
+// Why the grid misses no colliding pair: two segments are not separated only when an end of
+// one lies within one unit of the other, or they meet; then their grown boxes overlap, and
+// overlapping boxes share at least the cell at the larger of their low columns and the larger
+// of their low rows (cell numbers are floors of a monotone map). That cell is where the pair is
+// tested, so a pair sharing several cells is tested once. A segment whose box covers more
+// than WideSegmentCells cells (a long segment beside short ones) is kept out of the grid and
+// tested against every segment, and a region with a non-finite point in tolerance units falls
+// back to testing every pair, as SegmentCollides does.
+//
+// Sections, in order:
+//  - Segments and boxes
+//  - The grid
+//  - Colliding segments
+//  - Uses
+
+library UvRegionCollisions
+{
+    //==
+    // # Segments and boxes
+
+    // The region's boundary segments, loop by loop, outer loop first: the numbering a flag array
+    // follows.
+    RegionSegments(r: UvRegion): Array<RegionSegment>
+        => r.NumberOfLoops.Range.FlatMap(k => r.LoopAt(k).Points.Count.MapRange(i => RegionSegment(k, i)));
+
+    // SegmentsSeparated for two numbered segments.
+    SegmentsSeparatedAt(r: UvRegion, tol: UvTolerance, a: RegionSegment, b: RegionSegment): Boolean
+        => r.SegmentsSeparated(tol, a.Loop, a.Index, b.Loop, b.Index);
+
+    // The box of segment s in tolerance units, grown by one unit on every side.
+    SegmentBoxOf(r: UvRegion, tol: UvTolerance, s: RegionSegment): SegmentBox
+    {
+        var a = r.SegmentStart(s.Loop, s.Index).InToleranceUnits(tol);
+        var b = r.SegmentEnd(s.Loop, s.Index).InToleranceUnits(tol);
+        return SegmentBox(s,
+            Point2D(a.X.Min(b.X) - 1.0, a.Y.Min(b.Y) - 1.0),
+            Point2D(a.X.Max(b.X) + 1.0, a.Y.Max(b.Y) + 1.0),
+            a.X.IsFinite && a.Y.IsFinite && b.X.IsFinite && b.Y.IsFinite);
+    }
+
+    // The boxes of every boundary segment, in RegionSegments order.
+    SegmentBoxes(r: UvRegion, tol: UvTolerance): Array<SegmentBox>
+        => r.RegionSegments.Map(s => r.SegmentBoxOf(tol, s));
+
+    //==
+    // # The grid
+
+    // The most cells a segment's box may cover and still be entered in the grid; a wider one is
+    // tested against every segment instead, so one long segment cannot fill the grid.
+    WideSegmentCells(_: SegmentBox): Number
+        => 16.0;
+
+    // The side of a grid cell: the mean over the boxes of the larger of each box's width and
+    // height, at least 2 (every box is grown by one unit on each side). Precondition: a box.
+    GridCellSize(boxes: Array<SegmentBox>): Number
+        => boxes.Reduce(0.0, (sum, b) => sum + (b.High.X - b.Low.X).Max(b.High.Y - b.Low.Y)) / boxes.Count.ToNumber;
+
+    // The low corner of the grid: the least low corner over the boxes. Precondition: a box.
+    GridOrigin(boxes: Array<SegmentBox>): Point2D
+        => Point2D(boxes.Reduce(boxes[0].Low.X, (least, b) => least.Min(b.Low.X)),
+            boxes.Reduce(boxes[0].Low.Y, (least, b) => least.Min(b.Low.Y)));
+
+    // The number of the cell, along one axis, that holds coordinate x of a grid starting at
+    // origin with cells of side h.
+    GridCellNumber(x: Number, origin: Number, h: Number): Number
+        => ((x - origin) / h).Floor;
+
+    // The column of box b's low corner.
+    LowColumn(b: SegmentBox, o: Point2D, h: Number): Number
+        => GridCellNumber(b.Low.X, o.X, h);
+
+    // The row of box b's low corner.
+    LowRow(b: SegmentBox, o: Point2D, h: Number): Number
+        => GridCellNumber(b.Low.Y, o.Y, h);
+
+    // The number of columns box b covers.
+    ColumnSpan(b: SegmentBox, o: Point2D, h: Number): Number
+        => GridCellNumber(b.High.X, o.X, h) - b.LowColumn(o, h) + 1.0;
+
+    // The number of rows box b covers.
+    RowSpan(b: SegmentBox, o: Point2D, h: Number): Number
+        => GridCellNumber(b.High.Y, o.Y, h) - b.LowRow(o, h) + 1.0;
+
+    // True when box b covers more than WideSegmentCells cells.
+    IsWideOnGrid(b: SegmentBox, o: Point2D, h: Number): Boolean
+        => b.ColumnSpan(o, h) * b.RowSpan(o, h) > SegmentBox.WideSegmentCells;
+
+    // No grid entries.
+    NoGridEntries(_: SegmentGridEntry): Array<SegmentGridEntry>
+        => [SegmentGridEntry(0.0, 0.0, 0)].Take(0);
+
+    // An entry for every cell box b, the box of segment s, covers. Precondition: b is not wide.
+    GridEntriesOf(b: SegmentBox, s: Integer, o: Point2D, h: Number): Array<SegmentGridEntry>
+    {
+        var column = b.LowColumn(o, h);
+        var row = b.LowRow(o, h);
+        var columns = b.ColumnSpan(o, h).ToInteger;
+        var rows = b.RowSpan(o, h).ToInteger;
+        return (columns * rows).MapRange(j =>
+            SegmentGridEntry(column + (j % columns).ToNumber, row + (j / columns).ToNumber, s));
+    }
+
+    // True when a's cell comes before b's or is the same, by column, then row.
+    IsAtOrBeforeCell(a: SegmentGridEntry, b: SegmentGridEntry): Boolean
+        => a.Column < b.Column ? true : (a.Column == b.Column ? a.Row <= b.Row : false);
+
+    // True when a and b are in the same cell.
+    SameCell(a: SegmentGridEntry, b: SegmentGridEntry): Boolean
+        => a.Column == b.Column && a.Row == b.Row;
+
+    // The end of the run of sorted entries that share entry a's cell: the first position after
+    // a whose cell differs, or the count.
+    CellRunEnd(entries: Array<SegmentGridEntry>, a: Integer): Integer
+    {
+        var b = a + 1;
+        var more = b < entries.Count ? entries[a].SameCell(entries[b]) : false;
+        while (more)
+        {
+            b = b + 1;
+            more = b < entries.Count ? entries[a].SameCell(entries[b]) : false;
+        }
+        return b;
+    }
+
+    //==
+    // # Colliding segments
+
+    // One flag per boundary segment, in RegionSegments order: true when the segment collides
+    // with another (SegmentCollides), with the segment pairs visited counted as Insertions.
+    CollidingSegmentsCounted(r: UvRegion, tol: UvTolerance): Counted<Array<Boolean>>
+    {
+        var boxes = r.SegmentBoxes(tol);
+        return boxes.Count == 0
+            ? Counted([false].Take(0), Insertions(0))
+            : (boxes.All(b => b.Finite) ? r.CollidingSegmentsOnGrid(tol, boxes) : r.CollidingSegmentsAllPairs(tol, boxes));
+    }
+
+    // The flags of CollidingSegmentsCounted.
+    CollidingSegments(r: UvRegion, tol: UvTolerance): Array<Boolean>
+        => r.CollidingSegmentsCounted(tol).Value;
+
+    // CollidingSegmentsCounted by testing every pair, as SegmentCollides does: the fallback for
+    // a region the grid cannot place. Counts n^2 pairs.
+    CollidingSegmentsAllPairs(r: UvRegion, tol: UvTolerance, boxes: Array<SegmentBox>): Counted<Array<Boolean>>
+        => Counted(boxes.Map(a => boxes.Any(b => r.SegmentsSeparatedAt(tol, a.Segment, b.Segment).Not)),
+            Insertions(boxes.Count * boxes.Count));
+
+    // CollidingSegmentsCounted on the grid. Precondition: there is a box and every box is
+    // finite. Each pair sharing a cell is visited there and tested only in its first shared
+    // cell; each wide segment is visited with every other segment (a pair of two wide ones
+    // once). A test runs SegmentsSeparated in both orders, as SegmentCollides of each segment
+    // would, skipping an order whose first segment is already flagged.
+    CollidingSegmentsOnGrid(r: UvRegion, tol: UvTolerance, boxes: Array<SegmentBox>): Counted<Array<Boolean>>
+    {
+        var n = boxes.Count;
+        var h = boxes.GridCellSize;
+        var o = boxes.GridOrigin;
+        var lowColumns = boxes.Map(b => b.LowColumn(o, h));
+        var lowRows = boxes.Map(b => b.LowRow(o, h));
+        var wide = boxes.Map(b => b.IsWideOnGrid(o, h));
+        var entries = n.Range
+            .FlatMap(s => wide[s] ? SegmentGridEntry.NoGridEntries : boxes[s].GridEntriesOf(s, o, h))
+            .Sort((x, y) => x.IsAtOrBeforeCell(y));
+        var flags = new Buffer<Boolean>(n);
+        var s = 0;
+        while (s < n)
+        {
+            flags = flags.Set(s, false);
+            s = s + 1;
+        }
+        var visits = 0;
+        var a = 0;
+        while (a < entries.Count)
+        {
+            var stop = entries.CellRunEnd(a);
+            var p = a;
+            while (p < stop)
+            {
+                var q = p + 1;
+                while (q < stop)
+                {
+                    visits = visits + 1;
+                    var i = entries[p].Segment;
+                    var j = entries[q].Segment;
+                    if (lowColumns[i].Max(lowColumns[j]) == entries[a].Column && lowRows[i].Max(lowRows[j]) == entries[a].Row)
+                    {
+                        if (flags.At(i).Not)
+                        {
+                            if (r.SegmentsSeparatedAt(tol, boxes[i].Segment, boxes[j].Segment).Not)
+                            {
+                                flags = flags.Set(i, true);
+                            }
+                        }
+                        if (flags.At(j).Not)
+                        {
+                            if (r.SegmentsSeparatedAt(tol, boxes[j].Segment, boxes[i].Segment).Not)
+                            {
+                                flags = flags.Set(j, true);
+                            }
+                        }
+                    }
+                    q = q + 1;
+                }
+                p = p + 1;
+            }
+            a = stop;
+        }
+        var w = 0;
+        while (w < n)
+        {
+            if (wide[w])
+            {
+                var t = 0;
+                while (t < n)
+                {
+                    if (t != w && (wide[t].Not || t > w))
+                    {
+                        visits = visits + 1;
+                        if (flags.At(w).Not)
+                        {
+                            if (r.SegmentsSeparatedAt(tol, boxes[w].Segment, boxes[t].Segment).Not)
+                            {
+                                flags = flags.Set(w, true);
+                            }
+                        }
+                        if (flags.At(t).Not)
+                        {
+                            if (r.SegmentsSeparatedAt(tol, boxes[t].Segment, boxes[w].Segment).Not)
+                            {
+                                flags = flags.Set(t, true);
+                            }
+                        }
+                    }
+                    t = t + 1;
+                }
+            }
+            w = w + 1;
+        }
+        return Counted(flags.Freeze(), Insertions(visits));
+    }
+
+    //==
+    // # Uses
+
+    // IsSimpleRegion from the flags: no boundary segment collides.
+    IsSimpleRegionIndexed(r: UvRegion, tol: UvTolerance): Boolean
+        => r.CollidingSegments(tol).All(x => x.Not);
+
+    // SelfIntersectionRequests from the flags of CollidingSegments(r, tol): a LoopSelfIntersects
+    // request for every edge of face f with a flagged segment, in FaceEdges order. Each edge
+    // looks only at the flagged segments. Precondition: flags has one entry per RegionSegments.
+    SelfIntersectionRequestsFrom(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, flags: Array<Boolean>): Array<EdgeRefinementRequest>
+    {
+        var all = r.RegionSegments;
+        var flagged = flags.Count.Range.FlatMap(s => flags[s] ? [all[s]] : all.Take(0));
+        return m.FaceEdges(f).FlatMap(e => flagged.Any(g => r.IsSegmentOn(m, d, e, g.Loop, g.Index))
+            ? [EdgeRefinementRequest(e, RefinementReason.LoopSelfIntersects, m.TighterChordal(d, e), 0)]
+            : EdgeRefinementRequest.NoRequests);
+    }
+}

@@ -1,0 +1,50 @@
+//==
+// # Boundary segments on a uniform grid (complexity sweep, chunk F2)
+//
+// The types CollidingSegments (uv-collide.library.plato) works with: one numbering of a
+// region's boundary segments, each segment's box in tolerance units, and the grid cells the
+// boxes cover. Layer 05.
+//
+// Sections, in order:
+//  - Segments and their boxes
+//  - Grid cells
+
+//==
+// # Segments and their boxes
+
+// Boundary segment Index of loop Loop of a region: from point Index to point Index + 1, modulo
+// the loop's count (uv-regions.library.plato, SegmentStart and SegmentEnd). Loop 0 is the outer
+// loop, loop k > 0 is hole k - 1.
+// Removes: the (k, i) pair every segment test passes as two loose Integers.
+type RegionSegment
+    implements IValue
+{
+    Loop: Integer;
+    Index: Integer;
+}
+
+// The axis-aligned box of a boundary segment in tolerance units (InToleranceUnits), grown by
+// one unit on every side, so two segments within one unit of each other have overlapping
+// boxes. Finite is false when an end point is NaN or infinite in tolerance units (a NaN
+// parameter, or a zero tolerance), where the grid cannot place the segment.
+type SegmentBox
+    implements IValue
+{
+    Segment: RegionSegment;
+    Low: Point2D;
+    High: Point2D;
+    Finite: Boolean;
+}
+
+//==
+// # Grid cells
+
+// Segment Segment (a position in RegionSegments) covers the grid cell at Column and Row. The
+// cell numbers are whole numbers held as Number, so a far cell cannot overflow an Integer.
+type SegmentGridEntry
+    implements IValue
+{
+    Column: Number;
+    Row: Number;
+    Segment: Integer;
+}

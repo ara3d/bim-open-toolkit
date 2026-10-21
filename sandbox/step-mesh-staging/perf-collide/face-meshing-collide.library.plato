@@ -1,0 +1,38 @@
+//==
+// # Meshing a region with its colliding segments found once (complexity sweep, chunk F2)
+//
+// MeshRegion built the blocking requests (O(E B^2)) before it asked whether the region was
+// simple (O(B^2) again). MeshRegionBody finds the colliding segments once on a grid
+// (uv-collide.library.plato) and builds requests only for a region that is not simple. The
+// outcome is MeshRegion's, bit for bit: the same MeshedOutcome call for a simple region, the
+// same requests and diagnostics otherwise. Layer 05.
+//
+// Sections, in order:
+//  - Meshing a region
+
+library FaceMeshingCollisions
+{
+    //==
+    // # Meshing a region
+
+    // The outcome for face f whose region is not simple: an empty mesh with the blocking
+    // requests and their diagnostics, or one face error when no model edge is to blame.
+    NotSimpleOutcome(f: BrepFaceIndex, blocking: Array<EdgeRefinementRequest>): FaceMeshOutcome
+        => blocking.Count > 0
+            ? FaceMeshOutcome(EmptyFaceMesh(f), blocking, blocking.Map(q => q.RequestDiagnostic))
+            : f.UnmeshedOutcome("FACE-REGION-NOT-SIMPLE",
+                "Synthetic seam or pole segments of this face collide in parameter space; the face is not meshed.");
+
+    // MeshRegion with the colliding segments found once: a simple region is meshed, any other
+    // gets NotSimpleOutcome with the requests read from the same flags.
+    MeshRegionBody(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): FaceMeshOutcome
+    {
+        var raw = m.UnorientedRegionOf(f, d, c);
+        var r = m.OrientRegion(f, raw);
+        var chart = m.ChartOf(f, r);
+        var flags = r.CollidingSegments(m.RegionTolerance(f, chart));
+        return flags.Any(x => x)
+            ? f.NotSimpleOutcome(m.SelfIntersectionRequestsFrom(f, d, r, flags))
+            : m.MeshedOutcome(f, d, raw, r, chart, c);
+    }
+}
