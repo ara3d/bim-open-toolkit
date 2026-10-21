@@ -1,13 +1,14 @@
 ---
 id: TKT-395
 title: STEP mesher complexity chunk L6: Layer 01, 02, 06, 07 laws with a value computed twice or per sample: bound once in block bodies (Law_ProjectNoWorseThanSampleOnce and the rest o...
-status: open
+status: done
 depends_on: []
 owner:
 fence: [sandbox/step-mesh-staging/perf-law-bindings/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-349, TKT-356, TKT-356]
 created: 2026-10-21
+closed: 2026-10-21
 ---
 
 ## Acceptance criteria
