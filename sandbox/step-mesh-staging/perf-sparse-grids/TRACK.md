@@ -1,7 +1,7 @@
 # perf-sparse-grids: the seven dense topology checks visit only the cells some coedge cites
 
 Ticket: TKT-373
-Status: ready: V5
+Status: merged: V5 (2026-10-21, into 02-topology/topology-keyed-site-rows.{types,library}.plato, 07-validation/validation-checks-topology-sparse.library.plato, 08-pipeline/pipeline-sparse-grids.laws.plato)
 
 ## Files
 

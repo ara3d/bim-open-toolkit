@@ -830,13 +830,7 @@ library BrepTopology
     // Edge ends are keyed by (edge, IsStart), never by vertex (README,
     // "Implementation notes"), which CornersShareEnd does.
     LinkComponentCount(m: BrepModel, s: ShellIndex, v: BrepVertexIndex): Integer
-    {
-        var corners = m.CornersAtVertex(s, v);
-        var n = corners.Count;
-        var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
-            (i < j ? m.CornersShareEnd(corners[i], corners[j]) : false) ? [i * n + j] : n.Range.Take(0)));
-        return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n)).ClassCount;
-    }
+        => m.LinkComponentCountOf(m.CornersAtVertex(s, v));
 
     // The corners at v in cyclic order around the vertex when the link is one
     // cycle, or in path order from one free end when it is one path (an open

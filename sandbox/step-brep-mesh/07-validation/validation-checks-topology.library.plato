@@ -102,12 +102,12 @@ library BrepCheckingTopology
     // Law_EveryEdgeUsedTwiceInClosedShell at every shell and edge.
     // Topological group: Error.
     Check_EveryEdgeUsedTwiceInClosedShell(m: BrepModel): Check
-        => m.CheckShellEdges("Law_EveryEdgeUsedTwiceInClosedShell", (s, e) => Law_EveryEdgeUsedTwiceInClosedShell(m, s, e));
+        => m.Check_EveryEdgeUsedTwiceInClosedShellSparse;
 
     // Law_OpenShellEdgesUsedAtMostTwice at every shell and edge. Topological
     // group: Error.
     Check_OpenShellEdgesUsedAtMostTwice(m: BrepModel): Check
-        => m.CheckShellEdges("Law_OpenShellEdgesUsedAtMostTwice", (s, e) => Law_OpenShellEdgesUsedAtMostTwice(m, s, e));
+        => m.Check_OpenShellEdgesUsedAtMostTwiceSparse;
 
     // Law_DeclaredClosedIsClosed at every shell. Topological group: Error.
     Check_DeclaredClosedIsClosed(m: BrepModel): Check
@@ -116,22 +116,22 @@ library BrepCheckingTopology
     // Law_EdgeUsesHaveOppositeOrientation at every shell and edge.
     // Topological group: Error.
     Check_EdgeUsesHaveOppositeOrientation(m: BrepModel): Check
-        => m.CheckShellEdges("Law_EdgeUsesHaveOppositeOrientation", (s, e) => Law_EdgeUsesHaveOppositeOrientation(m, s, e));
+        => m.Check_EdgeUsesHaveOppositeOrientationSparse;
 
     // Law_SeamUsesRunOpposite at every face and edge. Topological group:
     // Error.
     Check_SeamUsesRunOpposite(m: BrepModel): Check
-        => m.CheckFaceEdges("Law_SeamUsesRunOpposite", (f, e) => Law_SeamUsesRunOpposite(m, f, e));
+        => m.Check_SeamUsesRunOppositeSparse;
 
     // Law_VertexLinkIsOneCycle at every shell and vertex. Topological group:
     // Error.
     Check_VertexLinkIsOneCycle(m: BrepModel): Check
-        => m.CheckShellVertices("Law_VertexLinkIsOneCycle", (s, v) => Law_VertexLinkIsOneCycle(m, s, v));
+        => m.Check_VertexLinkIsOneCycleSparse;
 
     // Law_OpenShellVertexLinkIsCycleOrPath at every shell and vertex.
     // Structure: Error.
     Check_OpenShellVertexLinkIsCycleOrPath(m: BrepModel): Check
-        => m.CheckShellVertices("Law_OpenShellVertexLinkIsCycleOrPath", (s, v) => Law_OpenShellVertexLinkIsCycleOrPath(m, s, v));
+        => m.Check_OpenShellVertexLinkIsCycleOrPathSparse;
 
     // Law_PolyLoopEdgesPairUp at every shell. Structure: Error.
     Check_PolyLoopEdgesPairUp(m: BrepModel): Check
@@ -140,7 +140,7 @@ library BrepCheckingTopology
     // Law_VertexLoopVertexIsIsolated at every shell and vertex. Topological
     // group: Error.
     Check_VertexLoopVertexIsIsolated(m: BrepModel): Check
-        => m.CheckShellVertices("Law_VertexLoopVertexIsIsolated", (s, v) => Law_VertexLoopVertexIsIsolated(m, s, v));
+        => m.Check_VertexLoopVertexIsIsolatedSparse;
 
     //==
     // # Euler-Poincare and bodies

@@ -65,7 +65,7 @@ library SparseGridsLaws
     }
 
     // Every uncited cell holds, on every witness model. Exact.
-    Law_Perf_UncitedCellsHold(m: BrepModel): Boolean
+    Law_UncitedCellsHold(m: BrepModel): Boolean
         => m.UncitedCellsHoldOn;
 
     //==
@@ -100,7 +100,7 @@ library SparseGridsLaws
         => m.DenseTopologyChecks.Corresponds(m.SparseTopologyChecks, (a, b) => a.Identical(b));
 
     // The sparse checks agree with the dense ones on every witness model. Exact.
-    Law_Perf_SparseChecksAgree(m: BrepModel): Boolean
+    Law_SparseChecksAgree(m: BrepModel): Boolean
         => m.SparseChecksAgreeOn;
 
     // The sparse checks agree on the negative witnesses and E1's odd models, and the failures
@@ -109,7 +109,7 @@ library SparseGridsLaws
     // Law_VertexLinkIsOneCycle, and the stray box, whose edge 4 has three uses and whose loop 1
     // cites edge 99, fails Law_EveryEdgeUsedTwiceInClosedShell at edge 4. Every uncited cell of
     // these models holds too.
-    Law_Perf_SparseChecksAgreeOnOddModels(_: Integer): Boolean
+    Law_SparseChecksAgreeOnOddModels(_: Integer): Boolean
     {
         var poles = BrepModel.Witness_SphereWithRedundantPoleLoops(1.0);
         var corner = BrepModel.Witness_TwoBoxesSharingCorner;
