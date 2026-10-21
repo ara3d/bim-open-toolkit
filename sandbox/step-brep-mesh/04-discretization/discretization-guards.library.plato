@@ -44,5 +44,5 @@ library EdgeGuards
     // DiscretizeAll, and termination's DiscretizeAllBounded (the same table, since Discretize is
     // DiscretizeBounded), with one whole-model scan.
     DiscretizeAllIndexed(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
-        => m.DiscretizeAllCounted(c, floors).Value;
+        => m.DiscretizeAllTabled(c, floors);
 }

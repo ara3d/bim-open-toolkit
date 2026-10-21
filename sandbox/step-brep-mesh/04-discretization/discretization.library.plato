@@ -278,12 +278,7 @@ library EdgeDiscretizing
     // The least segment count of the edge: exactly 1 for a degenerate edge, otherwise the largest
     // of the caller's floor, the closed-edge minimum, 2 inside a two-edge loop, and the turn floor.
     MinimumSegmentCount(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): Integer
-        => m.IsDegenerateEdge(e)
-            ? 1
-            : floors.FloorOf(e)
-                .Max(m.IsClosedRegularEdge(e) ? c.ClosedEdgeMinimum : 1)
-                .Max(m.IsInTwoEdgeLoop(e) ? 2 : 1)
-                .Max(m.TurnFloor(e));
+        => m.MinimumSegmentCountGiven(e, c, floors, m.IsInTwoEdgeLoop(e));
 
     //==
     // # Circular arcs in closed form
@@ -806,9 +801,7 @@ library EdgeDiscretizing
     // image chord, each widened as in the laws or at the floor. `RefineEdge` then splits nothing
     // for the criteria, and only the count pass can add points.
     MeetsCriteria(m: BrepModel, d: EdgeDiscretization, c: DiscretizationCriteria): Boolean
-        => m.IsEvaluable(d)
-            ? d.SegmentCount.MapRange(i => m.SegmentMeetsCriteria(d, c, i)).All(x => x)
-            : false;
+        => m.IsEvaluable(d) ? m.SegmentsMeetCriteriaOn(d, c, m.EdgeImages(d.Edge)) : false;
 
     // True when segment i meets every criterion the bisection tests, each widened as in its law
     // or escaped at the length floor: the per-segment test of `MeetsCriteria`, and the test by
@@ -854,11 +847,5 @@ library EdgeDiscretizing
     // The discretizations with every requested edge refined to the smallest requested chordal
     // bound and the largest requested count, and every other edge left as it is.
     Refine(m: BrepModel, d: EdgeDiscretizations, requests: Array<EdgeRefinementRequest>, c: DiscretizationCriteria): EdgeDiscretizations
-        => EdgeDiscretizations(d.ByEdge.Map(old =>
-            requests.IsRequested(old.Edge)
-                ? m.RefineEdge(
-                    old,
-                    c.WithChordal(requests.RequestedChordal(old.Edge, c.Chordal)),
-                    requests.RequestedSegments(old.Edge))
-                : old));
+        => m.RefineTabled(d, requests, c);
 }

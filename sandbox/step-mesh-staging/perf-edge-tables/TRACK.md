@@ -1,7 +1,7 @@
 # perf-edge-tables: the faces of every edge and the two-edge-loop flags built once per model
 
 Ticket: TKT-364
-Status: ready: E1
+Status: merged: E1 (2026-10-21, into 02-topology/topology-edge-tables.{types,library}.plato, 04-discretization/discretization-edge-tables.library.plato, 08-pipeline/pipeline-edge-tables.laws.plato)
 
 ## Files
 
