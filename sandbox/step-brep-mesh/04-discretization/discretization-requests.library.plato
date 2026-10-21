@@ -61,6 +61,17 @@ library EdgeDiscretizingRequests
     //==
     // # Requests and deltas
 
+    // The name of a refinement reason, for diffs and laws that match on the case.
+    ReasonName(r: RefinementReason): String
+        => match (r) {
+            LoopSelfIntersects => "LoopSelfIntersects";
+            TooCoarseInParameterSpace => "TooCoarseInParameterSpace";
+            QuadCountMismatch => "QuadCountMismatch";
+            NoInteriorPointMeetsChordal(c) => "NoInteriorPointMeetsChordal";
+            PoleAdjacency => "PoleAdjacency";
+            NeighbourDensity => "NeighbourDensity";
+        };
+
     // The stronger union of two requests on one edge: the smaller Chordal with its Reason (a on a
     // tie), the larger Segments.
     Strongest(a: EdgeRefinementRequest, b: EdgeRefinementRequest): EdgeRefinementRequest

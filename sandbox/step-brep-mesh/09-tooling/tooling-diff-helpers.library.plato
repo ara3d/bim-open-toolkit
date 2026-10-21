@@ -183,17 +183,6 @@ library ToolingDiffHelpers
             Info => "Info";
         };
 
-    // The name of a refinement reason.
-    ReasonName(r: RefinementReason): String
-        => match (r) {
-            LoopSelfIntersects => "LoopSelfIntersects";
-            TooCoarseInParameterSpace => "TooCoarseInParameterSpace";
-            QuadCountMismatch => "QuadCountMismatch";
-            NoInteriorPointMeetsChordal(c) => "NoInteriorPointMeetsChordal";
-            PoleAdjacency => "PoleAdjacency";
-            NeighbourDensity => "NeighbourDensity";
-        };
-
     //==
     // # Rows and tables
 
