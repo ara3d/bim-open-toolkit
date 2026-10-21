@@ -1231,13 +1231,7 @@ library BrepTopology
     // (quadratic, where an implementation unites the faces at each vertex in
     // one pass).
     ShellComponentCount(m: BrepModel, s: ShellIndex): Integer
-    {
-        var faces = m.ShellFaces(s);
-        var n = faces.Count;
-        var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
-            (i < j ? m.FacesTouch(faces[i], faces[j]) : false) ? [i * n + j] : n.Range.Take(0)));
-        return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n)).ClassCount;
-    }
+        => m.ShellComponentCountByVertex(s);
 
     //==
     // # Orientability
@@ -1269,21 +1263,12 @@ library BrepTopology
 
     // The model with every face in faces reversed; other rows unchanged.
     WithFacesReversed(m: BrepModel, faces: Array<BrepFaceIndex>): BrepModel
-        => BrepModel(
-            m.Geometry,
-            m.Vertices,
-            m.Edges,
-            m.Loops,
-            m.Faces.Count.MapRange(i => faces.Any(f => f.Value == i) ? m.Faces[i].Reversed : m.Faces[i]),
-            m.Shells,
-            m.Bodies,
-            m.Tolerances,
-            m.Unit);
+        => m.WithFacesReversedMarked(FaceMarks(faces, m.Faces.Count));
 
     // The model with every face reversed: each shell bounds the same region
     // from the other side. Layer 8's metamorphic input.
     WithEveryFaceReversed(m: BrepModel): BrepModel
-        => m.WithFacesReversed(m.Faces.Count.MapRange(i => BrepFaceIndex(i)));
+        => m.WithFacesReversedMarked(m.Faces.Count.MapRange(i => true));
 
     // The same edge traversed the other way: ends swapped and the sense
     // flipped, so it runs over the same curve points in the opposite direction.
@@ -1333,60 +1318,7 @@ library BrepTopology
     // face, in shell order, is coloured 0 (keep); a conflict is left as found.
     // The faces coloured 1, in shell order, are the result.
     OrientationFlips(m: BrepModel, s: ShellIndex): Array<BrepFaceIndex>
-    {
-        var faces = m.ShellFaces(s);
-        var n = faces.Count;
-        var links = m.EdgesOfShell(s).FlatMap(e => m.FaceParityLink(s, e, faces));
-        var colour = new Buffer<Integer>(n);
-        var i = 0;
-        while (i < n)
-        {
-            colour = colour.Set(i, -1);
-            i = i + 1;
-        }
-        var root = 0;
-        while (root < n)
-        {
-            if (colour.At(root) < 0)
-            {
-                colour = colour.Set(root, 0);
-                var queue = new List<Integer>().Add(root);
-                var head = 0;
-                while (head < queue.Count)
-                {
-                    var face = queue.At(head);
-                    var k = 0;
-                    while (k < links.Count)
-                    {
-                        var a = links[k] / (2 * n);
-                        var b = (links[k] / 2) % n;
-                        var parity = links[k] % 2;
-                        if (a == face)
-                        {
-                            if (colour.At(b) < 0)
-                            {
-                                colour = colour.Set(b, (colour.At(face) + parity) % 2);
-                                queue = queue.Add(b);
-                            }
-                        }
-                        if (b == face)
-                        {
-                            if (colour.At(a) < 0)
-                            {
-                                colour = colour.Set(a, (colour.At(face) + parity) % 2);
-                                queue = queue.Add(a);
-                            }
-                        }
-                        k = k + 1;
-                    }
-                    head = head + 1;
-                }
-            }
-            root = root + 1;
-        }
-        var colours = colour.Freeze();
-        return n.Range.FlatMap(j => colours[j] == 1 ? [faces[j]] : faces.Take(0));
-    }
+        => m.OrientationFlipsByAdjacency(s, m.EdgeUseTable(s));
 
     // The face-graph link edge e makes in shell s, encoded (a * n + b) * 2 +
     // parity with a, b the positions of its two faces in faces (n of them):
@@ -1412,7 +1344,7 @@ library BrepTopology
     // since reversing its face flips both uses. Precondition:
     // m.IsEveryIndexInRange.
     IsOrientable(m: BrepModel, s: ShellIndex): Boolean
-        => m.WithFacesReversed(m.OrientationFlips(s)).HasCoherentOrientation(s);
+        => m.IsOrientableByAdjacency(s);
 
     //==
     // # Bodies

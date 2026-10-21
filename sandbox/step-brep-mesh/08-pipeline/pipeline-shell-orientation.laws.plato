@@ -76,15 +76,10 @@ library ShellOrientationLaws
             ? m.Shells.Count.Range.All(s => m.ShellComponentCountByVertex(ShellIndex(s)) == m.ShellComponentCount(ShellIndex(s)))
             : true;
 
-    // The component counts agree on every witness model and on it with every face in one more
-    // shell. Exact.
-    Law_Perf_ShellComponentCountAgrees(m: BrepModel): Boolean
-        => m.ComponentCountsAgree && m.WithEveryFaceInOneShell.ComponentCountsAgree;
-
     // The counts agree where faces touch only through coinciding poly-loop points, and the cases
     // occur: two separate unit cubes in one shell are two components, the box beside three poly
     // triangles three.
-    Law_Perf_ShellComponentCountAgreesOnPolyLoops(_: Integer): Boolean
+    Law_ShellComponentCountAgreesOnPolyLoops(_: Integer): Boolean
     {
         var poly = BrepModel.PolyTrianglesBesideBox;
         var last = ShellIndex(poly.Shells.Count - 1);
@@ -109,20 +104,10 @@ library ShellOrientationLaws
             SameFaces(m.OrientationFlipsByAdjacency(ShellIndex(s), m.EdgeUseTable(ShellIndex(s))), m.OrientationFlips(ShellIndex(s)))
             && m.IsOrientableByAdjacency(ShellIndex(s)) == m.IsOrientable(ShellIndex(s)));
 
-    // The flips agree on every witness model with every index in range, and on it with face 0,
-    // faces 1 and 3, and every face reversed, so the search colours faces both ways. Exact.
-    Law_Perf_OrientationFlipsAgree(m: BrepModel): Boolean
-        => m.IsEveryIndexInRange
-            ? m.OrientationAgreesOn
-                && m.WithFacesReversed([BrepFaceIndex(0)]).OrientationAgreesOn
-                && m.WithFacesReversed([BrepFaceIndex(1), BrepFaceIndex(3)]).OrientationAgreesOn
-                && m.WithEveryFaceReversed.OrientationAgreesOn
-            : true;
-
     // The search finds flips: on the unit box with faces 1 and 3 reversed it names those two
     // faces; on Witness_BoxWithFlippedFace, whose flipped sense leaves every edge's uses opposite,
     // none. Both are orientable.
-    Law_Perf_OrientationFlipsAreFound(_: Integer): Boolean
+    Law_OrientationFlipsAreFound(_: Integer): Boolean
     {
         var box = BrepModel.Witness_UnitBox.WithFacesReversed([BrepFaceIndex(1), BrepFaceIndex(3)]);
         var flipped = BrepModel.Witness_BoxWithFlippedFace;
@@ -135,21 +120,6 @@ library ShellOrientationLaws
 
     //==
     // # Reversing faces and the fold
-
-    // WithFacesReversedMarked over FaceMarks is WithFacesReversed for no face, one face, a face
-    // named twice, and an index out of range; WithEveryFaceReversedMarked is WithEveryFaceReversed.
-    // Exact (SameModel).
-    Law_Perf_FacesReversedMarkedAgrees(m: BrepModel): Boolean
-    {
-        var n = m.Faces.Count;
-        var lists = [
-            0.MapRange(k => BrepFaceIndex(k)),
-            [BrepFaceIndex(0)],
-            [BrepFaceIndex(2), BrepFaceIndex(1), BrepFaceIndex(2)],
-            [BrepFaceIndex(99), BrepFaceIndex(n - 1)]];
-        return lists.All(faces => m.WithFacesReversedMarked(FaceMarks(faces, n)).SameModel(m.WithFacesReversed(faces)))
-            && m.WithEveryFaceReversedMarked.SameModel(m.WithEveryFaceReversed);
-    }
 
     // A fold record naming face k.
     FoldOn(k: Integer): FoldRecord
@@ -167,7 +137,7 @@ library ShellOrientationLaws
     // On records naming faces 3 three times, 1 twice, 5, 0, 99 and -1 over six faces, FoldParity
     // marks faces 0, 3 and 5, as FoldedFaces lists them; no records mark nothing; and the unit
     // box reversed by the marks is the box reversed by the list. Exact.
-    Law_Perf_FoldParityMarksFoldedFaces(_: Integer): Boolean
+    Law_FoldParityMarksFoldedFaces(_: Integer): Boolean
     {
         var folds = [3, 1, 3, 5, 3, 0, 99, -1, 1].Map(k => FoldOn(k));
         var box = BrepModel.Witness_UnitBox;
@@ -182,7 +152,7 @@ library ShellOrientationLaws
     // On every raw witness, the fold PrepareModelWith applies (the decoder's records and the
     // mirror records) reverses the same faces through FoldParity as through FoldedFaces, and so
     // does the refold of the prepared model's recorded folds. Exact (SameModel).
-    Law_Perf_FoldParityAgreesOnRawWitnesses(raw: RawDecodedModel): Boolean
+    Law_FoldParityAgreesOnRawWitnesses(raw: RawDecodedModel): Boolean
     {
         var folds = raw.Folds.Concatenate(raw.MirrorFolds);
         var m = raw.Model;

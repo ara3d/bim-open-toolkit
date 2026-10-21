@@ -92,7 +92,7 @@ library StepReading
         var tolerances = ModelTolerances(raw.Units.UsedContextsOf(raw.Occurrences), raw.Model.Unit, size, extent, policy);
         var reduced = raw.WithModel(raw.Model.WithTolerances(tolerances)).Reduced;
         var folds = reduced.Folds.Concatenate(reduced.MirrorFolds);
-        var folded = reduced.Model.WithFacesReversed(folds.FoldedFaces(reduced.Model.Faces.Count));
+        var folded = reduced.Model.WithFacesReversedMarked(FoldParity(folds, reduced.Model.Faces.Count));
         var model = folded.WithGeometry(folded.Geometry.WithClosures(folded.Geometry.ClosureMarks(tolerances)));
         var map = ProvenanceMap(reduced.Occurrences, reduced.Sources, reduced.Sources.ByInstanceOrder, folds, reduced.Repairs);
         return DecodedModel(model, map, reduced.Diagnostics.Concatenate(raw.ToleranceDiagnostics(tolerances, size, extent, policy)), size, extent);
@@ -315,7 +315,7 @@ library StepReading
     // raw. Law_PrepareIsIdempotent prepares it again.
     RawOf(d: DecodedModel, raw: RawDecodedModel): RawDecodedModel
         => RawDecodedModel(
-            d.Model.WithFacesReversed(d.Map.Folds.FoldedFaces(d.Model.Faces.Count))
+            d.Model.WithFacesReversedMarked(FoldParity(d.Map.Folds, d.Model.Faces.Count))
                 .WithGeometry(d.Model.Geometry.WithClosures(ClosureMark.NoMarks))
                 .WithTolerances(Tolerances.UnsetTolerances),
             d.Map.Occurrences,

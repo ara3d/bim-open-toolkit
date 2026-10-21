@@ -1,7 +1,7 @@
 # perf-shell-orientation: shell connectivity, orientation search and the fold in linear passes
 
 Ticket: TKT-376
-Status: ready: V8
+Status: merged: V8 (2026-10-21, into 02-topology/topology-shell-orientation.library.plato, 03-step/step-fold-parity.library.plato, 08-pipeline/pipeline-shell-orientation.laws.plato)
 
 ## Files
 
