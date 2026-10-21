@@ -1,0 +1,124 @@
+//==
+// # The surface domain and the region tolerance once per face: laws (complexity sweep chunk I5, TKT-382)
+//
+// The "In" forms give the library's values, bit for bit, on every face of every model witness
+// that can be regioned under the witness options: the unwrapped loops, the unoriented region,
+// the region tolerance, the point tolerance and the collapsed-line tests at every boundary
+// point; MeshRegionOnce gives MeshRegion's outcome where the region is not simple (a simple
+// region reaches MeshedOutcomeIn, MeshedOutcome with an argument it does not yet read, so it is
+// not meshed twice here). Unwrapping a face's loops builds its surface domain once, however many
+// loops and points it has (exact law), and the count witness reads the same count.
+// Laws over model witnesses: at merge this file goes to 08-pipeline (TRACK.md).
+//
+// Sections, in order:
+//  - Agreement on model witnesses
+//  - The domain once per face
+
+library FaceMeshingDomainOnceLaws
+{
+    //==
+    // # Agreement on model witnesses
+
+    // Whether two regions are the same, bit for bit (UnwrapIndexedLaws.SameUvLoop per loop).
+    SameUvRegion(a: UvRegion, b: UvRegion): Boolean
+        => SameUvLoop(a.Outer, b.Outer)
+            && (a.Holes.Count == b.Holes.Count ? a.Holes.Count.Range.All(k => SameUvLoop(a.Holes[k], b.Holes[k])) : false);
+
+    // Whether two parameter tolerances are the same, bit for bit.
+    SameUvTolerance(a: UvTolerance, b: UvTolerance): Boolean
+        => a.U.Value == b.U.Value && a.V.Value == b.V.Value;
+
+    // At boundary point uv of face f, given the face's domain: the point tolerance, the
+    // collapsed-line tests and the pole-free parameter agree with the library's.
+    PointTestsAgree(m: BrepModel, f: BrepFaceIndex, dom: SurfaceDomain, l: UvLoop, i: Integer): Boolean
+        => SameUvTolerance(m.PointToleranceIn(f, dom, l.Points[i]), m.PointTolerance(f, l.Points[i]))
+            && m.IsOnCollapsedLineIn(f, dom, l.Points[i]) == m.IsOnCollapsedLine(f, l.Points[i])
+            && m.IsOnCollapsedLineAlongIn(f, dom, l.Points[i], SurfaceParameter.ParameterU) == m.IsOnCollapsedLineAlong(f, l.Points[i], SurfaceParameter.ParameterU)
+            && m.IsOnCollapsedLineAlongIn(f, dom, l.Points[i], SurfaceParameter.ParameterV) == m.IsOnCollapsedLineAlong(f, l.Points[i], SurfaceParameter.ParameterV)
+            && SameUv(m.WithPoleFreeParameterIn(f, dom, l, i), m.WithPoleFreeParameter(f, l, i));
+
+    // On face f: every meshed bound's loop unwraps to UnwrapIndexed's loop, every boundary point
+    // passes PointTestsAgree, the unoriented region and the region tolerance are the library's,
+    // and, when the region is not simple, MeshRegionOnce gives MeshRegion's outcome.
+    FaceDomainOnceAgrees(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+    {
+        var dom = m.SurfaceDomainOf(f);
+        var loops = m.MeshedBounds(f).Map(b => m.LoopToUv(f, b, d));
+        var raw = m.UnorientedRegionOf(f, d, c);
+        var r = m.OrientRegion(f, raw);
+        var chart = m.ChartOf(f, r);
+        var tol = m.RegionTolerance(f, chart);
+        return loops.All(l => SameUvLoop(m.UnwrapIndexedIn(f, dom, l), m.UnwrapIndexed(f, l))
+                && l.Points.Count.Range.All(i => m.PointTestsAgree(f, dom, l, i)))
+            && SameUvRegion(m.UnorientedRegionOfIn(f, dom, d, c), raw)
+            && SameUvTolerance(m.RegionToleranceIn(f, dom, chart), tol)
+            && (r.IsSimpleRegionIndexed(tol) ? true : m.MeshRegionOnce(f, d, c).SameFaceMeshOutcome(m.MeshRegion(f, d, c)));
+    }
+
+    // On every face of every model witness that can be regioned under the witness options, the
+    // domain-once forms agree with the library (FaceDomainOnceAgrees).
+    Law_Perf_DomainOnceAgreesOnModel(m: BrepModel): Boolean
+    {
+        var c = MeshingOptions.WitnessOptions.Face;
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        return m.Faces.Count.Range.All(k =>
+            m.CanRegion(BrepFaceIndex(k), d, c) ? m.FaceDomainOnceAgrees(BrepFaceIndex(k), d, c) : true);
+    }
+
+    // MeshRegionOnce meshes simple regions as MeshRegion does: every face of the unit box and of
+    // the cylinder (witnesses 0 and 1), meshed by both.
+    Law_Perf_MeshRegionOnceAgreesOnSimpleFaces(_: Boolean): Boolean
+        => [0, 1].All(k => BrepModel.WitnessAt(k).MeshRegionOnceAgreesOnEveryFace);
+
+    // On every face of m that can be regioned under the witness options, MeshRegionOnce gives
+    // MeshRegion's outcome.
+    MeshRegionOnceAgreesOnEveryFace(m: BrepModel): Boolean
+    {
+        var c = MeshingOptions.WitnessOptions.Face;
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        return m.Faces.Count.Range.All(k => m.CanRegion(BrepFaceIndex(k), d, c)
+            ? m.MeshRegionOnce(BrepFaceIndex(k), d, c).SameFaceMeshOutcome(m.MeshRegion(BrepFaceIndex(k), d, c))
+            : true);
+    }
+
+    // Some witness boundary point lies on a collapsed line, so the agreement reaches IsOnLineIn:
+    // the sphere's faces (witness 2), whose loops touch the poles.
+    Law_Perf_DomainOnceReachesCollapsedLines(_: Boolean): Boolean
+    {
+        var m = BrepModel.WitnessAt(2);
+        var c = MeshingOptions.WitnessOptions.Face;
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        return m.Faces.Count.Range.Any(k => m.CanRegion(BrepFaceIndex(k), d, c)
+            ? m.MeshedBounds(BrepFaceIndex(k)).Any(b => m.LoopToUv(BrepFaceIndex(k), b, d).Points.Any(uv =>
+                m.IsOnCollapsedLine(BrepFaceIndex(k), uv)))
+            : false);
+    }
+
+    //==
+    // # The domain once per face
+
+    // n loops of the plane polygon of p points (UnwrapIndexedLaws.PlanePolygon).
+    PlanePolygons(n: Integer, p: Integer): Array<UvLoop>
+        => n.MapRange(k => PlanePolygon(p));
+
+    // The surface domains built while unwrapping n polygons of p points on the unit box's
+    // bottom face.
+    UnwrapDomainBuilds(n: Integer, p: Integer): Integer
+        => BrepModel.Witness_UnitBox.UnwrapLoopsCounted(BrepFaceIndex(0), PlanePolygons(n, p)).Work.Projections;
+
+    // Unwrapping a face's loops builds its surface domain exactly once, for one or three loops
+    // of 8 or 64 points: never once per point, as IsOnLine and PointTolerance did.
+    Law_Perf_UnwrapBuildsTheDomainOncePerFace(_: Boolean): Boolean
+        => UnwrapDomainBuilds(1, 8) == 1 && UnwrapDomainBuilds(3, 8) == 1
+            && UnwrapDomainBuilds(1, 64) == 1 && UnwrapDomainBuilds(3, 64) == 1;
+
+    // The work of unwrapping one plane polygon of n points with UnwrapLoopsCounted.
+    UnwrapLoopsWork(n: Integer): WorkBudget
+        => BrepModel.Witness_UnitBox.UnwrapLoopsCounted(BrepFaceIndex(0), PlanePolygons(1, n)).Work;
+
+    // UnwrapLoopsCounted builds one surface domain per face (Projections) and visits one step per
+    // point on a plane (Insertions), at 8 and 64 points; the library's unwrap built a domain per
+    // collapsed-line test of every point.
+    Witness_UnwrapLoopsWork(_: WorkClaim): WorkClaim
+        => WorkClaim("UnwrapLoopsCounted: surface domains built per face, steps visited per point", Projections(1).Add(Insertions(1)), [8, 64], n => UnwrapLoopsWork(n));
+}

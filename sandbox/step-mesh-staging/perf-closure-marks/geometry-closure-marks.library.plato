@@ -1,0 +1,210 @@
+//==
+// # Closure marks by binary search, domains once (complexity sweep chunk I5, TKT-382)
+//
+// Layer 01. IsMarkedClosed scanned every closure mark of the model (O(K)), and it runs inside
+// every Domain: once per curve domain, twice per surface domain, so in every trimmed-curve
+// evaluation (BasisParameter), two or three times per composite evaluation (CompositeExtents),
+// four times per rectangular-trimmed surface evaluation (TrimmedToBasis), and, in layer 05, per
+// loop point and per insertion candidate. Layer 03's ClosureMarks emits the marks sorted: curves
+// ascending, then surfaces closed in u ascending, then in v (MarkRank, MarkIndex), so a binary
+// search finds a mark in at most log2(K) + 2 comparisons. The answers are IsMarkedClosed's on
+// every arena whose marks are sorted (MarksAreSorted), which is every arena the library builds
+// (Law_Perf_ClosureMarksAreSorted); TRACK.md asks for sortedness to become part of IsWellFormed.
+//
+// Sections, in order:
+//  - The order of the marks
+//  - Lookup by binary search
+//  - Domains once
+//  - Composite evaluation with its extents once
+
+library BrepGeometryClosureMarks
+{
+    //==
+    // # The order of the marks
+
+    // The position of the mark's kind in ClosureMarks's output: 0 a curve, 1 a parameter-plane
+    // curve (layer 03 emits none), 2 a surface closed in u, 3 a surface closed in v.
+    MarkRank(mark: ClosureMark): Integer
+        => match (mark)
+        {
+            ClosedCurve(curve) => 0;
+            ClosedCurve2D(curve) => 1;
+            ClosedSurface(surface, direction) => direction.Along(2, 3);
+        };
+
+    // The index the mark names: the curve's, the parameter-plane curve's, or the surface's.
+    MarkIndex(mark: ClosureMark): Integer
+        => match (mark)
+        {
+            ClosedCurve(curve) => curve.Value;
+            ClosedCurve2D(curve) => curve.Value;
+            ClosedSurface(surface, direction) => surface.Value;
+        };
+
+    // -1, 0 or 1 as the mark sorts before, with, or after the key (rank, index): by rank, then
+    // by index.
+    CompareMarkTo(mark: ClosureMark, rank: Integer, index: Integer): Integer
+        => mark.MarkRank != rank
+            ? (mark.MarkRank < rank ? -1 : 1)
+            : (mark.MarkIndex < index ? -1 : (mark.MarkIndex > index ? 1 : 0));
+
+    // True when no mark sorts after the next one: the order ClosureMarks emits.
+    MarksAreSorted(marks: Array<ClosureMark>): Boolean
+        => (marks.Count - 1).Max(0).Range.All(i => marks[i].CompareMarkTo(marks[i + 1].MarkRank, marks[i + 1].MarkIndex) <= 0);
+
+    // True when the arena's closure marks are in ClosureMarks's order.
+    ClosuresAreSorted(g: GeometrySet): Boolean
+        => g.Closures.MarksAreSorted;
+
+    //==
+    // # Lookup by binary search
+
+    // Whether a mark with the key (rank, index) is among the sorted marks, by binary search for
+    // the first mark not before the key; its work, as Insertions, is the marks compared with the
+    // key: at most log2(K) + 2 of K marks. Precondition: MarksAreSorted.
+    FindMarkCounted(marks: Array<ClosureMark>, rank: Integer, index: Integer): Counted<Boolean>
+    {
+        var lo = 0;
+        var hi = marks.Count;
+        var comparisons = 0;
+        while (lo < hi)
+        {
+            var mid = (lo + hi) / 2;
+            if (marks[mid].CompareMarkTo(rank, index) < 0)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid;
+            }
+            comparisons = comparisons + 1;
+        }
+        var found = lo < marks.Count ? marks[lo].CompareMarkTo(rank, index) == 0 : false;
+        return Counted(found, Insertions(lo < marks.Count ? comparisons + 1 : comparisons));
+    }
+
+    // IsMarkedClosed for curve c, by binary search, with the marks compared.
+    // Precondition: g.ClosuresAreSorted.
+    IsMarkedClosedSortedCounted(g: GeometrySet, c: CurveIndex): Counted<Boolean>
+        => g.Closures.FindMarkCounted(0, c.Value);
+
+    // IsMarkedClosed for curve c, by binary search. Precondition: g.ClosuresAreSorted.
+    IsMarkedClosedSorted(g: GeometrySet, c: CurveIndex): Boolean
+        => g.Closures.FindMarkCounted(0, c.Value).Value;
+
+    // IsMarkedClosed for parameter-plane curve c, by binary search. Precondition:
+    // g.ClosuresAreSorted.
+    IsMarkedClosedSorted(g: GeometrySet, c: Curve2DIndex): Boolean
+        => g.Closures.FindMarkCounted(1, c.Value).Value;
+
+    // IsMarkedClosed for surface s in the given parameter, by binary search. Precondition:
+    // g.ClosuresAreSorted.
+    IsMarkedClosedSorted(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter): Boolean
+        => g.Closures.FindMarkCounted(which.Along(2, 3), s.Value).Value;
+
+    //==
+    // # Domains once
+
+    // Domain for surface s with the record's natural domain computed once, not once per
+    // direction: the same domain.
+    DomainOnce(g: GeometrySet, s: SurfaceIndex): SurfaceDomain
+    {
+        var d = g.SurfaceAt(s).Domain(g);
+        return SurfaceDomain(
+            d.U.WithClosure(g.IsMarkedClosed(s, SurfaceParameter.ParameterU)),
+            d.V.WithClosure(g.IsMarkedClosed(s, SurfaceParameter.ParameterV)));
+    }
+
+    // TrimmedToBasis with the basis's domain computed once, not once per direction: the same
+    // parameters.
+    TrimmedToBasisOnce(g: GeometrySet, basis: SurfaceIndex, uRange: NumberInterval, vRange: NumberInterval, uSense: Boolean, vSense: Boolean, uv: UvCoordinate): UvCoordinate
+    {
+        var d = g.Domain(basis);
+        return UvCoordinate(d.U.IntoRange(uRange.SensedParameter(uSense, uv.U)),
+            d.V.IntoRange(vRange.SensedParameter(vSense, uv.V)));
+    }
+
+    //==
+    // # Composite evaluation with its extents once
+    //
+    // CompositeSegmentAt and CompositeLocal each built CompositeExtents, a curve domain per
+    // segment, and CompositeLocal then took the found segment's domain a further time; Derivative
+    // asked CompositeSegmentAt twice. CompositePlaceOf takes each segment's domain once and
+    // reads both answers from them: the same lengths and the same range, so the same numbers.
+
+    // Where parameter t of the composite lands: its segment and the parameter on that segment's
+    // curve, as CompositeSegmentAt and CompositeLocal give them.
+    CompositePlaceOf(g: GeometrySet, segments: Array<CompositeSegment>, t: Number): CompositePlace
+    {
+        var domains = segments.Map(segment => g.Domain(segment.Curve));
+        var extents = domains.Map(d => d.ParameterLength);
+        var i = extents.PieceAt(t);
+        return CompositePlace(i, domains[i].Range.SensedParameter(segments[i].SameSense, t - extents.PieceStart(i)));
+    }
+
+    // Eval's Composite case with one CompositePlaceOf.
+    CompositeEval(g: GeometrySet, segments: Array<CompositeSegment>, t: Number): Point3D
+    {
+        var p = g.CompositePlaceOf(segments, t);
+        return g.Eval(segments[p.Segment].Curve, p.Local);
+    }
+
+    // Derivative's Composite case with one CompositePlaceOf.
+    CompositeDerivative(g: GeometrySet, segments: Array<CompositeSegment>, t: Number): Vector3D
+    {
+        var p = g.CompositePlaceOf(segments, t);
+        return g.Derivative(segments[p.Segment].Curve, p.Local) * segments[p.Segment].SameSense.SenseSign;
+    }
+
+    // SecondDerivative's Composite case with one CompositePlaceOf.
+    CompositeSecondDerivative(g: GeometrySet, segments: Array<CompositeSegment>, t: Number): Vector3D
+    {
+        var p = g.CompositePlaceOf(segments, t);
+        return g.SecondDerivative(segments[p.Segment].Curve, p.Local);
+    }
+
+    // EvaluationMagnitude's Composite case with one CompositePlaceOf.
+    CompositeEvaluationMagnitude(g: GeometrySet, segments: Array<CompositeSegment>, t: Number): Number
+    {
+        var p = g.CompositePlaceOf(segments, t);
+        return g.EvaluationMagnitude(segments[p.Segment].Curve, p.Local);
+    }
+
+    // CompositePlaceOf for a parameter-plane composite.
+    CompositePlaceOf(g: GeometrySet, segments: Array<CompositeSegment2D>, t: Number): CompositePlace
+    {
+        var domains = segments.Map(segment => g.Domain(segment.Curve));
+        var extents = domains.Map(d => d.ParameterLength);
+        var i = extents.PieceAt(t);
+        return CompositePlace(i, domains[i].Range.SensedParameter(segments[i].SameSense, t - extents.PieceStart(i)));
+    }
+
+    // Eval's parameter-plane Composite case with one CompositePlaceOf.
+    CompositeEval(g: GeometrySet, segments: Array<CompositeSegment2D>, t: Number): UvCoordinate
+    {
+        var p = g.CompositePlaceOf(segments, t);
+        return g.Eval(segments[p.Segment].Curve, p.Local);
+    }
+
+    // Derivative's parameter-plane Composite case with one CompositePlaceOf.
+    CompositeDerivative(g: GeometrySet, segments: Array<CompositeSegment2D>, t: Number): Vector2D
+    {
+        var p = g.CompositePlaceOf(segments, t);
+        return g.Derivative(segments[p.Segment].Curve, p.Local) * segments[p.Segment].SameSense.SenseSign;
+    }
+
+    // SecondDerivative's parameter-plane Composite case with one CompositePlaceOf.
+    CompositeSecondDerivative(g: GeometrySet, segments: Array<CompositeSegment2D>, t: Number): Vector2D
+    {
+        var p = g.CompositePlaceOf(segments, t);
+        return g.SecondDerivative(segments[p.Segment].Curve, p.Local);
+    }
+
+    // EvaluationMagnitude's parameter-plane Composite case with one CompositePlaceOf.
+    CompositeEvaluationMagnitude(g: GeometrySet, segments: Array<CompositeSegment2D>, t: Number): Number
+    {
+        var p = g.CompositePlaceOf(segments, t);
+        return g.EvaluationMagnitude(segments[p.Segment].Curve, p.Local);
+    }
+}

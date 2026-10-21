@@ -1,0 +1,16 @@
+//==
+// # Where a composite's parameter lands (complexity sweep chunk I5, TKT-382)
+//
+// Layer 01. The segment of a composite curve that holds a parameter, and the parameter on that
+// segment's own curve: what CompositeSegmentAt and CompositeLocal each found from their own
+// CompositeExtents, found once.
+
+// The segment Segment of a composite holding a parameter t, and Local, the parameter of the same
+// point on the segment's curve. Removes: the two or three CompositeExtents (one curve domain per
+// segment each) a composite evaluation made.
+type CompositePlace
+    implements IValue
+{
+    Segment: Integer;
+    Local: Number;
+}

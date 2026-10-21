@@ -1,0 +1,349 @@
+//==
+// # Closure marks by binary search, domains once: laws (complexity sweep chunk I5, TKT-382)
+//
+// The marks every arena of the library holds are sorted, so IsMarkedClosedSorted gives
+// IsMarkedClosed's answer; it does on synthetic mark lists of 0 to 33 marks for every key, and
+// on the catalog arena with marks added (MarkedCatalogArena). DomainOnce, TrimmedToBasisOnce and
+// the composite functions give the library's values, bit for bit, on both arenas. A lookup
+// among K marks compares at most 2 log2(K) + 2 of them (exact law at K = 1 to 256, and the
+// count witness at 16 and 256 marks for Law_WorkIsWithinSlope).
+//
+// Sections, in order:
+//  - Arenas
+//  - Comparing values exactly
+//  - Sorted marks
+//  - Lookup agrees with the scan
+//  - Domains and trimmed parameters once
+//  - Composite evaluation once
+//  - Count witness
+
+library BrepGeometryClosureMarksLaws
+{
+    //==
+    // # Arenas
+
+    // The mark of the given rank (MarkRank) naming the given index.
+    SyntheticMark(rank: Integer, index: Integer): ClosureMark
+        => rank == 0 ? ClosureMark.ClosedCurve(CurveIndex(index))
+            : (rank == 1 ? ClosureMark.ClosedCurve2D(Curve2DIndex(index))
+            : (rank == 2 ? ClosureMark.ClosedSurface(SurfaceIndex(index), SurfaceParameter.ParameterU)
+            : ClosureMark.ClosedSurface(SurfaceIndex(index), SurfaceParameter.ParameterV)));
+
+    // k marks in ClosureMarks's order: mark i of rank 4 i / k naming index 2 i, so every rank
+    // is present from k = 4 and every odd index is absent.
+    SyntheticMarks(k: Integer): Array<ClosureMark>
+        => k.MapRange(i => SyntheticMark(4 * i / k, 2 * i));
+
+    // An arena with no records and the k synthetic marks: enough for a lookup, which reads only
+    // the marks.
+    SyntheticMarkedArena(k: Integer): GeometrySet
+        => GeometrySet([], [], [], [], SyntheticMarks(k));
+
+    // The catalog arena (Witness_CatalogArena) with three parameter-plane curves, two space
+    // curves and one surface added, and five closure marks in ClosureMarks's order, so domains
+    // are made Closed and trimmed parameters wrap across a closed basis's join. Added: space
+    // curve 12, B-spline curve 6 trimmed across its join; 13, the composite of 7, 12 reversed and
+    // the polyline 5; parameter-plane curve 0, a polyline of three points; 1, it trimmed across
+    // its join, reversed; 2, the composite of 0 and 1 reversed; surface 10, B-spline surface 7
+    // trimmed across its join in both directions, v reversed. Marks: curves 5 and 6, parameter-
+    // plane curve 0, surface 7 in u and in v.
+    MarkedCatalogArena(_: Integer): GeometrySet
+    {
+        var cat = GeometrySet.Witness_CatalogArena;
+        var c6 = cat.CurveAt(CurveIndex(6)).Domain(cat).Range;
+        var s7 = cat.SurfaceAt(SurfaceIndex(7)).Domain(cat);
+        var lc = c6.End - c6.Start;
+        var lu = s7.U.Range.End - s7.U.Range.Start;
+        var lv = s7.V.Range.End - s7.V.Range.Start;
+        return GeometrySet(
+            cat.Curves.Concatenate([
+                BrepCurve.Trimmed(CurveIndex(6), NumberInterval(c6.Start + 0.5 * lc, c6.End + 0.25 * lc), true),
+                BrepCurve.Composite([CompositeSegment(CurveIndex(7), true), CompositeSegment(CurveIndex(12), false), CompositeSegment(CurveIndex(5), true)])]),
+            [BrepCurve2D.Polyline([UvCoordinate(0.0, 0.0), UvCoordinate(1.0, 0.5), UvCoordinate(0.0, 1.0)]),
+                BrepCurve2D.Trimmed(Curve2DIndex(0), NumberInterval(1.5, 2.5), false),
+                BrepCurve2D.Composite([CompositeSegment2D(Curve2DIndex(0), true), CompositeSegment2D(Curve2DIndex(1), false)])],
+            cat.Pcurves,
+            cat.Surfaces.Concatenate([
+                BrepSurface.RectangularTrimmed(SurfaceIndex(7),
+                    NumberInterval(s7.U.Range.Start + 0.5 * lu, s7.U.Range.End + 0.25 * lu),
+                    NumberInterval(s7.V.Range.Start + 0.25 * lv, s7.V.Range.End + 0.5 * lv), true, false)]),
+            [ClosureMark.ClosedCurve(CurveIndex(5)),
+                ClosureMark.ClosedCurve(CurveIndex(6)),
+                ClosureMark.ClosedCurve2D(Curve2DIndex(0)),
+                ClosureMark.ClosedSurface(SurfaceIndex(7), SurfaceParameter.ParameterU),
+                ClosureMark.ClosedSurface(SurfaceIndex(7), SurfaceParameter.ParameterV)]);
+    }
+
+    // The two arenas the agreement laws read: the catalog and the marked catalog.
+    PerfClosureArenas(_: Integer): Array<GeometrySet>
+        => [GeometrySet.Witness_CatalogArena, MarkedCatalogArena(0)];
+
+    //==
+    // # Comparing values exactly
+
+    // Whether two curve domains are the same, bit for bit.
+    SameCurveDomain(a: CurveDomain, b: CurveDomain): Boolean
+        => a.Range.Start == b.Range.Start && a.Range.End == b.Range.End && a.Periodicity == b.Periodicity;
+
+    // Whether two surface domains are the same, bit for bit.
+    SameSurfaceDomain(a: SurfaceDomain, b: SurfaceDomain): Boolean
+        => SameCurveDomain(a.U, b.U) && SameCurveDomain(a.V, b.V);
+
+    // Whether two parameter pairs are the same, bit for bit.
+    SameUv(a: UvCoordinate, b: UvCoordinate): Boolean
+        => a.U == b.U && a.V == b.V;
+
+    // Whether two points are the same, bit for bit.
+    SamePoint(a: Point3D, b: Point3D): Boolean
+        => a.X == b.X && a.Y == b.Y && a.Z == b.Z;
+
+    // Whether two vectors are the same, bit for bit.
+    SameVector(a: Vector3D, b: Vector3D): Boolean
+        => a.X == b.X && a.Y == b.Y && a.Z == b.Z;
+
+    // Whether two plane vectors are the same, bit for bit.
+    SameVector(a: Vector2D, b: Vector2D): Boolean
+        => a.X == b.X && a.Y == b.Y;
+
+    //==
+    // # Sorted marks
+
+    // Every witness model's closure marks are in ClosureMarks's order (MarksAreSorted).
+    Law_Perf_ClosureMarksAreSorted(m: BrepModel): Boolean
+        => m.Geometry.ClosuresAreSorted;
+
+    // Every decoded witness's closure marks are in ClosureMarks's order.
+    Law_Perf_ClosureMarksAreSorted(r: RawDecodedModel): Boolean
+        => r.Model.Geometry.ClosuresAreSorted;
+
+    // Every witness arena's closure marks are in ClosureMarks's order.
+    Law_Perf_ClosureMarksAreSorted(g: GeometrySet): Boolean
+        => g.ClosuresAreSorted;
+
+    // The decode's decisions come out sorted: on each decoded witness, and on the marked
+    // catalog, whose closed polyline, trimmed and composite curves and closed spline surface
+    // give marks of several kinds.
+    Law_Perf_ClosureMarkDecisionsAreSorted(r: RawDecodedModel): Boolean
+        => r.Model.Geometry.ClosureMarks(r.Model.Tolerances).MarksAreSorted
+            && MarkedCatalogArena(0).ClosureMarks(Tolerances.Witness_Tolerances).MarksAreSorted;
+
+    // The synthetic marks are sorted, and marks out of order are seen to be: the test is not
+    // vacuous.
+    Law_Perf_MarksAreSortedSeesOrder(_: Boolean): Boolean
+        => [0, 1, 2, 4, 16, 33].All(k => SyntheticMarks(k).MarksAreSorted)
+            && ![SyntheticMark(3, 0), SyntheticMark(0, 0)].MarksAreSorted
+            && ![SyntheticMark(0, 4), SyntheticMark(0, 2)].MarksAreSorted
+            && ![SyntheticMark(2, 1), SyntheticMark(1, 7)].MarksAreSorted;
+
+    //==
+    // # Lookup agrees with the scan
+
+    // IsMarkedClosedSorted gives IsMarkedClosed's answer for index q of the kind of the given
+    // rank.
+    SortedAgreesAt(g: GeometrySet, rank: Integer, q: Integer): Boolean
+        => rank == 0 ? g.IsMarkedClosedSorted(CurveIndex(q)) == g.IsMarkedClosed(CurveIndex(q))
+            : (rank == 1 ? g.IsMarkedClosedSorted(Curve2DIndex(q)) == g.IsMarkedClosed(Curve2DIndex(q))
+            : (rank == 2 ? g.IsMarkedClosedSorted(SurfaceIndex(q), SurfaceParameter.ParameterU) == g.IsMarkedClosed(SurfaceIndex(q), SurfaceParameter.ParameterU)
+            : g.IsMarkedClosedSorted(SurfaceIndex(q), SurfaceParameter.ParameterV) == g.IsMarkedClosed(SurfaceIndex(q), SurfaceParameter.ParameterV)));
+
+    // On 0, 1, 2, 3, 5, 16 and 33 synthetic marks, the binary search gives the scan's answer for
+    // every kind and every index from -1 to 2 k + 1: each mark, each gap, both ends.
+    Law_Perf_IsMarkedClosedSortedAgrees(_: Boolean): Boolean
+        => [0, 1, 2, 3, 5, 16, 33].All(k => 4.Range.All(rank =>
+            (2 * k + 3).Range.All(q => SortedAgreesAt(SyntheticMarkedArena(k), rank, q - 1))));
+
+    // On both arenas, the binary search gives the scan's answer for every record and direction.
+    Law_Perf_IsMarkedClosedSortedAgreesOnArenas(_: Boolean): Boolean
+        => PerfClosureArenas(0).All(g =>
+            g.Curves.Count.Range.All(q => SortedAgreesAt(g, 0, q))
+                && g.Curves2D.Count.Range.All(q => SortedAgreesAt(g, 1, q))
+                && g.Surfaces.Count.Range.All(q => SortedAgreesAt(g, 2, q) && SortedAgreesAt(g, 3, q)));
+
+    // The marked catalog reaches a found mark of every kind, so the agreement is not only on
+    // absent marks.
+    Law_Perf_MarkedCatalogFindsMarks(_: Boolean): Boolean
+    {
+        var g = MarkedCatalogArena(0);
+        return g.IsMarkedClosedSorted(CurveIndex(6)) && g.IsMarkedClosedSorted(Curve2DIndex(0))
+            && g.IsMarkedClosedSorted(SurfaceIndex(7), SurfaceParameter.ParameterU)
+            && g.IsMarkedClosedSorted(SurfaceIndex(7), SurfaceParameter.ParameterV)
+            && !g.IsMarkedClosedSorted(CurveIndex(7));
+    }
+
+    //==
+    // # Domains and trimmed parameters once
+
+    // DomainOnce gives Domain for every surface of both arenas, and the curve domains built with
+    // the binary search give Domain for every curve.
+    Law_Perf_DomainOnceAgrees(_: Boolean): Boolean
+        => PerfClosureArenas(0).All(g =>
+            g.Surfaces.Count.Range.All(s => SameSurfaceDomain(g.DomainOnce(SurfaceIndex(s)), g.Domain(SurfaceIndex(s))))
+                && g.Curves.Count.Range.All(c => SameCurveDomain(
+                    g.CurveAt(CurveIndex(c)).Domain(g).WithClosure(g.IsMarkedClosedSorted(CurveIndex(c))), g.Domain(CurveIndex(c))))
+                && g.Curves2D.Count.Range.All(c => SameCurveDomain(
+                    g.Curve2DAt(Curve2DIndex(c)).Domain(g).WithClosure(g.IsMarkedClosedSorted(Curve2DIndex(c))), g.Domain(Curve2DIndex(c)))));
+
+    // The fraction i / (n - 1) of the way along range r, for i of n.
+    GridAt(r: NumberInterval, n: Integer, i: Integer): Number
+        => r.Start + (r.End - r.Start) * i.ToNumber / (n - 1).ToNumber;
+
+    // TrimmedToBasisOnce gives TrimmedToBasis at uv for the trimmed surface's record.
+    TrimmedOnceAgreesAt(g: GeometrySet, surface: BrepSurface, uv: UvCoordinate): Boolean
+        => match (surface)
+        {
+            Plane(placement) => true;
+            Cylinder(placement, radius) => true;
+            Cone(placement, radius, semiAngle) => true;
+            Sphere(placement, radius) => true;
+            Torus(placement, major, minor, part) => true;
+            Revolution(profile, axis) => true;
+            LinearExtrusion(profile, extrusion) => true;
+            BSpline(data) => true;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => SameUv(
+                g.TrimmedToBasisOnce(basis, uRange, vRange, uSense, vSense, uv),
+                g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv));
+            Offset(basis, distance) => true;
+        };
+
+    // On every rectangular trimmed surface of both arenas (the sphere piece, and the closed
+    // spline trimmed across its join), TrimmedToBasisOnce gives TrimmedToBasis on an 11 by 11
+    // grid over the piece's domain.
+    Law_Perf_TrimmedToBasisOnceAgrees(_: Boolean): Boolean
+        => PerfClosureArenas(0).All(g => g.Surfaces.Count.Range.All(s =>
+            11.Range.All(i => 11.Range.All(j =>
+                TrimmedOnceAgreesAt(g, g.SurfaceAt(SurfaceIndex(s)), UvCoordinate(
+                    GridAt(g.Domain(SurfaceIndex(s)).U.Range.FiniteOr(4.0), 11, i),
+                    GridAt(g.Domain(SurfaceIndex(s)).V.Range.FiniteOr(4.0), 11, j)))))));
+
+    // r itself when both ends are finite; [-h, h] otherwise.
+    FiniteOr(r: NumberInterval, h: Number): NumberInterval
+        => (r.Start.IsFinite && r.End.IsFinite) ? r : NumberInterval(-h, h);
+
+    //==
+    // # Composite evaluation once
+
+    // At parameter t of composite curve c with these segments, the composite functions give the
+    // library's segment, local parameter, point, derivatives and magnitude, bit for bit.
+    CompositeOnceAgreesAt(g: GeometrySet, c: CurveIndex, segments: Array<CompositeSegment>, t: Number): Boolean
+    {
+        var p = g.CompositePlaceOf(segments, t);
+        return p.Segment == g.CompositeSegmentAt(segments, t)
+            && p.Local == g.CompositeLocal(segments, t)
+            && SamePoint(g.CompositeEval(segments, t), g.Eval(c, t))
+            && SameVector(g.CompositeDerivative(segments, t), g.Derivative(c, t))
+            && SameVector(g.CompositeSecondDerivative(segments, t), g.SecondDerivative(c, t))
+            && g.CompositeEvaluationMagnitude(segments, t) == g.EvaluationMagnitude(c, t);
+    }
+
+    // CompositeOnceAgreesAt for a parameter-plane composite.
+    CompositeOnceAgreesAt2D(g: GeometrySet, c: Curve2DIndex, segments: Array<CompositeSegment2D>, t: Number): Boolean
+    {
+        var p = g.CompositePlaceOf(segments, t);
+        return p.Segment == g.CompositeSegmentAt(segments, t)
+            && p.Local == g.CompositeLocal(segments, t)
+            && SameUv(g.CompositeEval(segments, t), g.Eval(c, t))
+            && SameVector(g.CompositeDerivative(segments, t), g.Derivative(c, t))
+            && SameVector(g.CompositeSecondDerivative(segments, t), g.SecondDerivative(c, t))
+            && g.CompositeEvaluationMagnitude(segments, t) == g.EvaluationMagnitude(c, t);
+    }
+
+    // The segments of a composite curve record; none for any other record.
+    SegmentsOfComposite(curve: BrepCurve): Array<CompositeSegment>
+        => match (curve)
+        {
+            Line(origin, velocity) => NoCompositeSegments(0);
+            Circle(placement, radius) => NoCompositeSegments(0);
+            Ellipse(placement, semiAxis1, semiAxis2) => NoCompositeSegments(0);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => NoCompositeSegments(0);
+            Parabola(placement, focalDistance) => NoCompositeSegments(0);
+            Polyline(points) => NoCompositeSegments(0);
+            BSpline(data) => NoCompositeSegments(0);
+            Trimmed(basis, range, sameSense) => NoCompositeSegments(0);
+            Composite(segments) => segments;
+            Offset(basis, distance, reference) => NoCompositeSegments(0);
+            OnSurface(spaceCurve, supports, master) => NoCompositeSegments(0);
+        };
+
+    // The segments of a parameter-plane composite curve record; none for any other record.
+    SegmentsOfComposite2D(curve: BrepCurve2D): Array<CompositeSegment2D>
+        => match (curve)
+        {
+            Line(origin, velocity) => NoCompositeSegments2D(0);
+            Circle(placement, radius) => NoCompositeSegments2D(0);
+            Ellipse(placement, semiAxis1, semiAxis2) => NoCompositeSegments2D(0);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => NoCompositeSegments2D(0);
+            Parabola(placement, focalDistance) => NoCompositeSegments2D(0);
+            Polyline(points) => NoCompositeSegments2D(0);
+            BSpline(data) => NoCompositeSegments2D(0);
+            Trimmed(basis, range, sameSense) => NoCompositeSegments2D(0);
+            Composite(segments) => segments;
+            Offset(basis, distance) => NoCompositeSegments2D(0);
+        };
+
+    // No segments: the typed empty array.
+    NoCompositeSegments(_: Integer): Array<CompositeSegment>
+        => [CompositeSegment(CurveIndex(0), true)].Take(0);
+
+    // No parameter-plane segments: the typed empty array.
+    NoCompositeSegments2D(_: Integer): Array<CompositeSegment2D>
+        => [CompositeSegment2D(Curve2DIndex(0), true)].Take(0);
+
+    // CompositeOnceAgreesAt at 25 parameters across curve c's domain when it is a composite.
+    CompositeOnceAgrees(g: GeometrySet, c: CurveIndex): Boolean
+        => g.CurveAt(c).SegmentsOfComposite.Count == 0
+            ? true
+            : 25.Range.All(i => CompositeOnceAgreesAt(g, c, g.CurveAt(c).SegmentsOfComposite, GridAt(g.Domain(c).Range, 25, i)));
+
+    // CompositeOnceAgrees for a parameter-plane curve.
+    CompositeOnceAgrees2D(g: GeometrySet, c: Curve2DIndex): Boolean
+        => g.Curve2DAt(c).SegmentsOfComposite2D.Count == 0
+            ? true
+            : 25.Range.All(i => CompositeOnceAgreesAt2D(g, c, g.Curve2DAt(c).SegmentsOfComposite2D, GridAt(g.Domain(c).Range, 25, i)));
+
+    // On every composite of both arenas (the catalog's one-segment composite, the marked
+    // catalog's three-segment space composite across a closed join, and its parameter-plane
+    // composite), the composite functions agree with the library at 25 parameters.
+    Law_Perf_CompositePlaceAgrees(_: Boolean): Boolean
+        => PerfClosureArenas(0).All(g =>
+            g.Curves.Count.Range.All(c => CompositeOnceAgrees(g, CurveIndex(c)))
+                && g.Curves2D.Count.Range.All(c => CompositeOnceAgrees2D(g, Curve2DIndex(c))));
+
+    //==
+    // # Count witness
+
+    // floor(log2 n) for n >= 1; 0 below.
+    FloorLog2(n: Integer): Integer
+    {
+        var v = n;
+        var p = 0;
+        while (v > 1)
+        {
+            v = v / 2;
+            p = p + 1;
+        }
+        return p;
+    }
+
+    // The most marks one lookup compares among k synthetic marks, over every kind and the keys
+    // before the first mark, at the first, in a gap, at the last, and after the last.
+    MarkLookupComparisons(k: Integer): Integer
+    {
+        var marks = SyntheticMarks(k);
+        return 4.Range.FlatMap(rank => [-1, 0, 1, k, 2 * k - 2, 2 * k + 1].Map(q =>
+            marks.FindMarkCounted(rank, q).Work.Insertions)).Reduce(0, (a, b) => a.Max(b));
+    }
+
+    // A lookup among K marks compares at most 2 log2(K) + 2 of them, at K from 1 to 256.
+    Law_Perf_MarkLookupIsLogarithmic(_: Boolean): Boolean
+        => [1, 2, 3, 4, 7, 16, 100, 256].All(k => MarkLookupComparisons(k) <= 2 * FloorLog2(k) + 2);
+
+    // The marks one lookup compares, as Insertions, at k marks.
+    MarkLookupWork(k: Integer): WorkBudget
+        => Insertions(MarkLookupComparisons(k));
+
+    // IsMarkedClosedSorted compares at most 2 log2(K) + 2 marks per lookup (Insertions: marks
+    // compared with the key), at 16 and 256 marks: within two per mark, the slope. IsMarkedClosed
+    // compared all K.
+    Witness_MarkLookupWork(_: WorkClaim): WorkClaim
+        => WorkClaim("IsMarkedClosedSorted: closure marks compared per lookup", Insertions(2), [16, 256], k => MarkLookupWork(k));
+}
