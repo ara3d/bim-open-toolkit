@@ -1,0 +1,145 @@
+//==
+// # Linear-time numbering and assembly: laws (complexity sweep, chunk M1)
+//
+// The replacements of mesh-numbering-indexed.library.plato and mesh-assembly-indexed.library.plato
+// agree exactly with the functions they replace, on boxes meshed once per sweep, and the
+// numbering's work is linear in the model edge count plus the source count.
+// Law_WorkIsWithinSlope (layer 00) reads the count witness; the laws here tie the counted form to
+// the plain one.
+//
+// Sections, in order:
+//  - Witnesses
+//  - Count witness
+//  - Agreement
+//  - Helpers
+
+library ModelMeshAssemblyIndexedLaws
+{
+    //==
+    // # Witnesses
+
+    // Criteria for the unit box with every edge cut into k segments: chordal 0.01, 15 degrees,
+    // chords at most 1 / k long, triangles.
+    BoxFaceCriteria(k: Integer): FaceMeshingCriteria
+        => FaceMeshingCriteria(
+            DiscretizationCriteria(0.01, 15.0.Degrees, Limit.AtMost(1.0 / k.Max(1).ToNumber), 0.001, 3),
+            0.01, 15.0.Degrees, false);
+
+    // The unit box with every edge cut into k segments and every face meshed once under
+    // BoxFaceCriteria(k), named name.
+    BoxAssembly(k: Integer, name: String): AssemblyWitness
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var c = BoxFaceCriteria(k);
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        return AssemblyWitness(name, m, d,
+            m.Faces.Count.MapRange(f => m.MeshFace(BrepFaceIndex(f), d, c).Mesh));
+    }
+
+    // The unit box, one segment per edge: no edge interior points.
+    Witness_UnitBoxAssembly(_: AssemblyWitness): AssemblyWitness
+        => BoxAssembly(1, "unit box, one segment per edge");
+
+    // The unit box, four segments per edge: edge interior points, and face interior points where
+    // the triangulation adds them.
+    Witness_FineBoxAssembly(_: AssemblyWitness): AssemblyWitness
+        => BoxAssembly(4, "unit box, four segments per edge");
+
+    //==
+    // # Count witness
+
+    // The size the numbering is linear in: model edges plus the sources of every face mesh.
+    NumberingSize(w: AssemblyWitness): Integer
+        => w.Model.Edges.Count + w.FaceMeshes.Map(fm => fm.Sources.Count).IntegerTotal;
+
+    // The numbering's counted work on a witness.
+    NumberingWork(w: AssemblyWitness): WorkBudget
+        => NumberMeshVerticesCounted(w.Model, w.Discretizations, w.FaceMeshes).Work;
+
+    // The work at size n of the box family: the unit box when n is at most its size, else the
+    // four-segment box. The claim's sizes are exactly the two boxes' sizes.
+    NumberingWorkAt(n: Integer): WorkBudget
+        => n <= AssemblyWitness.Witness_UnitBoxAssembly.NumberingSize
+            ? AssemblyWitness.Witness_UnitBoxAssembly.NumberingWork
+            : AssemblyWitness.Witness_FineBoxAssembly.NumberingWork;
+
+    // NumberMeshVerticesMarked visits each source once, flags each edge once, and reads each
+    // provenance entry once, counted as Insertions: at most two per unit of E + S, on the unit
+    // box and the four-segment box. The quadratic original made E S source visits.
+    Witness_NumberMeshVerticesWork(_: WorkClaim): WorkClaim
+        => WorkClaim("NumberMeshVertices: visits per edge and source", Insertions(2),
+            [AssemblyWitness.Witness_UnitBoxAssembly.NumberingSize, AssemblyWitness.Witness_FineBoxAssembly.NumberingSize],
+            n => NumberingWorkAt(n));
+
+    //==
+    // # Agreement
+
+    // CitedEdges flags exactly the edges CitesEdge finds cited.
+    Law_Perf_CitedEdgesAgree(w: AssemblyWitness): Boolean
+    {
+        var flags = CitedEdges(w.FaceMeshes, w.Model.Edges.Count);
+        return flags.Count == w.Model.Edges.Count
+            && w.Model.Edges.Count.Range.All(k => flags[k] == w.FaceMeshes.CitesEdge(BrepEdgeIndex(k)));
+    }
+
+    // NumberMeshVerticesMarked gives the numbering NumberMeshVertices gives, and its work is
+    // exactly the edges, the sources and the provenance entries it reads.
+    Law_Perf_NumberMeshVerticesMarkedAgrees(w: AssemblyWitness): Boolean
+    {
+        var counted = NumberMeshVerticesCounted(w.Model, w.Discretizations, w.FaceMeshes);
+        var provenance = w.FaceMeshes.Map(fm => fm.Provenance.Count).IntegerTotal;
+        return IsSameNumbering(counted.Value, NumberMeshVertices(w.Model, w.Discretizations, w.FaceMeshes))
+            && counted.Work.Insertions == w.NumberingSize + provenance;
+    }
+
+    // Every entry of FaceInteriorRanks is FaceInteriorRank at that local vertex, and RankAt clamps
+    // as FaceInteriorRank does, one step past either end included.
+    Law_Perf_FaceInteriorRanksAgree(w: AssemblyWitness): Boolean
+        => w.FaceMeshes.All(fm => fm.RanksAgree(fm.FaceInteriorRanks));
+
+    // GlobalVerticesOf gives GlobalVertexOf at every parameter-space point, and GlobalAt gives it
+    // one step past either end.
+    Law_Perf_GlobalVerticesOfAgree(w: AssemblyWitness): Boolean
+    {
+        var n = NumberMeshVertices(w.Model, w.Discretizations, w.FaceMeshes);
+        return w.FaceMeshes.All(fm => n.GlobalsAgree(fm, n.GlobalVerticesOf(fm)));
+    }
+
+    // AssembleModelMeshIndexed gives the mesh AssembleModelMesh gives, field by field.
+    Law_Perf_AssembleModelMeshIndexedAgrees(w: AssemblyWitness): Boolean
+    {
+        var n = NumberMeshVertices(w.Model, w.Discretizations, w.FaceMeshes);
+        return IsSameMesh(w.Model.AssembleModelMeshIndexed(w.FaceMeshes, n), w.Model.AssembleModelMesh(w.FaceMeshes, n));
+    }
+
+    // The witnesses meet AssembleModelMesh's preconditions, so the agreement above is over meshes
+    // the assembly laws accept, not their vacuous case.
+    Law_Perf_AssemblyWitnessCanAssemble(w: AssemblyWitness): Boolean
+        => w.Model.CanAssemble(w.FaceMeshes, NumberMeshVertices(w.Model, w.Discretizations, w.FaceMeshes));
+
+    //==
+    // # Helpers
+
+    // Whether ranks agrees with FaceInteriorRank at every local vertex from -1 to L + 1.
+    RanksAgree(fm: FaceMesh, ranks: Array<Integer>): Boolean
+        => ranks.Count == fm.Provenance.Count + 1
+            && (fm.Provenance.Count + 3).Range.All(k =>
+                fm.RankAt(ranks, VertexIndex(k - 1)) == fm.FaceInteriorRank(VertexIndex(k - 1)));
+
+    // Whether globals agrees with GlobalVertexOf at every parameter-space point from -1 to P.
+    GlobalsAgree(n: MeshVertexNumbering, fm: FaceMesh, globals: Array<VertexIndex>): Boolean
+        => globals.Count == fm.Sources.Count
+            && (fm.Sources.Count + 2).Range.All(i =>
+                globals.GlobalAt(VertexIndex(i - 1)).Value == n.GlobalVertexOf(fm, VertexIndex(i - 1)).Value);
+
+    // Whether two meshes are equal field by field, every entry exactly.
+    IsSameMesh(a: ModelMesh, b: ModelMesh): Boolean
+        => (a.Positions.Count == b.Positions.Count ? a.Positions.Count.Range.All(i => a.Positions[i] == b.Positions[i]) : false)
+            && (a.Triangles.Count == b.Triangles.Count ? a.Triangles.Count.Range.All(i => a.Triangles[i] == b.Triangles[i]) : false)
+            && (a.Quads.Count == b.Quads.Count ? a.Quads.Count.Range.All(i => a.Quads[i] == b.Quads[i]) : false)
+            && (a.CornerNormals.Count == b.CornerNormals.Count ? a.CornerNormals.Count.Range.All(i => a.CornerNormals[i] == b.CornerNormals[i]) : false)
+            && (a.CornerUvs.Count == b.CornerUvs.Count ? a.CornerUvs.Count.Range.All(i => a.CornerUvs[i] == b.CornerUvs[i]) : false)
+            && (a.ElementFace.Count == b.ElementFace.Count ? a.ElementFace.Count.Range.All(i => a.ElementFace[i].Value == b.ElementFace[i].Value) : false)
+            && (a.VertexProvenance.Count == b.VertexProvenance.Count ? a.VertexProvenance.Count.Range.All(i => a.VertexProvenance[i] == b.VertexProvenance[i]) : false)
+            && IsSameNumbering(a.Numbering, b.Numbering);
+}
