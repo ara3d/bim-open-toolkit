@@ -14,7 +14,7 @@ kind: defect
 ## Acceptance criteria
 
 - [ ] With BSplinePoint still bodiless (the library at bim-open-data a4298c8, or any later build before TKT-327 lands), CEL/LARA.STEP, CEL/LENA-R8.STEP and CEL/LEXI.STEP pass PrepareModel in the compiled C#: their plane and cylinder faces mesh, and each edge whose closure cannot be decided gets a located diagnostic (edge and curve instance ids) instead of an exception
-- [ ] A law states that Reduced and every closure decision it calls return for every curve kind of BrepCurve, including a B-spline whose evaluation is unavailable; a clamped B-spline's closure is decided from its first and last control points, which needs no evaluation
+- [x] A law states that Reduced and every closure decision it calls return for every curve kind of BrepCurve, including a B-spline whose evaluation is unavailable; a clamped B-spline's closure is decided from its first and last control points, which needs no evaluation (chunk D1, 2026-10-21: `sandbox/step-mesh-staging/prepare/`, `Law_Prepare_ClosureDecisionReturnsForEveryKind` and nine more, 10 pass under cpu64; merge instructions in its TRACK.md)
 - [ ] The corpus rerun (docs/plans/step-mesher-corpus-2026-10-19.md, How to rerun) reports no file whose cause is PrepareModel
 
 Found 2026-10-19 by the corpus run, step H of docs/plans/step-mesher-v2.md (report: docs/plans/step-mesher-corpus-2026-10-19.md, per-file CSV beside it). Measured library: Ara3D.StepBrep at bim-open-data a4298c8, generated from Plato acbc9b94 and bim-open-toolkit 6aee137d (layers 00 to 07).

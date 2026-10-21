@@ -1,0 +1,180 @@
+//==
+// # PrepareLaws
+//
+// Track D1 (TKT-348). Laws of closure decided without evaluation: every
+// closure decision Reduced calls returns for every BrepCurve kind, a
+// B-spline whose evaluation is unavailable included; a clamped B-spline's
+// closure is its end control points'; where the decision is made, it is the
+// one evaluation would give; and the reduction of a model with a B-spline
+// edge returns, keeping an undecided edge and locating a diagnostic on it.
+// Named Law_Prepare_* until the merge (README, rule 2).
+//
+// Sections, in order:
+//  - Every kind returns
+//  - Clamped B-splines
+//  - The reduction
+
+library PrepareLaws
+{
+    //==
+    // # Every kind returns
+
+    // For every curve of PrepareClosureArena (every BrepCurve kind, with
+    // B-splines whose evaluation is unavailable), DecidesClosedByEnds and
+    // RunsBackToStartDecided return, and the decision is Undecided exactly
+    // for the curves listed in ArenaIsUndecided: a curve that reaches a
+    // B-spline other than through clamped ends. One case checks all 21.
+    Law_Prepare_ClosureDecisionReturnsForEveryKind(_: Boolean): Boolean
+        => GeometrySet.ArenaCurves.All(c => c.ClosureDecisionReturns);
+
+    // Law_Prepare_ClosureDecisionReturnsForEveryKind for one arena curve.
+    ClosureDecisionReturns(c: CurveIndex): Boolean
+    {
+        var g = GeometrySet.PrepareClosureArena;
+        var tol = LengthTolerance.ArenaTolerance;
+        var decided = g.DecidesClosedByEnds(c, tol);
+        var runs = g.RunsBackToStartDecided(c, tol);
+        return decided.IsDecided == !c.Value.ArenaIsUndecided
+            && runs.IsDecided == !c.Value.ArenaIsUndecided
+            && (c.Value.ArenaIsUndecided ? true : runs.IsClosed == (decided.IsClosed || g.CurveAt(c).Domain(g).Periodicity.HasSeam));
+    }
+
+    // The decision is Closed exactly for the arena's curves listed in
+    // ArenaIsClosed, the unevaluable closed spline (11) among them.
+    Law_Prepare_ClosureDecisionIsTheEnds(_: Boolean): Boolean
+        => GeometrySet.ArenaCurves.All(c => GeometrySet.PrepareClosureArena.DecidesClosedByEnds(c, LengthTolerance.ArenaTolerance).IsClosed == c.Value.ArenaIsClosed);
+
+    // Where the arena's curve can be evaluated and the decision is made, it
+    // is DecidesClosed's (the evaluated ends): the staged decision changes
+    // no answer the library gives.
+    Law_Prepare_DecisionAgreesWithEvaluation(_: Boolean): Boolean
+        => GeometrySet.ArenaCurves.All(c => c.DecisionAgreesWithEvaluation);
+
+    // Law_Prepare_DecisionAgreesWithEvaluation for one arena curve.
+    DecisionAgreesWithEvaluation(c: CurveIndex): Boolean
+    {
+        var g = GeometrySet.PrepareClosureArena;
+        var tol = LengthTolerance.ArenaTolerance;
+        return c.Value.ArenaIsUnevaluable || c.Value.ArenaIsUndecided
+            ? true
+            : g.DecidesClosedWithoutEvaluation(c, tol) == g.DecidesClosed(c, tol)
+                && g.RunsBackToStartDecided(c, tol).IsClosed == g.RunsBackToStart(c, tol);
+    }
+
+    // A curve is Undecided only when evaluating it reaches a B-spline, and
+    // ReachesSpline names the arena's curves that do.
+    Law_Prepare_UndecidedOnlyWhenReachingSpline(_: Boolean): Boolean
+        => GeometrySet.ArenaCurves.All(c => c.UndecidedOnlyWhenReachingSpline);
+
+    // Law_Prepare_UndecidedOnlyWhenReachingSpline for one arena curve.
+    UndecidedOnlyWhenReachingSpline(c: CurveIndex): Boolean
+    {
+        var g = GeometrySet.PrepareClosureArena;
+        return g.ReachesSpline(c) == c.Value.ArenaReachesSpline
+            && (g.DecidesClosedByEnds(c, LengthTolerance.ArenaTolerance).IsDecided || g.ReachesSpline(c));
+    }
+
+    //==
+    // # Clamped B-splines
+
+    // A clamped B-spline's closure is decided, from its first and last
+    // control points: Closed exactly when they coincide within tol. Over
+    // layer 8's curve fixtures (all clamped) and this track's.
+    Law_Prepare_ClampedSplineClosureIsItsEndControlPoints(k: Integer, tol: LengthTolerance): Boolean
+    {
+        var d = k.PrepareSplineFixture;
+        var decision = d.EndsClosure(tol);
+        return d.Basis.HasClampedEnds
+            ? decision.IsDecided && decision.IsClosed == d.ControlPoints.First.Coincident(d.ControlPoints.Last, tol)
+            : !decision.IsDecided;
+    }
+
+    // For a clamped B-spline that can be evaluated, the ends decision agrees
+    // with evaluation at the domain's ends (ISO 10303-42 4.5.34: a clamped
+    // spline interpolates its end control points).
+    Law_Prepare_ClampedSplineEndsAreTheEvaluatedEnds(k: Integer, tol: LengthTolerance): Boolean
+    {
+        var d = k.FixtureIndex(Integer.CurveFixtureCount + 2).PrepareSplineFixture;
+        var dom = d.Basis.SplineDomain;
+        return d.Basis.HasClampedEnds
+            ? d.EndsClosure(tol).IsClosed == d.BSplinePoint(dom.Start).Coincident(d.BSplinePoint(dom.End), tol)
+            : true;
+    }
+
+    // The spline fixtures of the clamped laws: layer 8's CurveFixtureCount
+    // fixtures, then ClampedOpenSpline, ClampedClosedSpline, UnclampedSpline,
+    // UnevaluableClampedSpline and UnevaluableClosedSpline, by k modulo.
+    PrepareSplineFixture(k: Integer): BSplineCurveData
+    {
+        var n = Integer.CurveFixtureCount;
+        var i = k.FixtureIndex(n + 5);
+        return i < n
+            ? i.CurveFixture
+            : (i == n
+                ? BSplineCurveData.ClampedOpenSpline
+                : (i == n + 1
+                    ? BSplineCurveData.ClampedClosedSpline
+                    : (i == n + 2
+                        ? BSplineCurveData.UnclampedSpline
+                        : (i == n + 3 ? BSplineCurveData.UnevaluableClampedSpline : BSplineCurveData.UnevaluableClosedSpline))));
+    }
+
+    //==
+    // # The reduction
+
+    // PrepareModelDecided returns for every raw model, the cubes with a
+    // B-spline edge included, with every index in range (layer 2's
+    // Law_IndicesInRange).
+    Law_Prepare_PreparationReturns(raw: RawDecodedModel): Boolean
+        => raw.PrepareModelDecided.Model.Law_IndicesInRange;
+
+    // Every edge whose closure is undecided at the prepared tolerances is
+    // kept (the edge count is the raw count less the dropped edges, which
+    // are never undecided), and has one STEP-EDGE-CLOSURE-UNDECIDED
+    // diagnostic at its instance measuring its curve's instance id; no
+    // other edge has one.
+    Law_Prepare_UndecidedEdgesAreKeptAndDiagnosed(raw: RawDecodedModel, k: Integer): Boolean
+    {
+        var m = raw.Model;
+        if (k < 0 || k >= m.Edges.Count)
+        {
+            return true;
+        }
+        var prepared = raw.PrepareModelDecided;
+        var tol = prepared.Model.Tolerances.Length;
+        var e = m.Edges[k];
+        var undecided = !m.Geometry.RunsBackToStartDecided(e.Curve, tol).IsDecided;
+        var findings = prepared.Diagnostics.FlatMap(d => d.Code == "STEP-EDGE-CLOSURE-UNDECIDED" && d.Where == Provenance.AtInstance(raw.Sources.Edges[k].Instance) ? [d] : prepared.Diagnostics.Take(0));
+        return undecided
+            ? findings.Count == 1 && findings[0].Measure == raw.Sources.Curves[e.Curve.Value].Instance.Value.ToNumber
+                && prepared.Map.Repairs.All(r => r.Source.Instance != raw.Sources.Edges[k].Instance)
+            : findings.Count == 0;
+    }
+
+    // Where no edge is undecided, the staged preparation is PrepareModel's:
+    // the same model (closure marks included) and the same map.
+    Law_Prepare_PreparationAgreesWhereDecided(raw: RawDecodedModel): Boolean
+    {
+        var staged = raw.PrepareModelDecided;
+        var tol = staged.Model.Tolerances.Length;
+        var anyUndecided = raw.Model.Edges.Any(e => !raw.Model.Geometry.RunsBackToStartDecided(e.Curve, tol).IsDecided);
+        var library = raw.PrepareModel;
+        return anyUndecided ? true : staged.Model.SameModel(library.Model) && staged.Map.SameMap(library.Map);
+    }
+
+    // The two cube witnesses prepare as stated: the clamped one with no
+    // undecided diagnostic and the cube's edge count, the unclamped one with
+    // exactly one, at edge #53 measuring curve #33, and the same edge count.
+    Law_Prepare_CubeWitnessesPrepareAsStated(_: Boolean): Boolean
+    {
+        var clamped = RawDecodedModel.Witness_RawCubeWithClampedSplineEdge.PrepareModelDecided;
+        var unclamped = RawDecodedModel.Witness_RawCubeWithUnclampedSplineEdge.PrepareModelDecided;
+        var findings = unclamped.Diagnostics.FlatMap(d => d.Code == "STEP-EDGE-CLOSURE-UNDECIDED" ? [d] : unclamped.Diagnostics.Take(0));
+        return clamped.Model.Edges.Count == 12
+            && clamped.Diagnostics.All(d => d.Code != "STEP-EDGE-CLOSURE-UNDECIDED")
+            && unclamped.Model.Edges.Count == 12
+            && findings.Count == 1
+            && findings[0].Where == Provenance.AtInstance(StepInstanceId(53))
+            && findings[0].Measure == 33.0;
+    }
+}
