@@ -1,0 +1,200 @@
+//==
+// # Laws over the law runner that meshes each witness once (complexity sweep, chunk L7)
+//
+// The law runner's rows are unchanged when each witness is meshed once: the values a run reads
+// are the values the old runs recomputed (CheckedWitnessPair, built once per sweep, so the law
+// that compares them stays under the 2 s compiled budget), and the rows assembled from them are
+// the old rows (the unit box, every row the runner makes over one positive witness). The stage
+// dump built in one pass equals the replayed one on the unit cylinder. The count witness
+// states one validated pipeline run per positive witness.
+//
+// Sections, in order:
+//  - Witness names
+//  - Checked witnesses
+//  - Rows on the unit box
+//  - Stage dumps
+//  - Count witness
+
+library ToolingLawRunnerOnceLaws
+{
+    //==
+    // # Witness names
+
+    // The names list ModelWitnesses' names in its order, and the name of positive witness k read
+    // from it is WitnessName(k), negative k included.
+    Law_Perf_WitnessNamesAreModelWitnessNames(_: Integer): Boolean
+        => NamedModel.WitnessNames.Corresponds(NamedModel.ModelWitnesses.Map(x => x.Name), (a, b) => a == b)
+            && 12.Range.All(i => WitnessNameFromNames(i - 6) == WitnessName(i - 6));
+
+    //==
+    // # Checked witnesses
+
+    // The unit box checked once and checked as the runner did before.
+    Witness_UnitBoxCheckedPair(_: CheckedWitnessPair): CheckedWitnessPair
+    {
+        var w = NamedModel.ModelWitnesses[0];
+        return CheckedWitnessPair(w.CheckedWitnessOf, w.CheckedWitnessSeparately);
+    }
+
+    // The witness checked once holds what the separate runs computed, bit for bit: the same
+    // outcome as MeshModel under the witness options, and the same three validation reports.
+    Law_Perf_CheckedWitnessIsSeparateRuns(p: CheckedWitnessPair): Boolean
+        => p.Once.Meshed.Name == p.Separately.Meshed.Name
+            && p.Once.Meshed.Model.SameModel(p.Separately.Meshed.Model)
+            && p.Once.Meshed.Outcome.SameMeshOutcome(p.Separately.Meshed.Outcome)
+            && p.Once.ModelChecks.Identical(p.Separately.ModelChecks)
+            && p.Once.MeshChecks.Identical(p.Separately.MeshChecks)
+            && p.Once.CrossChecks.Identical(p.Separately.CrossChecks);
+
+    //==
+    // # Rows on the unit box
+
+    // True when two runs agree field by field: law, witness, stage, verdict with its reason,
+    // measure (NaN as NaN) and place.
+    SameRun(a: LawRun, b: LawRun): Boolean
+        => a.Law.Value == b.Law.Value
+            && a.Witness == b.Witness
+            && a.Stage.StageName == b.Stage.StageName
+            && a.Verdict.VerdictName == b.Verdict.VerdictName
+            && a.Verdict.VerdictReason == b.Verdict.VerdictReason
+            && a.Measure.Identical(b.Measure)
+            && a.Where == b.Where;
+
+    // True when two lists of runs agree run by run, in order.
+    SameRuns(a: Array<LawRun>, b: Array<LawRun>): Boolean
+        => a.Corresponds(b, (x, y) => x.SameRun(y));
+
+    // The rows ToolingLawRunner makes over positive witness 0 alone, in its order and through
+    // its own quantifiers (ModelRuns and MeshedRuns' bodies, Once, OverRange, NotRun), with every
+    // MeshModel of the unit box under the witness options read from s, the separately computed
+    // run; each perturbed run is meshed as StepToMeshMeshedWitnessesLaws meshes it.
+    OldRowsOnWitnessZero(s: CheckedWitness): Array<LawRun>
+    {
+        var name = WitnessName(0);
+        var w = s.Meshed;
+        return Flattened([
+            s.ModelChecks.Checks.Map(c => RunOfCheck(c, name, RunStage.ModelStage, [])),
+            w.Outcome.Report.Checks.Map(c => RunOfCheck(c, name, RunStage.MeshedStage, [])),
+            [Once("Law_WitnessMeshesOk", name, w.Outcome.Ok),
+             Once("Law_WitnessMeshCrossChecksClean", name, s.CrossChecks.IsClean),
+             Once("Law_WitnessMeshValidatesClean", name, s.MeshChecks.IsClean),
+             NotRun("Law_WitnessRigidMotionMovesPositions", "needs drawn frames and re-meshes per vertex; run through ToolingGenerators' DrawMotion once meshing has bodies"),
+             Once("Law_WitnessPowerOfTwoScalingKeepsConnectivity", name, Law_WitnessPowerOfTwoScalingKeepsConnectivity(w, 1)),
+             NotRun("Law_WitnessPowerOfTwoScalingScalesPositions", "re-meshes the witness for every vertex; sweep it when a run is cheap"),
+             OverRange("Law_WitnessEdgeReversalPreservesMesh", name, BrepModel.WitnessAt(0).Edges.Count,
+                e => Law_WitnessEdgeReversalPreservesMesh(w, e)),
+             Once("Law_WitnessShellReversalNegatesVolume", name, Law_WitnessShellReversalNegatesVolume(w))]]);
+    }
+
+    // The rows ToolingLawRunnerOnce makes over the unit box checked once: its check runs, then its
+    // pipeline-witness runs with no middle runs.
+    NewRowsOnWitnessZero(c: CheckedWitness): Array<LawRun>
+        => c.ModelRunsOf.Concatenate(c.MeshedRunsOf).Concatenate(PipelineWitnessRunsFrom([c], []));
+
+    // On the unit box the runner that meshes once makes the old runner's rows: the same laws,
+    // witness names, stages, verdicts, measures and places, in the same order and number, and
+    // every row holds.
+    Law_Perf_UnitBoxRunsAreTheOldRuns(p: CheckedWitnessPair): Boolean
+    {
+        var rows = p.Once.NewRowsOnWitnessZero;
+        return rows.SameRuns(p.Separately.OldRowsOnWitnessZero)
+            && rows.Count > 8
+            && rows.All(r => r.Verdict.VerdictName == "Held" || r.Verdict.VerdictName == "Skipped");
+    }
+
+    // The planted bad face's runs over the witness built once: five runs, every one held, the
+    // face loop over every face and the finding loop over every finding of the report.
+    Law_Perf_PlantedBadFaceRunsHold(w: FailedFaceWitness): Boolean
+    {
+        var rows = PlantedBadFaceRunsOf(w);
+        return rows.Count == 5
+            && rows.All(r => r.Verdict.VerdictName == "Held")
+            && rows[3].Law.Value == "Law_PlantedBadFaceErrorsStayInTheSheet";
+    }
+
+    // The hollow box (2, 1) gives the three hollow-box verdicts from one unvalidated mesh, all
+    // held, and a side pair outside the guard holds vacuously.
+    Law_Perf_HollowBoxVerdictsHold(_: Integer): Boolean
+    {
+        var v = HollowBoxVerdictsOf(2.0, 1.0);
+        var outside = HollowBoxVerdictsOf(1.0, 2.0);
+        return v.VoidMeshVolumeNegative && v.OuterMeshVolumePositive && v.MeshVolumeIsDifference
+            && outside.VoidMeshVolumeNegative && outside.OuterMeshVolumePositive && outside.MeshVolumeIsDifference;
+    }
+
+    //==
+    // # Stage dumps
+
+    // The witness options validated at the Structural level, so a dump's outcome is cheap to
+    // build twice.
+    StructuralWitnessOptions(_: MeshingOptions): MeshingOptions
+    {
+        var o = MeshingOptions.WitnessOptions;
+        return MeshingOptions(o.Face, ConformanceLevel.Structural, o.MaxRefinementRounds, o.Decode, o.Quality);
+    }
+
+    // The unit cylinder dumped by replaying the loop per round and in one pass.
+    Witness_CylinderStageDumps(_: StageDumpPair): StageDumpPair
+    {
+        var m = BrepModel.Witness_Cylinder;
+        var o = MeshingOptions.StructuralWitnessOptions;
+        return StageDumpPair(m.DumpStages(o), m.DumpStagesOnce(o));
+    }
+
+    // True when two loop states are the same, bit for bit.
+    SameState(a: PipelineState, b: PipelineState): Boolean
+        => a.Round == b.Round
+            && a.Discretizations.ByEdge.Corresponds(b.Discretizations.ByEdge, (x, y) => x.SameDiscretization(y))
+            && a.Floors.ByEdge.Corresponds(b.Floors.ByEdge, (x, y) => x == y)
+            && a.Outcomes.Corresponds(b.Outcomes, (x, y) => x.SameFaceMeshOutcome(y))
+            && a.Pending.Corresponds(b.Pending, (x, y) => x == y);
+
+    // The dump built in one pass equals the replayed dump: the same states in the same order,
+    // one region per face, and the same outcome.
+    Law_Perf_DumpStagesOnceIsDumpStages(p: StageDumpPair): Boolean
+        => p.Once.States.Corresponds(p.Replayed.States, (x, y) => x.SameState(y))
+            && p.Once.Regions.Count == p.Replayed.Regions.Count
+            && p.Once.Outcome.SameMeshOutcome(p.Replayed.Outcome);
+
+    // StatesOf gives one state per round from 0, the last terminal and the outcome's round. The
+    // unit cylinder needs no refinement round, so this witness has one state: no witness the
+    // library has refines in under 30 s interpreted (TRACK.md, Findings).
+    Law_Perf_StatesOfIsEveryRound(p: StageDumpPair): Boolean
+    {
+        var states = p.Once.States;
+        return states.Count >= 1
+            && states.Count.Range.All(k => states[k].Round == k)
+            && states[states.Count - 1].IsTerminal(p.Once.Options)
+            && states[states.Count - 1].Round == p.Once.Outcome.Rounds;
+    }
+
+    //==
+    // # Count witness
+
+    // A model witness with no topology and no geometry: the cheapest model the runner can mesh
+    // and validate, so a family of n of them measures the runner's own pipeline runs.
+    EmptyWitness(_: NamedModel): NamedModel
+    {
+        var box = BrepModel.Witness_UnitBox;
+        return NamedModel("Empty",
+            BrepModel(GeometrySet(box.Geometry.Curves.Take(0), box.Geometry.Curves2D.Take(0), box.Geometry.Pcurves.Take(0),
+                    box.Geometry.Surfaces.Take(0), box.Geometry.Closures.Take(0)),
+                box.Vertices.Take(0), box.Edges.Take(0), box.Loops.Take(0), box.Faces.Take(0), box.Shells.Take(0), box.Bodies.Take(0),
+                box.Tolerances, box.Unit),
+            []);
+    }
+
+    // The work of PipelineWitnessRunsOnce over n empty witnesses.
+    PipelineWitnessRunsWork(n: Integer): WorkBudget
+        => PipelineWitnessRunsOnceCounted(n.MapRange(i => NamedModel.EmptyWitness), []).Work;
+
+    // PipelineWitnessRunsOnce: validated pipeline runs (MeshModel or its shared-validation form,
+    // counted as Flips) per positive witness, at 8 and 32 witnesses. The old runner made four per
+    // witness, plus two per edge and four for the metamorphic laws.
+    Witness_PipelineWitnessRunsWork(_: WorkClaim): WorkClaim
+        => WorkClaim("PipelineWitnessRunsOnce: validated pipeline runs per witness", Flips(1), [8, 32], n => PipelineWitnessRunsWork(n));
+
+    // Exactly one validated pipeline run per witness, at both sizes.
+    Law_Perf_PipelineWitnessRunsMeshOncePerWitness(_: Integer): Boolean
+        => PipelineWitnessRunsWork(8).Flips == 8 && PipelineWitnessRunsWork(32).Flips == 32;
+}
