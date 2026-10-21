@@ -122,7 +122,7 @@ library BrepRepairPerfLaws
 
     // The comparisons tell different values apart, so no agreement law passes vacuously: the seam
     // on the closed face and on the open one, a plan and its reverse, two face lists.
-    Law_Perf_ComparisonsSeeDifferences(_: Defect): Boolean
+    Law_ComparisonsSeeDifferences(_: Defect): Boolean
     {
         var m = Defect.RepairSampleModel;
         var plan = m.PlanOf(SampleDefects(0));
@@ -138,19 +138,19 @@ library BrepRepairPerfLaws
     // FacesAtVertexByCoedges is FacesAtVertex at every vertex of the model and at -1, V and V + 5.
     FacesAtVertexAgreesOn(m: BrepModel): Boolean
         => (m.Vertices.Count + 7).Range.All(i =>
-            SameFaces(m.FacesAtVertexByCoedges(BrepVertexIndex(i - 1)), m.FacesAtVertex(BrepVertexIndex(i - 1))));
+            SameFaces(m.FacesAtVertexByCoedges(BrepVertexIndex(i - 1)), m.FacesAtVertexScanned(BrepVertexIndex(i - 1))));
 
     // The statement above, on every model.
-    Law_Perf_FacesAtVertexByCoedgesAgrees(_: Defect): Boolean
+    Law_FacesAtVertexByCoedgesAgrees(_: Defect): Boolean
         => RepairIndex.RepairPerfModelCount.Range.All(w => FacesAtVertexAgreesOn(RepairPerfModelAt(w)));
 
     // FacesOnCurveByCoedges is FacesOnCurve at every curve of the model and just outside.
     FacesOnCurveAgreesOn(m: BrepModel): Boolean
         => (m.Geometry.Curves.Count + 3).Range.All(i =>
-            SameFaces(m.FacesOnCurveByCoedges(CurveIndex(i - 1)), m.FacesOnCurve(CurveIndex(i - 1))));
+            SameFaces(m.FacesOnCurveByCoedges(CurveIndex(i - 1)), m.FacesOnCurveScanned(CurveIndex(i - 1))));
 
     // The statement above, on every model.
-    Law_Perf_FacesOnCurveByCoedgesAgrees(_: Defect): Boolean
+    Law_FacesOnCurveByCoedgesAgrees(_: Defect): Boolean
         => RepairIndex.RepairPerfModelCount.Range.All(w => FacesOnCurveAgreesOn(RepairPerfModelAt(w)));
 
     // Every answer the index gives is its namesake's, at every index of its table and at -1 and
@@ -161,11 +161,11 @@ library BrepRepairPerfLaws
         var ix = m.RepairIndexOf;
         return (m.Faces.Count + 3).Range.All(i => ix.IsInClosedShellIn(BrepFaceIndex(i - 1)) == m.IsInClosedShell(BrepFaceIndex(i - 1)))
             && (m.Vertices.Count + 3).Range.All(i =>
-                SameFaces(m.FacesAtVertexIndexed(ix, BrepVertexIndex(i - 1)).Value, m.FacesAtVertex(BrepVertexIndex(i - 1))))
+                SameFaces(m.FacesAtVertexIndexed(ix, BrepVertexIndex(i - 1)).Value, m.FacesAtVertexScanned(BrepVertexIndex(i - 1))))
             && (m.Edges.Count + 3).Range.All(i =>
                 SameFaces(m.FacesOfEdgeIndexed(ix, BrepEdgeIndex(i - 1)).Value, m.FacesOfEdge(BrepEdgeIndex(i - 1))))
             && (m.Geometry.Curves.Count + 3).Range.All(i =>
-                SameFaces(m.FacesOnCurveIndexed(ix, CurveIndex(i - 1)).Value, m.FacesOnCurve(CurveIndex(i - 1))))
+                SameFaces(m.FacesOnCurveIndexed(ix, CurveIndex(i - 1)).Value, m.FacesOnCurveScanned(CurveIndex(i - 1))))
             && (m.Geometry.Surfaces.Count + 3).Range.All(i =>
                 SameFaces(m.FacesOnSurfaceIndexed(ix, SurfaceIndex(i - 1)).Value, m.FacesOnSurface(SurfaceIndex(i - 1))))
             && (m.Loops.Count + 3).Range.All(i =>
@@ -175,7 +175,7 @@ library BrepRepairPerfLaws
     }
 
     // The statement above, on every model.
-    Law_Perf_RepairIndexAgrees(_: Defect): Boolean
+    Law_RepairIndexAgrees(_: Defect): Boolean
         => RepairIndex.RepairPerfModelCount.Range.All(w => IndexAgreesOn(RepairPerfModelAt(w)));
 
     // DiagnoseIndexed is Diagnose, and CostOfBound and CostOfIndexed are CostOf for every action
@@ -190,12 +190,12 @@ library BrepRepairPerfLaws
     }
 
     // The statement above, on every model.
-    Law_Perf_DiagnoseIndexedAgrees(_: Defect): Boolean
+    Law_DiagnoseIndexedAgrees(_: Defect): Boolean
         => RepairIndex.RepairPerfModelCount.Range.All(w => DiagnosisAgreesOn(RepairPerfModelAt(w)));
 
     // PlanOfIndexed is PlanOf on the sample defects in the order SampleDefects(k) gives, and on
     // every sample and extra defect, on every model.
-    Law_Perf_PlanOfIndexedAgrees(k: Integer): Boolean
+    Law_PlanOfIndexedAgrees(k: Integer): Boolean
     {
         var ds = SampleDefects(k);
         var all = RepairIndex.AllPerfDefects;
@@ -210,7 +210,7 @@ library BrepRepairPerfLaws
     // PlanOfIndexed makes the index's passes and no other whole-model scan (Flips) on the repair
     // sample model with 1, 8 and all 28 planted sample defects: a constant per plan. PlanOf makes
     // one or more scans per defect.
-    Law_Perf_PlanOfIndexedScansOnlyToBuildIndex(_: Defect): Boolean
+    Law_PlanOfIndexedScansOnlyToBuildIndex(_: Defect): Boolean
     {
         var m = Defect.RepairSampleModel;
         var once = m.RepairIndexCounted.Work;
@@ -219,7 +219,7 @@ library BrepRepairPerfLaws
     }
 
     // A negative index falls back to the namesake's scan, and the count shows it: one Flip each.
-    Law_Perf_FallbackScansAreCounted(_: Defect): Boolean
+    Law_FallbackScansAreCounted(_: Defect): Boolean
     {
         var m = Defect.RepairSampleModel;
         var once = m.RepairIndexCounted.Work;
@@ -246,6 +246,6 @@ library BrepRepairPerfLaws
         => WorkClaim("FacesAtVertexByCoedges: faces and coedges visited per coedge", Insertions(2), [6, 24], n => FacesAtVertexWorkAt(n));
 
     // The family's sizes are its members' coedge counts.
-    Law_Perf_CoedgeFamilySizes(_: Defect): Boolean
+    Law_CoedgeFamilySizes(_: Defect): Boolean
         => [6, 24].All(n => n.CoedgeFamilyModel.CoedgeCount == n);
 }

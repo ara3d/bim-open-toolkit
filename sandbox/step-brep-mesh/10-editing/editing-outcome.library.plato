@@ -342,7 +342,7 @@ library BrepEditing
                 var o = model.Apply(script.Edits[step]);
                 if (o.IsApplied)
                 {
-                    remap = remap.Compose(model.ResultRemap(o));
+                    remap = remap.ComposedAfter(script.Edits[step], model.ResultRemap(o));
                     inverses = inverses.Add(o.InverseOr(script.Edits[step]));
                     model = model.ResultModel(o);
                 }

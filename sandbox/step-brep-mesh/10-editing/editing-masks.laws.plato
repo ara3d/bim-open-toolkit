@@ -41,12 +41,12 @@ library BrepEditingPerfLaws
 
     // The three sets by mask are VertexSet, EdgeSet and FaceSet.
     SetsAgreeOn(m: BrepModel, xs: Array<Integer>): Boolean
-        => m.VertexSetByMask(xs.Map(x => BrepVertexIndex(x))).Corresponds(m.VertexSet(xs.Map(x => BrepVertexIndex(x))), (p, q) => p == q)
-            && m.EdgeSetByMask(xs.Map(x => BrepEdgeIndex(x))).Corresponds(m.EdgeSet(xs.Map(x => BrepEdgeIndex(x))), (p, q) => p == q)
-            && m.FaceSetByMask(xs.Map(x => BrepFaceIndex(x))).Corresponds(m.FaceSet(xs.Map(x => BrepFaceIndex(x))), (p, q) => p == q);
+        => m.VertexSetByMask(xs.Map(x => BrepVertexIndex(x))).Corresponds(m.VertexSetScanned(xs.Map(x => BrepVertexIndex(x))), (p, q) => p == q)
+            && m.EdgeSetByMask(xs.Map(x => BrepEdgeIndex(x))).Corresponds(m.EdgeSetScanned(xs.Map(x => BrepEdgeIndex(x))), (p, q) => p == q)
+            && m.FaceSetByMask(xs.Map(x => BrepFaceIndex(x))).Corresponds(m.FaceSetScanned(xs.Map(x => BrepFaceIndex(x))), (p, q) => p == q);
 
     // The statement above, on every model, and on no values.
-    Law_Perf_SetsByMaskAgree(k: Integer, i: Integer): Boolean
+    Law_SetsByMaskAgree(k: Integer, i: Integer): Boolean
         => Invalidation.EditPerfModelCount.Range.All(w =>
             SetsAgreeOn(EditPerfModelAt(w), SelectorValues(k, i)) && SetsAgreeOn(EditPerfModelAt(w), [0].Take(0)));
 
@@ -63,13 +63,13 @@ library BrepEditingPerfLaws
         var some = SelectorValues(k, i).Map(x => BrepVertexIndex(x));
         var one = [BrepVertexIndex(i)];
         var every = m.Vertices.Count.MapRange(v => BrepVertexIndex(v));
-        return SameClosure(m.ClosureOfVerticesOnce(some), m.ClosureOfVertices(some))
-            && SameClosure(m.ClosureOfVerticesOnce(one), m.ClosureOfVertices(one))
-            && SameClosure(m.ClosureOfVerticesOnce(every), m.ClosureOfVertices(every));
+        return SameClosure(m.ClosureOfVerticesOnce(some), m.ClosureOfVerticesScanned(some))
+            && SameClosure(m.ClosureOfVerticesOnce(one), m.ClosureOfVerticesScanned(one))
+            && SameClosure(m.ClosureOfVerticesOnce(every), m.ClosureOfVerticesScanned(every));
     }
 
     // The statement above, on every model.
-    Law_Perf_ClosureOfVerticesOnceAgrees(k: Integer, i: Integer): Boolean
+    Law_ClosureOfVerticesOnceAgrees(k: Integer, i: Integer): Boolean
         => Invalidation.EditPerfModelCount.Range.All(w => ClosureOfVerticesAgreesOn(EditPerfModelAt(w), k, i));
 
     //==
@@ -90,19 +90,19 @@ library BrepEditingPerfLaws
     }
 
     // The statement above, on every model.
-    Law_Perf_InvalidationSetsAreSorted(k: Integer, i: Integer): Boolean
+    Law_InvalidationSetsAreSorted(k: Integer, i: Integer): Boolean
         => Invalidation.EditPerfModelCount.Range.All(w => InvalidationSortedOn(EditPerfModelAt(w), k, i));
 
     // CoversSorted is Covers for every face and edge of m and two past each end.
     CoversAgreesOn(m: BrepModel, k: Integer, i: Integer): Boolean
     {
         var inv = m.InvalidationOf(m.EditAt(k, i));
-        return (m.Faces.Count + 4).Range.All(f => inv.CoversSorted(BrepFaceIndex(f - 2)) == inv.Covers(BrepFaceIndex(f - 2)))
-            && (m.Edges.Count + 4).Range.All(e => inv.CoversSorted(BrepEdgeIndex(e - 2)) == inv.Covers(BrepEdgeIndex(e - 2)));
+        return (m.Faces.Count + 4).Range.All(f => inv.CoversSorted(BrepFaceIndex(f - 2)) == inv.CoversScanned(BrepFaceIndex(f - 2)))
+            && (m.Edges.Count + 4).Range.All(e => inv.CoversSorted(BrepEdgeIndex(e - 2)) == inv.CoversScanned(BrepEdgeIndex(e - 2)));
     }
 
     // The statement above, on every model.
-    Law_Perf_CoversSortedAgrees(k: Integer, i: Integer): Boolean
+    Law_CoversSortedAgrees(k: Integer, i: Integer): Boolean
         => Invalidation.EditPerfModelCount.Range.All(w => CoversAgreesOn(EditPerfModelAt(w), k, i));
 
     // Whether two invalidations are equal.
@@ -121,11 +121,11 @@ library BrepEditingPerfLaws
     DirtyAfterAgreesAt(m: BrepModel, script: EditScript): Boolean
     {
         var t = Transaction(m, script, m, m.IdentityRemap);
-        return SameInvalidation(DirtyAfterOnce(t).Invalidation, DirtyAfter(t).Invalidation);
+        return SameInvalidation(DirtyAfterOnce(t).Invalidation, DirtyAfterScanned(t).Invalidation);
     }
 
     // The statement above, on every model.
-    Law_Perf_DirtyAfterOnceAgrees(k1: Integer, k2: Integer): Boolean
+    Law_DirtyAfterOnceAgrees(k1: Integer, k2: Integer): Boolean
         => Invalidation.EditPerfModelCount.Range.All(w => DirtyAfterAgreesOn(EditPerfModelAt(w), k1, k2));
 
     //==
@@ -149,37 +149,12 @@ library BrepEditingPerfLaws
     SameRemap(a: KernelRemap, b: KernelRemap): Boolean
         => 10.Range.All(t => a.NewOfValues(TableNameAt(t)).Corresponds(b.NewOfValues(TableNameAt(t)), (p, q) => p == q));
 
-    // ApplyScriptComposingRenumberings gives Apply's outcome for the script [a, b] on m: the same
-    // refused step, model and remap, and inverse scripts of the same length that undo it to the
-    // same model.
-    ScriptAgreesAt(m: BrepModel, a: ModelEdit, b: ModelEdit): Boolean
-    {
-        var script = EditScript([a, b]);
-        var slow = m.Apply(script);
-        var fast = m.ApplyScriptComposingRenumberings(script);
-        var after = m.ResultModel(slow);
-        return RefusedStepOf(fast) == RefusedStepOf(slow)
-            && m.ResultModel(fast).SameModel(after)
-            && SameRemap(m.ScriptRemapOr(fast), m.ScriptRemapOr(slow))
-            && fast.InverseScript.Edits.Count == slow.InverseScript.Edits.Count
-            && after.ResultModel(after.Apply(fast.InverseScript)).SameModel(after.ResultModel(after.Apply(slow.InverseScript)));
-    }
-
-    // The statement above for kinds k1 and k2 at indices -1, 0, 3 and 9 (below, in and above
-    // the tables' ranges), on the two edit witnesses.
-    Law_Perf_ApplyScriptComposingRenumberingsAgrees(k1: Integer, k2: Integer): Boolean
-        => 2.Range.All(w => ScriptAgreesOn(EditWitnessAt(w), k1, k2));
-
-    // ScriptAgreesAt at the indices -1, 0, 3 and 9 of both edits.
-    ScriptAgreesOn(m: BrepModel, k1: Integer, k2: Integer): Boolean
-        => [-1, 0, 3, 9].All(i => [-1, 0, 3, 9].All(j => m.ScriptAgreesAt(m.EditAt(k1, i), m.EditAt(k2, j))));
-
     //==
     // # The rewritten laws
     //
     // Each is the BrepEditingLaws law of the same name without Perf_, with the witness built once
     // per law case and the edit applied once per witness. At merge their bodies replace the
-    // library laws' bodies, with ApplyScriptComposingRenumberings read as Apply.
+    // library laws' bodies, with Apply (ApplyScriptComposingRenumberings before the merge) read as Apply.
 
     // ScriptInverseUndoesAt for a witness built once: the two-edit script, then its inverse,
     // gives m back exactly, unless a kind is not exactly invertible.
@@ -191,9 +166,9 @@ library BrepEditingPerfLaws
     // Whether applying script to m, then its inverse script, gives m back exactly.
     ScriptRoundTrips(m: BrepModel, script: EditScript): Boolean
     {
-        var o = m.ApplyScriptComposingRenumberings(script);
+        var o = m.Apply(script);
         var after = m.ResultModel(o);
-        return after.ResultModel(after.ApplyScriptComposingRenumberings(o.InverseScript)).SameModel(m);
+        return after.ResultModel(after.Apply(o.InverseScript)).SameModel(m);
     }
 
     // ScriptInverseUndoesOn on witness m, built once, with the first edit at the count indices
@@ -206,15 +181,15 @@ library BrepEditingPerfLaws
     // to 9. With the two laws below it states Law_ScriptInverseUndoes (both witnesses, both
     // edits at every index from -1 to 9), split so each part runs within the 2 s budget: one
     // SameModel and six identity remaps per script and inverse cost about 60 us on the box.
-    Law_Perf_ScriptInverseUndoes(k1: Integer, k2: Integer): Boolean
+    Law_ScriptInverseUndoes(k1: Integer, k2: Integer): Boolean
         => EditWitnessAt(0).ScriptInverseUndoesOver(k1, k2, -1, 6);
 
     // The statement above with the first edit at every index from 5 to 9.
-    Law_Perf_ScriptInverseUndoesFromFive(k1: Integer, k2: Integer): Boolean
+    Law_ScriptInverseUndoesFromFive(k1: Integer, k2: Integer): Boolean
         => EditWitnessAt(0).ScriptInverseUndoesOver(k1, k2, 5, 5);
 
     // The statement above on the cylinder, the first edit at every index from -1 to 9.
-    Law_Perf_ScriptInverseUndoesOnCylinder(k1: Integer, k2: Integer): Boolean
+    Law_ScriptInverseUndoesOnCylinder(k1: Integer, k2: Integer): Boolean
         => EditWitnessAt(1).ScriptInverseUndoesOver(k1, k2, -1, 11);
 
     // RemapIsIdentityForGeometricEditsAt with the edit applied once for all ten tables.
@@ -226,7 +201,7 @@ library BrepEditingPerfLaws
         => 10.Range.All(t => r.NewOfValues(TableNameAt(t)).Corresponds(m.RowCount(TableNameAt(t)).IdentityNewOf, (p, q) => p == q));
 
     // A geometric or tolerance edit renumbers no table, over both witnesses and every table.
-    Law_Perf_RemapIsIdentityForGeometricEdits(k: Integer, i: Integer): Boolean
+    Law_RemapIsIdentityForGeometricEdits(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => EditWitnessAt(w).RemapIsIdentityOn(k, i));
 
     // ComposeWithIdentityIsIdentityAt with the edit applied and the identity built once for all
@@ -239,6 +214,6 @@ library BrepEditingPerfLaws
 
     // Composing the identity remap before any remap gives that remap, over both witnesses and
     // every table.
-    Law_Perf_ComposeWithIdentityIsIdentity(k: Integer, i: Integer): Boolean
+    Law_ComposeWithIdentityIsIdentity(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => EditWitnessAt(w).ComposeWithIdentityOn(k, i));
 }

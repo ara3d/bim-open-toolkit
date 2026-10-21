@@ -83,40 +83,4 @@ library BrepEditingScripts
     //==
     // # Scripts
 
-    // Apply(m, script) with the running remap composed only where an edit renumbers: the same
-    // outcome, O(N_all + F per face edit) of composition instead of O(s N_all).
-    ApplyScriptComposingRenumberings(m: BrepModel, script: EditScript): ScriptOutcome
-    {
-        var model = m;
-        var remap = m.IdentityRemap;
-        var inverses = new List<ModelEdit>();
-        var failed = -1;
-        var reason = EditPrecondition.NotYetImplemented;
-        var where = Provenance.Nowhere;
-        var step = 0;
-        while (step < script.Edits.Count)
-        {
-            if (failed < 0)
-            {
-                var o = model.Apply(script.Edits[step]);
-                if (o.IsApplied)
-                {
-                    remap = remap.ComposedAfter(script.Edits[step], model.ResultRemap(o));
-                    inverses = inverses.Add(o.InverseOr(script.Edits[step]));
-                    model = model.ResultModel(o);
-                }
-                else
-                {
-                    failed = step;
-                    reason = o.PreconditionOr(reason);
-                    where = o.WhereOr(where);
-                }
-            }
-            step = step + 1;
-        }
-        var undo = inverses.Freeze();
-        return failed < 0
-            ? ScriptOutcome.ScriptApplied(model, remap, EditScript(undo.Count.MapRange(i => undo[undo.Count - 1 - i])))
-            : ScriptOutcome.ScriptRefused(failed, reason, where);
-    }
 }

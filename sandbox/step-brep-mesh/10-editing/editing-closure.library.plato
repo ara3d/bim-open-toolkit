@@ -21,16 +21,28 @@ library BrepEditingClosure
 
     // The vertices of m named in xs, each once, in increasing order.
     VertexSet(m: BrepModel, xs: Array<BrepVertexIndex>): Array<BrepVertexIndex>
+        => m.VertexSetByMask(xs);
+
+    // The reference: the scan before chunk L8 (the masks above give the same rows).
+    VertexSetScanned(m: BrepModel, xs: Array<BrepVertexIndex>): Array<BrepVertexIndex>
         => m.Vertices.Count.MapRange(i => BrepVertexIndex(i)).FlatMap(v =>
             xs.Any(x => x == v) ? [v] : 0.MapRange(k => BrepVertexIndex(k)));
 
     // The edges of m named in xs, each once, in increasing order.
     EdgeSet(m: BrepModel, xs: Array<BrepEdgeIndex>): Array<BrepEdgeIndex>
+        => m.EdgeSetByMask(xs);
+
+    // The reference: the scan before chunk L8 (the masks above give the same rows).
+    EdgeSetScanned(m: BrepModel, xs: Array<BrepEdgeIndex>): Array<BrepEdgeIndex>
         => m.Edges.Count.MapRange(i => BrepEdgeIndex(i)).FlatMap(e =>
             xs.Any(x => x == e) ? [e] : 0.MapRange(k => BrepEdgeIndex(k)));
 
     // The faces of m named in xs, each once, in increasing order.
     FaceSet(m: BrepModel, xs: Array<BrepFaceIndex>): Array<BrepFaceIndex>
+        => m.FaceSetByMask(xs);
+
+    // The reference: the scan before chunk L8 (the masks above give the same rows).
+    FaceSetScanned(m: BrepModel, xs: Array<BrepFaceIndex>): Array<BrepFaceIndex>
         => m.Faces.Count.MapRange(i => BrepFaceIndex(i)).FlatMap(f =>
             xs.Any(x => x == f) ? [f] : 0.MapRange(k => BrepFaceIndex(k)));
 
@@ -111,6 +123,10 @@ library BrepEditingClosure
     // The closure of a set of vertices: the vertices, the edges at them, and
     // the faces of those edges and of vertex loops at them.
     ClosureOfVertices(m: BrepModel, vs: Array<BrepVertexIndex>): SelectionClosure
+        => m.ClosureOfVerticesOnce(vs);
+
+    // The reference: the scan before chunk L8 (the masks above give the same rows).
+    ClosureOfVerticesScanned(m: BrepModel, vs: Array<BrepVertexIndex>): SelectionClosure
         => SelectionClosure(
             m.VertexSet(vs),
             m.EdgeSet(vs.FlatMap(v => m.EdgesAtVertex(v))),

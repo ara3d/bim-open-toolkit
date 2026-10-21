@@ -32,10 +32,18 @@ library BrepEditingInvalidation
 
     // Whether face f's mesh is stale under inv.
     Covers(inv: Invalidation, f: BrepFaceIndex): Boolean
+        => inv.CoversSorted(f);
+
+    // The reference: the form before chunk L8.
+    CoversScanned(inv: Invalidation, f: BrepFaceIndex): Boolean
         => inv.WholeModel ? true : inv.Faces.HoldsFace(f);
 
     // Whether edge e's discretization is stale under inv.
     Covers(inv: Invalidation, e: BrepEdgeIndex): Boolean
+        => inv.CoversSorted(e);
+
+    // The reference: the form before chunk L8.
+    CoversScanned(inv: Invalidation, e: BrepEdgeIndex): Boolean
         => inv.WholeModel ? true : inv.Edges.HoldsEdge(e);
 
     //==
@@ -86,6 +94,10 @@ library BrepEditingInvalidation
     // Before's, and carrying each invalidation through the remaps is not done
     // here (README.md, "Deferred edits"; FINDINGS F-58).
     DirtyAfter(t: Transaction): Dirty
+        => DirtyAfterOnce(t);
+
+    // The reference: the form before chunk L8.
+    DirtyAfterScanned(t: Transaction): Dirty
         => Dirty(t, Invalidation(
             t.Before.EdgeSet(t.Script.Edits.FlatMap(e => t.Before.InvalidationOf(e).Edges)),
             t.Before.FaceSet(t.Script.Edits.FlatMap(e => t.Before.InvalidationOf(e).Faces)),

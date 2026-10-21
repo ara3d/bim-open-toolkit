@@ -27,12 +27,21 @@ library BrepRepairDiagnosis
         => m.Faces.Count.MapRange(i => BrepFaceIndex(i)).FlatMap(f => [f].Take(keep(f) ? 1 : 0));
 
     // The faces that use an edge with v as an end.
+    // The faces that use an edge with v as an end (FacesAtVertexByCoedges, repair-indexed.library.plato,
+    // tests each face's own coedges; the edge scan below is its reference).
     FacesAtVertex(m: BrepModel, v: BrepVertexIndex): Array<BrepFaceIndex>
+        => m.FacesAtVertexByCoedges(v);
+
+    FacesAtVertexScanned(m: BrepModel, v: BrepVertexIndex): Array<BrepFaceIndex>
         => m.FacesWhere(f => m.Edges.Count.Range.Any(e =>
             m.Edges[e].Start == v || m.Edges[e].End == v ? m.FaceUsesEdge(f, BrepEdgeIndex(e)) : false));
 
     // The faces that use an edge on curve c.
+    // The faces that use an edge on curve c (FacesOnCurveByCoedges; the edge scan below is its reference).
     FacesOnCurve(m: BrepModel, c: CurveIndex): Array<BrepFaceIndex>
+        => m.FacesOnCurveByCoedges(c);
+
+    FacesOnCurveScanned(m: BrepModel, c: CurveIndex): Array<BrepFaceIndex>
         => m.FacesWhere(f => m.Edges.Count.Range.Any(e =>
             m.Edges[e].Curve == c ? m.FaceUsesEdge(f, BrepEdgeIndex(e)) : false));
 
@@ -140,7 +149,7 @@ library BrepRepairDiagnosis
 
     // What action a costs on model m.
     CostOf(m: BrepModel, a: RepairAction): RepairCost
-        => RepairCost(CountOf(m.FacesTouchedBy(a).Count), m.ToleranceGrowthOf(a), LocalityOf(a, m.FacesTouchedBy(a)));
+        => m.CostOfBound(a);
 
     // Action a with its cost.
     FixedBy(m: BrepModel, a: RepairAction): Fixability
@@ -265,9 +274,7 @@ library BrepRepairDiagnosis
     // are left out. Steps are ordered by class (ClassRank), stably, so
     // structure is fixed before tolerances and tolerances before geometry.
     PlanOf(m: BrepModel, defects: Array<Defect>): RepairPlan
-        => RepairPlan(defects
-            .FlatMap(d => FirstActionOf(m.Diagnose(d)).Map(a => RepairStep(d, a, ExpectedLawOf(d))))
-            .Sort((x, y) => ClassRank(ClassOf(x.Defect)) <= ClassRank(ClassOf(y.Defect))));
+        => m.PlanOfIndexed(defects);
 
     //==
     // # Policies

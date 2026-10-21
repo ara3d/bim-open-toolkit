@@ -1,7 +1,7 @@
 # perf-editing-repair: editing and repair layers without a whole-model scan per element or per defect
 
 Ticket: TKT-397
-Status: ready: L8
+Status: merged: L8 (2026-10-21, into 10-editing/editing-masks.{library,laws}.plato, editing-script.library.plato, 11-repair/repair-indexed.{types,library,laws}.plato; the edge scans kept as FacesAtVertexScanned and FacesOnCurveScanned, the agreement laws read them; ApplyScriptComposingRenumberings deleted and its agreement law dropped)
 
 ## Files
 

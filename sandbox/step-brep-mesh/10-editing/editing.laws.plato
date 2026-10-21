@@ -292,54 +292,8 @@ library BrepEditingLaws
     Law_InRangeEditIsApplied(k: Integer, i: Integer): Boolean
         => 2.Range.All(w => InRangeEditIsAppliedAt(w, k, i));
 
-    // A two-edit script, then the script it returned, gives the model back
-    // exactly.
-    ScriptInverseUndoesAt(w: Integer, k1: Integer, i1: Integer, k2: Integer, i2: Integer): Boolean
-    {
-        var m = EditWitnessAt(w);
-        var o = m.Apply(EditScript([m.EditAt(k1, i1), m.EditAt(k2, i2)]));
-        var after = m.ResultModel(o);
-        return k1.IsExactlyInvertible && k2.IsExactlyInvertible
-            ? after.ResultModel(after.Apply(o.InverseScript)).SameModel(m)
-            : true;
-    }
-
-    // The statement above, over both witnesses, with each edit at every index
-    // from -1 to 9.
-    Law_ScriptInverseUndoes(k1: Integer, k2: Integer): Boolean
-        => 2.Range.All(w => 11.Range.All(i => 11.Range.All(j => ScriptInverseUndoesAt(w, k1, i - 1, k2, j - 1))));
-
     //==
     // # Remaps
-
-    // A geometric or tolerance edit renumbers no table: its remap is the
-    // identity of every table's row count.
-    RemapIsIdentityForGeometricEditsAt(w: Integer, k: Integer, i: Integer, t: Integer): Boolean
-    {
-        var m = EditWitnessAt(w);
-        var o = m.Apply(m.EditAt(k, i));
-        var table = TableNameAt(t);
-        return k.IsGeometricOrTolerance
-            ? m.ResultRemap(o).NewOfValues(table).Corresponds(m.RowCount(table).IdentityNewOf, (p, q) => p == q)
-            : true;
-    }
-
-    // The statement above, over both witnesses and every table.
-    Law_RemapIsIdentityForGeometricEdits(k: Integer, i: Integer): Boolean
-        => 2.Range.All(w => 10.Range.All(t => RemapIsIdentityForGeometricEditsAt(w, k, i, t)));
-
-    // Composing the identity remap before any remap gives that remap.
-    ComposeWithIdentityIsIdentityAt(w: Integer, k: Integer, i: Integer, t: Integer): Boolean
-    {
-        var m = EditWitnessAt(w);
-        var r = m.ResultRemap(m.Apply(m.EditAt(k, i)));
-        var table = TableNameAt(t);
-        return m.IdentityRemap.Compose(r).NewOfValues(table).Corresponds(r.NewOfValues(table), (p, q) => p == q);
-    }
-
-    // The statement above, over both witnesses and every table.
-    Law_ComposeWithIdentityIsIdentity(k: Integer, i: Integer): Boolean
-        => 2.Range.All(w => 10.Range.All(t => ComposeWithIdentityIsIdentityAt(w, k, i, t)));
 
     // A face removal's remap sends the removed face to none and keeps the
     // others in order.
