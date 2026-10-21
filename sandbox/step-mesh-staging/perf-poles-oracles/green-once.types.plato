@@ -1,0 +1,25 @@
+//==
+// # The Green oracle computed once per face (complexity sweep, chunk L5)
+//
+// Layer 07's area and volume oracles run each face's Green boundary at two resolutions and
+// extrapolate (Richardson); the value and its allowance both read the same two results. Before this
+// chunk each reader rebuilt them: Oracle_FaceAreaByGreen and GreenAllowance together built the
+// boundary 5 to 7 times per face. A GreenEstimate holds the two results once, so the value and the
+// allowance are derived from one pair (GreenAreaPair, ShellVolumePair).
+
+// The two Green results of a face or a shell, at n and 2n chords per coedge, and what the
+// allowance and the area tolerance read from the boundaries that made them.
+// Ran is false when the oracle cannot run (CanGreen false, a shell out of range): every number is
+// then NaN and FineSegments 0. FineSegments is the number of segments of the 2n-chord boundary
+// (summed over the faces for a shell): the rounding term of the allowance. ConeRadius is the
+// smallest |R + v tan a| over the n-chord boundary of a face on a cone (FaceSmallestConeRadius),
+// NaN on other surfaces and for a shell.
+// Removes: the boundary rebuilt by every reader of the oracle's value and allowance.
+type GreenEstimate
+{
+    Ran: Boolean;
+    Coarse: Number;
+    Fine: Number;
+    FineSegments: Integer;
+    ConeRadius: Number;
+}

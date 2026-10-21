@@ -12,7 +12,7 @@ created: 2026-10-21
 
 ## Acceptance criteria
 
-- [ ] the staged functions of chunk L5 exist in sandbox/step-mesh-staging/perf-poles-oracles with their laws passing under cpu64, and every law the chunk's test column names keeps its verdict against sandbox/step-brep-mesh/reviews/verdicts-cpu64.tsv: `Law_*GaussBonnet`, `Law_*MeshIsSound`, `Law_GreenEquals*`, `Law_WitnessDivergenceVolumeMatchesFacts`; under 2 s compiled
+- [x] the staged functions of chunk L5 exist in sandbox/step-mesh-staging/perf-poles-oracles with their laws passing under cpu64, and every law the chunk's test column names keeps its verdict against sandbox/step-brep-mesh/reviews/verdicts-cpu64.tsv: `Law_*GaussBonnet`, `Law_*MeshIsSound`, `Law_GreenEquals*`, `Law_WitnessDivergenceVolumeMatchesFacts`; under 2 s compiled
 - [ ] every new or rewritten law runs under 2 s on the compiled backend (the pinned CLI, --backend=csharp --budget=2), and a witness that holds a mesh, discretization or triangulation is a shared Witness_* value, never re-meshed per law case
 - [ ] merged by the supervisor by wiring (TRACK.md merge instructions), the ledger row written, no regression at merge
 

@@ -1,0 +1,30 @@
+//==
+// # Curved witnesses meshed once per sweep (complexity sweep, chunk L5)
+//
+// The sphere, torus and cone laws of 07-validation/poles.laws.plato each meshed a fixed curved
+// witness per law case through RoundZeroModelMesh, and the face-check laws meshed it again. A
+// PoleWitness holds the model and its round-zero mesh, built once per sweep by the law runner, with
+// the discretizations and face meshes the mesh was assembled from, so the whole-model laws and the
+// face-check laws read one build. Not generatable: it holds a BrepModel and a ModelMesh, so the
+// runner exhausts the Witness_* list.
+
+// A curved witness model meshed once without refinement rounds or validation
+// (RoundZeroModelMesh) under PolesOptionsAt(chordal, false).
+// Invariant: Mesh is Model.AssembleModelMesh(FaceMeshes, Model.NumberMeshVertices(Discretizations,
+// FaceMeshes)), FaceMeshes[f] is Model.MeshFace(f, Discretizations, Options.Face).Mesh, and
+// Discretizations is Model.DiscretizeAll(Options.Face.Discretization, NoFloors).
+// Whole is true when the whole-model claims (closed, oriented, Euler characteristic Euler, volume
+// within the tube of VolumeModel's oracle, Gauss-Bonnet) are stated at this chordal bound; the
+// face-check laws name the witness and face they state.
+type PoleWitness
+{
+    Name: String;
+    Model: BrepModel;
+    Options: MeshingOptions;
+    Whole: Boolean;
+    Euler: Integer;
+    VolumeModel: BrepModel;
+    Discretizations: EdgeDiscretizations;
+    FaceMeshes: Array<FaceMesh>;
+    Mesh: ModelMesh;
+}
