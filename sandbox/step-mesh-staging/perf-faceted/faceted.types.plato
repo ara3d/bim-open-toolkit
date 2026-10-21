@@ -1,0 +1,19 @@
+//==
+// # Faceted shells: types (complexity sweep, chunk V9, TKT-377)
+//
+// The identification of a shell's poly-loop points and the implicit edge uses it implies, built
+// once per shell (faceted.library.plato).
+
+// The poly-loop points of one shell identified by coincidence, and the implicit edges they bound.
+// PointRoots[k] is the class root (the smallest index of its class) of point k, the points taken
+// bound by bound in ShellPolyBounds order; SortedUses is ImplicitEdgeUses over those bounds and
+// roots, sorted ascending, so the uses of one implicit edge (key u / 2) are adjacent, the
+// backward use (even) before the forward one (odd). Removes: CoincidenceRoots recomputed by each
+// of ReducedCounts, ImplicitBoundaryCycleCount and ImplicitFreeEdgeKeys within one law, and the
+// scan of every use per key in ImplicitFreeEdgeKeys and IsDefectiveImplicitEdge.
+type ShellPolyEdges
+    implements IValue
+{
+    PointRoots: Array<Integer>;
+    SortedUses: Array<Integer>;
+}
