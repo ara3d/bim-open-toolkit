@@ -1,0 +1,134 @@
+//==
+// # Synthetic cut step counts with each step point evaluated once (complexity sweep chunk R7, TKT-389)
+//
+// Layer 05. CutSegmentCount (uv-regions.library.plato) tries n = 1, 2, ... and stops at the first
+// n whose n equal steps meet the criteria, or whose next count n + 1 would make a step shorter
+// than the effective minimum length, or at 64. Each try evaluated the surface at every step point
+// three times (twice in CutStepsMeetCriteria, once more in ShortestCutStep at n + 1, whose points
+// the next try evaluated again), the midpoint and both end normals of every step, whether or not
+// an earlier step had already failed: about 7 n evaluations per try.
+//
+// The search here is the same linear search, so it returns the same n, bit for bit: the stopping
+// predicate is not monotone in n, so a doubling search would skip counts the linear search stops
+// at (TRACK.md, Findings: a profile with a sharp bend at its middle meets the chordal bound with
+// two steps and fails it with three). What changes is the work per try: the n + 2 points of the
+// next grid are evaluated once, for the shortest-step test, and kept as the next try's points;
+// each step's tests run cheapest first (length, then chordal midpoint, then the two normals) and
+// the try stops at the first step that fails; a step shares its end normal with the next step's
+// start. Every comparison reads the values the original computes, from the same expressions.
+//
+// Sections, in order:
+//  - Grids
+//  - The search
+
+library CutSegmentCounting
+{
+    //==
+    // # Grids
+
+    // The surface points of face f at the n + 1 ends of the n equal parameter steps from a to b
+    // (CutPoint k for k = 0 .. n).
+    CutGridPoints(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, n: Integer): Array<Point3D>
+        => (n + 1).MapRange(k => m.Geometry.Eval(m.SurfaceOf(f), a.CutPoint(b, n, k)));
+
+    // The shortest chord between consecutive points, Number.MaxValue for fewer than two points:
+    // ShortestCutStep's fold over the same distances in the same order.
+    ShortestChord(points: Array<Point3D>): Number
+        => (points.Count - 1).Max(0).Range.Reduce(Number.MaxValue, (shortest, k) => shortest.Min(points[k].Distance(points[k + 1])));
+
+    // CutStepsMeetCriteria(f, a, b, n, c), given the grid's points (CutGridPoints(f, a, b, n)),
+    // stopping at the first step that fails: its work is the surface evaluations it makes, the
+    // step midpoints and the face normals at step ends, each normal once.
+    CutGridMeetsCounted(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, n: Integer, points: Array<Point3D>, c: FaceMeshingCriteria): Counted<Boolean>
+    {
+        var s = m.SurfaceOf(f);
+        var ok = true;
+        var evals = 0;
+        var known = -1;
+        var start = Vector3D.UnitZ;
+        var k = 0;
+        while (ok && k < n)
+        {
+            var p = a.CutPoint(b, n, k);
+            var q = a.CutPoint(b, n, k + 1);
+            if (points[k].Distance(points[k + 1]).IsWithinLimit(c.Discretization.MaxLength))
+            {
+                var middle = m.Geometry.Eval(s, p.UvMidpoint(q));
+                evals = evals + 1;
+                if (middle.Distance(points[k].HalfwayPoint(points[k + 1])) <= c.SurfaceChordal)
+                {
+                    if (known != k)
+                    {
+                        start = m.FaceNormalAt(f, p, Vector3D.UnitZ);
+                        evals = evals + 1;
+                    }
+                    var end = m.FaceNormalAt(f, q, Vector3D.UnitZ);
+                    evals = evals + 1;
+                    ok = start.AngleBetween(end).Radians <= c.SurfaceAngular.Radians;
+                    start = end;
+                    known = k + 1;
+                }
+                else
+                {
+                    ok = false;
+                }
+            }
+            else
+            {
+                ok = false;
+            }
+            k = k + 1;
+        }
+        return Counted(ok, Evaluations(evals));
+    }
+
+    //==
+    // # The search
+
+    // CutSegmentCount(f, a, b, c), the same n by the same linear search, with its work: the
+    // surface evaluations it makes (grid points, step midpoints, face normals). A try at n that
+    // goes on evaluates the n + 2 points of the next grid once; they are the next try's points.
+    CutSegmentCountFastCounted(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, c: FaceMeshingCriteria): Counted<Integer>
+    {
+        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
+        var points = m.CutGridPoints(f, a, b, 1);
+        var evals = 2;
+        var n = 1;
+        var searching = true;
+        while (searching)
+        {
+            if (n >= 64)
+            {
+                searching = false;
+            }
+            else
+            {
+                var meets = m.CutGridMeetsCounted(f, a, b, n, points, c);
+                evals = evals + meets.Work.Evaluations;
+                if (meets.Value)
+                {
+                    searching = false;
+                }
+                else
+                {
+                    var next = m.CutGridPoints(f, a, b, n + 1);
+                    evals = evals + n + 2;
+                    if (next.ShortestChord >= least)
+                    {
+                        n = n + 1;
+                        points = next;
+                    }
+                    else
+                    {
+                        searching = false;
+                    }
+                }
+            }
+        }
+        return Counted(n, Evaluations(evals));
+    }
+
+    // CutSegmentCount(f, a, b, c), each step point evaluated once per try.
+    CutSegmentCountFast(m: BrepModel, f: BrepFaceIndex, a: UvCoordinate, b: UvCoordinate, c: FaceMeshingCriteria): Integer
+        => m.CutSegmentCountFastCounted(f, a, b, c).Value;
+}
