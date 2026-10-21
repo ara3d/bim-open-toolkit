@@ -1,7 +1,7 @@
 # perf-triangulation-laws: layer 05 triangulation laws over shared triangulated witnesses (chunk L4)
 
 Ticket: TKT-393
-Status: ready: L4
+Status: merged: L4 (2026-10-21, into 05-face-meshing/triangulation-witness.{types,library,laws}.plato; 13 triangulation laws and four helpers deleted, the seven generic face-meshing laws kept as the checks' predicates beside their OnSamples forms)
 
 ## Done
 - L4, this commit, about 1 h against 2 h expected. Added the type `TriangulatedWitness` (`triangulated-witness.types.plato`: name, sample number, model, face, discretizations, region, chart, the constrained triangulation `Cdt`, its refinement `Refined`, and the face's `MeshFace` outcome) and 42 witnesses `Witness_<Sample>Face<i>Triangulated`, one per face of `TriSampleModel`'s six sample models (every face is triangulable; `Law_Perf_TriangulatedWitnessesCoverTheSamples` checks the counts 6, 3, 10, 12, 5, 6). `TriangulatedAt` builds each one, binding region, chart and CDT once and refining that CDT once. Library `TriangulatedWitnesses` holds the claims the laws state on built values (`CdtKeepsBoundaryOn`, `KeepsEverySegmentOn`, `CdtIsConformingOn`, `CdtPositiveOn`, `MeetsRefineContractOn` with the region tolerance bound once, `RefinedMinAngleOn`, `CornersInRangeOn`, `EveryPointIsACornerOn`, `LiftKeepsPointsOn`, `LocalVertexInRangeOn`, `LocalVertexSurjectiveOn`, `ProvenanceMatchesSourceOn`, `RequestsNameFaceEdgesOn`) and `CanTriangulateFaceRegionOnce` (CanTriangulateFace with one RegionOf instead of two).

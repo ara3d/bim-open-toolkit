@@ -857,9 +857,7 @@ library FaceMeshing
     // FaceTriangulation's precondition: RegionOf's, and a region simple under its tolerance, as
     // TriangulateRegion requires.
     CanTriangulateFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
-        => m.CanRegion(f, d, c)
-            ? m.RegionOf(f, d, c).IsSimpleRegion(m.RegionTolerance(f, m.ChartOf(f, m.RegionOf(f, d, c))))
-            : false;
+        => m.CanTriangulateFaceRegionOnce(f, d, c);
 
     // Face f's triangulation as MeshedOutcome builds it before lifting: the quad grid when
     // PreferQuads finds one, else the refined constrained triangulation of the region. (Moved

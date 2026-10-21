@@ -35,7 +35,4 @@ library TriangulationFastLaws
     SameSlots(a: Array<Integer>, b: Array<Integer>): Boolean
         => a.Count == b.Count && a.Count.MapRange(k => a[k] == b[k]).All(x => x);
 
-    // UpdatedTableIsTable at every face of sample k.
-    Law_UpdatedNeighboursAreTheTable(k: Integer): Boolean
-        => EveryTriangulableFace(k, (m, f, r, chart) => m.UpdatedTableIsTable(f, r, chart));
 }

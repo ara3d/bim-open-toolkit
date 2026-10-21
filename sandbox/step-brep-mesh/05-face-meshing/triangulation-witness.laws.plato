@@ -7,12 +7,12 @@
 // TriangulationLaws' six sample models, built once per sweep (42 faces, every one triangulable).
 // Each law reads the witness's region, chart, triangulations and outcome and states the original
 // claim on them; none calls RegionOf, TriangulateRegionCdt, RefineToSurfaceByInsertion or
-// MeshFace except Law_Perf_RefinedIsFaceTriangulation and Law_Perf_MinAngleNoWorseThanLibrary,
+// MeshFace except Law_RefinedIsFaceTriangulation and Law_MinAngleNoWorseThanLibrary,
 // whose claims compare the witness with one fresh build. A law about some samples only (the
 // boxes, the cylinder and sector) is vacuous on the others' faces. The original laws over an
 // Integer quantified over the faces of the sample it drew; the witnesses list every face of
 // every sample, so each law here states the conjunction of the original's cases. At merge each
-// Law_Perf_<X> replaces Law_<X> (TRACK.md).
+// Law_<X> replaces Law_<X> (TRACK.md).
 //
 // Sections, in order:
 //  - The witness list
@@ -29,7 +29,7 @@ library TriangulatedWitnessLaws
     // Every face of sample model k is triangulable and the model has TriSampleFaceCount(k)
     // faces, so the witness list below, one witness per face, covers every face the original
     // laws quantified over.
-    Law_Perf_TriangulatedWitnessesCoverTheSamples(k: Integer): Boolean
+    Law_TriangulatedWitnessesCoverTheSamples(k: Integer): Boolean
     {
         var m = TriSampleModel(k);
         var d = m.TriDiscretizations;
@@ -37,11 +37,6 @@ library TriangulatedWitnessLaws
         return m.Faces.Count == TriSampleFaceCount(k)
             && m.Faces.Count.Range.All(i => m.CanTriangulateFaceRegionOnce(BrepFaceIndex(i), d, c));
     }
-
-    // CanTriangulateFaceRegionOnce agrees with CanTriangulateFace on every witness face.
-    Law_Perf_CanTriangulateFaceRegionOnceAgrees(w: TriangulatedWitness): Boolean
-        => w.Model.CanTriangulateFaceRegionOnce(w.Face, w.Discretizations, TriCriteria(0))
-            == w.Model.CanTriangulateFace(w.Face, w.Discretizations, TriCriteria(0));
 
     // True when two triangulations are identical in every field.
     SameTriangulation(a: UvTriangulation, b: UvTriangulation): Boolean
@@ -53,12 +48,12 @@ library TriangulatedWitnessLaws
     // The witness's refined triangulation is FaceTriangulation's, field for field: the sample
     // criteria do not prefer quads, so the laws of face-meshing.laws.plato over FaceTriangulation
     // are stated on Refined.
-    Law_Perf_RefinedIsFaceTriangulation(w: TriangulatedWitness): Boolean
+    Law_RefinedIsFaceTriangulation(w: TriangulatedWitness): Boolean
         => SameTriangulation(w.Refined, w.Model.FaceTriangulation(w.Face, w.Discretizations, TriCriteria(0)));
 
     // The witness's MeshFace outcome holds Refined lifted: the laws over MeshFace's mesh and over
     // Lift read one face mesh.
-    Law_Perf_OutcomeLiftsRefined(w: TriangulatedWitness): Boolean
+    Law_OutcomeLiftsRefined(w: TriangulatedWitness): Boolean
         => SameFaceMesh(w.Outcome.Mesh, w.Model.Lift(w.Face, w.Discretizations, w.Refined));
 
     // One witness per face of each sample model, in TriSampleModel's order.
@@ -152,45 +147,45 @@ library TriangulatedWitnessLaws
 
     // Law_CdtKeepsBoundary: TriangulateRegionCdt keeps the boundary points with their sources, in
     // order, and adds no point.
-    Law_Perf_CdtKeepsBoundary(w: TriangulatedWitness): Boolean
+    Law_CdtKeepsBoundary(w: TriangulatedWitness): Boolean
         => w.Region.CdtKeepsBoundaryOn(w.Cdt);
 
     // Law_CdtKeepsEverySegment: every boundary segment is a side of exactly one triangle, in the
     // boundary's direction.
-    Law_Perf_CdtKeepsEverySegment(w: TriangulatedWitness): Boolean
+    Law_CdtKeepsEverySegment(w: TriangulatedWitness): Boolean
         => w.Region.KeepsEverySegmentOn(w.Cdt);
 
     // Law_CdtIsConforming: every side that is not a boundary segment is shared by exactly two
     // triangles run opposite ways, every point is a corner, and there are no quads.
-    Law_Perf_CdtIsConforming(w: TriangulatedWitness): Boolean
+    Law_CdtIsConforming(w: TriangulatedWitness): Boolean
         => w.Region.CdtIsConformingOn(w.Cdt);
 
     // Law_CdtPositiveOrientation: every triangle is positive in the chart.
-    Law_Perf_CdtPositiveOrientation(w: TriangulatedWitness): Boolean
+    Law_CdtPositiveOrientation(w: TriangulatedWitness): Boolean
         => w.Region.CdtPositiveOn(w.Chart, w.Cdt);
 
     // Law_CdtNoFlippableEdge: no edge is flippable by the in-circle determinant.
-    Law_Perf_CdtNoFlippableEdge(w: TriangulatedWitness): Boolean
+    Law_CdtNoFlippableEdge(w: TriangulatedWitness): Boolean
         => w.Region.FlippableEdgeCount(w.Cdt, w.Chart) == 0;
 
     // Law_CdtAreaIsRegionArea: the triangles' chart areas sum to the region's.
-    Law_Perf_CdtAreaIsRegionArea(w: TriangulatedWitness): Boolean
+    Law_CdtAreaIsRegionArea(w: TriangulatedWitness): Boolean
         => w.Model.AreasSumOn(w.Face, w.Region, w.Cdt, w.Model.RegionTolerance(w.Face, w.Chart));
 
     // Law_UpdatedNeighboursAreTheTable: after one insertion into the constrained triangulation,
     // UpdatedNeighbours gives the table NeighbourSlots builds from scratch.
-    Law_Perf_UpdatedNeighboursAreTheTable(w: TriangulatedWitness): Boolean
+    Law_UpdatedNeighboursAreTheTable(w: TriangulatedWitness): Boolean
         => w.Model.UpdatedTableIsTable(w.Face, w.Region, w.Chart);
 
     //==
     // # Refinement by insertion
 
     // Law_RefineMeetsContract: the refinement meets every postcondition of RefineToSurface.
-    Law_Perf_RefineMeetsContract(w: TriangulatedWitness): Boolean
+    Law_RefineMeetsContract(w: TriangulatedWitness): Boolean
         => w.Model.MeetsRefineContractOn(w.Face, w.Region, w.Chart, w.Refined);
 
     // Law_RefinedNoFlippableEdge: the refined triangulation is still constrained Delaunay.
-    Law_Perf_RefinedNoFlippableEdge(w: TriangulatedWitness): Boolean
+    Law_RefinedNoFlippableEdge(w: TriangulatedWitness): Boolean
         => w.Region.FlippableEdgeCount(w.Refined, w.Chart) == 0;
 
     //==
@@ -199,12 +194,12 @@ library TriangulatedWitnessLaws
     // Law_RefinedInteriorMeetsMinAngle: every refined triangle that touches no boundary point has
     // its smallest lifted angle at least 30 degrees. Fails on the cylinder, as before
     // (reviews/verdicts-cpu64.tsv: k = 1).
-    Law_Perf_RefinedInteriorMeetsMinAngle(w: TriangulatedWitness): Boolean
+    Law_RefinedInteriorMeetsMinAngle(w: TriangulatedWitness): Boolean
         => w.Model.RefinedMinAngleOn(w.Face, w.Region, w.Refined);
 
     // Law_MinAngleNoWorseThanLibrary: the refinement's smallest lifted angle is no smaller than
     // RefinedTriangulation's, within 1e-5 rad; one fresh RefinedTriangulation per face.
-    Law_Perf_MinAngleNoWorseThanLibrary(w: TriangulatedWitness): Boolean
+    Law_MinAngleNoWorseThanLibrary(w: TriangulatedWitness): Boolean
     {
         var library = w.Model.RefinedTriangulation(w.Face, w.Region, w.Chart, TriCriteria(0));
         return w.Model.SmallestLiftedAngle(w.Face, w.Refined) >= w.Model.SmallestLiftedAngle(w.Face, library) - 1e-5;
@@ -213,14 +208,14 @@ library TriangulatedWitnessLaws
     // Law_MinAngleBetterOnCylinders: on every face of the cylinder (sample 1) and the quarter
     // sector (4), the smallest lifted angle is larger than the library's before the merge, 4.99
     // and 8.50 degrees. The original compared the least over the faces, which is the same claim.
-    Law_Perf_MinAngleBetterOnCylinders(w: TriangulatedWitness): Boolean
+    Law_MinAngleBetterOnCylinders(w: TriangulatedWitness): Boolean
         => (w.Sample == 1 || w.Sample == 4)
             ? w.Model.SmallestLiftedAngle(w.Face, w.Refined) > (w.Sample == 4 ? 8.50 : 4.99) * Number.Pi / 180.0
             : true;
 
     // Law_BoxFacesStayTwoTriangles: every face of the unit box (sample 0) and of the 2 x 3 x 4
     // box (5) is refined to its four corners and two triangles.
-    Law_Perf_BoxFacesStayTwoTriangles(w: TriangulatedWitness): Boolean
+    Law_BoxFacesStayTwoTriangles(w: TriangulatedWitness): Boolean
         => (w.Sample == 0 || w.Sample == 5)
             ? w.Refined.Points.Count == 4 && w.Refined.Triangles.Count == 2
             : true;
@@ -244,7 +239,7 @@ library TriangulatedWitnessLaws
     // original's "some face of the 2 x 3 x 4 box asks" is stated per face, and more sharply: a
     // face asks exactly when it is a 2 x 4 face, the one shape whose two triangles stay below 30
     // degrees (atan(1/2) = 26.6; atan(2/3) = 33.7 and atan(3/4) = 36.9 pass).
-    Law_Perf_QualityRequestsOnBoxes(w: TriangulatedWitness): Boolean
+    Law_QualityRequestsOnBoxes(w: TriangulatedWitness): Boolean
     {
         var requests = (w.Sample == 0 || w.Sample == 5) ? QualityRequestsOn(w) : EdgeRefinementRequest.NoRequests;
         return w.Sample == 0
@@ -259,30 +254,30 @@ library TriangulatedWitnessLaws
     // # Triangulations, lifting and the face mesh
 
     // Law_TriangulationCornersInRange at every element of the face's triangulation.
-    Law_Perf_TriangulationCornersInRange(w: TriangulatedWitness): Boolean
+    Law_TriangulationCornersInRangeOnSamples(w: TriangulatedWitness): Boolean
         => w.Refined.CornersInRangeOn;
 
     // Law_EveryPointIsACorner at every point of the face's triangulation.
-    Law_Perf_EveryPointIsACorner(w: TriangulatedWitness): Boolean
+    Law_EveryPointIsACornerOnSamples(w: TriangulatedWitness): Boolean
         => w.Refined.EveryPointIsACornerOn;
 
     // Law_LiftKeepsPoints at every point of the face's triangulation and its lift.
-    Law_Perf_LiftKeepsPoints(w: TriangulatedWitness): Boolean
+    Law_LiftKeepsPointsOnSamples(w: TriangulatedWitness): Boolean
         => w.Refined.LiftKeepsPointsOn(w.Outcome.Mesh);
 
     // Law_LocalVertexInRange at every point of MeshFace's mesh.
-    Law_Perf_LocalVertexInRange(w: TriangulatedWitness): Boolean
+    Law_LocalVertexInRangeOnSamples(w: TriangulatedWitness): Boolean
         => w.Outcome.Mesh.LocalVertexInRangeOn;
 
     // Law_LocalVertexSurjective at every local vertex of MeshFace's mesh.
-    Law_Perf_LocalVertexSurjective(w: TriangulatedWitness): Boolean
+    Law_LocalVertexSurjectiveOnSamples(w: TriangulatedWitness): Boolean
         => w.Outcome.Mesh.LocalVertexSurjectiveOn;
 
     // Law_ProvenanceMatchesSource at every point of MeshFace's mesh.
-    Law_Perf_ProvenanceMatchesSource(w: TriangulatedWitness): Boolean
+    Law_ProvenanceMatchesSourceOnSamples(w: TriangulatedWitness): Boolean
         => w.Discretizations.ProvenanceMatchesSourceOn(w.Outcome.Mesh);
 
     // Law_RequestsNameFaceEdges at every request of MeshFace's outcome.
-    Law_Perf_RequestsNameFaceEdges(w: TriangulatedWitness): Boolean
+    Law_RequestsNameFaceEdgesOnSamples(w: TriangulatedWitness): Boolean
         => w.Model.RequestsNameFaceEdgesOn(w.Face, w.Outcome);
 }
