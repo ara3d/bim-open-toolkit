@@ -202,16 +202,12 @@ library BrepOracles
     // evaluated, has a poly loop, or lies on a surface the closed forms do not
     // cover and whose quadrature is not yet implemented.
     Oracle_FaceAreaByGreen(m: BrepModel, f: BrepFaceIndex): Number
-        => m.CanGreen(f)
-            ? Richardson(m.GreenArea(f, Integer.GreenChords), m.GreenArea(f, 2 * Integer.GreenChords))
-            : Number.Unmeasured;
+        => m.Oracle_FaceAreaByGreenOnce(f);
 
     // True when the oracle can run on face f: every index of the model in
     // range, the arena well formed, the face intact, and no poly loop.
     CanGreen(m: BrepModel, f: BrepFaceIndex): Boolean
-        => m.IsEveryIndexInRange
-            ? (m.Geometry.IsWellFormed ? (m.IsFaceIntact(f) ? m.Faces[f].Bounds.All(b => m.Loops[b.Loop].IsPolyLoop.Not) : false) : false)
-            : false;
+        => m.CanGreenGiven(f, m.GreenModelOk);
 
     // The Richardson extrapolation of two results at n and 2n chords whose
     // error is c / n^2 + O(n^-4): (4 fine - coarse) / 3.
@@ -223,10 +219,7 @@ library BrepOracles
     // error by a wide margin, plus the rounding of a sum of as many terms as
     // the boundary has segments, each at most the area.
     GreenAllowance(m: BrepModel, f: BrepFaceIndex): Number
-        => m.CanGreen(f)
-            ? (m.GreenArea(f, 2 * Integer.GreenChords) - m.GreenArea(f, Integer.GreenChords)).Abs / 3.0
-                + ResolutionAt(m.GreenArea(f, 2 * Integer.GreenChords) * m.GreenBoundary(f, 2 * Integer.GreenChords).Count.ToNumber).Value
-            : Number.Unmeasured;
+        => m.GreenAreaPair(f).GreenAllowanceOf;
 
     // The area of face f from its n-chord boundary: the signed integral times
     // FaceNormalSign. On a closed surface (a whole sphere or torus) a region
@@ -292,12 +285,7 @@ library BrepOracles
     // sides that balance the paths' net winding in u, and the cut pairs of
     // paths that wind in v.
     GreenBoundary(m: BrepModel, f: BrepFaceIndex, n: Integer): Array<GreenSegment>
-    {
-        var paths = m.Faces[f].Bounds.Count.Range.FlatMap(j => m.GreenPathsOfBound(f, j, n));
-        return paths.FlatMap(p => p.PathSegments)
-            .Concatenate(m.ImplicitPoleSegments(f, paths))
-            .Concatenate(m.CutSegments(f, paths));
-    }
+        => m.GreenBoundaryCounted(f, n).Value;
 
     // The segments of a lifted path: between consecutive points, and from
     // the last back to the first when the path closes in the plane.
@@ -335,8 +323,7 @@ library BrepOracles
     // The lifted path of edge-loop bound j of face f: every coedge's lifted
     // samples, each coedge shifted to join the one before it, then closed.
     EdgeLoopPath(m: BrepModel, f: BrepFaceIndex, j: Integer, n: Integer): GreenPath
-        => m.ClosedPath(f, m.LoopCoedges(m.Faces[f].Bounds[j].Loop).Count.Range.Reduce(UvCoordinate.NoUvs, (acc, k) =>
-            acc.Concatenate(m.ShiftedCoedgePath(f, acc, CoedgeSite(f, BoundSlot(j), CoedgeSlot(k)), n))));
+        => m.EdgeLoopPathBuilt(f, j, n);
 
     // The lifted samples of the coedge at a site, shifted by whole periods to
     // join the path so far (acc); unshifted for the first coedge.
@@ -351,14 +338,7 @@ library BrepOracles
     // runs it, mapped into the face's parameter plane, collapsed-line samples
     // given their neighbour's u, lifted by continuity.
     CoedgeUvPath(m: BrepModel, site: CoedgeSite, n: Integer): Array<UvCoordinate>
-    {
-        var s = m.Faces[site.Face].Surface;
-        var raw = m.CoedgeSamplePoints(site, n).Map(p => m.Geometry.Project(s, p));
-        var filled = raw.Count.MapRange(k => m.IsAtVCollapse(site.Face, raw[k])
-            ? UvCoordinate(raw[k == 0 ? 1 : k - 1].U, raw[k].V)
-            : raw[k]);
-        return filled.UnwrappedFrom(m.Geometry.Domain(s));
-    }
+        => m.CoedgeUvPathBuilt(site, n);
 
     // The n + 1 points of the coedge's edge curve at equal steps of the edge
     // domain, in the direction the face runs the coedge.
@@ -374,8 +354,7 @@ library BrepOracles
     // The points lifted by continuity: each the copy, by whole periods, of
     // the input nearest the previous output.
     UnwrappedFrom(uvs: Array<UvCoordinate>, d: SurfaceDomain): Array<UvCoordinate>
-        => uvs.Count.Range.Reduce(UvCoordinate.NoUvs, (acc, k) =>
-            acc.Append(k == 0 ? uvs[0] : d.NearestUnwrapped(uvs[k], acc.Last)));
+        => uvs.UnwrappedFromBuilt(d);
 
     // The shift that joins a coedge starting at `start` to a path arriving at
     // `arrive` (after `before`): continuity in both directions at an ordinary
@@ -739,25 +718,19 @@ library BrepOracles
     // closed-form potential). Total over loops that wind in v and over
     // regions fixed only up to their whole closed surface (FaceVolumeTerm).
     Oracle_DivergenceVolume(m: BrepModel, s: ShellIndex): Number
-        => m.IsShellInRange(s)
-            ? Richardson(m.ShellVolume(s, Integer.GreenChords), m.ShellVolume(s, 2 * Integer.GreenChords))
-            : Number.Unmeasured;
+        => m.Oracle_DivergenceVolumeOnce(s);
 
     // The divergence oracle's own error budget for shell s, as GreenAllowance
     // is the area oracle's: the size of the Richardson correction,
     // |V(2n) - V(n)| / 3, plus the rounding of a sum of as many terms as the
     // shell's fine boundaries have segments, each at most the volume.
     DivergenceAllowance(m: BrepModel, s: ShellIndex): Number
-        => m.IsShellInRange(s)
-            ? (m.ShellVolume(s, 2 * Integer.GreenChords) - m.ShellVolume(s, Integer.GreenChords)).Abs / 3.0
-                + ResolutionAt(m.ShellVolume(s, 2 * Integer.GreenChords).Abs
-                    * m.ShellFaces(s).Map(f => m.GreenBoundary(f, 2 * Integer.GreenChords).Count).IntegerTotal.ToNumber).Value
-            : Number.Unmeasured;
+        => m.ShellVolumePair(s).DivergenceAllowanceOf;
 
     // The volume a body encloses: the sum over its shells (the outer shell
     // positive, every void negative).
     Oracle_BodyVolume(m: BrepModel, b: BodyIndex): Number
-        => m.IsBodyInRange(b) ? m.BodyShells(b).Map(s => m.Oracle_DivergenceVolume(s)).SumOf : Number.Unmeasured;
+        => m.Oracle_BodyVolumeOnce(b);
 
     // The shells of a body: the outer and the voids of a solid, all of a
     // shell set.
@@ -1083,17 +1056,7 @@ library BrepOracles
     //   A ((1 + kappa d)^2 / cos theta - 1) + d_e P + the oracle's allowance.
     // The largest Number (no bound) when theta reaches pi/2.
     FaceAreaTolerance(m: BrepModel, f: BrepFaceIndex, c: FaceMeshingCriteria): Number
-    {
-        var a = m.Oracle_FaceAreaByGreen(f);
-        var kappa = m.FaceCurvatureBound(f);
-        var d = c.SurfaceChordal + m.Tolerances.Length.Value;
-        var de = c.Discretization.EffectiveChordal(m.Tolerances) + m.Tolerances.Length.Value;
-        var theta = c.SurfaceAngular.Radians * 2.0;
-        var stretch = (1.0 + kappa * d) * (1.0 + kappa * d);
-        return theta < Number.HalfPi
-            ? a * (stretch / theta.Cos - 1.0) + de * m.Oracle_FacePerimeter(f) + m.GreenAllowance(f)
-            : Number.MaxValue;
-    }
+        => m.FaceAreaToleranceOnce(f, c);
 
     //==
     // # Quadrature and helpers

@@ -195,12 +195,7 @@ library BrepCrossChecking
     // (research/VALIDATION-MATH.md 6.2): how far a mesh within d of the
     // boundary may differ from the body in volume while d is below the reach.
     TubeVolume(m: BrepModel, b: BodyIndex, c: FaceMeshingCriteria): Number
-    {
-        var d = m.MeshDeviationBound(c);
-        var area = m.BodyShells(b).Map(s => m.ShellFaces(s).Map(f => m.Oracle_FaceAreaByGreen(f)).SumOf).SumOf;
-        var chi = m.BodyShells(b).Reduce(0, (n, s) => n + m.ShellEulerPoincare(s)).Abs;
-        return 2.0 * d * area + 2.0 * Number.Tau / 3.0 * chi.ToNumber * d * d * d;
-    }
+        => m.TubeVolumeOnce(b, c);
 
     // The signed volume of body b's mesh: the sum over its shells.
     BodyMeshVolume(m: BrepModel, mesh: ModelMesh, b: BodyIndex): Number
@@ -208,7 +203,7 @@ library BrepCrossChecking
 
     // The area of shell s's faces by the oracle.
     ShellOracleArea(m: BrepModel, s: ShellIndex): Number
-        => m.ShellFaces(s).Map(f => m.Oracle_FaceAreaByGreen(f)).SumOf;
+        => m.ShellOracleAreaOnce(s);
 
     //==
     // # Checks: topology against the B-rep (structure)
@@ -272,10 +267,7 @@ library BrepCrossChecking
     // keeps as its bound; 0 against 0 where the law is vacuous. Oracle
     // family: Error.
     Check_FaceAreaMatchesOracle(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
-        => CheckAllWithinEach("FaceAreaMatchesOracle", m.Faces.Count,
-            f => m.IsFaceAreaJudged(c, BrepFaceIndex(f)) ? m.FaceAreaGap(mesh, BrepFaceIndex(f)) : 0.0,
-            f => m.IsFaceAreaJudged(c, BrepFaceIndex(f)) ? m.FaceAreaTolerance(BrepFaceIndex(f), c) : 0.0,
-            f => AtFace(f));
+        => m.Check_FaceAreaMatchesOracleOnce(mesh, c);
 
     // True when face f's mesh area is judged: the oracle has a number and
     // the envelope is finite (it is not at a cone's apex, where the
@@ -293,12 +285,7 @@ library BrepCrossChecking
     // (TubeVolume), which the check keeps as its bound; 0 against 0 where the
     // law is vacuous. Oracle family: Error.
     Check_SolidVolumeWithinTube(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
-        => CheckAllWithinEach("SolidVolumeWithinTube", m.Bodies.Count,
-            b => m.IsSolidVolumeJudged(mesh, c, BodyIndex(b))
-                ? (m.BodyMeshVolume(mesh, BodyIndex(b)) - m.Oracle_BodyVolume(BodyIndex(b))).Abs
-                : 0.0,
-            b => m.IsSolidVolumeJudged(mesh, c, BodyIndex(b)) ? m.TubeVolume(BodyIndex(b), c) : 0.0,
-            b => AtBody(b));
+        => m.Check_SolidVolumeWithinTubeOnce(mesh, c);
 
     // True when body b's mesh volume is judged: the hypotheses of
     // SolidVolumeWithinTube, and a finite tube.

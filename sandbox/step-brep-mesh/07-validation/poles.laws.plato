@@ -165,45 +165,6 @@ library PolesLaws
     GaussBonnetHolds(m: BrepModel, chordal: Number): Boolean
         => m.AngleDefectMatchesBrepEuler(m.RoundZeroModelMesh(PolesOptionsAt(chordal, false)), ShellIndex(0));
 
-    Law_SphereMeshIsSound(_: BrepModel): Boolean
-        => BrepModel.Witness_Sphere.MeshIsSound(0.05, 2);
-
-    Law_SphereByPoleLoopsMeshIsSound(_: BrepModel): Boolean
-        => BrepModel.Witness_SphereByPoleLoops(1.0).MeshIsSound(0.05, 2);
-
-    // The torus has Euler characteristic 0, and its volume oracle holds over a boundary that
-    // wraps in v.
-    Law_TorusMeshIsSound(_: BrepModel): Boolean
-        => BrepModel.Witness_Torus.MeshIsSound(0.05, 0);
-
-    Law_ConeMeshIsSound(_: BrepModel): Boolean
-        => BrepModel.Witness_Cone.MeshIsSound(0.01, 2);
-
-    Law_TorusAtVertexMeshIsSound(_: BrepModel): Boolean
-        => BrepModel.Witness_TorusAtVertex(2.0, 0.5).MeshIsSound(0.05, 0);
-
-    // The negative witness meshes as the seamed sphere does: its redundant vertex loops are
-    // dropped before the region (layer 02's KeptBounds), so its mesh is closed, oriented, of
-    // Euler characteristic 2, and within the tube of the sphere's exact volume. The volume is
-    // judged against the seamed sphere's oracle: layer 07's Oracle_BodyVolume gives this model
-    // 8.378, twice the sphere's 4.189, counting its redundant loops (TRACK.md, findings).
-    Law_RedundantPoleLoopsMeshIsSound(_: BrepModel): Boolean
-    {
-        var o = PolesOptionsAt(0.05, false);
-        var mesh = BrepModel.Witness_SphereWithRedundantPoleLoops(1.0).RoundZeroModelMesh(o);
-        return mesh.IsClosed && mesh.IsConsistentlyOriented && mesh.EulerCharacteristic == 2
-            && BrepModel.Witness_Sphere.SolidVolumeWithinTube(mesh, o.Face, BodyIndex(0));
-    }
-
-    Law_SphereGaussBonnet(_: BrepModel): Boolean
-        => BrepModel.Witness_Sphere.GaussBonnetHolds(0.05);
-
-    Law_TorusGaussBonnet(_: BrepModel): Boolean
-        => BrepModel.Witness_Torus.GaussBonnetHolds(0.05);
-
-    Law_ConeGaussBonnet(_: BrepModel): Boolean
-        => BrepModel.Witness_Cone.GaussBonnetHolds(0.01);
-
     // Every face check of layer 07 at Geometric holds on every face of each witness.
     Law_SphereFaceChecksHold(_: BrepModel): Boolean
         => BrepModel.Witness_Sphere.FaceCheckFailures(0, 0.01, false).Count == 0;

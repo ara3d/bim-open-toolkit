@@ -147,16 +147,7 @@ library BrepCheckingLaws
     // 1e-6 against an angle tolerance of 1e-8 per vertex (chunk A).
     // Oracle family, Error.
     AngleDefectMatchesBrepEuler(m: BrepModel, mesh: ModelMesh, s: ShellIndex): Boolean
-        => (m.IsEveryIndexInRange ? m.IsShellInRange(s) : false)
-            ? (m.IsClosedAndOrientedShellMesh(mesh, s)
-                ? (m.RestrictedToShell(mesh, s).Oracle_AngleDefectSum - m.RestrictedToShell(mesh, s).Oracle_QuadDefectSum
-                        - Number.Tau * m.ShellEulerPoincare(s).ToNumber).Abs
-                    <= m.Tolerances.Angle.Value.Radians
-                        * (m.RestrictedToShell(mesh, s).ReferencedVertexCount + m.RestrictedToShell(mesh, s).Quads.Count).ToNumber
-                        + ResolutionAt(Number.Tau
-                            * (m.RestrictedToShell(mesh, s).ReferencedVertexCount + m.RestrictedToShell(mesh, s).Quads.Count).ToNumber).Value
-                : true)
-            : true;
+        => m.AngleDefectMatchesBrepEulerOnce(mesh, s);
 
     // The mesh volume of solid b is its divergence-theorem volume within the
     // tube of radius d about its boundary (TubeVolume, Weyl's formula; valid
@@ -165,9 +156,7 @@ library BrepCheckingLaws
     // the oracle or the tube has no finite number (IsSolidVolumeJudged).
     // Oracle family, Error.
     SolidVolumeWithinTube(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria, b: BodyIndex): Boolean
-        => m.IsSolidVolumeJudged(mesh, c, b)
-            ? (m.BodyMeshVolume(mesh, b) - m.Oracle_BodyVolume(b)).Abs <= m.TubeVolume(b, c)
-            : true;
+        => m.SolidVolumeWithinTubeOnce(mesh, c, b);
 
     // Layer 2's reduced Euler characteristic of shell s (union-find over the
     // reduction rule) equals the oracle's (raw counts plus the reduction's
@@ -199,15 +188,6 @@ library BrepCheckingLaws
                 : true)
             : true;
 
-    // On a planar face bounded by lines and conics, the exact area
-    // (Oracle_PlanarFaceArea) and the Green's-theorem area agree within the
-    // Green oracle's allowance: two routes to one number. Oracle family,
-    // a self-test, Error.
-    Law_PlanarFaceAreaMatchesGreen(m: BrepModel, f: BrepFaceIndex): Boolean
-        => (m.Oracle_PlanarFaceArea(f).IsFinite ? m.Oracle_FaceAreaByGreen(f).IsFinite : false)
-            ? (m.Oracle_PlanarFaceArea(f) - m.Oracle_FaceAreaByGreen(f)).Abs <= m.GreenAllowance(f)
-            : true;
-
     //==
     // # Oracles against the closed forms
     //
@@ -219,71 +199,6 @@ library BrepCheckingLaws
     // correction that is itself rounding. Guards keep the sizes positive and
     // finite.
 
-    // The side of the solid cylinder of radius r and height h: 2 pi r h.
-    Law_GreenEqualsCylinderPatchArea(r: Number, h: Number): Boolean
-        => (r > 0.0 && h > 0.0 && r.IsFinite && h.IsFinite)
-            ? (BrepModel.Witness_Cylinder(r, h, Angle(Number.Tau)).Oracle_FaceAreaByGreen(BrepFaceIndex(0))
-                    - Oracle_CylinderPatchArea(r, Angle(Number.Tau), h)).Abs
-                <= BrepModel.Witness_Cylinder(r, h, Angle(Number.Tau)).GreenAllowance(BrepFaceIndex(0))
-            : true;
-
-    // The side of the cylinder sector of radius r, height h and the given
-    // sweep: sweep r h.
-    Law_GreenEqualsCylinderSectorPatchArea(r: Number, h: Number, sweep: Number): Boolean
-        => (r > 0.0 && h > 0.0 && sweep > 0.0 && sweep < Number.Tau && r.IsFinite && h.IsFinite)
-            ? (BrepModel.Witness_Cylinder(r, h, Angle(sweep)).Oracle_FaceAreaByGreen(BrepFaceIndex(2))
-                    - Oracle_CylinderPatchArea(r, Angle(sweep), h)).Abs
-                <= BrepModel.Witness_Cylinder(r, h, Angle(sweep)).GreenAllowance(BrepFaceIndex(2))
-            : true;
-
-    // The sphere of radius r, seam and two pole sides: 4 pi r^2.
-    Law_GreenEqualsSphereArea(r: Number): Boolean
-        => (r > 0.0 && r.IsFinite)
-            ? (BrepModel.Witness_Sphere(r).Oracle_FaceAreaByGreen(BrepFaceIndex(0)) - Oracle_SphereArea(r)).Abs
-                <= BrepModel.Witness_Sphere(r).GreenAllowance(BrepFaceIndex(0))
-            : true;
-
-    // The sphere of radius r bounded by two pole vertex loops: 4 pi r^2,
-    // carried entirely by the vertex loops' pole sides.
-    Law_GreenEqualsSphereAreaByPoleLoops(r: Number): Boolean
-        => (r > 0.0 && r.IsFinite)
-            ? (BrepModel.Witness_SphereByPoleLoops(r).Oracle_FaceAreaByGreen(BrepFaceIndex(0)) - Oracle_SphereArea(r)).Abs
-                <= BrepModel.Witness_SphereByPoleLoops(r).GreenAllowance(BrepFaceIndex(0))
-            : true;
-
-    // The ring torus of radii major > minor > 0, two seams: 4 pi^2 R r.
-    Law_GreenEqualsTorusArea(major: Number, minor: Number): Boolean
-        => (minor > 0.0 && major > minor && major.IsFinite)
-            ? (BrepModel.Witness_Torus(major, minor).Oracle_FaceAreaByGreen(BrepFaceIndex(0)) - Oracle_TorusArea(major, minor)).Abs
-                <= BrepModel.Witness_Torus(major, minor).GreenAllowance(BrepFaceIndex(0))
-            : true;
-
-    // The ring torus of radii major > minor > 0 encloses 2 pi^2 R r^2 by the
-    // divergence theorem, though its one loop winds in v and its region is
-    // fixed only up to the whole surface.
-    Law_DivergenceEqualsTorusVolume(major: Number, minor: Number): Boolean
-        => (minor > 0.0 && major > minor && major.IsFinite)
-            ? (BrepModel.Witness_Torus(major, minor).Oracle_DivergenceVolume(ShellIndex(0)) - Number.Pi * Number.Tau * major * minor * minor).Abs
-                <= BrepModel.Witness_Torus(major, minor).DivergenceAllowance(ShellIndex(0))
-            : true;
-
-    // The side of the cone of base radius r and height h, v from the apex
-    // -h to the base 0: pi r sqrt(r^2 + h^2), the whole of it carried by the
-    // apex's pole side.
-    Law_GreenEqualsConePatchArea(r: Number, h: Number): Boolean
-        => (r > 0.0 && h > 0.0 && r.IsFinite && h.IsFinite)
-            ? (BrepModel.Witness_Cone(r, h).Oracle_FaceAreaByGreen(BrepFaceIndex(0))
-                    - Oracle_ConePatchArea(r, (r / h).Atan, Angle(Number.Tau), 0.0 - h, 0.0)).Abs
-                <= BrepModel.Witness_Cone(r, h).GreenAllowance(BrepFaceIndex(0))
-            : true;
-
-    // Face k of the box w x d x h: the rectangle's area from BoxFacts.
-    Law_GreenEqualsBoxFaceArea(w: Number, d: Number, h: Number, k: Integer): Boolean
-        => (w > 0.0 && d > 0.0 && h > 0.0 && w.IsFinite && d.IsFinite && h.IsFinite && k >= 0 && k < 6)
-            ? (BrepModel.Witness_Box(w, d, h).Oracle_FaceAreaByGreen(BrepFaceIndex(k)) - BoxFacts(w, d, h).FaceAreas[k]).Abs
-                <= BrepModel.Witness_Box(w, d, h).GreenAllowance(BrepFaceIndex(k))
-            : true;
-
     // The base disk of the cone of radius r: its circle is curved in the
     // plane's (u, v), so the Green polygon errs by the inscribed polygon's
     // defect; after Richardson the remainder is at most
@@ -293,13 +208,6 @@ library BrepCheckingLaws
         => (r > 0.0 && r.IsFinite)
             ? (BrepModel.Witness_Cone(r, 1.0).Oracle_PlanarFaceArea(BrepFaceIndex(1)) - Number.Pi * r * r).Abs
                 <= ResolutionAt(Number.Pi * r * r * 64.0).Value
-            : true;
-
-    // The Green area of the cone's base disk is within ArcResidual of pi r^2.
-    Law_GreenDiskAreaWithinArcResidual(r: Number): Boolean
-        => (r > 0.0 && r.IsFinite)
-            ? (BrepModel.Witness_Cone(r, 1.0).Oracle_FaceAreaByGreen(BrepFaceIndex(1)) - Number.Pi * r * r).Abs
-                <= ArcResidual(r, Number.Tau, Integer.GreenChords) + ResolutionAt(Number.Pi * r * r * 256.0).Value
             : true;
 
     //==

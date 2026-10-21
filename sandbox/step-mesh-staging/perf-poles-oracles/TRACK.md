@@ -1,7 +1,7 @@
 # perf-poles-oracles: the Green oracle once per face, and the curved-witness laws over meshes built once per sweep
 
 Ticket: TKT-394
-Status: ready: L5
+Status: merged in part: L5 (2026-10-21, the Green and volume oracles, the Green and witness laws and the pole mesh and Gauss-Bonnet laws; the six face-check laws left out, they fail on the curved witnesses and four exceed 2 s in ValidateFaceMesh, filed as a defect)
 
 ## Done
 - L5, (this commit), about 1.5 h against 2 h expected. Candidate 38 of `docs/plans/step-mesher-complexity.md`.

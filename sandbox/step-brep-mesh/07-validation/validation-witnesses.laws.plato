@@ -129,40 +129,9 @@ library BrepWitnessesLaws
     //==
     // # Positive witnesses: areas and volumes
 
-    // The Green area of face f of witness k is its stated area within the
-    // oracle's allowance; vacuous where the facts give no closed form (the
-    // B-spline top).
-    Law_WitnessGreenAreaMatchesFacts(k: Integer, f: Integer): Boolean
-        => (WitnessFacts.FactsAt(k).FaceAreas.IsValidIndex(f) ? WitnessFacts.FactsAt(k).FaceAreas[f].IsFinite : false)
-            ? (BrepModel.WitnessAt(k).Oracle_FaceAreaByGreen(BrepFaceIndex(f)) - WitnessFacts.FactsAt(k).FaceAreas[f]).Abs
-                <= BrepModel.WitnessAt(k).GreenAllowance(BrepFaceIndex(f))
-            : true;
-
     // Witness k has as many faces as its facts give areas.
     Law_WitnessHasStatedFaceCount(k: Integer): Boolean
         => BrepModel.WitnessAt(k).Faces.Count == WitnessFacts.FactsAt(k).FaceAreas.Count;
-
-    // The divergence-theorem volume of shell s of witness k is its stated
-    // signed volume within the oracle's allowance: positive for an outer
-    // shell, negative for the hollow box's void.
-    Law_WitnessDivergenceVolumeMatchesFacts(k: Integer, s: Integer): Boolean
-        => (WitnessFacts.FactsAt(k).ShellVolumes.IsValidIndex(s)
-                ? BrepModel.WitnessAt(k).Oracle_DivergenceVolume(ShellIndex(s)).IsFinite
-                : false)
-            ? (BrepModel.WitnessAt(k).Oracle_DivergenceVolume(ShellIndex(s)) - WitnessFacts.FactsAt(k).ShellVolumes[s]).Abs
-                <= BrepModel.WitnessAt(k).DivergenceAllowance(ShellIndex(s))
-            : true;
-
-    // The B-spline top's Green area lies in its bracket [1, 1 + 16 bump^2 / 45]
-    // (the graph's area between the flat square and the first two terms of
-    // the area integrand's series), widened by the oracle's allowance.
-    Law_BSplineTopAreaInBracket(bump: Number): Boolean
-        => (bump > 0.0 && bump < 1.0)
-            ? (BrepModel.Witness_BSplinePatchSolid(bump).Oracle_FaceAreaByGreen(BrepFaceIndex(1))
-                    >= 1.0 - BrepModel.Witness_BSplinePatchSolid(bump).GreenAllowance(BrepFaceIndex(1))
-                && BrepModel.Witness_BSplinePatchSolid(bump).Oracle_FaceAreaByGreen(BrepFaceIndex(1))
-                    <= 1.0 + 16.0 * bump * bump / 45.0 + BrepModel.Witness_BSplinePatchSolid(bump).GreenAllowance(BrepFaceIndex(1)))
-            : true;
 
     //==
     // # Negative witnesses

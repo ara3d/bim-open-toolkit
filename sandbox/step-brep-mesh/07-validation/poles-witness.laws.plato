@@ -20,7 +20,7 @@ library PolesWitnessLaws
     // The witness's round-zero mesh is closed, consistently oriented, of the stated Euler
     // characteristic, and encloses its volume model's exact volume within the tube of the
     // criteria (MeshIsSound).
-    Law_Perf_PoleMeshIsSound(w: PoleWitness): Boolean
+    Law_PoleMeshIsSound(w: PoleWitness): Boolean
         => w.Whole
             ? (w.Mesh.IsClosed && w.Mesh.IsConsistentlyOriented && w.Mesh.EulerCharacteristic == w.Euler
                 && w.VolumeModel.SolidVolumeWithinTubeOnce(w.Mesh, w.Options.Face, BodyIndex(0)))
@@ -29,7 +29,7 @@ library PolesWitnessLaws
     // Gauss-Bonnet on the witness's one shell (GaussBonnetHolds), on the three witnesses the
     // originals state it for: the sphere, the torus and the cone. (It also holds on both pole-loop
     // spheres and fails on the torus pinned at a vertex: TRACK.md, "Findings".)
-    Law_Perf_PoleGaussBonnet(w: PoleWitness): Boolean
+    Law_PoleGaussBonnet(w: PoleWitness): Boolean
         => w.StatesGaussBonnet ? w.Model.AngleDefectMatchesBrepEulerOnce(w.Mesh, ShellIndex(0)) : true;
 
     // True for the witnesses Law_SphereGaussBonnet, Law_TorusGaussBonnet and Law_ConeGaussBonnet
@@ -52,27 +52,4 @@ library PolesWitnessLaws
     PoleFaceChecksHold(m: BrepModel, w: PoleWitness, f: Integer): Boolean
         => m.ValidateFaceMesh(w.Discretizations, w.FaceMeshes[f], w.Options.Face, ConformanceLevel.Geometric).Checks.All(c => c.Holds);
 
-    // Law_SphereFaceChecksHold: the seamed sphere at 0.01.
-    Law_Perf_SphereFaceChecksHold(w: PoleWitness): Boolean
-        => w.FaceChecksHoldOn("SphereFine", 0);
-
-    // Law_SphereByPoleLoopsFaceChecksHold: the pole-loop sphere at 0.01.
-    Law_Perf_SphereByPoleLoopsFaceChecksHold(w: PoleWitness): Boolean
-        => w.FaceChecksHoldOn("SphereByPoleLoopsFine", 0);
-
-    // Law_TorusFaceChecksHold: the torus at 0.05.
-    Law_Perf_TorusFaceChecksHold(w: PoleWitness): Boolean
-        => w.FaceChecksHoldOn("Torus", 0);
-
-    // Law_ConeFaceChecksHold, its lateral face: the cone at 0.01.
-    Law_Perf_ConeLateralFaceChecksHold(w: PoleWitness): Boolean
-        => w.FaceChecksHoldOn("Cone", 0);
-
-    // Law_ConeFaceChecksHold, its base disk: the cone at 0.01.
-    Law_Perf_ConeBaseFaceChecksHold(w: PoleWitness): Boolean
-        => w.FaceChecksHoldOn("Cone", 1);
-
-    // Law_TorusAtVertexFaceChecksHold: the torus pinned at a vertex at 0.05.
-    Law_Perf_TorusAtVertexFaceChecksHold(w: PoleWitness): Boolean
-        => w.FaceChecksHoldOn("TorusAtVertex", 0);
 }
