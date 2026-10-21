@@ -1,13 +1,14 @@
 ---
 id: TKT-378
 title: STEP mesher complexity chunk I1: RoundingUnit and SmallestNormal as profile constants (TKT-335 H1): a closed form per profile with a law that the constant equals the loop's valu...
-status: open
+status: done
 depends_on: [TKT-357]
 owner:
 fence: [sandbox/step-mesh-staging/perf-constants/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-349, TKT-356, TKT-335]
 created: 2026-10-21
+closed: 2026-10-21
 ---
 
 ## Acceptance criteria
