@@ -1,0 +1,216 @@
+//==
+// # The surface refinement test from cached values (complexity sweep, chunk R2, TKT-384)
+//
+// Ranked candidate 27 of docs/plans/step-mesher-complexity.md. UvDelaunay's
+// TriangleNeedsRefinement evaluates about 17 surface points, 4 projections and 5 normals per
+// tested triangle per pass: its three corners, the corners again twice for LiftsFacingFaceNormal,
+// the centroid normal twice, and for every side, through || with no early exit, the chord
+// midpoint's projection and the parameter midpoint's point; a corner is shared by about six
+// triangles and a side by two, and nothing was kept. Here a pass reads the corner positions the
+// refinement carries (PositionedTriangulation, chunk R1), takes the face normal once per corner of
+// a tested triangle, the vector area and the centroid's normal once per triangle, and each side's
+// two samples once, read by both triangles that share it. The tests run cheapest first and stop
+// at the first that finds the triangle wanting; a side is sampled only for a triangle the corner
+// and centroid tests pass. Every value tested is the old path's value for value (a cached
+// position is the same Eval of the same parameters; HalfwayPoint and UvMidpoint are symmetric in
+// their ends), and the verdict is their disjunction, so it is the old Boolean for every triangle.
+//
+// Sections, in order:
+//  - Points
+//  - Corner and centroid tests
+//  - Sides
+//  - The pass
+//  - Refinement
+
+library RefinementTestCached
+{
+    //==
+    // # Points
+
+    // The number of true entries.
+    TrueCount(xs: Array<Boolean>): Integer
+        => xs.Reduce(0, (n, x) => n + (x ? 1 : 0));
+
+    // Face f's normal and collapsed-line test at every point of t that `corners` marks.
+    PointNormalsOf(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, corners: Array<Boolean>): PointNormals
+        => PointNormals(
+            t.Points.Count.MapRange(v => corners[v] ? m.FaceNormalAt(f, t.Points[v], Vector3D.UnitZ) : Vector3D.Zero),
+            t.Points.Count.MapRange(v => corners[v] ? m.IsOnCollapsedLine(f, t.Points[v]) : false));
+
+    // The surface points of triangle tri's corners, in corner order.
+    CornerPositions(pt: PositionedTriangulation, tri: TriangleFace): Array<Point3D>
+        => [pt.Positions[tri.A.Value], pt.Positions[tri.B.Value], pt.Positions[tri.C.Value]];
+
+    //==
+    // # Corner and centroid tests
+
+    // Whether the face normal turns by more than SurfaceAngular along some side of tri that is
+    // not a boundary segment. No evaluation: the normals are cached.
+    SideNormalsTurn(r: UvRegion, tri: TriangleFace, pn: PointNormals, c: FaceMeshingCriteria): Boolean
+        => 3.Range.Any(j => r.IsConstrained(tri.Corner(j), tri.Corner(j + 1))
+            ? false
+            : pn.Normals[tri.Corner(j)].AngleBetween(pn.Normals[tri.Corner(j + 1)]).Radians > c.SurfaceAngular.Radians);
+
+    // The corner and centroid tests of triangle k, cheapest first, stopping at the first that
+    // fails: the side normals (no evaluation), then the fold and normal tests at the centroid's
+    // normal (one), then the centroid's surface point against the flat triangle (one), then the
+    // corner mean's surface distance (a projection and an evaluation).
+    TriangleCentroidTest(m: BrepModel, f: BrepFaceIndex, r: UvRegion, pt: PositionedTriangulation, pn: PointNormals, k: Integer, c: FaceMeshingCriteria): CentroidTest
+        => r.SideNormalsTurn(pt.Triangulation.Triangles[k], pn, c)
+            ? CentroidTest(true, 0)
+            : m.CentroidNormalTest(f, pt, pn, k, c);
+
+    // Whether triangle k folds when lifted (LiftsFacingFaceNormal is false) or, off collapsed
+    // lines, its normal is more than SurfaceAngular from the face normal at its parameter
+    // centroid; the vector area and that normal are taken once. Then CentroidPointTest.
+    CentroidNormalTest(m: BrepModel, f: BrepFaceIndex, pt: PositionedTriangulation, pn: PointNormals, k: Integer, c: FaceMeshingCriteria): CentroidTest
+    {
+        var tri = pt.Triangulation.Triangles[k];
+        var ps = pt.CornerPositions(tri);
+        var centroid = pt.Triangulation.ElementUvCentroid(ElementIndex(k));
+        var area = ps.VectorArea;
+        var normal = m.FaceNormalAt(f, centroid, area);
+        var onPole = pn.OnCollapsedLine[tri.A.Value] || pn.OnCollapsedLine[tri.B.Value] || pn.OnCollapsedLine[tri.C.Value];
+        var bent = (area.Dot(normal) > 0.0).Not
+            || (onPole ? false : area.AngleBetween(normal).Radians > c.SurfaceAngular.Radians);
+        return bent ? CentroidTest(true, 1) : m.CentroidPointTest(f, ps, centroid, c);
+    }
+
+    // Whether the surface point at the parameter centroid, or the surface distance of the corner
+    // mean, is farther than SurfaceChordal; the second only when the first is not.
+    CentroidPointTest(m: BrepModel, f: BrepFaceIndex, ps: Array<Point3D>, centroid: UvCoordinate, c: FaceMeshingCriteria): CentroidTest
+        => UnsignedDistanceToTriangle(m.Geometry.Eval(m.SurfaceOf(f), centroid), ps[0], ps[1], ps[2]) > c.SurfaceChordal
+            ? CentroidTest(true, 2)
+            : CentroidTest(m.SurfaceDistance(f, ps.AverageOfPoints) > c.SurfaceChordal, 4);
+
+    //==
+    // # Sides
+    //
+    // Slot 3 k + j is side j of triangle k, from corner j to corner j + 1, as in a neighbour
+    // table.
+
+    // The slot whose sample slot s reads: the same side in the neighbour u across it when u is
+    // pending and comes first (and names k back), else s itself.
+    SampleSlot(tris: Array<TriangleFace>, nb: Array<Integer>, pending: Array<Boolean>, s: Integer): Integer
+    {
+        var k = s / 3;
+        var u = nb[s];
+        var back = u >= 0 ? tris[u].SideSlot(tris[k].Corner(s % 3 + 1), tris[k].Corner(s % 3)) : -1;
+        return back >= 0
+            ? ((u < k ? (pending[u] ? nb[3 * u + back] == k : false) : false) ? 3 * u + back : s)
+            : s;
+    }
+
+    // Whether slot s is sampled: its triangle is pending, its side is not a boundary segment,
+    // and it reads its own sample.
+    IsSampled(r: UvRegion, tris: Array<TriangleFace>, pending: Array<Boolean>, sources: Array<Integer>, s: Integer): Boolean
+        => pending[s / 3]
+            ? (sources[s] == s ? r.IsConstrained(tris[s / 3].Corner(s % 3), tris[s / 3].Corner(s % 3 + 1)).Not : false)
+            : false;
+
+    // The samples of side j of tri: a projection and two evaluations.
+    SideSampleOf(m: BrepModel, f: BrepFaceIndex, pt: PositionedTriangulation, tri: TriangleFace, j: Integer): SideSample
+    {
+        var a = tri.Corner(j);
+        var b = tri.Corner(j + 1);
+        return SideSample(
+            m.SurfaceDistance(f, pt.Positions[a].HalfwayPoint(pt.Positions[b])),
+            m.Geometry.Eval(m.SurfaceOf(f), pt.Triangulation.Points[a].UvMidpoint(pt.Triangulation.Points[b])));
+    }
+
+    // Whether along some side of triangle k that is not a boundary segment the chord midpoint's
+    // surface distance, or the distance of the surface point at the parameter midpoint from the
+    // flat triangle, is farther than SurfaceChordal. No evaluation: the samples are taken.
+    SidesExceed(r: UvRegion, pt: PositionedTriangulation, samples: Array<SideSample>, sources: Array<Integer>, k: Integer, c: FaceMeshingCriteria): Boolean
+    {
+        var tri = pt.Triangulation.Triangles[k];
+        var ps = pt.CornerPositions(tri);
+        return 3.Range.Any(j => r.IsConstrained(tri.Corner(j), tri.Corner(j + 1))
+            ? false
+            : (samples[sources[3 * k + j]].ChordDistance > c.SurfaceChordal
+                || UnsignedDistanceToTriangle(samples[sources[3 * k + j]].Midpoint, ps[0], ps[1], ps[2]) > c.SurfaceChordal));
+    }
+
+    // TriangleNeedsRefinement of tested triangle k, from its corner and centroid tests and the
+    // pass's side samples: the same Boolean.
+    TriangleNeedsRefinementCached(r: UvRegion, pt: PositionedTriangulation, first: CentroidTest, samples: Array<SideSample>, sources: Array<Integer>, k: Integer, c: FaceMeshingCriteria): Boolean
+        => first.Fails ? true : r.SidesExceed(pt, samples, sources, k, c);
+
+    //==
+    // # The pass
+
+    // UvDelaunay's NeedsRefinement over pt, with the surface evaluations, normals and projections
+    // it made counted as Evaluations: one normal per corner of a tested triangle, at most four
+    // per tested triangle for its corner and centroid tests, and three per side sampled.
+    NeedsRefinementCachedCounted(m: BrepModel, f: BrepFaceIndex, r: UvRegion, pt: PositionedTriangulation, known: Array<Boolean>, c: FaceMeshingCriteria): Counted<Array<Boolean>>
+    {
+        var t = pt.Triangulation;
+        var tris = t.Triangles;
+        var tested = tris.Count.MapRange(k => (k < known.Count ? known[k] : false).Not);
+        var marks = new List<Boolean>().AddRange(t.Points.Map(x => false));
+        var i = 0;
+        while (i < tris.Count)
+        {
+            if (tested[i])
+            {
+                marks = marks.Set(tris[i].A.Value, true).Set(tris[i].B.Value, true).Set(tris[i].C.Value, true);
+            }
+            i = i + 1;
+        }
+        var corners = marks.Freeze();
+        var pn = m.PointNormalsOf(f, t, corners);
+        var first = tris.Count.MapRange(k => tested[k] ? m.TriangleCentroidTest(f, r, pt, pn, k, c) : CentroidTest(false, 0));
+        var pending = tris.Count.MapRange(k => tested[k] ? first[k].Fails.Not : false);
+        var nb = NeighbourSlots(tris, t.Points.Count);
+        var sources = (3 * tris.Count).MapRange(s => SampleSlot(tris, nb, pending, s));
+        var sampled = (3 * tris.Count).MapRange(s => r.IsSampled(tris, pending, sources, s));
+        var samples = (3 * tris.Count).MapRange(s => sampled[s]
+            ? m.SideSampleOf(f, pt, tris[s / 3], s % 3)
+            : SideSample(0.0, Point3D(0.0, 0.0, 0.0)));
+        var value = tris.Count.MapRange(k => tested[k] ? r.TriangleNeedsRefinementCached(pt, first[k], samples, sources, k, c) : false);
+        var work = corners.TrueCount + first.Reduce(0, (n, x) => n + x.Evaluations) + 3 * sampled.TrueCount;
+        return Counted(value, Evaluations(work));
+    }
+
+    // UvDelaunay's NeedsRefinement over pt: the same Boolean per triangle.
+    NeedsRefinementCached(m: BrepModel, f: BrepFaceIndex, r: UvRegion, pt: PositionedTriangulation, known: Array<Boolean>, c: FaceMeshingCriteria): Array<Boolean>
+        => m.NeedsRefinementCachedCounted(f, r, pt, known, c).Value;
+
+    //==
+    // # Refinement
+
+    // TriangulationBuilt's RefineToSurfaceByInsertionBuilt with NeedsRefinementCached over the
+    // carried positions in place of NeedsRefinement: the merged form, kept here only so the
+    // agreement law runs the whole refinement (the merge edits one line of the library's loop and
+    // deletes this copy).
+    RefineToSurfaceByInsertionCached(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
+    {
+        var planar = m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord;
+        var tol = m.RegionTolerance(f, chart);
+        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
+        var none = [0].Take(0);
+        var current = m.Positioned(f, t);
+        var known = t.Triangles.Map(x => false);
+        var refused = t.Triangles.Map(x => false);
+        var good = t.Triangles.Map(x => false);
+        var pass = 0;
+        var changed = true;
+        while (pass < 40 && changed)
+        {
+            var now = current.Triangulation;
+            var surface = planar ? now.Triangles.Map(x => false) : m.NeedsRefinementCached(f, r, current, known, c);
+            var mid = m.SurfacePassBuilt(f, r, chart, tol, least, current, surface);
+            var carried = now.Triangles.CarriedMarks(refused, none, mid.Triangulation.Triangles);
+            var goodMid = now.Triangles.CarriedMarks(good, none, mid.Triangulation.Triangles);
+            var bad = m.BelowAngleKnown(f, mid.Triangulation, carried, goodMid);
+            var next = m.AnglePassBuilt(f, r, chart, tol, least, mid, bad);
+            refused = mid.Triangulation.Triangles.CarriedMarks(carried, bad, next.Triangulation.Triangles);
+            good = mid.Triangulation.Triangles.CarriedMarks(mid.Triangulation.AngleGoodMarks(carried, bad), none, next.Triangulation.Triangles);
+            known = KnownGood(now, surface, next.Triangulation);
+            changed = next.Triangulation.Points.Count > now.Points.Count;
+            current = next;
+            pass = pass + 1;
+        }
+        return current.Triangulation;
+    }
+}
