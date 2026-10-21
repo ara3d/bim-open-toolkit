@@ -1,0 +1,33 @@
+//==
+// # The bisection with its ends carried down: law witnesses (complexity sweep, chunk R5)
+//
+// Sections, in order:
+//  - Bisection cases
+
+//==
+// # Bisection cases
+
+// One edge bisected both ways, for the agreement laws: edge Edge of Model under Criteria, its
+// domain Range, the usable images, whether it is degenerate, BisectedCachedCounted's
+// discretization and BisectedParametersGiven's parameters. Built once per sweep as part of a
+// BisectionCases witness, so each law reads the two bisections instead of running them.
+// Removes: the agreement laws re-running the reference bisection per claim.
+type BisectionCase
+{
+    Model: BrepModel;
+    Edge: BrepEdgeIndex;
+    Criteria: DiscretizationCriteria;
+    Range: NumberInterval;
+    Images: Array<EdgeImage>;
+    Degenerate: Boolean;
+    Cached: EdgeDiscretization;
+    Reference: Array<Number>;
+}
+
+// A named family of bisection cases: every evaluable edge with a domain of positive extent of
+// some models, at some chordal bounds. The value of a Witness_Bisection* function.
+type BisectionCases
+{
+    Family: String;
+    Cases: Array<BisectionCase>;
+}

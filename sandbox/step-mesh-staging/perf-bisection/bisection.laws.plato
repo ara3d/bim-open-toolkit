@@ -1,0 +1,226 @@
+//==
+// # The bisection with its ends carried down: laws (complexity sweep, chunk R5)
+//
+// The count witness for BisectedCachedCounted (curve evaluations and inverse maps per
+// parameter), the exact evaluation bound of EstimatedSagittaBody2Counted, and the laws that the
+// cached forms return what their references return: the bisection's parameters and the bounded
+// discretization bit for bit, the ordered segment test's Boolean, SagittaGiven bit for bit, and
+// the estimated sagitta's verdicts in Law_SagittaIsAttained. The bisection's agreement laws read
+// BisectionCases witnesses, built once per sweep (strategy part a). Layer 8: the laws use layer 7's
+// witnesses and layer 8's B-spline witnesses (CurveEdgeModel, Witness_BsplineCrescentSheet).
+//
+// Sections, in order:
+//  - Witness
+//  - Agreement of the bisection
+//  - The estimated sagitta
+
+library BisectionCachedLaws
+{
+    //==
+    // # Witness
+
+    // BisectedCachedCounted on edge e of m under c over the usable images, the domain computed
+    // once, as DiscretizeRanged passes them.
+    BisectedOn(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria): Counted<EdgeDiscretization>
+    {
+        var range = m.EdgeDomain(e).Range;
+        return m.BisectedCachedCounted(e, c, m.UsableImagesGiven(e, c, m.EdgeImages(e), range), range);
+    }
+
+    // The family bisected at the chordal bound of DefaultCriteria(chordal): the unit cylinder's
+    // two circles (two images each, the cylinder and a plane, both with a closed-form inverse),
+    // the upper arc of the crescent sheet (a B-spline edge with one image on a B-spline surface,
+    // whose second ends are seeded searches), and the clamped cubic of CurveEdgeModel(0) (a
+    // B-spline edge with no image).
+    BisectionFamily(chordal: Number): Array<Counted<EdgeDiscretization>>
+    {
+        var c = DefaultCriteria(chordal);
+        var cylinder = BrepModel.Witness_Cylinder;
+        return [
+            cylinder.BisectedOn(BrepEdgeIndex(0), c),
+            cylinder.BisectedOn(BrepEdgeIndex(1), c),
+            BrepModel.Witness_BsplineCrescentSheet.BisectedOn(BrepEdgeIndex(0), c),
+            0.CurveEdgeModel.BisectedOn(BrepEdgeIndex(0), c)];
+    }
+
+    // The family's size: its parameters, summed over the four edges.
+    BisectionFamilySize(chordal: Number): Integer
+        => chordal.BisectionFamily.Reduce(0, (n, x) => n + x.Value.Parameters.Count);
+
+    // The family's curve evaluations and inverse maps, summed over the four edges.
+    BisectionFamilyWork(chordal: Number): WorkBudget
+        => chordal.BisectionFamily.Reduce(Projections(0), (w, x) => w.Add(Evaluations(x.Work.Evaluations)).Add(Projections(x.Work.Projections)));
+
+    // The chordal bound at which the family has n parameters: 0.01 at the smaller size of the
+    // witness, 0.0002 at the larger.
+    BisectionChordalOfSize(n: Integer): Number
+        => n <= 128 ? 0.01 : 0.0002;
+
+    // BisectedCachedCounted evaluates each parameter of the bisection at most twice (once as a
+    // midpoint or seed; once more only where a failing test stops at the length floor) and maps
+    // it to each image once, plus one seeded search per image test on an image without a
+    // closed-form inverse: at most 2 Evaluations and 2 Projections per parameter on the family,
+    // at the two sizes the chordal bounds 0.01 and 0.0002 give. The reference evaluated each
+    // final parameter 5 to 9 times and projected it twice per image at every test it was an end
+    // of. Evaluations count PointOnEdge calls the bisection makes itself (not the sagitta's or
+    // the tangents'), Projections the inverse maps (Project, ClosestParameter, and the seeded
+    // ProjectNearBySearch or ClosestParameterNear).
+    Witness_BisectedCachedWork(_: WorkClaim): WorkClaim
+        => WorkClaim("BisectedCached: curve evaluations and inverse maps per parameter", Evaluations(2).Add(Projections(2)), [R5SmallSize(0), R5LargeSize(0)],
+            n => BisectionFamilyWork(BisectionChordalOfSize(n)));
+
+    // The family's parameter count at chordal 0.01.
+    R5SmallSize(_: Integer): Integer
+        => 106;
+
+    // The family's parameter count at chordal 0.0002.
+    R5LargeSize(_: Integer): Integer
+        => 770;
+
+    // The witness sizes are the family's parameter counts at the two chordal bounds, and each is
+    // on its side of BisectionChordalOfSize's split.
+    Law_Perf_BisectedCachedWitnessSizes(_: Integer): Boolean
+        => (0.01).BisectionFamilySize == R5SmallSize(0)
+            && (0.0002).BisectionFamilySize == R5LargeSize(0)
+            && R5SmallSize(0) <= 128
+            && R5LargeSize(0) > 128;
+
+    //==
+    // # Agreement of the bisection
+
+    // The parameters are the same, bit for bit.
+    SameParameters(a: Array<Number>, b: Array<Number>): Boolean
+        => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
+
+    // Edge e of m bisected both ways under DefaultCriteria(chordal), over the usable images.
+    BisectionCaseOf(m: BrepModel, e: BrepEdgeIndex, chordal: Number): BisectionCase
+    {
+        var c = DefaultCriteria(chordal);
+        var range = m.EdgeDomain(e).Range;
+        var images = m.UsableImagesGiven(e, c, m.EdgeImages(e), range);
+        return BisectionCase(m, e, c, range, images, m.IsDegenerateEdgeGiven(e, range),
+            m.BisectedCachedCounted(e, c, images, range).Value, m.BisectedParametersGiven(e, c, images, range));
+    }
+
+    // The cases of every evaluable edge of m with a domain of positive extent, at chordal bounds
+    // 0.01 and 0.001.
+    BisectionCasesOf(m: BrepModel): Array<BisectionCase>
+        => m.Edges.Count.Range.FlatMap(i => (m.IsEdgeEvaluable(BrepEdgeIndex(i)) ? m.EdgeDomain(BrepEdgeIndex(i)).Range.Start < m.EdgeDomain(BrepEdgeIndex(i)).Range.End : false)
+            ? [0.01, 0.001].Map(chordal => m.BisectionCaseOf(BrepEdgeIndex(i), chordal))
+            : 0.MapRange(j => m.BisectionCaseOf(BrepEdgeIndex(0), 0.01)));
+
+    // Circles and lines with closed-form images: the unit cylinder (two circles, two images
+    // each, and the seam), the sphere (a meridian through both poles, where PolesFilled sets a
+    // free coordinate) and the cone (its apex on a pole).
+    Witness_BisectionConics(_: BisectionCases): BisectionCases
+        => BisectionCases("conics", BrepModel.Witness_Cylinder.BisectionCasesOf
+            .Concatenate(BrepModel.Witness_Sphere.BisectionCasesOf)
+            .Concatenate(BrepModel.Witness_Cone.BisectionCasesOf));
+
+    // The crescent sheet's two B-spline arcs, one image each on a B-spline surface, so the image
+    // test's second ends are seeded searches.
+    Witness_BisectionCrescent(_: BisectionCases): BisectionCases
+        => BisectionCases("crescent", BrepModel.Witness_BsplineCrescentSheet.BisectionCasesOf);
+
+    // The five B-spline curve fixtures, which have no image.
+    Witness_BisectionCurveFixtures(_: BisectionCases): BisectionCases
+        => BisectionCases("curve fixtures", 5.Range.FlatMap(k => k.CurveEdgeModel.BisectionCasesOf));
+
+    // The box whose bottom edge is a surface curve with a pcurve on the bottom plane (the
+    // sagitta estimated, the pcurve the image's inverse), at pcurve speeds 1 and 2.
+    Witness_BisectionPcurves(_: BisectionCases): BisectionCases
+        => BisectionCases("pcurves", BrepModel.Witness_UnitBoxWithBottomPcurve(1.0).BisectionCasesOf
+            .Concatenate(BrepModel.Witness_UnitBoxWithBottomPcurve(2.0).BisectionCasesOf));
+
+    // BisectedCachedCounted gives BisectedParametersGiven's parameters bit for bit, each with
+    // PointOnEdge's point (the curve's, at both ends too).
+    Law_Perf_BisectionCachedAgrees(w: BisectionCases): Boolean
+        => w.Cases.All(x => SameParameters(x.Cached.Parameters, x.Reference)
+            && x.Cached.Points.Count == x.Reference.Count
+            && x.Reference.Count.Range.All(i => x.Cached.Points[i] == x.Model.PointOnEdge(x.Edge, x.Reference[i])));
+
+    // DiscretizeBoundedOnCached is DiscretizeBoundedOnRanged bit for bit with least 1 (the
+    // bisection's points kept) and with least three above the bisection's count (raised and
+    // evaluated again). On a bisected edge DiscretizeBoundedOnRanged is DiscretizationAt of the
+    // raised reference parameters, written out so the reference is not bisected again.
+    Law_Perf_DiscretizeBoundedOnCachedAgrees(w: BisectionCases): Boolean
+        => w.Cases.All(x => [1, x.Cached.SegmentCount + 3].All(least =>
+            x.Model.DiscretizeBoundedOnCached(x.Edge, x.Criteria, least, x.Images, x.Range, x.Degenerate).SameDiscretization(
+                (x.Degenerate ? false : x.Model.ConicCountGiven(x.Edge, x.Criteria, 1, x.Range) == 0)
+                    ? x.Model.DiscretizationAt(x.Edge, x.Model.RaisedToCount(x.Reference, least))
+                    : x.Model.DiscretizeBoundedOnRanged(x.Edge, x.Criteria, least, x.Images, x.Range, x.Degenerate))));
+
+    // SegmentFailsOrderedOn is SegmentFailsOn on every segment of the bisection (which pass the
+    // cheaper criteria, so the image test runs) and on the whole domain (which mostly fails
+    // early).
+    Law_Perf_SegmentFailsOrderedAgrees(w: BisectionCases): Boolean
+        => w.Cases.All(x => x.Reference.Count.Range.All(i =>
+                i + 1 < x.Reference.Count
+                    ? x.Model.SegmentFailsOrderedOn(x.Edge, x.Criteria, x.Reference[i], x.Reference[i + 1], x.Images)
+                        == x.Model.SegmentFailsOn(x.Edge, x.Criteria, x.Reference[i], x.Reference[i + 1], x.Images)
+                    : true)
+            && x.Model.SegmentFailsOrderedOn(x.Edge, x.Criteria, x.Range.Start, x.Range.End, x.Images)
+                == x.Model.SegmentFailsOn(x.Edge, x.Criteria, x.Range.Start, x.Range.End, x.Images));
+
+    //==
+    // # The estimated sagitta
+
+    // SagittaGiven is Sagitta bit for bit on curve fixture k over [t0, t1] and over [t1, t0],
+    // for parameters anywhere in its domain (the hull certificate on a B-spline, as
+    // Law_SagittaBoundsArc reads it), and on the unit cylinder's bottom circle (the closed form).
+    Law_Perf_SagittaGivenAgrees(k: Integer, a: Number, b: Number): Boolean
+    {
+        var m = k.CurveEdgeModel;
+        var e = BrepEdgeIndex(0);
+        var d = k.CurveFixture;
+        var t0 = d.Basis.DomainAt(a.Min(b));
+        var t1 = d.Basis.DomainAt(a.Max(b));
+        var cylinder = BrepModel.Witness_Cylinder;
+        var u0 = a.UnitFraction * Number.Tau;
+        var u1 = b.UnitFraction * Number.Tau;
+        return m.SagittaGiven(e, t0, t1, m.PointOnEdge(e, t0), m.PointOnEdge(e, t1)) == m.Sagitta(e, t0, t1)
+            && m.SagittaGiven(e, t1, t0, m.PointOnEdge(e, t1), m.PointOnEdge(e, t0)) == m.Sagitta(e, t1, t0)
+            && cylinder.SagittaGiven(e, u0, u1, cylinder.PointOnEdge(e, u0), cylinder.PointOnEdge(e, u1)) == cylinder.Sagitta(e, u0, u1);
+    }
+
+    // EstimatedSagittaBody2Counted makes at least the 67 evaluations of its samples and first
+    // two inner points and at most 110, on curve fixture k over any [t0, t1] in its domain.
+    // EstimatedSagitta made 65 x 2 for the samples, 2 x 60 for the golden section and 2 more.
+    Law_Perf_EstimatedSagittaWithinBudget(k: Integer, a: Number, b: Number): Boolean
+    {
+        var m = k.CurveEdgeModel;
+        var e = BrepEdgeIndex(0);
+        var d = k.CurveFixture;
+        var t0 = d.Basis.DomainAt(a.Min(b));
+        var t1 = d.Basis.DomainAt(a.Max(b));
+        var n = m.EstimatedSagittaBody2Counted(e, t0, t1, m.PointOnEdge(e, t0), m.PointOnEdge(e, t1)).Work.Evaluations;
+        return n >= 67 && n <= 110;
+    }
+
+    // Law_SagittaIsAttained's verdict on fixture k over [t0, t1] is the same with
+    // EstimatedSagittaBody2 as with EstimatedSagitta: the early stop moves no case across the
+    // law's bound.
+    SagittaAttainedVerdictsAgree(k: Integer, a: Number, b: Number): Boolean
+    {
+        var m = k.CurveEdgeModel;
+        var e = BrepEdgeIndex(0);
+        var d = k.CurveFixture;
+        var t0 = d.Basis.DomainAt(a.Min(b));
+        var t1 = d.Basis.DomainAt(a.Max(b));
+        var bound = m.Tolerances.Length.Value + ResolutionAt(m.SagittaMagnitude(k)).Value;
+        var sagitta = m.Sagitta(e, t0, t1);
+        return ((sagitta - m.EstimatedSagitta(e, t0, t1)).Abs <= bound)
+            == ((sagitta - m.EstimatedSagittaBody2(e, t0, t1, m.PointOnEdge(e, t0), m.PointOnEdge(e, t1))).Abs <= bound);
+    }
+
+    // SagittaAttainedVerdictsAgree on the runner's cases.
+    Law_Perf_SagittaAttainedVerdictAgrees(k: Integer, a: Number, b: Number): Boolean
+        => SagittaAttainedVerdictsAgree(k, a, b);
+
+    // SagittaAttainedVerdictsAgree on the case Law_SagittaIsAttained fails in
+    // reviews/verdicts-cpu64.tsv (fixture 2, whose corner the hull certificate and the estimate
+    // see differently), so that law keeps its failing verdict once EstimatedSagitta is wired to
+    // EstimatedSagittaBody2.
+    Law_Perf_SagittaAttainedBaselineFailKept(_: Integer): Boolean
+        => SagittaAttainedVerdictsAgree(12, -9.387846216274355, -3.0);
+}

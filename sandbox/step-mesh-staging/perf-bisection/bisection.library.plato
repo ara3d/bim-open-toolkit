@@ -1,0 +1,372 @@
+//==
+// # The bisection with its ends carried down (complexity sweep, chunk R5)
+//
+// Ranked candidates 23 and 24 of docs/plans/step-mesher-complexity.md.
+//
+// 23: the bisection (termination's SplitSpanOn, SegmentFailsOn, layer 4's HalvesKeepMinLength
+// and PieceOf) evaluated each final parameter 5 to 9 times: as an end of each neighbouring piece
+// at every level, in HalvesKeepMinLength, in the sagitta's a and b, and once more in
+// DiscretizationAt; it projected each piece's two ends onto every image at every test; and
+// SegmentFailsOn's || chain ran all four criteria, the image test too, when the first had failed.
+// Here a span's ends travel down the recursion as BisectionEnd values holding the point and its
+// anchor in every image, so a parameter is evaluated once and mapped to each image once by the
+// global inverse (Project or ClosestParameter); the criteria run cheapest first and stop at the
+// first that fails; and the bisection returns its points, so DiscretizationAt is not rerun.
+//
+// Bit for bit: every interior point is PointOnEdge at its parameter, as before, and the image
+// test of a piece [A, B] reads the same parameter-space points the reference reads. Those come
+// from layer 1's ProjectAlong or ClosestParametersAlong over the piece's two points: the first
+// point by the global inverse (its anchor, computed once), the second by a search seeded with
+// the first's answer (SeededEndCounted). On a closed-form surface and a straight pcurve the
+// second is the global inverse too, so it is the end's own anchor and costs nothing; on every
+// other image it is one seeded local search per test, the step ProjectAlong makes for its second
+// point. So a test changes no decision, and the parameters are the reference's.
+//
+// 24: EstimatedSagitta made about 256 evaluations per call. EstimatedSagittaBody2 takes the
+// chord's ends from its caller, maps the 65 sample distances once, reuses one golden-section
+// point per iteration, and stops once the four bracket values agree to the arithmetic resolution
+// or the bracket is at it, or after GoldenIterationBudget iterations: at most 110 evaluations.
+// Its result differs from EstimatedSagitta's: TRACK.md, "Findings".
+//
+// Sections, in order:
+//  - Sagitta with the ends given
+//  - The estimated sagitta
+//  - Anchors
+//  - The image test of one piece
+//  - The segment test, cheapest criterion first
+//  - The bisection
+//  - Discretize
+
+library BisectionCached
+{
+    //==
+    // # Sagitta with the ends given
+
+    // Layer 4's Sagitta(m, e, t0, t1) with the curve's points at t0 and t1 given: the closed form
+    // where there is one, else the body of SagittaByHullBound with the points it would evaluate.
+    SagittaGiven(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number, p0: Point3D, p1: Point3D): Number
+    {
+        var closed = m.Geometry.CurveAt(m.Edges[e].Curve).ClosedFormSagitta(t0, t1);
+        return closed >= 0.0
+            ? closed
+            : (t0 <= t1 ? m.SagittaByHullBoundGiven(e, t0, t1, p0, p1) : m.SagittaByHullBoundGiven(e, t1, t0, p1, p0));
+    }
+
+    // SagittaByHullBoundBody(m, e, lo, hi) for lo <= hi with a = PointOnEdge(e, lo) and
+    // b = PointOnEdge(e, hi) given: SagittaByHullBoundBody(m, e, t0, t1) is
+    // m.SagittaByHullBoundGiven(e, lo, hi, m.PointOnEdge(e, lo), m.PointOnEdge(e, hi)).
+    SagittaByHullBoundGiven(m: BrepModel, e: BrepEdgeIndex, lo: Number, hi: Number, a: Point3D, b: Point3D): Number
+        => match (m.Geometry.CurveAt(m.Edges[e].Curve))
+        {
+            Line(origin, velocity) => 0.0;
+            Circle(placement, radius) => m.EstimatedSagittaBody2(e, lo, hi, a, b);
+            Ellipse(placement, semiAxis1, semiAxis2) => m.EstimatedSagittaBody2(e, lo, hi, a, b);
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => m.EstimatedSagittaBody2(e, lo, hi, a, b);
+            Parabola(placement, focalDistance) => m.EstimatedSagittaBody2(e, lo, hi, a, b);
+            Polyline(points) => points.PolylineSagitta(a, b, lo, hi);
+            BSpline(data) => data.HullSagitta(a, b, lo, hi, m.Tolerances.Length.Value);
+            Trimmed(basis, range, sameSense) => m.EstimatedSagittaBody2(e, lo, hi, a, b);
+            Composite(segments) => m.EstimatedSagittaBody2(e, lo, hi, a, b);
+            Offset(basis, distance, reference) => m.EstimatedSagittaBody2(e, lo, hi, a, b);
+            OnSurface(spaceCurve, supports, master) => m.EstimatedSagittaBody2(e, lo, hi, a, b);
+        };
+
+    //==
+    // # The estimated sagitta
+
+    // The most golden-section iterations EstimatedSagittaBody2 makes: with the 65 samples and the
+    // two first inner points, 110 evaluations per call. The bracket is then 0.618^43, about 1e-9,
+    // of two sample steps wide.
+    GoldenIterationBudget(_: Integer): Integer
+        => 43;
+
+    // EstimatedSagitta(m, e, lo, hi) with a = PointOnEdge(e, lo) and b = PointOnEdge(e, hi)
+    // given, and its curve evaluations counted: the best of the 65 uniform sample distances,
+    // mapped once, refined by golden-section search on the two sample steps around it, one new
+    // point per iteration. The search stops when the distances at the bracket's ends and inner
+    // points agree to the arithmetic resolution at the points' magnitude, when the bracket is at
+    // the resolution of its parameters (lo > hi is allowed, as in EstimatedSagitta), or after GoldenIterationBudget iterations. The answer is
+    // the larger of the best sample and the two inner points. Evaluations: 67 plus the
+    // iterations, at most 110.
+    EstimatedSagittaBody2Counted(m: BrepModel, e: BrepEdgeIndex, lo: Number, hi: Number, a: Point3D, b: Point3D): Counted<Number>
+    {
+        var step = (hi - lo) / 64.0;
+        var distances = 65.MapRange(j => DistanceToSegment(a, b, m.PointOnEdge(e, lo + step * j.ToNumber)));
+        var best = 65.Range.Reduce(0, (i, j) => distances[j] > distances[i] ? j : i);
+        var below = (best - 1).Max(0);
+        var above = (best + 1).Min(64);
+        var x0 = lo + step * below.ToNumber;
+        var x1 = lo + step * above.ToNumber;
+        var f0 = distances[below];
+        var f1 = distances[above];
+        var ratio = 0.5 * ((5.0).Sqrt - 1.0);
+        var left = x1 - (x1 - x0) * ratio;
+        var right = x0 + (x1 - x0) * ratio;
+        var fl = DistanceToSegment(a, b, m.PointOnEdge(e, left));
+        var fr = DistanceToSegment(a, b, m.PointOnEdge(e, right));
+        var resolution = ResolutionAt(a.PositionVector.Length.Max(b.PositionVector.Length).Max(distances[best])).Value;
+        var n = 0;
+        while (n < Integer.GoldenIterationBudget
+            && f0.Max(f1).Max(fl).Max(fr) - f0.Min(f1).Min(fl).Min(fr) > resolution
+            && (x1 - x0).Abs > ResolutionAt(x0.Abs.Max(x1.Abs)).Value)
+        {
+            if (fl >= fr)
+            {
+                x1 = right;
+                f1 = fr;
+                right = left;
+                fr = fl;
+                left = x1 - (x1 - x0) * ratio;
+                fl = DistanceToSegment(a, b, m.PointOnEdge(e, left));
+            }
+            else
+            {
+                x0 = left;
+                f0 = fl;
+                left = right;
+                fl = fr;
+                right = x0 + (x1 - x0) * ratio;
+                fr = DistanceToSegment(a, b, m.PointOnEdge(e, right));
+            }
+            n = n + 1;
+        }
+        return Counted(fl.Max(fr).Max(distances[best]), Evaluations(67 + n));
+    }
+
+    // EstimatedSagittaBody2Counted's value: EstimatedSagitta(m, e, lo, hi) is
+    // m.EstimatedSagittaBody2(e, lo, hi, m.PointOnEdge(e, lo), m.PointOnEdge(e, hi)).
+    EstimatedSagittaBody2(m: BrepModel, e: BrepEdgeIndex, lo: Number, hi: Number, a: Point3D, b: Point3D): Number
+        => m.EstimatedSagittaBody2Counted(e, lo, hi, a, b).Value;
+
+    //==
+    // # Anchors
+
+    // The anchor of point p in image img, by the global inverse, counted as Projections (1, or 0
+    // on an image that is not evaluable): what ProjectAlong or ClosestParametersAlong gives the
+    // first point of a run.
+    AnchorCounted(m: BrepModel, img: EdgeImage, p: Point3D): Counted<ImageAnchor>
+    {
+        if (m.IsImageEvaluable(img).Not)
+        {
+            return Counted(ImageAnchor(UvCoordinate(0.0, 0.0), 0.0), Projections(0));
+        }
+        if (img.Pcurve.IsNone)
+        {
+            return Counted(ImageAnchor(m.Geometry.Project(m.ImageSurface(img), p), 0.0), Projections(1));
+        }
+        var t = m.Geometry.ClosestParameter(img.Pcurve, p);
+        return Counted(ImageAnchor(m.Geometry.Eval(m.Geometry.Pcurves[img.Pcurve].Curve, t), t), Projections(1));
+    }
+
+    // The anchors of p in every image, in order, with their Projections summed.
+    AnchorsCounted(m: BrepModel, images: Array<EdgeImage>, p: Point3D): Counted<Array<ImageAnchor>>
+    {
+        var each = images.Map(img => m.AnchorCounted(img, p));
+        return Counted(each.Map(x => x.Value), Projections(each.Reduce(0, (n, x) => n + x.Work.Projections)));
+    }
+
+    // The end of a span at parameter t: one curve evaluation and its anchors.
+    BisectionEndCounted(m: BrepModel, e: BrepEdgeIndex, t: Number, images: Array<EdgeImage>): Counted<BisectionEnd>
+    {
+        var p = m.PointOnEdge(e, t);
+        var anchors = m.AnchorsCounted(images, p);
+        return Counted(BisectionEnd(t, p, anchors.Value), Evaluations(1).Add(anchors.Work));
+    }
+
+    //==
+    // # The image test of one piece
+
+    // The raw parameter-space point (before PolesFilled and unwrapping) that ProjectAlong or
+    // ClosestParametersAlong gives point p, the second of a run whose first has the anchor from,
+    // in the evaluable image img; own is p's anchor. On a closed-form surface or a straight
+    // pcurve that is own's point; otherwise the search seeded with from's answer, kept when its
+    // point lies within the length tolerance of p, else own's point (the global inverse the
+    // run falls back to). Projections counts the seeded search, 0 or 1. The same steps as layer
+    // 1's ProjectAlongBySearchCounted and ClosestParametersAlongBySearchCounted at i = 1.
+    SeededEndCounted(m: BrepModel, img: EdgeImage, from: ImageAnchor, p: Point3D, own: ImageAnchor): Counted<UvCoordinate>
+    {
+        var g = m.Geometry;
+        var tol = m.Tolerances.Length.Value;
+        if (img.Pcurve.IsNone)
+        {
+            var s = m.ImageSurface(img);
+            if (g.HasClosedFormProjection(s))
+            {
+                return Counted(own.Uv, Projections(0));
+            }
+            var surface = g.SurfaceAt(s);
+            var d = surface.Domain(g);
+            var nearUv = surface.ProjectNearBySearchCounted(g, p, from.Uv).Value;
+            return Counted(surface.Eval(g, nearUv).Distance(p) <= tol ? surface.StartWhereFree(g, nearUv, d).WrapSeams(d) : own.Uv, Projections(1));
+        }
+        if (g.IsStraightPcurve(img.Pcurve))
+        {
+            return Counted(own.Uv, Projections(0));
+        }
+        var nearT = g.ClosestParameterNear(img.Pcurve, p, from.Parameter);
+        return Counted(g.Eval(img.Pcurve, nearT).Distance(p) <= tol ? g.Eval(g.Pcurves[img.Pcurve].Curve, nearT) : own.Uv, Projections(1));
+    }
+
+    // Whether the image chord of the piece [a, b] in image k of the images (img) exceeds the
+    // image bound: termination's ImagesExceedChordalOn for one image of a one-segment piece, with
+    // the ends' anchors given. False on an image that is not evaluable.
+    ImageExceedsCounted(m: BrepModel, c: DiscretizationCriteria, a: BisectionEnd, b: BisectionEnd, img: EdgeImage, k: Integer): Counted<Boolean>
+    {
+        if (m.IsImageEvaluable(img).Not)
+        {
+            return Counted(false, Projections(0));
+        }
+        var s = m.ImageSurface(img);
+        var end = m.SeededEndCounted(img, a.Anchors[k], b.Point, b.Anchors[k]);
+        var raw = [a.Anchors[k].Uv, end.Value];
+        var uvs = m.Geometry.Domain(s).UnwrappedByContinuity(img.Pcurve.IsNone ? m.PolesFilled(s, raw) : raw);
+        return Counted(m.UvChordDeviation(s, a.Point, b.Point, uvs[0], uvs[1], SamplePlan.DiscretizationPlan) > m.ImageBound(c), end.Work);
+    }
+
+    // Whether some image chord of the piece [a, b] exceeds the image bound, the images tested in
+    // order until one does.
+    ImagesExceedCounted(m: BrepModel, c: DiscretizationCriteria, a: BisectionEnd, b: BisectionEnd, images: Array<EdgeImage>): Counted<Boolean>
+    {
+        var exceeds = false;
+        var work = Projections(0);
+        var k = 0;
+        while (exceeds.Not && k < images.Count)
+        {
+            var one = m.ImageExceedsCounted(c, a, b, images[k], k);
+            exceeds = one.Value;
+            work = work.Add(one.Work);
+            k = k + 1;
+        }
+        return Counted(exceeds, work);
+    }
+
+    //==
+    // # The segment test, cheapest criterion first
+
+    // Termination's SegmentFailsOn(m, e, c, a.Parameter, b.Parameter, images) with the ends given,
+    // the criteria in order of cost and stopping at the first that fails: the length limit (one
+    // distance), the tangent deviation (three derivatives), the sagitta (a closed form, a hull
+    // certificate, or an estimate), the image chords (a seeded search and three surface
+    // evaluations per image on a surface without a closed-form inverse). The same Boolean.
+    SegmentFailsCachedCounted(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: BisectionEnd, b: BisectionEnd, images: Array<EdgeImage>): Counted<Boolean>
+    {
+        var piece = EdgeDiscretization(e, [a.Parameter, b.Parameter], [a.Point, b.Point]);
+        if (piece.SegmentLength(0).IsWithinLimit(c.MaxLength).Not)
+        {
+            return Counted(true, Projections(0));
+        }
+        if (m.TangentDeviation(piece, SamplePlan.DiscretizationPlan, 0) > c.EffectiveAngular * 0.5)
+        {
+            return Counted(true, Projections(0));
+        }
+        if (m.SagittaGiven(e, a.Parameter, b.Parameter, a.Point, b.Point) > c.EffectiveChordal(m.Tolerances))
+        {
+            return Counted(true, Projections(0));
+        }
+        return m.ImagesExceedCounted(c, a, b, images);
+    }
+
+    // Termination's SegmentFailsOn with each end evaluated once and the criteria cheapest first,
+    // for callers that hold parameters only (the findings' floor count): the same Boolean.
+    SegmentFailsOrderedOn(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: Number, b: Number, images: Array<EdgeImage>): Boolean
+    {
+        var piece = m.PieceOf(e, a, b);
+        return piece.SegmentLength(0).IsWithinLimit(c.MaxLength).Not
+            ? true
+            : (m.TangentDeviation(piece, SamplePlan.DiscretizationPlan, 0) > c.EffectiveAngular * 0.5
+                ? true
+                : (m.SagittaGiven(e, a, b, piece.Points[0], piece.Points[1]) > c.EffectiveChordal(m.Tolerances)
+                    ? true
+                    : m.ImagesExceedChordalOn(piece, c, images)));
+    }
+
+    //==
+    // # The bisection
+
+    // Termination's SplitSpanOn(m, e, c, a.Parameter, b.Parameter, depth, images) with the
+    // span's ends given: the ends strictly inside [a, b] that the bisection makes, in order, each
+    // with its point and anchors. The span is split at its parameter midpoint while it fails,
+    // both halves keep the effective minimum length, and depth is below 40. Work: Evaluations
+    // counts the midpoints evaluated (one per failing test below depth 40), Projections the
+    // anchors of the midpoints kept (one per image each) and the seeded searches of the image
+    // tests. The sagitta's own evaluations are its work, not this function's.
+    SplitSpanCachedCounted(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: BisectionEnd, b: BisectionEnd, depth: Integer, images: Array<EdgeImage>): Counted<Array<BisectionEnd>>
+    {
+        var none = [a].Take(0);
+        if (depth >= 40)
+        {
+            return Counted(none, Projections(0));
+        }
+        var test = m.SegmentFailsCachedCounted(e, c, a, b, images);
+        if (test.Value.Not)
+        {
+            return Counted(none, test.Work);
+        }
+        var t = (a.Parameter + b.Parameter) * 0.5;
+        var p = m.PointOnEdge(e, t);
+        var shortest = c.EffectiveMinLength(m.Tolerances);
+        if ((a.Point.Distance(p) >= shortest ? p.Distance(b.Point) >= shortest : false).Not)
+        {
+            return Counted(none, test.Work.Add(Evaluations(1)));
+        }
+        var anchors = m.AnchorsCounted(images, p);
+        var middle = BisectionEnd(t, p, anchors.Value);
+        var below = m.SplitSpanCachedCounted(e, c, a, middle, depth + 1, images);
+        var above = m.SplitSpanCachedCounted(e, c, middle, b, depth + 1, images);
+        return Counted(
+            below.Value.Concatenate([middle]).Concatenate(above.Value),
+            test.Work.Add(Evaluations(1)).Add(anchors.Work).Add(below.Work).Add(above.Work));
+    }
+
+    // SplitSpanCachedCounted's value.
+    SplitSpanCached(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: BisectionEnd, b: BisectionEnd, depth: Integer, images: Array<EdgeImage>): Array<BisectionEnd>
+        => m.SplitSpanCachedCounted(e, c, a, b, depth, images).Value;
+
+    // BisectedParametersGiven(m, e, c, images, range) with the curve's point at every parameter,
+    // each evaluated once: the parameters are BisectedParametersGiven's, and point i is
+    // PointOnEdge at parameter i (curve points at both ends, not the vertex points). Work: the
+    // seeds' evaluations and anchors, and every span's SplitSpanCachedCounted work.
+    BisectedCachedCounted(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, images: Array<EdgeImage>, range: NumberInterval): Counted<EdgeDiscretization>
+    {
+        var seeds = m.EdgeSeedsGiven(e, range);
+        var ends = seeds.Map(t => m.BisectionEndCounted(e, t, images));
+        var spans = (seeds.Count - 1).MapRange(k => m.SplitSpanCachedCounted(e, c, ends[k].Value, ends[k + 1].Value, 0, images));
+        var all = [ends[0].Value].Concatenate((seeds.Count - 1).Range.FlatMap(k => spans[k].Value.Concatenate([ends[k + 1].Value])));
+        var work = ends.Reduce(Projections(0), (w, x) => w.Add(x.Work)).Add(spans.Reduce(Projections(0), (w, x) => w.Add(x.Work)));
+        return Counted(EdgeDiscretization(e, all.Map(x => x.Parameter), all.Map(x => x.Point)), work);
+    }
+
+    //==
+    // # Discretize
+
+    // d with its first and last points replaced by the edge's domain-start and domain-end vertex
+    // points: DiscretizationAt(m, d.Edge, d.Parameters) when d's interior points are PointOnEdge
+    // at its parameters.
+    WithVertexEnds(m: BrepModel, d: EdgeDiscretization): EdgeDiscretization
+        => EdgeDiscretization(d.Edge, d.Parameters, d.Points.Count.MapRange(i =>
+            i == 0
+                ? m.Vertices[m.DomainStartVertex(d.Edge)].Point
+                : (i == d.Points.Count - 1 ? m.Vertices[m.DomainEndVertex(d.Edge)].Point : d.Points[i])));
+
+    // Chunk E2's DiscretizeBoundedOnRanged with the bisection's points kept: a degenerate edge
+    // and a conic as there; every other curve bisected by BisectedCachedCounted, whose points
+    // are used as they are when it has at least least segments (RaisedToCount then adds none),
+    // and evaluated again only for the parameters RaisedToCount adds otherwise. The same
+    // discretization, bit for bit.
+    DiscretizeBoundedOnCached(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, least: Integer, images: Array<EdgeImage>, range: NumberInterval, degenerate: Boolean): EdgeDiscretization
+    {
+        if (degenerate)
+        {
+            return m.DiscretizationAt(e, [range.Start, range.End]);
+        }
+        var conic = m.ConicCountGiven(e, c, least, range);
+        if (conic > 0)
+        {
+            return m.DiscretizationAt(e, range.Samples(m.RaisedForImagesGiven(e, c, conic, m.ConicCapGiven(e, c, least, range), images, range) + 1));
+        }
+        var bisected = m.BisectedCachedCounted(e, c, images, range).Value;
+        return bisected.SegmentCount >= least
+            ? m.WithVertexEnds(bisected)
+            : m.DiscretizationAt(e, m.RaisedToCount(bisected.Parameters, least));
+    }
+}
