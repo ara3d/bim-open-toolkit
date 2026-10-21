@@ -1,0 +1,33 @@
+//==
+// # Layer 2 law bodies with each value bound once (complexity sweep, chunk L6)
+//
+// ParameterizationSignIsConstantOnFaceGiven computed the sign at the site
+// twice, each a projection of a coedge point onto the face's surface;
+// the Once form computes it once and returns the same Boolean.
+//
+// Sections, in order:
+//  - Parameterization sign
+
+library TopologyLawsOnce
+{
+    //==
+    // # Parameterization sign
+
+    // ParameterizationSignIsConstantOnFaceGiven with ParameterizationSignAt
+    // computed once.
+    ParameterizationSignIsConstantOnFaceGivenOnce(m: BrepModel, ok: Boolean, site: CoedgeSite, t: Number): Boolean
+    {
+        if (!ok)
+        {
+            return true;
+        }
+        if (!m.IsCoedgeSiteInRange(site))
+        {
+            return true;
+        }
+        var sign = m.ParameterizationSignAt(site, t);
+        return sign == 0
+            ? true
+            : (sign == 1) == m.Geometry.NormalAgreesWithParameterization(m.Faces[site.Face].Surface);
+    }
+}

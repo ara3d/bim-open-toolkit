@@ -1,0 +1,480 @@
+//==
+// # STEP self-tests over one decode (complexity sweep, chunk L6)
+//
+// BrepCheckingStep's decode self-tests called a layer 3 law per sample, and
+// each law decoded the whole file again (f.DecodeBrep, or
+// f.DecodeRaw(...).PrepareModel), so a check over n kernel elements decoded
+// the file n times, and Check_ProvenanceSourcesDistinct n^2 times. Here each
+// such law has a *Given claim that reads a decode passed in, transcribed
+// from the law with the decode's binding turned into a parameter and any
+// whole-file value it rebuilt per sample (the sources list, the used
+// contexts, an occurrence's reachable instances) bound once per check. Each
+// Check_<Name>Given folds the same samples, in the same order, as
+// Check_<Name>; Check_<Name>Once decodes once and calls it.
+//
+// The laws over a RawDecodedModel run on layer 3's raw witnesses, where
+// Law_Perf_RawStepClaimsAgree shows their claims agree with the laws. The
+// laws over a Part21File cannot run under the law runner (DecodeRaw is a
+// host obligation), so their claims are shown only by transcription.
+//
+// Sections, in order:
+//  - One decode
+//  - Closure and folding, over the raw model
+//  - The provenance map
+//  - Units, sense and flags
+//  - Checks over one decode
+//  - Checks that decode once
+
+library BrepCheckingStepOnce
+{
+    //==
+    // # One decode
+
+    // The file decoded once with the standard policy, raw and prepared.
+    DecodeOnce(f: Part21File): RawAndDecoded
+    {
+        var raw = f.DecodeRaw(DecodePolicy.StandardPolicy);
+        return RawAndDecoded(raw, raw.PrepareModel);
+    }
+
+    //==
+    // # Closure and folding, over the raw model
+
+    // Law_CurveClosureDecidedByEnds(raw, k) with d = raw.PrepareModel given.
+    CurveClosureDecidedByEndsGiven(d: DecodedModel, k: Integer): Boolean
+    {
+        var m = d.Model;
+        if (k < 0 || k >= m.Geometry.Curves.Count)
+        {
+            return true;
+        }
+        var p = m.Geometry.Domain(CurveIndex(k)).Periodicity;
+        return (p.HasSeam && !p.IsPeriodic) == m.Geometry.DecidesClosed(CurveIndex(k), m.Tolerances.Length);
+    }
+
+    // Law_SurfaceClosureDecidedBySides(raw, k, which) with d given.
+    SurfaceClosureDecidedBySidesGiven(d: DecodedModel, k: Integer, which: SurfaceParameter): Boolean
+    {
+        var m = d.Model;
+        if (k < 0 || k >= m.Geometry.Surfaces.Count)
+        {
+            return true;
+        }
+        var p = m.Geometry.Domain(SurfaceIndex(k)).DomainAlong(which).Periodicity;
+        return (p.HasSeam && !p.IsPeriodic) == m.Geometry.DecidesClosed(SurfaceIndex(k), which, m.Tolerances);
+    }
+
+    // Law_FoldPreservesInteriorSide(raw, k, j) with d given.
+    FoldPreservesInteriorSideGiven(raw: RawDecodedModel, d: DecodedModel, k: Integer, j: Integer): Boolean
+    {
+        if (k < 0 || k >= d.Model.Faces.Count || k >= raw.Model.Faces.Count)
+        {
+            return true;
+        }
+        var face = d.Model.Faces[k];
+        var written = raw.Model.Faces[k];
+        return j >= 0 && j < face.Bounds.Count && j < written.Bounds.Count
+            ? (face.SameSense == face.Bounds[j].Orientation) == (written.SameSense == written.Bounds[j].Orientation)
+            : true;
+    }
+
+    // Law_FoldFlipsExactlyRecorded(raw, k) with d given.
+    FoldFlipsExactlyRecordedGiven(raw: RawDecodedModel, d: DecodedModel, k: Integer): Boolean
+        => k >= 0 && k < d.Model.Faces.Count && k < raw.Model.Faces.Count
+            ? (d.Model.Faces[k].SameSense == raw.Model.Faces[k].SameSense) == !d.Map.IsFolded(BrepFaceIndex(k))
+            : true;
+
+    // Law_MirrorFoldRecordedOnce(raw, k) with d given.
+    MirrorFoldRecordedOnceGiven(d: DecodedModel, k: Integer): Boolean
+    {
+        if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
+        {
+            return true;
+        }
+        var mirrors = d.Map.Folds.Reduce(0, (n, r) => r.Face == BrepFaceIndex(k) && r.Cause == FoldCause.MirroredPlacement ? n + 1 : n);
+        return mirrors == (d.Map.IsMirroredSource(d.Map.Sources.Faces[k]) ? 1 : 0);
+    }
+
+    // Law_LeftHandedSurfacesAreFolded(raw, k) with d given.
+    LeftHandedSurfacesAreFoldedGiven(d: DecodedModel, k: Integer): Boolean
+    {
+        if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
+        {
+            return true;
+        }
+        return d.Model.Geometry.PlacementHandedness(d.Model.Faces[k].Surface) < 0.0
+            ? d.Map.IsMirroredSource(d.Map.Sources.Faces[k])
+            : true;
+    }
+
+    //==
+    // # The provenance map
+
+    // Law_RepairsAreDiagnosed(f, r) with d = f.DecodeBrep given.
+    RepairsAreDiagnosedGiven(d: DecodedModel, r: Integer): Boolean
+        => r >= 0 && r < d.Map.Repairs.Count ? d.Diagnostics.Any(x => x.Where == Provenance.AtInstance(d.Map.Repairs[r].Source.Instance)) : true;
+
+    // Law_ProvenanceSourcesDistinct(f, a, b) with all, the decode's
+    // AllSources, given.
+    ProvenanceSourcesDistinctGiven(all: Array<StepSource>, a: Integer, b: Integer): Boolean
+        => a >= 0 && a < all.Count && b >= 0 && b < all.Count && a != b ? !(all[a] == all[b]) : true;
+
+    // Law_ProvenanceLookupInvertsSources(f, a) with d and its AllSources
+    // given.
+    ProvenanceLookupInvertsSourcesGiven(d: DecodedModel, all: Array<StepSource>, a: Integer): Boolean
+        => a >= 0 && a < all.Count ? d.Map.KernelOf(all[a]) == d.Map.Sources.ElementAt(a) : true;
+
+    // Law_SourceKindMatchesTable(f, a) with the decode's sources and their
+    // AllSources given.
+    SourceKindMatchesTableGiven(f: Part21File, sources: KernelSources, all: Array<StepSource>, a: Integer): Boolean
+        => a >= 0 && a < all.Count ? f.IsAnyOf(all[a].Instance, sources.ElementAt(a).TableKinds) : true;
+
+    // Law_RepairedSourcesAreUnmapped(f, r) with the decode's map given.
+    RepairedSourcesAreUnmappedGiven(map: ProvenanceMap, r: Integer): Boolean
+        => r >= 0 && r < map.Repairs.Count ? !map.IsMapped(map.Repairs[r].Source) : true;
+
+    // The instances each occurrence of the decode reaches, as
+    // Law_ReachedInstancesAreAccountedFor finds them, once per occurrence.
+    ReachedByOccurrence(f: Part21File, d: DecodedModel): Array<Array<Integer>>
+        => d.Map.Occurrences.Count.MapRange(o =>
+            f.ReachableOfKind(f.RepresentationPosition(d.Map.Occurrences[o]), "REPRESENTATION_ITEM"));
+
+    // Law_ReachedInstancesAreAccountedFor(f, o, k) with d and its
+    // ReachedByOccurrence given.
+    ReachedInstancesAreAccountedForGiven(f: Part21File, d: DecodedModel, reached: Array<Array<Integer>>, o: Integer, k: Integer): Boolean
+    {
+        if (o < 0 || o >= d.Map.Occurrences.Count)
+        {
+            return true;
+        }
+        var row = reached[o];
+        if (k < 0 || k >= row.Count || !f.ProducesKernelElement(row[k]))
+        {
+            return true;
+        }
+        var source = StepSource(StepOccurrenceIndex(o), f.IdAt(row[k]));
+        return d.Map.IsMapped(source) || d.Map.IsRepaired(source);
+    }
+
+    //==
+    // # Units, sense and flags
+
+    // Law_CirclePeriodIsTwoPi(f, k, tol) with d given.
+    CirclePeriodIsTwoPiGiven(f: Part21File, d: DecodedModel, k: Integer, tol: ParameterTolerance): Boolean
+    {
+        var sources = d.Map.Sources.Curves;
+        if (k < 0 || k >= sources.Count || k >= d.Model.Geometry.Curves.Count || !f.IsA(sources[k].Instance, "CIRCLE"))
+        {
+            return true;
+        }
+        var periodicity = d.Model.Geometry.Domain(CurveIndex(k)).Periodicity;
+        return periodicity.IsPeriodic ? (periodicity.PeriodOr(Number.Unmeasured) - Number.Tau).Abs <= tol.Value : false;
+    }
+
+    // The contexts the decode's occurrences use, as the unit laws find them.
+    UsedContextsOf(f: Part21File, d: DecodedModel): Array<ContextUnits>
+        => f.ResolveContexts(DecodePolicy.StandardPolicy).UsedContexts(d.Map);
+
+    // Law_AngleUnitIsReported(f, c) with d and its used contexts given.
+    AngleUnitIsReportedGiven(d: DecodedModel, used: Array<ContextUnits>, c: Integer): Boolean
+        => c >= 0 && c < used.Count
+            ? d.Diagnostics.HasCodeAt(used[c].AngleStated ? StepDiagnosticCode.AngleUnitFound : StepDiagnosticCode.AngleUnitDefaulted, used[c].Context)
+            : true;
+
+    // Law_ToleranceCoversStatedUncertainties(f, c) with d and its used
+    // contexts given.
+    ToleranceCoversStatedUncertaintiesGiven(d: DecodedModel, used: Array<ContextUnits>, c: Integer): Boolean
+    {
+        var tolerance = d.Model.Tolerances.Length.Value;
+        return c >= 0 && c < used.Count
+            ? used[c].StatedUncertaintyIn(d.Model.Unit).All(u => u <= tolerance || u.AlmostEqual(tolerance, DecodePolicy.StandardPolicy.UnitMatch))
+            : true;
+    }
+
+    // Law_EdgeSenseCopied(f, e) with d given.
+    EdgeSenseCopiedGiven(f: Part21File, d: DecodedModel, e: Integer): Boolean
+        => e >= 0 && e < d.Model.Edges.Count && e < d.Map.Sources.Edges.Count
+            ? d.Model.Edges[e].SameSense == f.FileEdgeSameSense(d.Map.Sources.Edges[e])
+            : true;
+
+    // Law_PcurvesComeFromPcurveInstances(f, k) with d given.
+    PcurvesComeFromPcurveInstancesGiven(f: Part21File, d: DecodedModel, k: Integer): Boolean
+        => k >= 0 && k < d.Map.Sources.Pcurves.Count ? f.IsA(d.Map.Sources.Pcurves[k].Instance, "PCURVE") : true;
+
+    // Law_DeclaredClosedCopied(f, s) with d given.
+    DeclaredClosedCopiedGiven(f: Part21File, d: DecodedModel, s: Integer): Boolean
+        => s >= 0 && s < d.Model.Shells.Count && s < d.Map.Sources.Shells.Count
+            ? d.Model.Shells[s].DeclaredClosed == f.IsA(d.Map.Sources.Shells[s].Instance, "CLOSED_SHELL")
+            : true;
+
+    // Law_OuterFlagClearedWhenDoubled(f, k) with d given.
+    OuterFlagClearedWhenDoubledGiven(f: Part21File, d: DecodedModel, k: Integer): Boolean
+    {
+        if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
+        {
+            return true;
+        }
+        return f.OuterBoundCount(f.InstancePosition(d.Map.Sources.Faces[k].Instance)) > 1
+            ? d.Model.Faces[k].Bounds.All(b => !b.IsOuter)
+            : true;
+    }
+
+    // Law_OuterFlagCopiedWhenSingle(f, k, j) with d given.
+    OuterFlagCopiedWhenSingleGiven(f: Part21File, d: DecodedModel, k: Integer, j: Integer): Boolean
+    {
+        if (k < 0 || k >= d.Model.Faces.Count || k >= d.Map.Sources.Faces.Count)
+        {
+            return true;
+        }
+        var p = f.InstancePosition(d.Map.Sources.Faces[k].Instance);
+        var bounds = f.FaceBounds(p);
+        var kernel = d.Model.Faces[k].Bounds;
+        return f.OuterBoundCount(p) <= 1 && j >= 0 && j < bounds.Count && j < kernel.Count
+            ? kernel[j].IsOuter == f.IsA(bounds[j], "FACE_OUTER_BOUND")
+            : true;
+    }
+
+    // Law_MergedVerticesCoincide(f, r) with d given.
+    MergedVerticesCoincideGiven(f: Part21File, d: DecodedModel, r: Integer): Boolean
+    {
+        if (r < 0 || r >= d.Map.Repairs.Count)
+        {
+            return true;
+        }
+        var repair = d.Map.Repairs[r];
+        var v = repair.Repair.MergedVertexOf;
+        return v.IsNone ? true
+            : (d.Model.Vertices.IsValidIndex(v) ? f.PlacedVertexPoint(d.Map, repair.Source).Coincident(d.Model.Vertices[v.Value].Point, d.Model.Tolerances.Length) : false);
+    }
+
+    // Law_FoldRecordsNameFalseFlags(f, r) with d given.
+    FoldRecordsNameFalseFlagsGiven(f: Part21File, d: DecodedModel, r: Integer): Boolean
+        => r >= 0 && r < d.Map.Folds.Count ? f.IsJustifiedFold(d.Map, d.Map.Folds[r]) : true;
+
+    //==
+    // # Checks over one decode
+
+    // Check_CurveClosureDecidedByEnds over s.
+    Check_CurveClosureDecidedByEndsGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_CurveClosureDecidedByEnds", s.Decoded.Model.Geometry.Curves.Count,
+            k => s.Decoded.CurveClosureDecidedByEndsGiven(k), k => Provenance.KernelCurve(CurveIndex(k)));
+
+    // Check_SurfaceClosureDecidedBySides over s.
+    Check_SurfaceClosureDecidedBySidesGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckGrid("Law_SurfaceClosureDecidedBySides", s.Decoded.Model.Geometry.Surfaces.Count, 2,
+            (k, w) => s.Decoded.SurfaceClosureDecidedBySidesGiven(k, w == 0 ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV),
+            (k, w) => Provenance.KernelSurface(SurfaceIndex(k)));
+
+    // Check_MirrorFoldRecordedOnce over s.
+    Check_MirrorFoldRecordedOnceGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_MirrorFoldRecordedOnce", s.Decoded.Model.Faces.Count,
+            k => s.Decoded.MirrorFoldRecordedOnceGiven(k), k => AtFace(k));
+
+    // Check_LeftHandedSurfacesAreFolded over s.
+    Check_LeftHandedSurfacesAreFoldedGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_LeftHandedSurfacesAreFolded", s.Decoded.Model.Faces.Count,
+            k => s.Decoded.LeftHandedSurfacesAreFoldedGiven(k), k => AtFace(k));
+
+    // Check_RepairsAreDiagnosed over s.
+    Check_RepairsAreDiagnosedGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_RepairsAreDiagnosed", s.Decoded.Map.Repairs.Count,
+            r => s.Decoded.RepairsAreDiagnosedGiven(r), r => Provenance.WholeInput);
+
+    // Check_ProvenanceSourcesDistinct over s.
+    Check_ProvenanceSourcesDistinctGiven(f: Part21File, s: RawAndDecoded): Check
+    {
+        var all = s.Decoded.Map.Sources.AllSources;
+        return CheckGrid("Law_ProvenanceSourcesDistinct", all.Count, all.Count,
+            (a, b) => all.ProvenanceSourcesDistinctGiven(a, b), (a, b) => Provenance.WholeInput);
+    }
+
+    // Check_ProvenanceLookupInvertsSources over s.
+    Check_ProvenanceLookupInvertsSourcesGiven(f: Part21File, s: RawAndDecoded): Check
+    {
+        var all = s.Decoded.Map.Sources.AllSources;
+        return CheckAll("Law_ProvenanceLookupInvertsSources", all.Count,
+            a => s.Decoded.ProvenanceLookupInvertsSourcesGiven(all, a), a => Provenance.WholeInput);
+    }
+
+    // Check_SourceKindMatchesTable over s.
+    Check_SourceKindMatchesTableGiven(f: Part21File, s: RawAndDecoded): Check
+    {
+        var sources = s.Decoded.Map.Sources;
+        var all = sources.AllSources;
+        return CheckAll("Law_SourceKindMatchesTable", all.Count,
+            a => f.SourceKindMatchesTableGiven(sources, all, a), a => Provenance.WholeInput);
+    }
+
+    // Check_RepairedSourcesAreUnmapped over s.
+    Check_RepairedSourcesAreUnmappedGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_RepairedSourcesAreUnmapped", s.Decoded.Map.Repairs.Count,
+            r => s.Decoded.Map.RepairedSourcesAreUnmappedGiven(r), r => Provenance.WholeInput);
+
+    // Check_ReachedInstancesAreAccountedFor over s, each occurrence's
+    // reachable instances found once (once per instance position in the
+    // original).
+    Check_ReachedInstancesAreAccountedForGiven(f: Part21File, s: RawAndDecoded): Check
+    {
+        var reached = f.ReachedByOccurrence(s.Decoded);
+        return CheckGrid("Law_ReachedInstancesAreAccountedFor", s.Decoded.Map.Occurrences.Count, f.Instances.Count,
+            (o, k) => f.ReachedInstancesAreAccountedForGiven(s.Decoded, reached, o, k), (o, k) => Provenance.WholeInput);
+    }
+
+    // Check_CirclePeriodIsTwoPi over s.
+    Check_CirclePeriodIsTwoPiGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_CirclePeriodIsTwoPi", s.Decoded.Model.Geometry.Curves.Count,
+            k => f.CirclePeriodIsTwoPiGiven(s.Decoded, k, s.Decoded.Model.Tolerances.AngleParameter), k => Provenance.KernelCurve(CurveIndex(k)));
+
+    // Check_AngleUnitIsReported over s, the used contexts found once.
+    Check_AngleUnitIsReportedGiven(f: Part21File, s: RawAndDecoded): Check
+    {
+        var used = f.UsedContextsOf(s.Decoded);
+        return CheckAll("Law_AngleUnitIsReported", f.Instances.Count,
+            c => s.Decoded.AngleUnitIsReportedGiven(used, c), c => f.AtInstance(c));
+    }
+
+    // Check_ToleranceCoversStatedUncertainties over s, the used contexts
+    // found once.
+    Check_ToleranceCoversStatedUncertaintiesGiven(f: Part21File, s: RawAndDecoded): Check
+    {
+        var used = f.UsedContextsOf(s.Decoded);
+        return CheckAll("Law_ToleranceCoversStatedUncertainties", f.Instances.Count,
+            c => s.Decoded.ToleranceCoversStatedUncertaintiesGiven(used, c), c => f.AtInstance(c));
+    }
+
+    // Check_EdgeSenseCopied over s.
+    Check_EdgeSenseCopiedGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_EdgeSenseCopied", s.Decoded.Model.Edges.Count,
+            e => f.EdgeSenseCopiedGiven(s.Decoded, e), e => AtEdge(e));
+
+    // Check_PcurvesComeFromPcurveInstances over s.
+    Check_PcurvesComeFromPcurveInstancesGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_PcurvesComeFromPcurveInstances", s.Decoded.Model.Geometry.Pcurves.Count,
+            k => f.PcurvesComeFromPcurveInstancesGiven(s.Decoded, k), k => Provenance.WholeInput);
+
+    // Check_DeclaredClosedCopied over s.
+    Check_DeclaredClosedCopiedGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_DeclaredClosedCopied", s.Decoded.Model.Shells.Count,
+            k => f.DeclaredClosedCopiedGiven(s.Decoded, k), k => AtShell(k));
+
+    // Check_OuterFlagClearedWhenDoubled over s.
+    Check_OuterFlagClearedWhenDoubledGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_OuterFlagClearedWhenDoubled", s.Decoded.Model.Faces.Count,
+            k => f.OuterFlagClearedWhenDoubledGiven(s.Decoded, k), k => AtFace(k));
+
+    // Check_OuterFlagCopiedWhenSingle over s.
+    Check_OuterFlagCopiedWhenSingleGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckGrid("Law_OuterFlagCopiedWhenSingle", s.Decoded.Model.Faces.Count, s.Decoded.Model.MostBounds,
+            (k, j) => f.OuterFlagCopiedWhenSingleGiven(s.Decoded, k, j), (k, j) => AtFace(k));
+
+    // Check_MergedVerticesCoincide over s.
+    Check_MergedVerticesCoincideGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_MergedVerticesCoincide", s.Decoded.Map.Repairs.Count,
+            r => f.MergedVerticesCoincideGiven(s.Decoded, r), r => Provenance.WholeInput);
+
+    // Check_FoldPreservesInteriorSide over s.
+    Check_FoldPreservesInteriorSideGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckGrid("Law_FoldPreservesInteriorSide", s.Decoded.Model.Faces.Count, s.Decoded.Model.MostBounds,
+            (k, j) => s.Raw.FoldPreservesInteriorSideGiven(s.Decoded, k, j), (k, j) => AtFace(k));
+
+    // Check_FoldFlipsExactlyRecorded over s.
+    Check_FoldFlipsExactlyRecordedGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_FoldFlipsExactlyRecorded", s.Decoded.Model.Faces.Count,
+            k => s.Raw.FoldFlipsExactlyRecordedGiven(s.Decoded, k), k => AtFace(k));
+
+    // Check_FoldRecordsNameFalseFlags over s.
+    Check_FoldRecordsNameFalseFlagsGiven(f: Part21File, s: RawAndDecoded): Check
+        => CheckAll("Law_FoldRecordsNameFalseFlags", s.Decoded.Map.Folds.Count,
+            r => f.FoldRecordsNameFalseFlagsGiven(s.Decoded, r), r => Provenance.WholeInput);
+
+    //==
+    // # Checks that decode once
+
+    // Check_CurveClosureDecidedByEnds, the file decoded once.
+    Check_CurveClosureDecidedByEndsOnce(f: Part21File): Check
+        => f.Check_CurveClosureDecidedByEndsGiven(f.DecodeOnce);
+
+    // Check_SurfaceClosureDecidedBySides, the file decoded once.
+    Check_SurfaceClosureDecidedBySidesOnce(f: Part21File): Check
+        => f.Check_SurfaceClosureDecidedBySidesGiven(f.DecodeOnce);
+
+    // Check_MirrorFoldRecordedOnce, the file decoded once.
+    Check_MirrorFoldRecordedOnceOnce(f: Part21File): Check
+        => f.Check_MirrorFoldRecordedOnceGiven(f.DecodeOnce);
+
+    // Check_LeftHandedSurfacesAreFolded, the file decoded once.
+    Check_LeftHandedSurfacesAreFoldedOnce(f: Part21File): Check
+        => f.Check_LeftHandedSurfacesAreFoldedGiven(f.DecodeOnce);
+
+    // Check_RepairsAreDiagnosed, the file decoded once.
+    Check_RepairsAreDiagnosedOnce(f: Part21File): Check
+        => f.Check_RepairsAreDiagnosedGiven(f.DecodeOnce);
+
+    // Check_ProvenanceSourcesDistinct, the file decoded once.
+    Check_ProvenanceSourcesDistinctOnce(f: Part21File): Check
+        => f.Check_ProvenanceSourcesDistinctGiven(f.DecodeOnce);
+
+    // Check_ProvenanceLookupInvertsSources, the file decoded once.
+    Check_ProvenanceLookupInvertsSourcesOnce(f: Part21File): Check
+        => f.Check_ProvenanceLookupInvertsSourcesGiven(f.DecodeOnce);
+
+    // Check_SourceKindMatchesTable, the file decoded once.
+    Check_SourceKindMatchesTableOnce(f: Part21File): Check
+        => f.Check_SourceKindMatchesTableGiven(f.DecodeOnce);
+
+    // Check_RepairedSourcesAreUnmapped, the file decoded once.
+    Check_RepairedSourcesAreUnmappedOnce(f: Part21File): Check
+        => f.Check_RepairedSourcesAreUnmappedGiven(f.DecodeOnce);
+
+    // Check_ReachedInstancesAreAccountedFor, the file decoded once.
+    Check_ReachedInstancesAreAccountedForOnce(f: Part21File): Check
+        => f.Check_ReachedInstancesAreAccountedForGiven(f.DecodeOnce);
+
+    // Check_CirclePeriodIsTwoPi, the file decoded once.
+    Check_CirclePeriodIsTwoPiOnce(f: Part21File): Check
+        => f.Check_CirclePeriodIsTwoPiGiven(f.DecodeOnce);
+
+    // Check_AngleUnitIsReported, the file decoded once.
+    Check_AngleUnitIsReportedOnce(f: Part21File): Check
+        => f.Check_AngleUnitIsReportedGiven(f.DecodeOnce);
+
+    // Check_ToleranceCoversStatedUncertainties, the file decoded once.
+    Check_ToleranceCoversStatedUncertaintiesOnce(f: Part21File): Check
+        => f.Check_ToleranceCoversStatedUncertaintiesGiven(f.DecodeOnce);
+
+    // Check_EdgeSenseCopied, the file decoded once.
+    Check_EdgeSenseCopiedOnce(f: Part21File): Check
+        => f.Check_EdgeSenseCopiedGiven(f.DecodeOnce);
+
+    // Check_PcurvesComeFromPcurveInstances, the file decoded once.
+    Check_PcurvesComeFromPcurveInstancesOnce(f: Part21File): Check
+        => f.Check_PcurvesComeFromPcurveInstancesGiven(f.DecodeOnce);
+
+    // Check_DeclaredClosedCopied, the file decoded once.
+    Check_DeclaredClosedCopiedOnce(f: Part21File): Check
+        => f.Check_DeclaredClosedCopiedGiven(f.DecodeOnce);
+
+    // Check_OuterFlagClearedWhenDoubled, the file decoded once.
+    Check_OuterFlagClearedWhenDoubledOnce(f: Part21File): Check
+        => f.Check_OuterFlagClearedWhenDoubledGiven(f.DecodeOnce);
+
+    // Check_OuterFlagCopiedWhenSingle, the file decoded once.
+    Check_OuterFlagCopiedWhenSingleOnce(f: Part21File): Check
+        => f.Check_OuterFlagCopiedWhenSingleGiven(f.DecodeOnce);
+
+    // Check_MergedVerticesCoincide, the file decoded once.
+    Check_MergedVerticesCoincideOnce(f: Part21File): Check
+        => f.Check_MergedVerticesCoincideGiven(f.DecodeOnce);
+
+    // Check_FoldPreservesInteriorSide, the file decoded once.
+    Check_FoldPreservesInteriorSideOnce(f: Part21File): Check
+        => f.Check_FoldPreservesInteriorSideGiven(f.DecodeOnce);
+
+    // Check_FoldFlipsExactlyRecorded, the file decoded once.
+    Check_FoldFlipsExactlyRecordedOnce(f: Part21File): Check
+        => f.Check_FoldFlipsExactlyRecordedGiven(f.DecodeOnce);
+
+    // Check_FoldRecordsNameFalseFlags, the file decoded once.
+    Check_FoldRecordsNameFalseFlagsOnce(f: Part21File): Check
+        => f.Check_FoldRecordsNameFalseFlagsGiven(f.DecodeOnce);
+}

@@ -1,0 +1,220 @@
+//==
+// # Layer 6 laws over meshes assembled once: laws (complexity sweep, chunk L6)
+//
+// Law_Perf_<Name> is ModelMeshAssemblyLaws' or ModelMeshMeasuresLaws'
+// Law_<Name> stated over an AssembledWitness, quantified over every face,
+// element, slot and vertex inside the body. The originals take arrays of
+// face meshes, which the runner fills with 25 generated cases that
+// CanAssemble mostly refuses; these run on the two box witnesses of chunk
+// M1, assembled once per sweep. ModelMeshConversionsLaws' Law_Split* laws
+// are restated with ToSplitTriangleMesh3D bound once per case (the
+// originals built it up to twelve times).
+//
+// Sections, in order:
+//  - Witnesses
+//  - Assembly laws over the witnesses
+//  - Split laws, the split mesh bound once
+
+library ModelMeshAssemblyOnceLaws
+{
+    //==
+    // # Witnesses
+
+    // Chunk M1's unit box, one segment per edge, numbered and assembled.
+    Witness_UnitBoxAssembled(_: AssembledWitness): AssembledWitness
+        => AssemblyWitness.Witness_UnitBoxAssembly.AssembledWitnessOf;
+
+    // Chunk M1's unit box, four segments per edge, numbered and assembled.
+    Witness_FineBoxAssembled(_: AssembledWitness): AssembledWitness
+        => AssemblyWitness.Witness_FineBoxAssembly.AssembledWitnessOf;
+
+    // Every witness is accepted by CanAssemble, so the laws below are not
+    // vacuous on it.
+    Law_Perf_AssembledWitnessesAreAccepted(w: AssembledWitness): Boolean
+        => w.Accepted;
+
+    //==
+    // # Assembly laws over the witnesses
+
+    // Law_AssemblyKeepsTheNumbering.
+    Law_Perf_AssemblyKeepsTheNumbering(w: AssembledWitness): Boolean
+        => w.Accepted ? w.Mesh.Numbering.IsSameNumbering(w.Numbering) : true;
+
+    // Law_AssemblyKeepsEveryTriangle.
+    Law_Perf_AssemblyKeepsEveryTriangle(w: AssembledWitness): Boolean
+        => w.Accepted ? w.Mesh.Triangles.Count == w.Inputs.FaceMeshes.TotalTriangleCount : true;
+
+    // Law_AssemblyKeepsEveryQuad.
+    Law_Perf_AssemblyKeepsEveryQuad(w: AssembledWitness): Boolean
+        => w.Accepted ? w.Mesh.Quads.Count == w.Inputs.FaceMeshes.Map(fm => fm.Quads.Count).IntegerTotal : true;
+
+    // Law_AssembledModelVertexIsModelPoint at every model vertex.
+    Law_Perf_AssembledModelVertexIsModelPoint(w: AssembledWitness): Boolean
+        => w.Accepted
+            ? w.Inputs.Model.Vertices.Count.Range.All(v =>
+                w.Inputs.Model.AssembledModelVertexIsModelPointGiven(w.Mesh, BrepVertexIndex(v)))
+            : true;
+
+    // Law_AssembledPositionIsFaceMeshPosition at every point of every face
+    // mesh.
+    Law_Perf_AssembledPositionIsFaceMeshPosition(w: AssembledWitness): Boolean
+        => w.Accepted
+            ? w.Inputs.FaceMeshes.Count.Range.All(f => w.Inputs.FaceMeshes[f].Sources.Count.Range.All(i =>
+                w.Inputs.FaceMeshes.AssembledPositionIsFaceMeshPositionGiven(w.Numbering, w.Mesh, BrepFaceIndex(f), VertexIndex(i))))
+            : true;
+
+    // Law_AssembledCornerIsGlobalVertexOfFaceMeshCorner at every corner.
+    Law_Perf_AssembledCornerIsGlobalVertexOfFaceMeshCorner(w: AssembledWitness): Boolean
+        => w.Accepted
+            ? w.Inputs.FaceMeshes.AllFaceMeshCorners((f, e, s) =>
+                w.Inputs.FaceMeshes.AssembledCornerIsGlobalVertexGiven(w.Numbering, w.Mesh, f, e, s))
+            : true;
+
+    // Law_AssembledElementRemembersItsFace at every element.
+    Law_Perf_AssembledElementRemembersItsFace(w: AssembledWitness): Boolean
+        => w.Accepted
+            ? w.Inputs.FaceMeshes.AllFaceMeshCorners((f, e, s) =>
+                s == 0 ? w.Inputs.FaceMeshes.AssembledElementRemembersItsFaceGiven(w.Mesh, f, e) : true)
+            : true;
+
+    // Law_AssembledCornerUvIsCopied at every corner.
+    Law_Perf_AssembledCornerUvIsCopied(w: AssembledWitness): Boolean
+        => w.Accepted
+            ? w.Inputs.FaceMeshes.AllFaceMeshCorners((f, e, s) => w.Inputs.FaceMeshes.AssembledCornerUvIsCopiedGiven(w.Mesh, f, e, s))
+            : true;
+
+    // Law_AssembledCornerNormalIsCopied at every corner.
+    Law_Perf_AssembledCornerNormalIsCopied(w: AssembledWitness): Boolean
+        => w.Accepted
+            ? w.Inputs.FaceMeshes.AllFaceMeshCorners((f, e, s) => w.Inputs.FaceMeshes.AssembledCornerNormalIsCopiedGiven(w.Mesh, f, e, s))
+            : true;
+
+    // Law_AssembledSharedBoundaryCornersCoincide at every pair of corners
+    // (the original assembled the mesh twice per pair).
+    Law_Perf_AssembledSharedBoundaryCornersCoincide(w: AssembledWitness): Boolean
+        => w.Accepted
+            ? w.Inputs.FaceMeshes.AllFaceMeshCornerPairs((f, ea, sa, g, eb, sb) =>
+                w.Inputs.FaceMeshes.AssembledSharedBoundaryCornersCoincideGiven(w.Mesh, f, ea, sa, g, eb, sb))
+            : true;
+
+    // Law_AreaIsSumOfFaceMeshAreas (the original assembled the mesh twice).
+    Law_Perf_AreaIsSumOfFaceMeshAreas(w: AssembledWitness): Boolean
+        => w.Accepted ? w.Inputs.FaceMeshes.AreaIsSumOfFaceMeshAreasGiven(w.Mesh) : true;
+
+    //==
+    // # Split laws, the split mesh bound once
+
+    // Law_SplitHasAtLeastAsManyVertices.
+    Law_Perf_SplitHasAtLeastAsManyVertices(mesh: ModelMesh): Boolean
+        => mesh.IsWellFormed
+            ? (mesh.IsEveryVertexReferenced ? mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count >= mesh.Positions.Count : true)
+            : true;
+
+    // Law_SplitSplitsEachQuadInTwo.
+    Law_Perf_SplitSplitsEachQuadInTwo(mesh: ModelMesh): Boolean
+        => mesh.IsWellFormed ? mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count == mesh.Triangles.Count + 2 * mesh.Quads.Count : true;
+
+    // Law_SplitHasOneNormalPerVertex, the split mesh built once (twice in
+    // the original).
+    Law_Perf_SplitHasOneNormalPerVertex(mesh: ModelMesh): Boolean
+    {
+        if (!mesh.IsWellFormed)
+        {
+            return true;
+        }
+        var split = mesh.ToSplitTriangleMesh3D;
+        return split.Normals.Count == split.Mesh.Positions.Count;
+    }
+
+    // Law_SplitHasOneUvPerVertex, the split mesh built once.
+    Law_Perf_SplitHasOneUvPerVertex(mesh: ModelMesh): Boolean
+    {
+        if (!mesh.IsWellFormed)
+        {
+            return true;
+        }
+        var split = mesh.ToSplitTriangleMesh3D;
+        return split.Uvs.Count == split.Mesh.Positions.Count;
+    }
+
+    // Law_SplitHasOneSourcePerVertex, the split mesh built once.
+    Law_Perf_SplitHasOneSourcePerVertex(mesh: ModelMesh): Boolean
+    {
+        if (!mesh.IsWellFormed)
+        {
+            return true;
+        }
+        var split = mesh.ToSplitTriangleMesh3D;
+        return split.SourceVertex.Count == split.Mesh.Positions.Count;
+    }
+
+    // Law_SplitVertexKeepsItsSourcePosition, the split mesh built once
+    // (four times in the original).
+    Law_Perf_SplitVertexKeepsItsSourcePosition(mesh: ModelMesh, v: VertexIndex): Boolean
+    {
+        if (!mesh.IsWellFormed)
+        {
+            return true;
+        }
+        var split = mesh.ToSplitTriangleMesh3D;
+        return (split.Mesh.Positions.IsValidIndex(v) ? split.SourceVertex.IsValidIndex(v) : false)
+            ? mesh.PositionIs(split.SourceVertex[v], split.Mesh.Positions[v])
+            : true;
+    }
+
+    // Law_SplitFollowsTheTriangulation, the split mesh built once.
+    Law_Perf_SplitFollowsTheTriangulation(mesh: ModelMesh, k: Integer, s: Integer): Boolean
+    {
+        if (!mesh.IsWellFormed)
+        {
+            return true;
+        }
+        var split = mesh.ToSplitTriangleMesh3D;
+        return (split.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
+            ? split.SourceOfCorner(k, s).Value == mesh.CornerVertex(mesh.TriangulatedCorner(k, s)).Value
+            : true;
+    }
+
+    // Law_SplitVertexCarriesItsCornerNormal, the split mesh built once
+    // (three times in the original).
+    Law_Perf_SplitVertexCarriesItsCornerNormal(mesh: ModelMesh, k: Integer, s: Integer): Boolean
+    {
+        if (!mesh.IsWellFormed)
+        {
+            return true;
+        }
+        var split = mesh.ToSplitTriangleMesh3D;
+        return (split.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
+            ? split.NormalIs(split.Mesh.Faces[k].At(s), mesh.CornerNormals, mesh.TriangulatedCorner(k, s))
+            : true;
+    }
+
+    // Law_SplitVertexCarriesItsCornerUv, the split mesh built once.
+    Law_Perf_SplitVertexCarriesItsCornerUv(mesh: ModelMesh, k: Integer, s: Integer): Boolean
+    {
+        if (!mesh.IsWellFormed)
+        {
+            return true;
+        }
+        var split = mesh.ToSplitTriangleMesh3D;
+        return (split.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
+            ? split.UvIs(split.Mesh.Faces[k].At(s), mesh.CornerUvs, mesh.TriangulatedCorner(k, s))
+            : true;
+    }
+
+    // Law_SplitVerticesDiffer, the split mesh built once (up to twelve
+    // times in the original).
+    Law_Perf_SplitVerticesDiffer(mesh: ModelMesh, a: VertexIndex, b: VertexIndex): Boolean
+    {
+        if (!mesh.IsWellFormed)
+        {
+            return true;
+        }
+        var split = mesh.ToSplitTriangleMesh3D;
+        return (a.Value != b.Value && split.HasVertexRecord(a) && split.HasVertexRecord(b))
+            ? (split.SourceVertex[a].Value != split.SourceVertex[b].Value
+                || split.Normals[a] != split.Normals[b]   // exact by construction
+                || split.Uvs[a] != split.Uvs[b])          // exact by construction
+            : true;
+    }
+}

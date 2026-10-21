@@ -1,0 +1,42 @@
+//==
+// # The pcurve-to-curve check with each pcurve range found once (complexity sweep, chunk L6)
+//
+// Check_SurfaceCurvePcurveLiesOnCurveHoisted measured PcurveToCurveGap at
+// every (curve, sample, support), and each measurement ran PcurveSampleFor
+// twice, so PcurveRangeOver's two closest-parameter searches ran four times
+// per sample. Check_SurfaceCurvePcurveLiesOnCurveOnce finds each support's
+// range once per curve (PcurveRangesOf) and measures each sample with one
+// search on the space curve: the same measures, folded in the same order.
+//
+// Sections, in order:
+//  - The check
+
+library BrepCheckingPcurveGapOnce
+{
+    //==
+    // # The check
+
+    // PcurveRangesOf for every curve of the arena that CanEvaluateGiven
+    // admits; none for the others.
+    PcurveRangeTable(m: BrepModel, ok: Boolean): Array<Array<NumberInterval>>
+        => m.Geometry.Curves.Count.MapRange(c => m.Geometry.CanEvaluateGiven(ok, CurveIndex(c))
+            ? m.Geometry.PcurveRangesOf(CurveIndex(c))
+            : 0.MapRange(i => NumberInterval(0.0, 0.0)));
+
+    // Check_SurfaceCurvePcurveLiesOnCurveHoisted with each support's pcurve
+    // range found once per curve.
+    Check_SurfaceCurvePcurveLiesOnCurveOnce(m: BrepModel, plan: SamplePlan): Check
+    {
+        var ok = m.Geometry.IsWellFormed;
+        var samples = m.CurveSampleTable(ok, plan);
+        var ranges = m.PcurveRangeTable(ok);
+        return GuardedSamplesVacuous(ok, m.Tolerances.Length.Value)
+            ? NoSampleCheck("Law_SurfaceCurvePcurveLiesOnCurve")
+            : CheckGridWithin("Law_SurfaceCurvePcurveLiesOnCurve", m.Geometry.Curves.Count, 2 * plan.Count,
+                (c, j) => m.Geometry.CanEvaluateGiven(ok, CurveIndex(c))
+                    ? m.Geometry.PcurveToCurveGapGiven(CurveIndex(c), ranges[c], samples[c][j % plan.Count], j / plan.Count)
+                    : 0.0,
+                m.Tolerances.Length.Value,
+                (c, j) => m.CurveSite(CurveIndex(c)));
+    }
+}

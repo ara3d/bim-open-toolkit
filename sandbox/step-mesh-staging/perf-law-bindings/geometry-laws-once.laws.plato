@@ -1,0 +1,105 @@
+//==
+// # Layer 1 laws with each value bound once: laws (complexity sweep, chunk L6)
+//
+// Law_Perf_<Name> is BrepGeometryLaws' or BsplineInverseLaws' Law_<Name>
+// with its repeated projection, closest parameter, pcurve sample or fixture
+// build computed once; at merge it replaces the original's body under the
+// original name. The agreement laws show the Once functions return the
+// original's value exactly on the same witnesses.
+//
+// Sections, in order:
+//  - BrepGeometryLaws, restated
+//  - BsplineInverseLaws, restated
+//  - Agreement
+
+library GeometryLawsOnceLaws
+{
+    //==
+    // # BrepGeometryLaws, restated
+
+    // Law_ProjectNoWorseThanSample with p projected once (the original
+    // projected it twice).
+    Law_Perf_ProjectNoWorseThanSample(g: GeometrySet, s: SurfaceIndex, p: Point3D, uv: UvCoordinate): Boolean
+        => g.CanEvaluate(s) ? g.ProjectNoWorseThan(s, p, g.Project(s, p), g.Domain(s).SampleIn(uv)) : true;
+
+    // Law_PcurveClosestParameterIsBounded with the closest parameter, the
+    // period and the floor computed once (the original searched three times).
+    Law_Perf_PcurveClosestParameterIsBounded(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): Boolean
+    {
+        if (!g.CanEvaluate(p))
+        {
+            return true;
+        }
+        var best = g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t)));
+        var period = g.PcurveParameterPeriod(p);
+        return best.IsFinite
+            && (period > 0.0 ? best.IsInPeriodWindow(period, g.ParameterFloorOf(p, tol).Value) : true);
+    }
+
+    // Law_SurfaceCurvePcurveLiesOnCurve over PcurveToCurveGapOnce.
+    Law_Perf_SurfaceCurvePcurveLiesOnCurve(g: GeometrySet, c: CurveIndex, t: Number, k: Integer, tol: Tolerances): Boolean
+        => g.CanEvaluate(c) ? g.PcurveToCurveGapOnce(c, t, k) <= tol.Length.Value : true;
+
+    //==
+    // # BsplineInverseLaws, restated
+
+    // BsplineInverseLaws.Law_ClosestParameterIsMinimal with each fixture
+    // built once and one closest-parameter search per curve (the original
+    // built each fixture twice and searched four times).
+    Law_Perf_ClosestParameterIsMinimal(k: Integer, p: Point3D, s: Number): Boolean
+        => k.CurveFixtureSet.ClosestParameterIsMinimalAt(CurveIndex(0), p, s)
+            && Integer.SearchCurveSet.ClosestParameterIsMinimalAt(CurveIndex(k.FixtureIndex(4)), p, s);
+
+    // BsplineInverseLaws.Law_PcurveClosestParameterIsBounded over the
+    // restated layer 1 law.
+    Law_Perf_PcurveClosestParameterIsBounded(k: Integer, t: Number): Boolean
+        => Law_Perf_PcurveClosestParameterIsBounded(k.PcurveFixtureSet, PcurveIndex(0), t, Tolerances.Witness_Tolerances);
+
+    // BsplineInverseLaws.Law_ProjectRecoversPoint with the fixture built
+    // once and one projection (the original built it twice and projected
+    // twice).
+    Law_Perf_ProjectRecoversPoint(k: Integer, u: Number, v: Number): Boolean
+    {
+        var g = k.SurfaceFixtureSet;
+        var s = SurfaceIndex(0);
+        return g.CanEvaluate(s) ? g.ProjectRecoversCanonicallyAt(s, UvCoordinate(u, v), Tolerances.Witness_Tolerances) : true;
+    }
+
+    // BsplineInverseLaws.Law_ProjectIsMinimal with the fixture built once
+    // and one projection (the original built it three times and projected
+    // four times).
+    Law_Perf_ProjectIsMinimal(k: Integer, p: Point3D, u: Number, v: Number): Boolean
+    {
+        var g = k.SurfaceFixtureSet;
+        var s = SurfaceIndex(0);
+        return g.CanEvaluate(s) ? g.ProjectIsMinimalAt(s, p, UvCoordinate(u, v)) : true;
+    }
+
+    //==
+    // # Agreement
+
+    // PcurveToCurveGapOnce, and PcurveToCurveGapGiven over the ranges built
+    // once, equal PcurveToCurveGap exactly.
+    Law_Perf_PcurveToCurveGapOnceAgrees(g: GeometrySet, c: CurveIndex, t: Number, k: Integer): Boolean
+    {
+        if (!g.CanEvaluate(c))
+        {
+            return true;
+        }
+        var gap = g.PcurveToCurveGap(c, t, k);
+        return SameNumberOrNaN(g.PcurveToCurveGapOnce(c, t, k), gap)
+            && SameNumberOrNaN(g.PcurveToCurveGapGiven(c, g.PcurveRangesOf(c), t, k), gap);
+    }
+
+    // The two Once oracles equal the originals exactly on the curve and 2D
+    // curve fixtures, at any parameter (NaN where both are).
+    Law_Perf_OraclesOnceAgree(k: Integer, t: Number): Boolean
+    {
+        var d = k.CurveFixture;
+        var d2 = k.Curve2DFixture;
+        var a = Oracle_BSplineCurvePointOnce(d, t);
+        var b = Oracle_BSplineCurvePoint(d, t);
+        return SameNumberOrNaN(a.X, b.X) && SameNumberOrNaN(a.Y, b.Y) && SameNumberOrNaN(a.Z, b.Z)
+            && SameUvOrNaN(Oracle_BSplineCurve2DPointOnce(d2, t), Oracle_BSplineCurve2DPoint(d2, t));
+    }
+}

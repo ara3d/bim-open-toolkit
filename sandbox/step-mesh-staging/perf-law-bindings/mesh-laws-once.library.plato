@@ -1,0 +1,100 @@
+//==
+// # Layer 6 law claims over a mesh assembled once (complexity sweep, chunk L6)
+//
+// The claims of ModelMeshAssemblyLaws and Law_AreaIsSumOfFaceMeshAreas with
+// the assembled model mesh given, where the originals ran CanAssemble and
+// AssembleModelMesh in every case (twice in the shared-corner and area
+// laws). Each *Given claim is the original's claim after its CanAssemble
+// guard, unchanged; a caller that has checked CanAssemble once passes the
+// mesh it assembled once. AssembledWitnessOf builds the witnesses' values.
+//
+// Sections, in order:
+//  - Building a witness
+//  - Claims over the assembled mesh
+//  - Quantifiers
+
+library ModelMeshAssemblyOnce
+{
+    //==
+    // # Building a witness
+
+    // The numbering and assembled mesh of w, each built once.
+    // Precondition: w's inputs can be assembled (CanAssemble), as M1's
+    // Law_AssemblyWitnessCanAssemble shows for its two box witnesses.
+    AssembledWitnessOf(w: AssemblyWitness): AssembledWitness
+    {
+        var n = NumberMeshVertices(w.Model, w.Discretizations, w.FaceMeshes);
+        return AssembledWitness(w, n, w.Model.CanAssemble(w.FaceMeshes, n), w.Model.AssembleModelMesh(w.FaceMeshes, n));
+    }
+
+    //==
+    // # Claims over the assembled mesh
+
+    // Law_AssembledModelVertexIsModelPoint's claim on mesh.
+    AssembledModelVertexIsModelPointGiven(m: BrepModel, mesh: ModelMesh, v: BrepVertexIndex): Boolean
+        => m.Vertices.IsValidIndex(v) ? mesh.PositionIs(VertexIndex(v.Value), m.Vertices[v].Point) : true;
+
+    // Law_AssembledPositionIsFaceMeshPosition's claim on mesh.
+    AssembledPositionIsFaceMeshPositionGiven(faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering, mesh: ModelMesh,
+        f: BrepFaceIndex, i: VertexIndex): Boolean
+        => (faceMeshes.IsValidIndex(f) ? faceMeshes[f].Sources.IsValidIndex(i) : false)
+            ? mesh.PositionIs(n.GlobalVertexOf(faceMeshes[f], i), faceMeshes[f].FaceMeshPoint(i))
+            : true;
+
+    // Law_AssembledCornerIsGlobalVertexOfFaceMeshCorner's claim on mesh.
+    AssembledCornerIsGlobalVertexGiven(faceMeshes: Array<FaceMesh>, n: MeshVertexNumbering, mesh: ModelMesh,
+        f: BrepFaceIndex, e: ElementIndex, slot: Integer): Boolean
+        => faceMeshes.HasFaceMeshCorner(f, e, slot)
+            ? mesh.ElementCorner(faceMeshes.AssembledElement(f, e), slot).Value
+                == n.GlobalVertexOf(faceMeshes[f], faceMeshes[f].FaceMeshCorner(e, slot)).Value
+            : true;
+
+    // Law_AssembledElementRemembersItsFace's claim on mesh.
+    AssembledElementRemembersItsFaceGiven(faceMeshes: Array<FaceMesh>, mesh: ModelMesh, f: BrepFaceIndex, e: ElementIndex): Boolean
+        => faceMeshes.HasFaceMeshCorner(f, e, 0) ? mesh.ElementFaceIs(faceMeshes.AssembledElement(f, e), f) : true;
+
+    // Law_AssembledCornerUvIsCopied's claim on mesh.
+    AssembledCornerUvIsCopiedGiven(faceMeshes: Array<FaceMesh>, mesh: ModelMesh, f: BrepFaceIndex, e: ElementIndex, slot: Integer): Boolean
+        => faceMeshes.HasFaceMeshCorner(f, e, slot)
+            ? mesh.CornerUvIsCopied(faceMeshes[f], faceMeshes.AssembledElement(f, e), e, slot)
+            : true;
+
+    // Law_AssembledCornerNormalIsCopied's claim on mesh.
+    AssembledCornerNormalIsCopiedGiven(faceMeshes: Array<FaceMesh>, mesh: ModelMesh, f: BrepFaceIndex, e: ElementIndex, slot: Integer): Boolean
+        => faceMeshes.HasFaceMeshCorner(f, e, slot)
+            ? mesh.CornerNormalIsCopied(faceMeshes[f], faceMeshes.AssembledElement(f, e), e, slot)
+            : true;
+
+    // Law_AssembledSharedBoundaryCornersCoincide's claim on mesh.
+    AssembledSharedBoundaryCornersCoincideGiven(faceMeshes: Array<FaceMesh>, mesh: ModelMesh,
+        f: BrepFaceIndex, ea: ElementIndex, sa: Integer, g: BrepFaceIndex, eb: ElementIndex, sb: Integer): Boolean
+        => ((faceMeshes.HasFaceMeshCorner(f, ea, sa) && faceMeshes.HasFaceMeshCorner(g, eb, sb))
+                ? IsSameBoundarySample(faceMeshes.CornerSource(f, ea, sa), faceMeshes.CornerSource(g, eb, sb))
+                : false)
+            ? mesh.ElementCorner(faceMeshes.AssembledElement(f, ea), sa).Value
+                == mesh.ElementCorner(faceMeshes.AssembledElement(g, eb), sb).Value
+            : true;
+
+    // Law_AreaIsSumOfFaceMeshAreas' claim on mesh.
+    AreaIsSumOfFaceMeshAreasGiven(faceMeshes: Array<FaceMesh>, mesh: ModelMesh): Boolean
+        => mesh.HasAllValidCorners
+            ? TotalsAgree(mesh.Area, faceMeshes.Map(fm => fm.FaceMeshArea).CompensatedSum)
+            : true;
+
+    //==
+    // # Quantifiers
+
+    // Whether holds is true at every corner slot 0 to 3 of every element of
+    // every face mesh (slots past an element's arity included, as the
+    // layer 7 corner grid does).
+    AllFaceMeshCorners(faceMeshes: Array<FaceMesh>, holds: Function3<BrepFaceIndex, ElementIndex, Integer, Boolean>): Boolean
+        => faceMeshes.Count.Range.All(f =>
+            (4 * faceMeshes[f].ElementCount).Range.All(j => holds(BrepFaceIndex(f), ElementIndex(j / 4), j % 4)));
+
+    // Whether holds is true at every pair of corners of one face mesh's
+    // elements or two: the quadratic pair grid of the shared-corner law.
+    AllFaceMeshCornerPairs(faceMeshes: Array<FaceMesh>,
+        holds: Function6<BrepFaceIndex, ElementIndex, Integer, BrepFaceIndex, ElementIndex, Integer, Boolean>): Boolean
+        => faceMeshes.AllFaceMeshCorners((f, ea, sa) =>
+            faceMeshes.AllFaceMeshCorners((g, eb, sb) => holds(f, ea, sa, g, eb, sb)));
+}
