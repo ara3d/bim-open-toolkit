@@ -47,7 +47,7 @@ library BsplineLocalEvaluationLaws
 
     // Every evaluation reads exactly p + 1 control points, for degrees 1 to
     // 6 and 7 to 70 control points, at any parameter and order.
-    Law_Perf_LocalDerivativeReadsDegreePlusOne(p: Integer, n: Integer, t: Number, order: Integer): Boolean
+    Law_LocalDerivativeReadsDegreePlusOne(p: Integer, n: Integer, t: Number, order: Integer): Boolean
     {
         var degree = 1 + p.FixtureIndex(6);
         var d = PerfSplineCurve(degree, 7 + n.FixtureIndex(64));
@@ -67,7 +67,7 @@ library BsplineLocalEvaluationLaws
     // On every space-curve fixture, inside its domain and half a unit past
     // either end, the point and both derivatives equal the old bodies' bit
     // for bit, and the counted form returns the same value.
-    Law_Perf_BSplineLocalDerivativeAgrees(k: Integer, t: Number): Boolean
+    Law_BSplineLocalDerivativeAgrees(k: Integer, t: Number): Boolean
     {
         var d = k.CurveFixture;
         var x = d.Basis.PerfAroundDomain(t);
@@ -79,7 +79,7 @@ library BsplineLocalEvaluationLaws
 
     // The same on the many-point family, where the local controls are a
     // small part of the curve's.
-    Law_Perf_BSplineLocalDerivativeAgreesOnFamily(p: Integer, n: Integer, t: Number): Boolean
+    Law_BSplineLocalDerivativeAgreesOnFamily(p: Integer, n: Integer, t: Number): Boolean
     {
         var d = PerfSplineCurve(1 + p.FixtureIndex(6), 7 + n.FixtureIndex(64));
         var x = d.Basis.PerfAroundDomain(t);
@@ -90,7 +90,7 @@ library BsplineLocalEvaluationLaws
 
     // On every parameter-plane fixture, the point and both derivatives equal
     // the old bodies' bit for bit.
-    Law_Perf_BSplineLocalDerivative2DAgrees(k: Integer, t: Number): Boolean
+    Law_BSplineLocalDerivative2DAgrees(k: Integer, t: Number): Boolean
     {
         var d = k.Curve2DFixture;
         var x = d.Basis.PerfAroundDomain(t);

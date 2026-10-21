@@ -1,7 +1,7 @@
 # perf-spline-local: B-spline curve evaluation from the p + 1 local control points
 
 Ticket: TKT-379
-Status: ready: I2
+Status: merged: I2 (2026-10-21, into 01-geometry/bspline-local.{library,laws}.plato; the whole-polygon bodies kept as the reference the agreement laws compare against)
 
 ## Done
 - I2, (this commit), about 0.3 h against 1.5 h expected: `BSplineLocalDerivative(d, order, t)` for
