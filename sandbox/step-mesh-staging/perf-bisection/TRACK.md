@@ -1,7 +1,7 @@
 # perf-bisection: the bisection carries its ends down; the estimated sagitta maps its samples once
 
 Ticket: TKT-387
-Status: ready: R5
+Status: merged: R5 (2026-10-21, into 04-discretization/discretization-ranged-bisection.{types,library}.plato and 08-pipeline/pipeline-bisection.laws.plato; the case witnesses deleted after wiring)
 
 ## Files
 

@@ -38,26 +38,7 @@ library BsplineSagitta
     // e's arc over [t0, t1] from its chord, by the control-hull certificate
     // on a B-spline, exactly on a polyline, by a sampled estimate otherwise.
     SagittaByHullBoundBody(m: BrepModel, e: BrepEdgeIndex, t0: Number, t1: Number): Number
-    {
-        var lo = t0.Min(t1);
-        var hi = t0.Max(t1);
-        var a = m.PointOnEdge(e, lo);
-        var b = m.PointOnEdge(e, hi);
-        return match (m.Geometry.CurveAt(m.Edges[e].Curve))
-        {
-            Line(origin, velocity) => 0.0;
-            Circle(placement, radius) => m.EstimatedSagitta(e, lo, hi);
-            Ellipse(placement, semiAxis1, semiAxis2) => m.EstimatedSagitta(e, lo, hi);
-            Hyperbola(placement, semiAxis, semiImaginaryAxis) => m.EstimatedSagitta(e, lo, hi);
-            Parabola(placement, focalDistance) => m.EstimatedSagitta(e, lo, hi);
-            Polyline(points) => points.PolylineSagitta(a, b, lo, hi);
-            BSpline(data) => data.HullSagitta(a, b, lo, hi, m.Tolerances.Length.Value);
-            Trimmed(basis, range, sameSense) => m.EstimatedSagitta(e, lo, hi);
-            Composite(segments) => m.EstimatedSagitta(e, lo, hi);
-            Offset(basis, distance, reference) => m.EstimatedSagitta(e, lo, hi);
-            OnSurface(spaceCurve, supports, master) => m.EstimatedSagitta(e, lo, hi);
-        };
-    }
+        => m.SagittaByHullBoundGiven(e, t0.Min(t1), t0.Max(t1), m.PointOnEdge(e, t0.Min(t1)), m.PointOnEdge(e, t0.Max(t1)));
 
     //==
     // # The B-spline certificate
@@ -121,31 +102,5 @@ library BsplineSagitta
     // around it. Exact to rounding when the distance has one local maximum
     // per sample interval; not a certificate.
     EstimatedSagitta(m: BrepModel, e: BrepEdgeIndex, lo: Number, hi: Number): Number
-    {
-        var a = m.PointOnEdge(e, lo);
-        var b = m.PointOnEdge(e, hi);
-        var step = (hi - lo) / 64.0;
-        var best = 65.Range.Reduce(0, (i, j) =>
-            DistanceToSegment(a, b, m.PointOnEdge(e, lo + step * j.ToNumber)) > DistanceToSegment(a, b, m.PointOnEdge(e, lo + step * i.ToNumber)) ? j : i);
-        var x0 = lo + step * (best - 1).Max(0).ToNumber;
-        var x1 = lo + step * (best + 1).Min(64).ToNumber;
-        var ratio = 0.5 * ((5.0).Sqrt - 1.0);
-        var n = 0;
-        while (n < 60)
-        {
-            var left = x1 - (x1 - x0) * ratio;
-            var right = x0 + (x1 - x0) * ratio;
-            if (DistanceToSegment(a, b, m.PointOnEdge(e, left)) >= DistanceToSegment(a, b, m.PointOnEdge(e, right)))
-            {
-                x1 = right;
-            }
-            else
-            {
-                x0 = left;
-            }
-            n = n + 1;
-        }
-        return DistanceToSegment(a, b, m.PointOnEdge(e, 0.5 * (x0 + x1)))
-            .Max(DistanceToSegment(a, b, m.PointOnEdge(e, lo + step * best.ToNumber)));
-    }
+        => m.EstimatedSagittaBody2(e, lo, hi, m.PointOnEdge(e, lo), m.PointOnEdge(e, hi));
 }

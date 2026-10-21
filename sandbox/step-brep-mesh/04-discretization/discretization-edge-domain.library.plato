@@ -181,26 +181,14 @@ library EdgeRangedDiscretizing
 
     // Termination's BisectedParametersOn with the edge domain given.
     BisectedParametersGiven(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, images: Array<EdgeImage>, range: NumberInterval): Array<Number>
-    {
-        var seeds = m.EdgeSeedsGiven(e, range);
-        return [seeds[0]].Concatenate((seeds.Count - 1).Range.FlatMap(k =>
-            m.SplitSpanOn(e, c, seeds[k], seeds[k + 1], 0, images).Concatenate([seeds[k + 1]])));
-    }
+        => m.BisectedCachedCounted(e, c, images, range).Value.Parameters;
 
     // Chunk E1's DiscretizeBoundedOnIndexed with the edge domain and the degeneracy given:
     // DiscretizeBoundedOnIndexed(m, e, c, least, images) is
     // m.DiscretizeBoundedOnRanged(e, c, least, images, range, m.IsDegenerateEdgeGiven(e, range))
     // for range = m.EdgeDomain(e).Range.
     DiscretizeBoundedOnRanged(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, least: Integer, images: Array<EdgeImage>, range: NumberInterval, degenerate: Boolean): EdgeDiscretization
-    {
-        var conic = m.ConicCountGiven(e, c, least, range);
-        var parameters = degenerate
-            ? [range.Start, range.End]
-            : (conic > 0
-                ? range.Samples(m.RaisedForImagesGiven(e, c, conic, m.ConicCapGiven(e, c, least, range), images, range) + 1)
-                : m.RaisedToCount(m.BisectedParametersGiven(e, c, images, range), least));
-        return m.DiscretizationAt(e, parameters);
-    }
+        => m.DiscretizeBoundedOnCached(e, c, least, images, range, degenerate);
 
     // Chunk E1's DiscretizeTabled with the edge domain given: DiscretizeTabled(m, t, two, e, c,
     // floors) is m.DiscretizeRanged(t, two, e, c, floors, m.EdgeDomain(e).Range). The degeneracy

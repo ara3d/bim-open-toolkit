@@ -94,13 +94,7 @@ library TermDiscretize
 
     // Layer 4's SegmentFails with the image test over the given images.
     SegmentFailsOn(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: Number, b: Number, images: Array<EdgeImage>): Boolean
-    {
-        var piece = m.PieceOf(e, a, b);
-        return m.Sagitta(e, a, b) > c.EffectiveChordal(m.Tolerances)
-            || m.TangentDeviation(piece, SamplePlan.DiscretizationPlan, 0) > c.EffectiveAngular * 0.5
-            || piece.SegmentLength(0).IsWithinLimit(c.MaxLength).Not
-            || m.ImagesExceedChordalOn(piece, c, images);
-    }
+        => m.SegmentFailsOrderedOn(e, c, a, b, images);
 
     // Layer 4's SegmentMeetsCriteria with the image law over the given
     // images: each criterion widened as in its law or escaped at the length
@@ -178,11 +172,7 @@ library TermDiscretize
     // Layer 4's BisectedParameters with the image test over the given
     // images.
     BisectedParametersOn(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, images: Array<EdgeImage>): Array<Number>
-    {
-        var seeds = m.EdgeSeeds(e);
-        return [seeds[0]].Concatenate((seeds.Count - 1).Range.FlatMap(k =>
-            m.SplitSpanOn(e, c, seeds[k], seeds[k + 1], 0, images).Concatenate([seeds[k + 1]])));
-    }
+        => m.BisectedParametersGiven(e, c, images, m.EdgeDomain(e).Range);
 
     // Layer 4's SplitSpan with the image test over the given images: the
     // midpoint and both halves' own while the segment fails and both halves
