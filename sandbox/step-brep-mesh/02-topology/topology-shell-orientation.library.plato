@@ -39,61 +39,7 @@ library BrepShellOrientation
     // reference (listed, then walked in sorted order), plus one per pair of poly faces tested;
     // the sort's comparisons are not counted. Precondition: every face of the shell intact.
     ShellComponentCountByVertexCounted(m: BrepModel, s: ShellIndex): Counted<Integer>
-    {
-        var faces = m.ShellFaces(s);
-        var n = faces.Count;
-        var keyList = new List<Integer>();
-        var ownerList = new List<Integer>();
-        var i = 0;
-        while (i < n)
-        {
-            var vs = m.FaceVertices(faces[i]);
-            var k = 0;
-            while (k < vs.Count)
-            {
-                keyList = keyList.Add(vs[k].Value);
-                ownerList = ownerList.Add(i);
-                k = k + 1;
-            }
-            i = i + 1;
-        }
-        var keys = keyList.Freeze();
-        var owners = ownerList.Freeze();
-        var order = keys.SortedIndices((a, b) => a <= b);
-        var first = new List<Integer>();
-        var second = new List<Integer>();
-        var j = 1;
-        while (j < order.Count)
-        {
-            if (keys[order[j]] == keys[order[j - 1]])
-            {
-                first = first.Add(owners[order[j - 1]]);
-                second = second.Add(owners[order[j]]);
-            }
-            j = j + 1;
-        }
-        var points = faces.Map(f => m.FacePolyPoints(f));
-        var poly = n.Range.FlatMap(p => points[p].Count > 0 ? [p] : n.Range.Take(0));
-        var tested = 0;
-        var a = 0;
-        while (a < poly.Count)
-        {
-            var b = a + 1;
-            while (b < poly.Count)
-            {
-                if (m.PolyPointsTouch(points[poly[a]], points[poly[b]]))
-                {
-                    first = first.Add(poly[a]);
-                    second = second.Add(poly[b]);
-                }
-                tested = tested + 1;
-                b = b + 1;
-            }
-            a = a + 1;
-        }
-        var count = ClassRoots(n, first.Freeze(), second.Freeze()).ClassCount;
-        return Counted(count, Insertions(n + 2 * keys.Count + tested));
-    }
+        => m.ShellComponentCountByGridCounted(s);
 
     // Whether a point of p coincides with a point of q at the model's tolerance: FacesTouch's
     // poly-loop test over points already gathered.

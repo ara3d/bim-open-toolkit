@@ -1,7 +1,7 @@
 # perf-faceted: poly-loop points identified on a tolerance grid, implicit edges counted once per shell
 
 Ticket: TKT-377
-Status: ready: V9
+Status: merged: V9 (2026-10-21, into 02-topology/topology-faceted.{types,library}.plato and 08-pipeline/pipeline-faceted.laws.plato; CoincidenceCell and its helpers moved to 00-foundation/foundation-coincidence-cell.{types,library}.plato)
 
 ## Files
 

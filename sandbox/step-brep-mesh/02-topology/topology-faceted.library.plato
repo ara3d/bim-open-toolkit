@@ -40,11 +40,11 @@ library BrepFacetedShells
     IsFinitePoint(p: Point3D): Boolean
         => p.X.IsFinite && p.Y.IsFinite && p.Z.IsFinite;
 
-    // CoincidenceRoots(m, points).
+    // CoincidenceRootsPairwise(m, points).
     CoincidenceRootsByGrid(m: BrepModel, points: Array<Point3D>): Array<Integer>
         => m.CoincidenceRootsByGridCounted(points).Value;
 
-    // CoincidenceRoots(m, points) with its work counted: Insertions is the number of pair tests,
+    // CoincidenceRootsPairwise(m, points) with its work counted: Insertions is the number of pair tests,
     // one for each point b in the 27 cells around each point a (a itself included), whether or
     // not the pair is then compared. The sort and the 9 binary searches per point are not
     // counted. The pairwise fallback counts P^2.
@@ -57,7 +57,7 @@ library BrepFacetedShells
         var exact = (side > 0.0 && side.IsFinite) ? candidates.All(k => cells[k].IsExactCoincidenceCell) : false;
         return exact
             ? m.GriddedCoincidenceRootsCounted(points, cells, candidates.Sort((a, b) => cells[a].CoincidenceCellAtMost(cells[b])))
-            : Counted(m.CoincidenceRoots(points), Insertions(n * n));
+            : Counted(m.CoincidenceRootsPairwise(points), Insertions(n * n));
     }
 
     // The coincidence roots of the points from the candidates in order, each compared with the

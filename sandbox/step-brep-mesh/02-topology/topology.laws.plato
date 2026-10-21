@@ -220,7 +220,7 @@ library BrepTopologyLaws
             ? (m.IsShellInRange(s)
                 ? (m.Shells[s].DeclaredClosed
                     ? true
-                    : (m.ShellEulerPoincare(s) + m.BoundaryCycleCount(s)).IsEvenAndAtMostTwo)
+                    : m.ShellEulerPlusBoundaryCycles(s).IsEvenAndAtMostTwo)
                 : true)
             : true;
 

@@ -1,8 +1,9 @@
 //==
-// # Coincident vertex pairs on a grid: types (complexity sweep, chunk V7, TKT-375)
+// # Coincidence cells (complexity sweep, chunk V7, moved to layer 00 at V9's merge)
 //
-// The cell of the tolerance grid CoincidentVertexPairsGridded buckets vertices into
-// (mesh-coincident-gridded.library.plato).
+// The cell of the tolerance grid that CoincidentVertexPairsGridded (layer 06) and
+// CoincidenceRootsByGrid (layer 02) bucket points into. In layer 0 because it depends only on
+// Point3D, Number and LengthTolerance, and layer 2 reads it.
 
 // The cell of a uniform grid holding a point: the floors of the point's coordinates divided by
 // the cell side. The coordinates are whole Numbers, not Integers, so a model far from the origin

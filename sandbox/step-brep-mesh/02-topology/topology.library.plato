@@ -982,7 +982,12 @@ library BrepTopology
     // The class roots of the points under coincidence within the length
     // tolerance, closed transitively (layer 0's ClassRoots over every
     // coinciding pair; quadratic, where an implementation hashes).
+    // The classes of coinciding points (CoincidenceRootsByGrid, topology-faceted.library.plato:
+    // a tolerance grid; the pairwise scan below is its reference and fallback).
     CoincidenceRoots(m: BrepModel, points: Array<Point3D>): Array<Integer>
+        => m.CoincidenceRootsByGrid(points);
+
+    CoincidenceRootsPairwise(m: BrepModel, points: Array<Point3D>): Array<Integer>
     {
         var n = points.Count;
         var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
@@ -993,7 +998,7 @@ library BrepTopology
     // The class roots of shell s's poly-loop points under coincidence, the
     // points taken bound by bound in ShellPolyBounds order.
     ShellPolyPointRoots(m: BrepModel, s: ShellIndex): Array<Integer>
-        => m.CoincidenceRoots(m.ShellPolyBounds(s).FlatMap(b => m.Loops[b.Loop].PolyLoopPointsOf));
+        => m.CoincidenceRootsByGrid(m.ShellPolyPoints(s));
 
     // The position of the first point of poly bound k among the points of
     // all the bounds, taken in order.
@@ -1011,7 +1016,7 @@ library BrepTopology
     // runs the use from the smaller class to the larger, key * 2 otherwise,
     // the bound's Orientation composed with the loop's order.
     ImplicitEdgeUses(m: BrepModel, poly: Array<FaceBound>, pointRoots: Array<Integer>): Array<Integer>
-        => poly.Count.Range.FlatMap(k => m.ImplicitEdgeUsesOf(poly[k], m.PolyPointOffset(poly, k), pointRoots));
+        => m.ImplicitEdgeUsesByOffsets(poly, pointRoots);
 
     // The implicit edge uses of one poly bound whose first point is at
     // position offset.
@@ -1101,20 +1106,12 @@ library BrepTopology
     // implicit edges, counted over the classes those edges touch. The same
     // argument as for indexed edges makes each component one cycle.
     ImplicitBoundaryCycleCount(m: BrepModel, s: ShellIndex): Integer
-    {
-        var n = m.ShellPolyPointRoots(s).Count;
-        var free = m.ImplicitFreeEdgeKeys(s);
-        var roots = ClassRoots(n, free.Map(k => k / n), free.Map(k => k % n));
-        return free.Map(k => roots[k / n]).DistinctCount;
-    }
+        => m.ShellPolyEdgesOf(s).ImplicitBoundaryCycleCountSorted;
 
     // The keys (ImplicitEdgeKeys) of shell s's implicit edges used exactly
     // once: its faceted free edges.
     ImplicitFreeEdgeKeys(m: BrepModel, s: ShellIndex): Array<Integer>
-    {
-        var keys = m.ImplicitEdgeKeys(m.ShellPolyBounds(s), m.ShellPolyPointRoots(s));
-        return keys.FlatMap(k => keys.Reduce(0, (c, j) => j == k ? c + 1 : c) == 1 ? [k] : keys.Take(0));
-    }
+        => m.ShellPolyEdgesOf(s).ImplicitFreeEdgeKeysSorted;
 
     // How many implicit edges of shell s's poly loops are used exactly once.
     ImplicitFreeEdgeCount(m: BrepModel, s: ShellIndex): Integer
@@ -1170,16 +1167,7 @@ library BrepTopology
     // declared closed, not exactly two uses in opposite directions; open,
     // more than two uses, or two in the same direction.
     PolyEdgeUseDefects(m: BrepModel, s: ShellIndex): Integer
-    {
-        var poly = m.ShellPolyBounds(s);
-        var uses = m.ImplicitEdgeUses(poly, m.ShellPolyPointRoots(s));
-        var keys = uses.Map(u => u / 2).Sort((a, b) => a <= b);
-        var closed = m.Shells[s].DeclaredClosed;
-        return keys.Count.Range.Reduce(0, (n, i) =>
-            (i == 0 ? true : keys[i] != keys[i - 1])
-                ? (m.IsDefectiveImplicitEdge(uses, keys[i], closed) ? n + 1 : n)
-                : n);
-    }
+        => m.ShellPolyEdgesOf(s).PolyEdgeUseDefectsSorted(m.Shells[s].DeclaredClosed);
 
     // Whether the uses of the implicit edge key break the edge-use rule for a
     // shell declared closed or open.

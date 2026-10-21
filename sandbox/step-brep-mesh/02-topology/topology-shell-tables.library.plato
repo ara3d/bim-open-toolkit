@@ -266,19 +266,5 @@ library BrepShellTables
     // with the shell's edges and vertices read from the table instead of from a scan per model
     // edge and per model vertex.
     ReducedCountsIndexed(m: BrepModel, s: ShellIndex, t: EdgeUseTable): ShellCounts
-    {
-        var shellEdges = t.EdgesOfShellByUse;
-        var degenerate = shellEdges.FlatMap(e => m.IsDegenerateEdge(e) ? [e] : shellEdges.Take(0));
-        var roots = m.DegenerateEdgeRoots(degenerate);
-        var vertexClasses = m.VerticesOfShellByMark(s, t).Map(v => roots[v.Value]);
-        var faces = m.ShellFaces(s);
-        var kept = faces.Reduce(0, (n, f) => n + m.KeptReducedBoundCount(f, roots));
-        var poly = m.ShellPolyBounds(s);
-        var pointRoots = m.ShellPolyPointRoots(s);
-        return ShellCounts(
-            vertexClasses.DistinctCount + pointRoots.ClassCount,
-            shellEdges.Count - degenerate.Count + m.ImplicitEdgeKeys(poly, pointRoots).DistinctCount,
-            faces.Count,
-            kept);
-    }
+        => m.ReducedCountsPolyIndexed(s, t, m.ShellPolyEdgesOf(s));
 }

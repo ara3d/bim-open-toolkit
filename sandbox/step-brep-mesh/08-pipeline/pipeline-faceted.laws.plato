@@ -120,7 +120,7 @@ library FacetedLaws
     FacetedAgreesOnShell(m: BrepModel, s: ShellIndex): Boolean
     {
         var poly = m.ShellPolyBounds(s);
-        var roots = m.CoincidenceRoots(m.ShellPolyPoints(s));
+        var roots = m.CoincidenceRootsPairwise(m.ShellPolyPoints(s));
         var uses = m.ImplicitEdgeUses(poly, roots);
         var p = m.ShellPolyEdgesOf(s);
         var t = m.EdgeUseTable(s);
@@ -146,12 +146,12 @@ library FacetedLaws
             : true;
 
     // On every faceted case, the replacements agree with their references on every shell.
-    Law_Perf_FacetedAgrees(_: Integer): Boolean
+    Law_FacetedAgrees(_: Integer): Boolean
         => 0.FacetedCaseCount.Range.All(k => BrepModel.FacetedCase(k).FacetedAgreesOn);
 
     // On the ten positive witnesses, which have no poly loop, the replacements agree: the
     // faceted parts are empty and the indexed parts are V4's.
-    Law_Perf_FacetedAgreesOnWitnesses(_: Integer): Boolean
+    Law_FacetedAgreesOnWitnesses(_: Integer): Boolean
         => BrepModel.WitnessCount.Range.All(k => BrepModel.WitnessAt(k).FacetedAgreesOn);
 
     // The cases are not vacuous: the jittered sheet's 24 points fall into its 12 grid points and
@@ -160,7 +160,7 @@ library FacetedLaws
     // points are its 8 corners, with 12 edges, no defect and chi = 2; the sheet declared closed
     // has its 10 boundary edges as defects; the repeated quad and the flipped faces give defects;
     // the box beside three poly triangles is three components.
-    Law_Perf_FacetedCasesAreFaceted(_: Integer): Boolean
+    Law_FacetedCasesAreFaceted(_: Integer): Boolean
     {
         var s = ShellIndex(0);
         var sheet = BrepModel.FacetedCase(2);
@@ -191,15 +191,15 @@ library FacetedLaws
     // generated point array with two shifted copies, 0.6 tol and 1.2 tol along x (a chain whose
     // ends are too far apart to coincide directly), and on the array scaled by tol, which packs
     // the points into a few cells.
-    Law_Perf_CoincidenceRootsByGridAgrees(points: Array<Point3D>): Boolean
+    Law_CoincidenceRootsByGridAgrees(points: Array<Point3D>): Boolean
     {
         var m = BrepModel.Witness_UnitBox;
         var tol = 0.0.FacetedTolerance;
         var chained = points.Concatenate(points.Map(q => q + Vector3D(0.6 * tol, 0.0, 0.0)))
             .Concatenate(points.Map(q => q + Vector3D(1.2 * tol, 0.0, 0.0)));
         var close = points.Map(q => Point3D(q.X * tol, q.Y * tol, q.Z * tol));
-        return SameIntegers(m.CoincidenceRootsByGrid(chained), m.CoincidenceRoots(chained))
-            && SameIntegers(m.CoincidenceRootsByGrid(close), m.CoincidenceRoots(close));
+        return SameIntegers(m.CoincidenceRootsByGrid(chained), m.CoincidenceRootsPairwise(chained))
+            && SameIntegers(m.CoincidenceRootsByGrid(close), m.CoincidenceRootsPairwise(close));
     }
 
     //==
@@ -219,7 +219,7 @@ library FacetedLaws
     // The witness's sizes are the poly-point counts of its sheets, and the grid tests exactly the
     // pairs of copies of each grid point: 4 corners with one copy, 2 r + 4 boundary points with
     // two and 3 (r - 1) inner points with four, r = n / 16 rows, so 196 at 64 and 1764 at 512.
-    Law_Perf_FacetedSheetSizes(_: Integer): Boolean
+    Law_FacetedSheetSizes(_: Integer): Boolean
         => [64, 512].All(n => BrepModel.FacetedSheetOfPoints(n).ShellPolyPoints(ShellIndex(0)).Count == n)
             && FacetedSheetWork(64).Insertions == 196
             && FacetedSheetWork(512).Insertions == 1764;
