@@ -90,7 +90,7 @@ library PolesSegments
         var up = m.UWinding(f, l).ToNumber * (m.IsChartMirrored(f) ? -1.0 : 1.0) > 0.0;
         var free = lines.Count.Range.FlatMap(k =>
             ((up ? lines[k] > meanV : lines[k] < meanV)
-                && loops.All(x => x.Points.All(uv => m.IsOnLine(f, uv, SurfaceParameter.ParameterV, lines[k]).Not))) ? [k] : lines.Count.Range.Take(0));
+                && loops.All(x => x.Points.All(uv => m.IsOnLine(f, uv, SurfaceParameter.ParameterV, lines[k]).Not))) ? [k] : [k].Take(0));
         return free.Reduce(-1, (best, k) => best < 0 ? k : ((lines[k] - meanV).Abs < (lines[best] - meanV).Abs ? k : best));
     }
 

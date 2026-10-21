@@ -1,7 +1,7 @@
 # perf-refine-flat: O(T) filters in refinement and the seed, and an angle test that lifts only changed triangles
 
 Ticket: TKT-363
-Status: ready: F4
+Status: merged: F4 (2026-10-21, into 05-face-meshing/triangulation-fast-marks.{library,laws}.plato and the five edit sites)
 
 ## Done
 - F4, this commit, about 0.6 h against 1.5 h expected: ranked candidate 7 of `docs/plans/step-mesher-complexity.md`.

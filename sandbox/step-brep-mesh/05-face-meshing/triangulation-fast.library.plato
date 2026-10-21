@@ -260,7 +260,7 @@ library TriangulationFast
     // and come after every existing point; quads are kept.
     SurfacePassLocal(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, surface: Array<Boolean>, c: FaceMeshingCriteria): UvTriangulation
     {
-        var failing = t.Triangles.Count.Range.FlatMap(k => surface[k] ? [k] : t.Triangles.Count.Range.Take(0));
+        var failing = t.Triangles.Count.Range.FlatMap(k => surface[k] ? [k] : [k].Take(0));
         var least = c.Discretization.EffectiveMinLength(m.Tolerances);
         var pts = t.Points;
         var points = pts.Map(x => chart.ChartPoint(x));
@@ -292,10 +292,10 @@ library TriangulationFast
     //==
     // # The angle pass
 
-    // The indices of the triangles of t below RefinementMinAngle that refused[k] does not mark.
+    // The indices of the triangles of t below RefinementMinAngle that refused[k] does not mark
+    // (BelowAngleKnown with no triangle known good; the refinement loop carries the marks).
     BelowAngle(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation, refused: Array<Boolean>): Array<Integer>
-        => t.Triangles.Count.Range.FlatMap(k => ((k < refused.Count ? refused[k] : false) ? false
-            : m.SmallestCornerAngle(f, t, t.Triangles[k]) < RefinementMinAngle(0)) ? [k] : t.Triangles.Count.Range.Take(0));
+        => m.BelowAngleKnown(f, t, refused, [false].Take(0));
 
     // AnglePass one point at a time with local flips: every triangle below the angle that refused
     // does not mark, while it is still a triangle (still at its index), gets the first of
@@ -357,23 +357,29 @@ library TriangulationFast
     // afterwards, unchanged) is not tried again while it stays unchanged. The profile showed some 65
     // such triangles on the cylinder side face retried, four candidates each, in every one of the
     // last eight rounds. Up to forty rounds while a round adds a point; the surface criteria are
-    // not tested on a plane; a triangle known to meet them is not tested again while unchanged.
+    // not tested on a plane; a triangle known to meet them is not tested again while unchanged,
+    // and an angle-good mark is carried the same way, so BelowAngleKnown lifts only the
+    // triangles that are neither refused nor known to meet the angle (chunk F4, 2026-10-21).
     RefineToSurfaceByInsertion(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
     {
         var planar = m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord;
+        var none = [0].Take(0);
         var current = t;
         var known = t.Triangles.Map(x => false);
         var refused = t.Triangles.Map(x => false);
+        var good = t.Triangles.Map(x => false);
         var pass = 0;
         var changed = true;
         while (pass < 40 && changed)
         {
             var surface = planar ? current.Triangles.Map(x => false) : m.NeedsRefinement(f, r, current, known, c);
             var mid = m.SurfacePassLocal(f, r, chart, current, surface, c);
-            var carried = current.Triangles.CarriedMarks(refused, [0].Take(0), mid.Triangles);
-            var bad = m.BelowAngle(f, mid, carried);
+            var carried = current.Triangles.CarriedMarks(refused, none, mid.Triangles);
+            var goodMid = current.Triangles.CarriedMarks(good, none, mid.Triangles);
+            var bad = m.BelowAngleKnown(f, mid, carried, goodMid);
             var next = m.AnglePassLocal(f, r, chart, mid, bad, c);
             refused = mid.Triangles.CarriedMarks(carried, bad, next.Triangles);
+            good = mid.Triangles.CarriedMarks(mid.AngleGoodMarks(carried, bad), none, next.Triangles);
             known = KnownGood(current, surface, next);
             changed = next.Points.Count > current.Points.Count;
             current = next;

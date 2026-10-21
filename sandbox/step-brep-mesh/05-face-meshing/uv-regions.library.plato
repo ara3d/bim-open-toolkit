@@ -399,7 +399,7 @@ library UvRegions
 
     // The positions in `loops` of the loops that wind.
     WindingLoops(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>): Array<Integer>
-        => loops.Count.Range.FlatMap(k => m.IsWindingLoop(f, loops[k]) ? [k] : loops.Count.Range.Take(0));
+        => loops.Count.Range.FlatMap(k => m.IsWindingLoop(f, loops[k]) ? [k] : [k].Take(0));
 
     // Whether exactly two loops wind, once each round one direction and the
     // opposite way: the two boundary circles of a band.

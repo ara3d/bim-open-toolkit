@@ -107,12 +107,12 @@ library TriangulationCdt
         var points = r.BoundaryPoints.Map(uv => chart.ChartPoint(uv));
         var outer = r.Outer.Points.Count.Range;
         var holes = r.Holes.Count.Range.FlatMap(h =>
-            r.Holes[h].Points.Count >= 3 ? [h] : r.Holes.Count.Range.Take(0));
+            r.Holes[h].Points.Count >= 3 ? [h] : [h].Take(0));
         var bySide = holes.Sort((a, b) => r.HoleRightmost(points, a) >= r.HoleRightmost(points, b));
         var ring = bySide.Reduce(outer, (current, h) => current.HoleBridged(r.HoleRing(h), points, r.AllRingSegments(points)));
         var clipped = ring.EarClipped(points);
         var pointHoles = r.Holes.Count.Range.FlatMap(h =>
-            r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : r.Holes.Count.Range.Take(0));
+            r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : [h].Take(0));
         var triangles = r.Delaunayed(points, pointHoles.Reduce(clipped, (ts, p) => ts.WithPointInserted(p, points)));
         return UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
     }
