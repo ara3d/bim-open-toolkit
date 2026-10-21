@@ -125,8 +125,8 @@ library BrepFoundationParameters
     // The point of the iso-line at value s of the parameter that runs along it.
     PointAt(l: IsoLine, s: Number): UvPoint
         => match (l.Constant) {
-            ParameterU => UvPoint(l.At, s);
-            ParameterV => UvPoint(s, l.At);
+            ParameterU => UvPoint(l.Fixed, s);
+            ParameterV => UvPoint(s, l.Fixed);
         };
 
     // The value of the fixed parameter at p.
@@ -138,5 +138,5 @@ library BrepFoundationParameters
 
     // True when p lies on the iso-line within t.
     IsOn(l: IsoLine, p: UvPoint, t: ParameterTolerance): Boolean
-        => (l.FixedValueAt(p) - l.At).Abs <= t.Value;
+        => (l.FixedValueAt(p) - l.Fixed).Abs <= t.Value;
 }

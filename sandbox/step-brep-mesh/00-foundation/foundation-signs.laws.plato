@@ -26,7 +26,7 @@ library BrepFoundationSignsLaws
 
     // Negating x negates its sign.
     Law_SignIsAntisymmetric(x: Number, tol: Resolution): Boolean
-        => tol.Value >= 0.0 ? SignWithin(0.0 - x, tol) == SignWithin(x, tol).Negative : true;
+        => tol.Value >= 0.0 ? SignWithin(0.0 - x, tol) == SignWithin(x, tol).Negated : true;
 
     // The exact sign of a product is the product of the exact signs.
     Law_SignOfProductIsProduct(x: Number, y: Number): Boolean

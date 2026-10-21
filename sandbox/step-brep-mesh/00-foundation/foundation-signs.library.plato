@@ -26,8 +26,9 @@ library BrepFoundationSigns
     Exact(_: Resolution): Resolution
         => Resolution(0.0);
 
-    // The opposite sign; Zero stays Zero.
-    Negative(s: Sign): Sign
+    // The opposite sign; Zero stays Zero. (Negated, not Negative: the sum case Sign.Negative
+    // and a method of the same name collide in the generated C#.)
+    Negated(s: Sign): Sign
         => match (s) {
             Positive => Sign.Negative;
             Zero => Sign.Zero;
@@ -39,7 +40,7 @@ library BrepFoundationSigns
         => match (a) {
             Positive => b;
             Zero => Sign.Zero;
-            Negative => b.Negative;
+            Negative => b.Negated;
         };
 
     //==

@@ -123,7 +123,7 @@ library BrepGeometryKindsLaws
             CollapsedSide(side) => false;
             CollapsedTwoSides(a, b) => false;
             CollapsedSides(sides) => false;
-            Apex(at) => at.Constant == SurfaceParameter.ParameterV && CatalogAgreesToRounding(at.At, v0);
+            Apex(at) => at.Constant == SurfaceParameter.ParameterV && CatalogAgreesToRounding(at.Fixed, v0);
         };
 
     //==

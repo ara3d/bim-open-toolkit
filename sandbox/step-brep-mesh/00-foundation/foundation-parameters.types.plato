@@ -127,12 +127,12 @@ type PeriodicRange
 // # Iso-lines
 
 // A line of constant u or v in a surface's natural parameters: Constant
-// names the parameter held fixed and At its value, so (ParameterU, 0.5) is
+// names the parameter held fixed and Fixed its value, so (ParameterU, 0.5) is
 // the line u = 0.5 along which v runs. Removes: "the v-line at u" and "the
 // u-line at v" confused in pole and seam code.
 type IsoLine
     implements IValue
 {
     Constant: SurfaceParameter;
-    At: Number;
+    Fixed: Number;
 }

@@ -38,7 +38,7 @@ spec OrientationOf(a: ChartPoint, b: ChartPoint, c: ChartPoint): Sign
 {
     ensures result == Sign.Positive ? TwiceSignedArea(a.ToPoint2D, b.ToPoint2D, c.ToPoint2D) > 0.0 : true;   // Law_OrientationOfAgreesWithLibrarySign
     ensures result == Sign.Negative ? TwiceSignedArea(a.ToPoint2D, b.ToPoint2D, c.ToPoint2D) < 0.0 : true;
-    ensures OrientationOf(a, c, b) == result.Negative;                                                        // Law_OrientationIsAntisymmetric
+    ensures OrientationOf(a, c, b) == result.Negated;                                                        // Law_OrientationIsAntisymmetric
 }
 
 spec ElementInChart

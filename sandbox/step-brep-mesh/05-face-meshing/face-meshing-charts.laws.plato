@@ -89,7 +89,7 @@ library FaceMeshingChartsLaws
 
     // Swapping two corners negates the orientation.
     Law_OrientationIsAntisymmetric(a: ChartPoint, b: ChartPoint, c: ChartPoint): Boolean
-        => OrientationOf(a, c, b) == OrientationOf(a, b, c).Negative;
+        => OrientationOf(a, c, b) == OrientationOf(a, b, c).Negated;
 
     // An element's area has the sign of its orientation when the orientation is not Zero.
     Law_ElementInChartAreaHasItsOrientation(a: ChartPoint, b: ChartPoint, c: ChartPoint): Boolean
