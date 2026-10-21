@@ -1,0 +1,47 @@
+//==
+// # Whole-model guards hoisted out of the per-sample measures: laws (complexity sweep, chunk V2)
+//
+// The count witness of Check_EdgeLiesOnAdjacentSurfacesCounted (read by layer 00's
+// Law_WorkIsWithinSlope): whole-model scans per edge. Merged 2026-10-21 from
+// sandbox/step-mesh-staging/perf-measures; the agreement of every hoisted check and measure with
+// the form it replaced was shown before wiring, field by field, on the runner's models and on two
+// meshed pairs.
+//
+// Sections, in order:
+//  - The count witness
+
+library check it replaces, field for field (Identical): the topology
+// checks over the runner's models and plans, the cross checks over the
+// runner's (model, mesh) pairs and over the CrossCheckPair witnesses, each
+// meshed once per sweep.
+//
+// Sections, in order:
+//  - Count witness
+//  - Topology checks agree
+//  - Cross checks agree
+
+library MeasuresGivenLaws
+{
+    //==
+    // # Count witness
+
+    // The whole-model scans Check_EdgeLiesOnAdjacentSurfaces makes on the
+    // model with n edges (the unit box for 12, the block with a through hole
+    // for 24) under the default plan.
+    EdgeOnSurfaceCheckWork(n: Integer): WorkBudget
+        => BrepModel.GuardsModelOfSize(n).Check_EdgeLiesOnAdjacentSurfacesCounted(SamplePlan.CheckPlan).Work;
+
+    // Check_EdgeLiesOnAdjacentSurfaces makes at most two whole-model scans
+    // (IsEveryIndexInRange, AllCoedgeSites), counted as Flips, per edge, at 12
+    // and 24 edges. The hoisted check makes two in all; the library's makes
+    // three per sample, 2 x plan.Count x 3 per edge.
+    Witness_EdgeOnSurfaceCheckWork(_: WorkClaim): WorkClaim
+        => WorkClaim("Check_EdgeLiesOnAdjacentSurfaces: whole-model scans per edge", Flips(2), [12, 24], n => EdgeOnSurfaceCheckWork(n));
+
+    //==
+    // # Topology checks agree
+
+    //==
+    // # Cross checks agree
+
+}

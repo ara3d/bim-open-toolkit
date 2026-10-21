@@ -195,10 +195,7 @@ library BrepCheckingTopology
     // others, where the law is vacuous). A library law, the contract of the
     // deferred IsDegenerateEdge: self-test, Error.
     Check_DegenerateEdgeStaysAtStart(m: BrepModel, plan: SamplePlan): Check
-        => CheckGridWithin("Law_DegenerateEdgeStaysAtStart", m.Edges.Count, plan.Count,
-            (e, j) => m.DegenerateDeviationAt(BrepEdgeIndex(e), plan.PlanFractions[j]),
-            m.Tolerances.Length.Value,
-            (e, j) => AtEdge(e));
+        => m.Check_DegenerateEdgeStaysAtStartHoisted(plan);
 
     //==
     // # Geometry coupling
@@ -207,58 +204,40 @@ library BrepCheckingTopology
     // DomainEndDeviation. Geometric group, bound Tolerances.Length: Warning
     // below ten times it, Error above.
     Check_EdgeDomainEndsAtVertices(m: BrepModel): Check
-        => CheckGridWithin("Law_EdgeDomainEndsAtVertices", m.Edges.Count, 2,
-            (e, k) => m.EndDeviation(BrepEdgeIndex(e), k == 0),
-            m.Tolerances.Length.Value,
-            (e, k) => AtEdge(e));
+        => m.Check_EdgeDomainEndsAtVerticesHoisted;
 
     // Law_VertexCoincidesWithCurveEnd at every edge and both ends, measured
     // by VertexCurveDeviation. Geometric group, bound Tolerances.Length.
     Check_VertexCoincidesWithCurveEnd(m: BrepModel): Check
-        => CheckGridWithin("Law_VertexCoincidesWithCurveEnd", m.Edges.Count, 2,
-            (e, k) => m.VertexOnCurveDeviation(BrepEdgeIndex(e), k == 0),
-            m.Tolerances.Length.Value,
-            (e, k) => AtEdge(e));
+        => m.Check_VertexCoincidesWithCurveEndHoisted;
 
     // Law_EdgeLiesOnAdjacentSurfaces at every coedge site and every fraction
     // of the plan, measured by SurfaceDeviationAt. Geometric group, bound
     // Tolerances.Length. Reported at the face of the site.
     Check_EdgeLiesOnAdjacentSurfaces(m: BrepModel, plan: SamplePlan): Check
-        => CheckGridWithin("Law_EdgeLiesOnAdjacentSurfaces", m.AllCoedgeSites.Count, plan.Count,
-            (k, j) => m.SiteSurfaceDeviation(m.AllCoedgeSites[k], plan.PlanFractions[j]),
-            m.Tolerances.Length.Value,
-            (k, j) => Provenance.KernelFace(m.AllCoedgeSites[k].Face));
+        => m.Check_EdgeLiesOnAdjacentSurfacesCounted(plan).Value;
 
     // Law_PcurveAgreesWithCurve at every edge, each of its pcurves k = 0, 1,
     // and every fraction of the plan, measured by PcurveDeviationAt.
     // Geometric group, bound Tolerances.Length.
     Check_PcurveAgreesWithCurve(m: BrepModel, plan: SamplePlan): Check
-        => CheckGridWithin("Law_PcurveAgreesWithCurve", m.Edges.Count, 2 * plan.Count,
-            (e, j) => m.PcurveCurveDeviation(BrepEdgeIndex(e), j / plan.Count, plan.PlanFractions[j % plan.Count]),
-            m.Tolerances.Length.Value,
-            (e, j) => AtEdge(e));
+        => m.Check_PcurveAgreesWithCurveHoisted(plan);
 
     // Law_CurveAgreesWithPcurve at every edge, each of its pcurves k = 0, 1,
     // and every fraction of the plan, measured by CurvePcurveDeviationAt
     // (review M3, curve to pcurve). Geometric group, bound Tolerances.Length.
     Check_CurveAgreesWithPcurve(m: BrepModel, plan: SamplePlan): Check
-        => CheckGridWithin("Law_CurveAgreesWithPcurve", m.Edges.Count, 2 * plan.Count,
-            (e, j) => m.CurvePcurveDeviation(BrepEdgeIndex(e), j / plan.Count, plan.PlanFractions[j % plan.Count]),
-            m.Tolerances.Length.Value,
-            (e, j) => AtEdge(e));
+        => m.Check_CurveAgreesWithPcurveHoisted(plan);
 
     // Law_PcurveRunsWithCurve at every edge, pcurve and fraction of the plan.
     // Structure (an exact sign): Error.
     Check_PcurveRunsWithCurve(m: BrepModel, plan: SamplePlan): Check
-        => CheckGrid("Law_PcurveRunsWithCurve", m.Edges.Count, 2 * plan.Count,
-            (e, j) => Law_PcurveRunsWithCurve(m, BrepEdgeIndex(e), j / plan.Count, plan.PlanFractions[j % plan.Count]),
-            (e, j) => AtEdge(e));
+        => m.Check_PcurveRunsWithCurveHoisted(plan);
 
     // Law_PcurveSurfaceIsAFaceSurface at every edge and pcurve. Structure, an
     // ignored pcurve: Warning.
     Check_PcurveSurfaceIsAFaceSurface(m: BrepModel): Check
-        => CheckGrid("Law_PcurveSurfaceIsAFaceSurface", m.Edges.Count, 2,
-            (e, k) => Law_PcurveSurfaceIsAFaceSurface(m, BrepEdgeIndex(e), k), (e, k) => AtEdge(e));
+        => m.Check_PcurveSurfaceIsAFaceSurfaceHoisted;
 
     //==
     // # Self-tests
@@ -277,9 +256,7 @@ library BrepCheckingTopology
     // Law_ParameterizationSignIsConstantOnFace at every coedge site and
     // fraction of the plan. Self-test: Error.
     Check_ParameterizationSignIsConstantOnFace(m: BrepModel, plan: SamplePlan): Check
-        => CheckGrid("Law_ParameterizationSignIsConstantOnFace", m.AllCoedgeSites.Count, plan.Count,
-            (k, j) => Law_ParameterizationSignIsConstantOnFace(m, m.AllCoedgeSites[k], plan.PlanFractions[j]),
-            (k, j) => Provenance.KernelFace(m.AllCoedgeSites[k].Face));
+        => m.Check_ParameterizationSignIsConstantOnFaceHoisted(plan);
 
     // Law_ReversingEveryFaceKeepsCoherence at every shell. Self-test: Error.
     Check_ReversingEveryFaceKeepsCoherence(m: BrepModel): Check
@@ -312,33 +289,25 @@ library BrepCheckingTopology
 
     // DomainEndDeviation behind Law_EdgeDomainEndsAtVertices's guard.
     EndDeviation(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Number
-        => m.IsEveryIndexInRange ? (m.IsEdgeInRange(e) ? m.DomainEndDeviation(e, atStart) : 0.0) : 0.0;
+        => m.EndDeviationGiven(m.IsEveryIndexInRange, e, atStart);
 
     // VertexCurveDeviation behind Law_VertexCoincidesWithCurveEnd's guard.
     VertexOnCurveDeviation(m: BrepModel, e: BrepEdgeIndex, atStart: Boolean): Number
-        => m.IsEveryIndexInRange ? (m.IsEdgeInRange(e) ? m.VertexCurveDeviation(e, atStart) : 0.0) : 0.0;
+        => m.VertexOnCurveDeviationGiven(m.IsEveryIndexInRange, e, atStart);
 
     // StartVertexDeviationAt behind Law_DegenerateEdgeStaysAtStart's guard.
     DegenerateDeviationAt(m: BrepModel, e: BrepEdgeIndex, t: Number): Number
-        => m.IsEveryIndexInRange
-            ? (m.IsEdgeInRange(e) ? (m.IsDegenerateEdge(e) ? m.StartVertexDeviationAt(e, t) : 0.0) : 0.0)
-            : 0.0;
+        => m.DegenerateDeviationAtGiven(m.IsEveryIndexInRange, e, t);
 
     // SurfaceDeviationAt behind Law_EdgeLiesOnAdjacentSurfaces's guard.
     SiteSurfaceDeviation(m: BrepModel, site: CoedgeSite, t: Number): Number
-        => m.IsEveryIndexInRange ? (m.IsCoedgeSiteInRange(site) ? m.SurfaceDeviationAt(site, t) : 0.0) : 0.0;
+        => m.SiteSurfaceDeviationGiven(m.IsEveryIndexInRange, site, t);
 
     // CurvePcurveDeviationAt behind Law_CurveAgreesWithPcurve's guard.
     CurvePcurveDeviation(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Number
-        => m.IsEveryIndexInRange
-            ? (m.IsEdgeInRange(e) ? (m.HasPcurve(e, k) ? m.CurvePcurveDeviationAt(e, k, t) : 0.0) : 0.0)
-            : 0.0;
+        => m.CurvePcurveDeviationGiven(m.IsEveryIndexInRange, e, k, t);
 
     // PcurveDeviationAt behind Law_PcurveAgreesWithCurve's guard.
     PcurveCurveDeviation(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Number
-        => m.IsEveryIndexInRange
-            ? (m.IsEdgeInRange(e)
-                ? (m.Geometry.PcurvesOf(m.Edges[e].Curve).IsValidIndex(k) ? m.PcurveDeviationAt(e, k, t) : 0.0)
-                : 0.0)
-            : 0.0;
+        => m.PcurveCurveDeviationGiven(m.IsEveryIndexInRange, e, k, t);
 }

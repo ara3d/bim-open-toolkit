@@ -105,11 +105,7 @@ library BrepCrossChecking
     // provenance names, behind VertexReevaluatesFromProvenance's guard (0
     // where the law is vacuous).
     ReevaluationDeviation(m: BrepModel, mesh: ModelMesh, v: VertexIndex): Number
-        => (mesh.Positions.IsValidIndex(v) && mesh.VertexProvenance.IsValidIndex(v) && m.IsEveryIndexInRange && m.Geometry.IsWellFormed)
-            ? (m.ProvenanceInModel(mesh.VertexProvenance[v])
-                ? mesh.Positions[v].Distance(m.ProvenancePoint(mesh.VertexProvenance[v]))
-                : 0.0)
-            : 0.0;
+        => m.ReevaluationDeviationGiven(mesh, m.IsIndexedAndWellFormed, v);
 
     // The area of the mesh's elements that approximate face f, quads by their
     // A-C split (layer 6's ElementArea).
@@ -145,9 +141,7 @@ library BrepCrossChecking
     // corners and corner attributes, its face a face of the model, and the
     // model's indices in range.
     CanCompareElement(m: BrepModel, mesh: ModelMesh, e: ElementIndex): Boolean
-        => (mesh.HasValidCorners(e) && mesh.HasValidCornerAttributes(e) && mesh.ElementFace.IsValidIndex(e) && m.IsEveryIndexInRange)
-            ? (m.IsFaceInRange(mesh.ElementFace[e]) ? m.Geometry.IsWellFormed : false)
-            : false;
+        => m.CanCompareElementGiven(mesh, m.IsIndexedAndWellFormed, e);
 
     // The mean of element e's corner parameters: its parameter centroid, all
     // corners read on the same copy of a seam (corner attributes).
@@ -162,25 +156,14 @@ library BrepCrossChecking
     // ElementNormalAgreesWithFaceNormal's guard and exemption (0 on an
     // element with a corner on a collapsed line).
     ElementNormalGap(m: BrepModel, mesh: ModelMesh, e: ElementIndex): Number
-        => m.CanCompareElement(mesh, e)
-            ? (mesh.ElementArity(e).Range.Any(s => m.IsOnAnyCollapse(mesh.ElementFace[e], mesh.CornerUvAt(e, s)))
-                ? 0.0
-                : AngleBetweenDirections(
-                    Direction3D(mesh.ElementNormalVector(e)),
-                    m.FaceNormalOf(mesh.ElementFace[e], mesh.CornerUvCentroid(e), Direction3D(mesh.ElementNormalVector(e)))).Radians)
-            : 0.0;
+        => m.ElementNormalGapGiven(mesh, m.IsIndexedAndWellFormed, e);
 
     // The angle in radians between the normal stored at corner slot of
     // element e and the face normal at the corner's parameters, behind
     // CornerNormalIsFaceNormal's guard and exemption (0 at a corner on a
     // collapsed line, where the stored normal is a limit).
     CornerNormalGap(m: BrepModel, mesh: ModelMesh, e: ElementIndex, slot: Integer): Number
-        => (m.CanCompareElement(mesh, e) ? (slot >= 0 && slot < mesh.ElementArity(e)) : false)
-            ? (m.IsOnAnyCollapse(mesh.ElementFace[e], mesh.CornerUvAt(e, slot))
-                ? 0.0
-                : AngleBetweenDirections(mesh.CornerNormalAt(e, slot),
-                    m.FaceNormalOf(mesh.ElementFace[e], mesh.CornerUvAt(e, slot), mesh.CornerNormalAt(e, slot))).Radians)
-            : 0.0;
+        => m.CornerNormalGapGiven(mesh, m.IsIndexedAndWellFormed, e, slot);
 
     // The signed volume of the mesh of shell s (layer 6's SignedVolume of the
     // restriction, about the centre of the whole mesh's bounding box).
@@ -269,20 +252,17 @@ library BrepCrossChecking
     // ReevaluationDeviation against Tolerances.Length. Geometry: Warning below
     // ten times the tolerance, Error above.
     Check_VertexReevaluatesFromProvenance(m: BrepModel, mesh: ModelMesh): Check
-        => CheckAllWithin("VertexReevaluatesFromProvenance", mesh.Positions.Count,
-            v => m.ReevaluationDeviation(mesh, VertexIndex(v)), m.Tolerances.Length.Value, v => AtMeshVertex(v));
+        => m.Check_VertexReevaluatesFromProvenanceHoisted(mesh);
 
     // CornerNormalIsFaceNormal at every element and corner slot, measured
     // by CornerNormalGap against Tolerances.Angle. Geometry: W/E.
     Check_CornerNormalIsFaceNormal(m: BrepModel, mesh: ModelMesh): Check
-        => CheckGridWithin("CornerNormalIsFaceNormal", mesh.ElementCount, 4,
-            (e, s) => m.CornerNormalGap(mesh, ElementIndex(e), s), m.Tolerances.Angle.Value.Radians, (e, s) => AtElement(e));
+        => m.Check_CornerNormalIsFaceNormalHoisted(mesh);
 
     // ElementNormalAgreesWithFaceNormal at every element, measured by
     // ElementNormalGap against SurfaceAngular. Geometry: W/E.
     Check_ElementNormalAgreesWithFaceNormal(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Check
-        => CheckAllWithin("ElementNormalAgreesWithFaceNormal", mesh.ElementCount,
-            e => m.ElementNormalGap(mesh, ElementIndex(e)), c.SurfaceAngular.Radians, e => AtElement(e));
+        => m.Check_ElementNormalAgreesWithFaceNormalHoisted(mesh, c);
 
     //==
     // # Checks: oracles (oracle)

@@ -280,13 +280,7 @@ library BrepTopologyLaws
     // a mirrored placement or a spindle torus broke before the fix wave
     // (review F2, F3). Library, exact sign.
     Law_ParameterizationSignIsConstantOnFace(m: BrepModel, site: CoedgeSite, t: Number): Boolean
-        => m.IsEveryIndexInRange
-            ? (m.IsCoedgeSiteInRange(site)
-                ? (m.ParameterizationSignAt(site, t) == 0
-                    ? true
-                    : (m.ParameterizationSignAt(site, t) == 1) == m.Geometry.NormalAgreesWithParameterization(m.Faces[site.Face].Surface))
-                : true)
-            : true;
+        => m.ParameterizationSignIsConstantOnFaceGiven(m.IsEveryIndexInRange, site, t);
 
     //==
     // # Edge domains
@@ -419,17 +413,13 @@ library BrepTopologyLaws
     // sense CoedgeRunsForwardOnCurve orients the pcurve on this premise.
     // Structural, exact sign beyond the arithmetic resolution.
     Law_PcurveRunsWithCurve(m: BrepModel, e: BrepEdgeIndex, k: Integer, t: Number): Boolean
-        => m.IsEveryIndexInRange
-            ? (m.IsEdgeInRange(e) ? (m.HasPcurve(e, k) ? m.PcurveRunsWithCurveAt(e, k, t) : true) : true)
-            : true;
+        => m.PcurveRunsWithCurveGiven(m.IsEveryIndexInRange, e, k, t);
 
     // A pcurve lies on the surface of a face whose bounds cite its edge.
     // PcurvesOnFace never returns one that does not, so such a pcurve is
     // ignored, not wrong in any result: Structural, exact, Warning.
     Law_PcurveSurfaceIsAFaceSurface(m: BrepModel, e: BrepEdgeIndex, k: Integer): Boolean
-        => m.IsEveryIndexInRange
-            ? (m.IsEdgeInRange(e) ? (m.HasPcurve(e, k) ? m.IsPcurveOnAdjacentFace(e, k) : true) : true)
-            : true;
+        => m.PcurveSurfaceIsAFaceSurfaceGiven(m.IsEveryIndexInRange, e, k);
 
     //==
     // # Size and extent
