@@ -1,7 +1,7 @@
 # perf-needs-refinement: the surface refinement test from cached positions, normals and side samples
 
 Ticket: TKT-384
-Status: ready: R2
+Status: merged: R2 (2026-10-21, into 05-face-meshing/refinement-test-cached.{types,library,laws}.plato; the duplicate cached loop and its law deleted; the slope of 8 evaluations per tested triangle accepted as the verdict-preserving floor)
 
 ## Done
 - R2, this commit, about 0.6 h against 1.5 h expected: ranked candidate 27 of `docs/plans/step-mesher-complexity.md`.

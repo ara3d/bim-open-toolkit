@@ -50,7 +50,7 @@ library RefinementTestCachedLaws
     // NeedsRefinementCached gives NeedsRefinement's verdict on every triangle of the witness's
     // constrained Delaunay triangulation and of its refined triangulation, nothing known, and on
     // the constrained Delaunay triangulation with every other triangle known.
-    Law_Perf_NeedsRefinementCachedAgrees(w: TriangulatedWitness): Boolean
+    Law_NeedsRefinementCachedAgrees(w: TriangulatedWitness): Boolean
     {
         var m = w.Model;
         var f = w.Face;
@@ -64,8 +64,4 @@ library RefinementTestCachedLaws
             && SameMarks(m.NeedsRefinementCached(f, r, cdt, AlternateKnown(w.Cdt), c), m.NeedsRefinement(f, r, w.Cdt, AlternateKnown(w.Cdt), c));
     }
 
-    // The refinement with NeedsRefinementCached makes the same insertions in the same order: its
-    // triangulation is the witness's refined one, point for point and triangle for triangle.
-    Law_Perf_RefineCachedAgrees(w: TriangulatedWitness): Boolean
-        => SameUvTriangulation(w.Model.RefineToSurfaceByInsertionCached(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0)), w.Refined);
 }

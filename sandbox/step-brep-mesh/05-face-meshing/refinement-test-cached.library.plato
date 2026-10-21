@@ -179,38 +179,4 @@ library RefinementTestCached
     //==
     // # Refinement
 
-    // TriangulationBuilt's RefineToSurfaceByInsertionBuilt with NeedsRefinementCached over the
-    // carried positions in place of NeedsRefinement: the merged form, kept here only so the
-    // agreement law runs the whole refinement (the merge edits one line of the library's loop and
-    // deletes this copy).
-    RefineToSurfaceByInsertionCached(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
-    {
-        var planar = m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord;
-        var tol = m.RegionTolerance(f, chart);
-        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
-        var none = [0].Take(0);
-        var current = m.Positioned(f, t);
-        var known = t.Triangles.Map(x => false);
-        var refused = t.Triangles.Map(x => false);
-        var good = t.Triangles.Map(x => false);
-        var pass = 0;
-        var changed = true;
-        while (pass < 40 && changed)
-        {
-            var now = current.Triangulation;
-            var surface = planar ? now.Triangles.Map(x => false) : m.NeedsRefinementCached(f, r, current, known, c);
-            var mid = m.SurfacePassBuilt(f, r, chart, tol, least, current, surface);
-            var carried = now.Triangles.CarriedMarks(refused, none, mid.Triangulation.Triangles);
-            var goodMid = now.Triangles.CarriedMarks(good, none, mid.Triangulation.Triangles);
-            var bad = m.BelowAngleKnown(f, mid.Triangulation, carried, goodMid);
-            var next = m.AnglePassBuilt(f, r, chart, tol, least, mid, bad);
-            refused = mid.Triangulation.Triangles.CarriedMarks(carried, bad, next.Triangulation.Triangles);
-            good = mid.Triangulation.Triangles.CarriedMarks(mid.Triangulation.AngleGoodMarks(carried, bad), none, next.Triangulation.Triangles);
-            known = KnownGood(now, surface, next.Triangulation);
-            changed = next.Triangulation.Points.Count > now.Points.Count;
-            current = next;
-            pass = pass + 1;
-        }
-        return current.Triangulation;
-    }
 }
