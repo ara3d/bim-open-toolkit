@@ -624,9 +624,7 @@ library EdgeDiscretizing
     // The preconditions of `Discretize`: the model's indices are in range, the criteria are well
     // formed, and the edge is evaluable with a domain of positive extent.
     CanDiscretize(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria): Boolean
-        => (m.Law_IndicesInRange && c.IsWellFormed && m.IsEdgeEvaluable(e))
-            ? m.EdgeDomain(e).Range.Start < m.EdgeDomain(e).Range.End
-            : false;
+        => m.Law_IndicesInRange ? m.CanDiscretizeInRange(e, c) : false;
 
     // Chunk A body, from the contract Discretize: DiscretizeBounded (the "bounded" functions in
     // termination-discretize.library.plato). A degenerate edge gets its two domain ends and its two
@@ -753,7 +751,7 @@ library EdgeDiscretizing
     // repeats it. Each edge is independent of the others, so this is a map and parallel without
     // coordination.
     DiscretizeAll(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
-        => EdgeDiscretizations(m.Edges.Count.MapRange(i => m.DiscretizedEntry(BrepEdgeIndex(i), c, floors)));
+        => m.DiscretizeAllIndexed(c, floors);
 
     // The entry DiscretizeAll makes for edge e: its canonical discretization when CanDiscretize
     // accepts it, Undiscretized otherwise. Total.

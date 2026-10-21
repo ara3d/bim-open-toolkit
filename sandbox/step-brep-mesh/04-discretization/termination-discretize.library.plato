@@ -267,8 +267,7 @@ library TermDiscretize
     // Layer 4's DiscretizeAll with DiscretizeBounded: the table the pipeline
     // builds once the library's Discretize is wired to it.
     DiscretizeAllBounded(m: BrepModel, c: DiscretizationCriteria, floors: SegmentFloors): EdgeDiscretizations
-        => EdgeDiscretizations(m.Edges.Count.MapRange(i =>
-            m.CanDiscretize(BrepEdgeIndex(i), c) ? m.DiscretizeBounded(BrepEdgeIndex(i), c, floors) : Undiscretized(BrepEdgeIndex(i))));
+        => m.DiscretizeAllIndexed(c, floors);
 
     // Edge e does not lie on the surface of a face that uses it. Measure:
     // the largest probe gap.

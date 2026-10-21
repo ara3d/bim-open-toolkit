@@ -1,7 +1,7 @@
 # perf-guards-edge: ask Law_IndicesInRange once per model, not once per edge
 
 Ticket: TKT-358
-Status: ready: G1
+Status: merged: G1 (2026-10-21, files moved to 04-discretization/discretization-guards.library.plato, 08-pipeline/pipeline-guards-edge.{library,laws}.plato)
 
 ## Files
 

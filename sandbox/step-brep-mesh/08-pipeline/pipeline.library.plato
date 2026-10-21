@@ -153,10 +153,7 @@ library StepToMesh
 
     // An error for every edge that cannot be discretized under the options.
     EdgeDiagnostics(m: BrepModel, o: MeshingOptions): Array<Diagnostic>
-        => m.Edges.Count.Range.FlatMap(i =>
-            m.CanDiscretize(BrepEdgeIndex(i), o.Face.Discretization)
-                ? Diagnostic.NoDiagnostics
-                : [UndiscretizedEdge(BrepEdgeIndex(i))]);
+        => m.EdgeDiagnosticsInRange(o);
 
     // Per edge, true when after differs from before: the edges a refinement
     // step actually changed. A requested edge whose segments are all at the
