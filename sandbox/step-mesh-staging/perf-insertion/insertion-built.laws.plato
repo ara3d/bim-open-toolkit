@@ -1,0 +1,166 @@
+//==
+// # Refinement passes over builders: laws (complexity sweep, chunk R1, TKT-383)
+//
+// The staged functions of insertion-built.library.plato against TriangulationFast's originals
+// on layer 5's triangulation samples (TriSampleModel, EveryTriangulableFace), and the count
+// witness of the angle pass on a plane strip. Each agreement law binds the values it builds once
+// in a block body (the shared TriangulatedWitness of chunk L4 has not merged).
+//
+// Sections, in order:
+//  - The count witness
+//  - Agreement
+//  - Equality
+
+library InsertionBuiltLaws
+{
+    //==
+    // # The count witness
+
+    // A strip region over the parameters of the unit box's face 0, a plane, with n boundary
+    // points (n rounded down to even, at least 4): k + 1 points on v = 0 from u = 0 to 1, then
+    // k + 1 on v = 0.25 back, counter-clockwise. Its columns are narrower than its height for
+    // k > 4, so most triangles of its constrained Delaunay triangulation are below the angle.
+    StripRegion(n: Integer): UvRegion
+    {
+        var k = (n / 2 - 1).Max(1);
+        var pts = (2 * (k + 1)).MapRange(i => i <= k
+            ? UvCoordinate(i.ToNumber / k.ToNumber, 0.0)
+            : UvCoordinate((2 * k + 1 - i).ToNumber / k.ToNumber, 0.25));
+        return UvRegion(UvLoop(pts, pts.Map(x => UvPointSource.Interior)), [UvLoop([], [])].Take(0));
+    }
+
+    // The work of one angle pass over the constrained Delaunay triangulation of the n-point
+    // strip, every triangle below the angle tried.
+    AnglePassWork(n: Integer): WorkBudget
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var f = BrepFaceIndex(0);
+        var r = StripRegion(n);
+        var chart = m.ChartOf(f, r);
+        var t = r.TriangulateRegionCdt(chart);
+        var bad = m.BelowAngleKnown(f, t, [false].Take(0), [false].Take(0));
+        var least = TriCriteria(0).Discretization.EffectiveMinLength(m.Tolerances);
+        return m.AnglePassBuiltCounted(f, r, chart, m.RegionTolerance(f, chart), least, m.Positioned(f, t), bad).Work;
+    }
+
+    // One angle pass evaluates the surface at most once per candidate (Evaluations; at most four
+    // candidates per triangle below the angle, fewer than n triangles) and writes the builder
+    // elements of the points it keeps (Insertions: the point's three entries, its triangles and
+    // their neighbour slots), at 32 and 128 boundary points. Measured 2026-10-21: 11 Evaluations
+    // and 301 Insertions for 7 points kept at 32 (30 triangles below the angle), 17 and 1001 for
+    // 13 points at 128 (126 triangles). The library's pass copied the points twice and
+    // the triangles twice per candidate (about 4n Insertions per candidate) and evaluated the
+    // corners again (four to forty Evaluations per candidate).
+    Witness_AnglePassWork(_: WorkClaim): WorkClaim
+        => WorkClaim("AnglePassBuilt: evaluations per candidate, writes per kept point", Insertions(12).Add(Evaluations(4)), [32, 128], n => AnglePassWork(n));
+
+    //==
+    // # Agreement
+
+    // At every face of sample k, the trial of the off-centre of triangle 0 of the face's
+    // constrained Delaunay triangulation, unguarded and guarded, keeps the point exactly when
+    // TryInsertion does, its writes give TryInsertion's triangles, and its neighbour writes give
+    // the table NeighbourSlots builds from scratch; it evaluates the surface at most once, and
+    // exactly once for a kept point.
+    Law_Perf_TrialAgrees(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => m.TrialAgreesOn(f, r, chart, false) && m.TrialAgreesOn(f, r, chart, true));
+
+    TrialAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, guarded: Boolean): Boolean
+    {
+        var t = r.TriangulateRegionCdt(chart);
+        var points = t.Points.Map(x => chart.ChartPoint(x));
+        var nb = NeighbourSlots(t.Triangles, t.Points.Count);
+        var uv = chart.OffCentre(points, t.Triangles[0]);
+        var least = TriCriteria(0).Discretization.EffectiveMinLength(m.Tolerances);
+        var after = m.TryInsertion(f, r, chart, t.Points, points, t.Triangles, nb, 0, uv, least, guarded);
+        var pointsIn = new List<Point2D>().AddRange(points);
+        var posIn = new List<Point3D>().AddRange(m.Positioned(f, t).Positions);
+        var trisIn = new List<TriangleFace>().AddRange(t.Triangles);
+        var nbIn = new List<Integer>().AddRange(nb);
+        var x = m.TryInsertionInto(f, r, chart, m.RegionTolerance(f, chart), least, guarded, 0, uv, pointsIn, posIn, trisIn, nbIn);
+        var tris = x.WithTriangles(trisIn).Freeze();
+        var table = x.WithNeighbours(nbIn).Freeze();
+        return x.Kept == (after.Count > t.Triangles.Count)
+            && (x.Kept ? x.Evaluations == 1 : x.Evaluations <= 1)
+            && SameTriangles(tris, after)
+            && SameSlots(table, NeighbourSlots(after, t.Points.Count + (x.Kept ? 1 : 0)));
+    }
+
+    // SurfacePassBuilt gives SurfacePassLocal's triangulation, and the surface point of each of
+    // its points, from every face's constrained Delaunay triangulation of sample k with the
+    // triangles NeedsRefinement finds.
+    Law_Perf_SurfacePassBuiltAgrees(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => m.SurfacePassAgreesOn(f, r, chart));
+
+    SurfacePassAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
+    {
+        var c = TriCriteria(0);
+        var t = r.TriangulateRegionCdt(chart);
+        var surface = m.NeedsRefinement(f, r, t, [false].Take(0), c);
+        var built = m.SurfacePassBuilt(f, r, chart, m.RegionTolerance(f, chart), c.Discretization.EffectiveMinLength(m.Tolerances), m.Positioned(f, t), surface);
+        return SameUvTriangulation(built.Triangulation, m.SurfacePassLocal(f, r, chart, t, surface, c))
+            && m.HoldsItsPositions(f, built);
+    }
+
+    // AnglePassBuilt gives AnglePassLocal's triangulation, and the surface point of each of its
+    // points, from every face's constrained Delaunay triangulation of sample k with every
+    // triangle below the angle.
+    Law_Perf_AnglePassBuiltAgrees(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => m.AnglePassAgreesOn(f, r, chart));
+
+    AnglePassAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
+    {
+        var c = TriCriteria(0);
+        var t = r.TriangulateRegionCdt(chart);
+        var bad = m.BelowAngleKnown(f, t, [false].Take(0), [false].Take(0));
+        var built = m.AnglePassBuilt(f, r, chart, m.RegionTolerance(f, chart), c.Discretization.EffectiveMinLength(m.Tolerances), m.Positioned(f, t), bad);
+        return SameUvTriangulation(built.Triangulation, m.AnglePassLocal(f, r, chart, t, bad, c))
+            && m.HoldsItsPositions(f, built);
+    }
+
+    // RefineToSurfaceByInsertionBuilt gives RefineToSurfaceByInsertion's triangulation, point for
+    // point and triangle for triangle, at every face of sample k.
+    Law_Perf_RefineBuiltAgrees(k: Integer): Boolean
+        => EveryTriangulableFace(k, (m, f, r, chart) => m.RefineBuiltAgreesOn(f, r, chart));
+
+    RefineBuiltAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
+    {
+        var t = r.TriangulateRegionCdt(chart);
+        return SameUvTriangulation(m.RefineToSurfaceByInsertionBuilt(f, r, chart, t, TriCriteria(0)), m.RefineToSurfaceByInsertion(f, r, chart, t, TriCriteria(0)));
+    }
+
+    // The strip of the count witness at 32 points: the angle pass over builders agrees with
+    // AnglePassLocal there too, so the witness measures the same insertions.
+    Law_Perf_StripPassAgrees(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var f = BrepFaceIndex(0);
+        var r = StripRegion(32);
+        var chart = m.ChartOf(f, r);
+        return m.AnglePassAgreesOn(f, r, chart);
+    }
+
+    //==
+    // # Equality
+
+    // Whether pt holds, for every point, the surface point of face f at it.
+    HoldsItsPositions(m: BrepModel, f: BrepFaceIndex, pt: PositionedTriangulation): Boolean
+        => pt.Positions.Count == pt.Triangulation.Points.Count
+            ? pt.Positions.Count.Range.All(i => pt.Positions[i] == m.Geometry.Eval(m.SurfaceOf(f), pt.Triangulation.Points[i]))
+            : false;
+
+    // Whether two triangle arrays are equal element by element.
+    SameTriangles(a: Array<TriangleFace>, b: Array<TriangleFace>): Boolean
+        => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
+
+    // Whether two triangulations have the same points, sources, triangles and quads, in order.
+    // Conditional, not &&, which evaluates every operand and would index past a shorter array.
+    SameUvTriangulation(a: UvTriangulation, b: UvTriangulation): Boolean
+        => (a.Points.Count == b.Points.Count && a.Sources.Count == b.Sources.Count
+            && a.Triangles.Count == b.Triangles.Count && a.Quads.Count == b.Quads.Count)
+            ? a.Points.Count.Range.All(i => a.Points[i] == b.Points[i])
+            && a.Sources.Count.Range.All(i => a.Sources[i] == b.Sources[i])
+            && SameTriangles(a.Triangles, b.Triangles)
+            && a.Quads.Count.Range.All(i => a.Quads[i] == b.Quads[i])
+            : false;
+}
