@@ -1,7 +1,7 @@
 # perf-incidence: vertex-to-element incidence for components and pinched vertices (chunk M2)
 
 Ticket: TKT-367
-Status: ready: M2
+Status: merged: M2 (2026-10-21, into 06-mesh/mesh-incidence.{types,library,laws}.plato; the layer 08 witness pair deleted at merge, its only law would compare a function with itself)
 
 ## Done
 - M2, this commit, about 0.7 h against 2 h. Added `VertexIncidence` (compressed rows: `Offsets`, `Elements`), `VertexElementIncidence(Counted)`, `ComponentsOfIndexed(Counted)`, `ComponentsOfCounted`, `LinkEdgesIndexed`, `MaxEndDegree`, `IsPinchedLink`, `IsPinchedVertexIndexed`, `CountsOfComponentIndexed`, `ComponentCountsOfIndexed` (`mesh-incidence.library.plato`); the count witness `Witness_ComponentsOfWork` and ten `Law_Perf_*` agreement laws.

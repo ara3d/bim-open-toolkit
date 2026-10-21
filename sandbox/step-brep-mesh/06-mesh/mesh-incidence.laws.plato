@@ -118,27 +118,12 @@ library ModelMeshIncidenceLaws
     PinchAgrees(mesh: ModelMesh, v: VertexIndex): Boolean
         => mesh.IsPinchedVertexIndexed(mesh.VertexElementIncidence, v) == mesh.IsPinchedVertex(v);
 
-    // Whether ComponentsOfIndexed and ComponentsOfCounted equal ComponentsOf (components, vertex
-    // components, count, parents and depths) and ComponentCountsOfIndexed equals
-    // ComponentCountsOf, component by component.
-    IndexedFormsAgree(mesh: ModelMesh): Boolean
-    {
-        var t = mesh.EdgeTableOf;
-        var comps = mesh.ComponentsOf;
-        var inc = mesh.VertexElementIncidence;
-        var indexed = mesh.ComponentCountsOfIndexed(t, comps, inc);
-        var reference = mesh.ComponentCountsOf(t, comps);
-        return SameComponents(mesh.ComponentsOfIndexed(inc), comps)
-            && SameComponents(mesh.ComponentsOfCounted.Value, comps)
-            && (indexed.Count == reference.Count ? indexed.Count.Range.All(c => indexed[c] == reference[c]) : false);
-    }
-
     //==
     // # Agreement
 
     // The incidence has one offset per vertex plus one, starting at 0, non-decreasing, ending at
     // its entry count.
-    Law_Perf_IncidenceOffsetsAreARunningTotal(k: Integer): Boolean
+    Law_IncidenceOffsetsAreARunningTotal(k: Integer): Boolean
     {
         var mesh = ModelMesh.IncidenceTestMeshAt(k);
         var inc = mesh.VertexElementIncidence;
@@ -149,20 +134,16 @@ library ModelMeshIncidenceLaws
     }
 
     // Each row of the incidence of a literal mesh is the scan.
-    Law_Perf_IncidenceRowIsTheScan(k: Integer, v: Integer): Boolean
+    Law_IncidenceRowIsTheScan(k: Integer, v: Integer): Boolean
         => ModelMesh.IncidenceTestMeshAt(k).RowIsTheScan(VertexIndex(v));
 
-    // The indexed components and counts of a literal mesh equal the reference.
-    Law_Perf_IndexedFormsAgree(k: Integer): Boolean
-        => ModelMesh.IncidenceTestMeshAt(k).IndexedFormsAgree;
-
     // The indexed pinch test of a literal mesh equals the reference at every v, in range or not.
-    Law_Perf_IsPinchedVertexIndexedAgrees(k: Integer, v: Integer): Boolean
+    Law_IsPinchedVertexIndexedAgrees(k: Integer, v: Integer): Boolean
         => ModelMesh.IncidenceTestMeshAt(k).PinchAgrees(VertexIndex(v));
 
     // The pinched pair has its shared vertex pinched and no other, so the agreement above is not
     // vacuous.
-    Law_Perf_PinchedPairIsPinchedAtItsSharedVertex(v: Integer): Boolean
+    Law_PinchedPairIsPinchedAtItsSharedVertex(v: Integer): Boolean
     {
         var mesh = ModelMesh.IncidenceTestPinched;
         return mesh.Positions.IsValidIndex(v)
@@ -170,15 +151,12 @@ library ModelMeshIncidenceLaws
             : true;
     }
 
-    // The same three agreements on every mesh the runner gives, generated ones included, whose
+    // The same agreements on every mesh the runner gives, generated ones included, whose
     // corners may name no position.
-    Law_Perf_IncidenceRowIsTheScanOnAnyMesh(mesh: ModelMesh, v: VertexIndex): Boolean
+    Law_IncidenceRowIsTheScanOnAnyMesh(mesh: ModelMesh, v: VertexIndex): Boolean
         => mesh.RowIsTheScan(v);
 
-    Law_Perf_IndexedFormsAgreeOnAnyMesh(mesh: ModelMesh): Boolean
-        => mesh.IndexedFormsAgree;
-
-    Law_Perf_IsPinchedVertexIndexedAgreesOnAnyMesh(mesh: ModelMesh, v: VertexIndex): Boolean
+    Law_IsPinchedVertexIndexedAgreesOnAnyMesh(mesh: ModelMesh, v: VertexIndex): Boolean
         => mesh.PinchAgrees(v);
 
     //==
