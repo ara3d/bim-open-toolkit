@@ -1,6 +1,6 @@
 # STEP mesher speed ideas: evaluation plan and results
 
-Status: plan written 2026-10-21; evaluation runs follow in the same document
+Status: done 2026-10-21; plan, baseline, seven run sections, 15 new ideas, final table and seven tickets (TKT-402 to TKT-408)
 Ticket: TKT-323 (epic)
 Input: `docs/plans/step-mesher-brainstorm-2026-10-21.md` (18 ideas, 4 tensions, 5 approaches, 5 owner decisions)
 Baseline to beat: `docs/plans/step-mesher-corpus-2026-10-19.md` (26 to 90 ms per edge, 3 to 14 ms per plane face, 86 s to over 8 minutes on faces with 80 to 212 boundary edges), measured on a library that predates the complexity sweep (`docs/plans/step-mesher-complexity.md`, 41 chunks merged)
@@ -81,11 +81,12 @@ Runs B to F wait for A's regenerated build and harness; G and F's decoder part d
 
 | Decision | Default | Number this evaluation supplies |
 |---|---|---|
-| Fast paths in Plato as certified branches, or in the C# host before the library call? | Plato, each with a law | item 1's proof of concept shows the law shape and cost |
-| May the host run edges and faces on all cores now? | yes | item 7's speed-up and static-state check |
-| Should the angle-quality pass run on planar faces in version 1? | off for planes | item 2's stage split on a plane face |
-| Is a cross-file mesh cache keyed by geometry fingerprint acceptable? | no, until repeats dominate | item 14's repeat share |
-| Should integer-snapped predicates replace floating ones? | defer until a defect names them | item 10's defect search and predicate share |
+| Fast paths in Plato as certified branches, or in the C# host before the library call? | Plato, each with a law | moot for now: the one fast path worth taking (the strip, idea 3) already exists in Plato behind `PreferQuads`, and no edge fast path is worth its law (idea 1, under 10% of file time) |
+| May the host run edges and faces on all cores now? | yes | face stage 2.1x to 5.4x, whole file under 4x, identical meshes (TKT-403 carries the decision as a criterion) |
+| Should the angle-quality pass run on planar faces in version 1? | off for planes | refine is 0.055 of a rectangle's 0.179 ms; with `PreferQuads` rectangles take the grid and the pass never runs on them, so the decision now bears only on plane faces the grid does not take |
+| Is a cross-file mesh cache keyed by geometry fingerprint acceptable? | no, until repeats dominate | repeats are 23 to 33% of the cost proxy within a file, 36 to 40% across the corpus, half of it re-exports; at the targets a cache saves about 35 s over the corpus: the default stands |
+| Should integer-snapped predicates replace floating ones? | defer until a defect names them | predicates are 1.2% of refinement; no defect names them; the default stands |
+| New: quads in the mesh output, or a triangle-emitting strip; and is dropping the 15 degree criterion on strip faces acceptable? | quads (the host already splits them); yes, since refinement cannot meet it on those faces and the chordal bound holds | TKT-405's first criterion |
 
 ## New ideas
 
@@ -104,6 +105,9 @@ Numbered from 19, recorded as they come up during the evaluation.
 | 28 | Make the face angle criterion attainable: every one of the 82,450 refinement flags on the four files came from the 15 degree `SideNormalsTurn` criterion and none from the chordal ones, and a boundary chord on a curve segment spanning over 30 degrees of arc can never meet it, so refinement inserts until the length and angle guards refuse (EMMY-W1 face 365: 10 boundary points to 720 triangles over 13 passes). Either raise curve-on-curved-surface segment counts in layer 04 to ceil(arc / 15 degrees), or refuse on the first pass a triangle whose constrained side's normals already differ by over twice the angle. Also reaches the 9-to-16-edge cylinders (6.3% of face time) the strip does not | run C (idea 3) | **yes**; TKT-406 |
 | 29 | Ruled strip for oblique cylinder cuts: the four ellipse-bounded faces in ODIN-W160 (242 ms, 6.1% of face time) fall back to CDT because the strip wants two circles; match the two ellipses' samples by u instead | run C | maybe; after 3 |
 | 30 | Harness timing with `DOTNET_TieredCompilation=0` or more warm-up: tiered JIT made a rarely called path 2 to 3x slower in the first runs | run C | recorded; a flag on the harness |
+| 31 | Allocation-free inside test: `IsStrictlyInsideOnGrid`'s clear-of-boundary part, `ItemsNear(u, u).All(DistanceToSegment)`, is 313 ms (23%) of ODIN-W160's refinement and allocates 1 GB; loop over `g.Starts` and `g.Items` as the row scan does, parity first, the clear test only for inside points; same verdict, about 1 h plus a law against `IsStrictlyInsideOnGrid`; inferred 250 to 290 ms, about 10% of the file | run E | **yes**; see the final table |
+| 32 | Carry the neighbour table across passes (the rest of idea 6): return the table from the angle pass and reuse it instead of three merge sorts per pass at about 180 ns per slot, 165 ms (12%) on ODIN; 2 to 3 h; the agreement law `Law_UpdatedNeighboursAreTheTable` fails compiled at k = -1 today (TKT-355) | run E | **yes**; see the final table |
+| 33 | Allocation-light fan and candidates in `TryInsertionIndexed`: 246 ms (18%) and 500 MB on ODIN; about 2 h, inferred 100 to 150 ms | run E | maybe; after 31 and 32 |
 | 27 | Small evaluation savings: `BelowAngleCounted` re-evaluates 3 corners per tested triangle although R1's `PositionedTriangulation` carries them; `EdgeFindingsGiven` repeats the per-image probe `UsableImagesGiven` just ran (6 projections where 3 suffice) | run G | debt, under 1 h each |
 
 ## Results
@@ -196,6 +200,18 @@ Method (ran): the harness with the criteria's `PreferQuads` set true (`--quads`)
 
 Idea 20 (fast paths cover the repeats) is confirmed in part: the grid faces mesh in 0.08 and 0.23 ms, not microseconds.
 
+### Run E: ideas 9, 10, 17 (refinement profile on run A's build, 2 h box)
+
+Method (ran): Stopwatch and counters around the generated refinement functions in a copy of the harness, ODIN-W160 whole file, face 3431 (cylinder) and face 2109 (80-edge plane); identical meshes, about 1% instrumentation cost; no tool installed. The agent's transcript file came back empty, so the numbers are the ones its report relayed.
+
+**Where refinement's 1,343 ms on ODIN-W160 go.** Mostly not arithmetic: the clear-of-boundary part of the inside test (`ItemsNear(u, u).All(DistanceToSegment)`) 313 ms, 23%, 1 GB allocated; the row scan, wide segments and parity 88 ms, 6.5%; `NeighbourSlots` sorted three times per pass 165 ms, 12%; the fan and candidates in `TryInsertionIndexed` 246 ms, 18%, 500 MB; refinement allocates 2.2 GB in all, and face 3431 swings between 51 and 300 ms with GC pauses (run A's 113 ms was partly GC). All arithmetic buckets together are about 420 ms, 15% of the file, spread over nine loops of 2 to 3% each.
+
+**Idea 9, SIMD.** No arithmetic loop is near the 25% bar: the chart 2.8%, the whole edge stage 7%, the largest refinement arithmetic bucket 3.4%. Verdict: **no**. Would change it: B-spline faces past TKT-348 with projection searches near 25% (TKT-404 reduces them first).
+
+**Idea 10, integer-snapped predicates.** Orientation 1.71 M calls at most 3.1 ns each (0.4% of refinement), in-circle 156 k at most 66 ns (0.8%); all floating predicates under 6.5% of refinement. No defect names them: TKT-343's strict-positive flip rule and 4(n0 + 2) flip cap, TKT-352 is chordal, TKT-401 names no cause; TKT-355 already shows the engines disagreeing on witness 7, which makes a bit-identical snap harder to certify, not easier. Verdict: **no**. Effort 1 to 2 days, payoff none on speed. Owner decision 5 stays at its default, defer.
+
+**Idea 17, checks cheap enough to keep always.** Positive orientation of every refined triangle and no flippable edge by in-circle cost about 4 ms, 0.15% of ODIN-W160: keep. Hausdorff and the Structural `ValidateAssembly` are not (366 s on the bump solid, TKT-401).
+
 ### Run F: idea 14, geometry repeats (spike, 2 h box, throwaway program over the decoder)
 
 Method (ran): a console program against the committed decoder (`StepModel`, `DecodeRaw`; `PrepareModel` not needed, so all 88 files decode; the corpus pass took 20 s). Fingerprint per face: surface kind, loop count, per loop the rotation-normalised sequence of (curve kind, edge length quantised to 1e-4 of the bounding-box diagonal, circle radius the same way); dihedral angles skipped. Cost proxy: edge count squared. Units: 18 files with diagonals over 1,000 taken as micrometres (`LengthFactor` is 1 in every file).
@@ -226,4 +242,46 @@ Method: the merged `.plato` source of `sandbox/step-brep-mesh` and the host C#; 
 
 ## Final table
 
-(pending: one row per idea and new idea with verdict, method used, effort, payoff, evidence in one line, ticket id for each yes)
+Baseline (run A, hoisted path, regenerated library): 0.017 to 0.026 ms per edge (target 0.1 met), 0.14 to 0.23 ms per plane face (target 0.4 met at the median), cylinder faces 0.9 to 6.2 ms median, slowest face 113 ms (target 1 s met). Face time splits: four-edge cylinder family 46%, rectangles 22%, refinement 68 to 82% of every face.
+
+| # | Idea | Verdict | Method | Effort | Payoff | Evidence | Ticket |
+|---|---|---|---|---|---|---|---|
+| 1 | Kind-pair certificate table for edges | no, for now | M | 3 to 4 h | under 10% of file time | edges are 10% of meshing time at 0.018 ms median after the sweep; the four pairs hold 99% of that 10% | |
+| 2 | Rectangle plane face to two triangles | no, as a separate path | M, S | 2 h | about 9% of face time | rectangles 19 to 22% of face time at 0.15 to 0.18 ms; with `PreferQuads` 4,755 of 4,771 take the grid as one quad, median 0.081 to 0.139 ms | (covered by TKT-405) |
+| 3 | Cylinder band as a structured strip | **yes** | S | one line in `Criteria`, or 2 h for a triangle-emitting strip | about 48% of face time | `PreferQuads` true: the four-edge cylinder family 1,693 to 321 ms, full cylinders 173 to 44 ms, every file closed and oriented | TKT-405 |
+| 4 | Lazy meshing | no | R | 2 h (as idea 25 only) | 0 in the host | every caller (assembly, validation, corpus criterion, viewer) needs every face lifted | |
+| 5 | Memoize image points per edge and face | no on analytic, maybe on B-spline | R | 4 to 6 h | under 5% of an analytic face | 2 projections per sample per face plus 3 to 9 per edge; analytic projections are closed forms; sharing is not bit-identical (global `Project` against `ProjectAlong`) | |
+| 6 | Spatial hash for simplicity and point location | done | R | remainder 2 to 3 h | remainder about 12% of refinement | F2, R3, R4 on the live path; what remains is the per-pass neighbour rebuild (idea 32) and the inside test's allocation (idea 31) | TKT-407, TKT-408 |
+| 7 | Host `Parallel.For` over `Rows` | **yes** (owner decision 2, default yes) | M | under 1 h | face stage 2.1x to 5.4x; file under 4x | identical meshes on four files; serial parse, decode and prepare bound the file speed-up | TKT-403 |
+| 8 | Speculative general CDT | no | R | | none | the predicates are microseconds; the grid stage is 0.015 to 0.147 ms; the cores are already filled by 7 | |
+| 9 | SIMD in the intrinsics | no | S | | none reachable | no arithmetic loop near 25% of file time: chart 2.8%, edge stage 7%, largest refinement arithmetic bucket 3.4%; refinement's time is allocation, sorting and copying | |
+| 10 | Integer-snapped predicates | no (owner decision 5, default defer) | S, R | 1 to 2 days | none on speed | orientation 0.4% and in-circle 0.8% of refinement; no defect names a floating predicate; TKT-355's engine disagreement makes a certified snap harder | |
+| 11 | Coarse-first count from the curvature bound | no | M, R | | about 1% of meshing time | lines take one segment on the first trial; circles start at `ConicSegmentCount`; circles are 9.7% of edge time | |
+| 12 | B-spline projection grid | **yes, reshaped** as ideas 23 and 24 | R | 3 to 4 h plus 1.5 h | inferred 5 to 10x on median B-spline faces (the "no face over 1 s" target) | refinement's `SurfaceDistance` is about 85% of a B-spline face's global searches at about 330 evaluations each; corpus surfaces are 96% degree (3, 1), median 4 knot pieces | TKT-404 |
+| 13 | Group technology families | yes as a measurement, no code | M | 0 | | 21 families on four files, top five 82% of face time; the harness's family CSV is the histogram | (harness, bim-open-data `0f5090f`) |
+| 14 | Cross-file mesh cache by fingerprint | maybe (owner decision 4, default no) | S | 3 to 5 days in the host, 1.5 to 3 weeks certified | about 35 s over the corpus at the targets | within a file repeats are 84% of faces but 23 to 33% of the cost proxy; 74% of cost is in 111 unique faces of 80 or more edges | |
+| 15 | Level of detail for the viewer | no, until a viewer streams faces | R | | 0 today | the host has no per-face request path | |
+| 16 | Read-only shared structures | confirmed | M | | | the once-per-model tables are read concurrently with identical results | |
+| 17 | Exact checks everywhere | framing | S | | | orientation and in-circle checks cost 4 ms on ODIN-W160, keep; Hausdorff and Structural validation cost minutes, do not | |
+| 18 | Boundary-first inversion | framing | | | | the rationale of approach 1 | |
+| 19 | Instance-aware meshing by occurrence | maybe | S (count) | spike first | 16.8% of the cost proxy, 38.6% of faces | 192,457 decoded faces against 118,182 source faces | |
+| 20 | Fast paths cover the repeats | confirmed in part | S | | | the grid faces mesh in 0.08 and 0.23 ms, not microseconds | |
+| 21 | Corpus hygiene, six duplicate exports | note | S | 0.1 h | | AP203/AP214 pairs and three others named in run F's section | (one line in TKT-313's runner) |
+| 22 | Host calls the sweep's once-per-model forms | **yes** | M | 1 h | 11x on ODIN-W160 (30,499 to 2,751 ms) | `CanDiscretize` is 69 to 73% of the host's edge time, `IsDiscretizedFace` 11 to 62% of its face time | TKT-402 |
+| 23 | Memo of the B-spline search grid per surface | **yes** | R | 3 to 4 h | with 24, 8 to 10x on median B-spline faces | the grid depends only on the window and knots, so it is bit-identical | TKT-404 |
+| 24 | Seed `SurfaceDistance` from the known uv | **yes** | R | 1.5 h plus verdicts | the larger half of 23's gain | refinement holds about 85% of the global searches | TKT-404 |
+| 25 | Defer CDT, refinement and lift to the loop's end | maybe | R | 2 h | 0 in the host; (rounds - 1) x (CDT + refine + lift) per re-meshed face in `MeshModel` | requests depend only on the region | |
+| 26 | Closed-form chart speeds for planes and cylinders | folded into 2 and 3 | R | | the chart is 2 to 4% of face time | 126 partials per face; bit-identical only with unit axes | |
+| 27 | Small evaluation savings | debt | R | under 1 h each | under 2% | `BelowAngleCounted` re-evaluates carried corners; `EdgeFindingsGiven` repeats 3 probes | |
+| 28 | Make the 15 degree criterion attainable | **yes** (defect) | S | 2 to 3 h | the 9-to-16-edge cylinders, 6.3% of face time, and every curved face the strip does not reach | all 82,450 refinement flags on four files came from `SideNormalsTurn`, none from the chordal criteria; EMMY-W1 face 365 grew from 10 points to 720 triangles over 13 passes without meeting it | TKT-406 |
+| 29 | Ruled strip for oblique cylinder cuts | maybe, after 3 | S | 2 h | 6.1% of face time (four faces of ODIN-W160, 242 ms) | the strip wants two circles | |
+| 30 | Harness timing with tiered JIT off | note | S | 0.2 h | | a rarely called path was 2 to 3x slower under tiered JIT | (harness flag) |
+| 31 | Allocation-free inside test | **yes** | S | 1 h plus a law | about 10% of ODIN-W160's file time, 1 GB less allocation | the clear-of-boundary test is 313 ms (23% of refinement) and allocates 1 GB | TKT-407 |
+| 32 | Carry the neighbour table across passes | **yes** | S | 2 to 3 h | 165 ms, 12% of ODIN-W160's refinement | three merge sorts per pass at about 180 ns per slot; bit-identical | TKT-408 |
+| 33 | Allocation-light fan and candidates | maybe, after 31 and 32 | S | 2 h | inferred 100 to 150 ms on ODIN-W160 | 246 ms, 18% of refinement, 500 MB | |
+
+Spiked or measured: 1, 2, 3, 7, 8 (on measured predicates), 9, 10, 11, 13, 14, 16, 17, 22, 28 to 33. Estimated from source: 4, 5, 6, 12, 15, 18 to 21, 23 to 27.
+
+Order of the yeses by payoff per hour: TKT-402 (host rewiring, 11x, 1 h), TKT-405 (the strip, 48% of face time, one line plus the owner's decision), TKT-403 (parallel, 2 to 5x on faces, under 1 h), TKT-407 and TKT-408 (a third of refinement, bit-identical, 3 to 4 h together), TKT-406 (the unattainable criterion, 2 to 3 h), TKT-404 (B-spline projection, unmeasurable until TKT-348).
+
+Left open: the four owner decisions below plus the new one on quads; B-spline faces cannot be measured until TKT-348 or TKT-327's closure test lands; ideas 19, 25, 29 and 33 wait for the yeses above to land and be re-measured; the regenerated `Ara3D.StepBrep` is uncommitted in `deps/bim-open-data` (TKT-313's track commits it); the harness is not in `BimOpenData.sln`; `Law_WitnessIsSameAsItself` fails compiled at case k = 7 on the committed tree (found while checking the `ReasonName` move; interpreter verdict pass), unfiled.
