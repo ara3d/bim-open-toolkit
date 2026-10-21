@@ -1,7 +1,7 @@
 # perf-law-bindings: laws and self-tests that computed a value twice or per sample, with each value bound once (complexity sweep chunk L6)
 
 Ticket: TKT-395
-Status: ready: L6
+Status: merged: L6 (2026-10-21, the staged files moved into layers 01, 02, 06 and 07 as they are, the originals wired to the Once forms or deleted; the agreement laws that would compare a function with itself dropped, Law_RawStepClaimsAgree kept; StepFileReport still decodes per check)
 
 ## Done
 - L6, the commit that adds this file, about 1.4 h against 2 h expected. Candidate 39 of `docs/plans/step-mesher-complexity.md`. No count witness (the dispatch asks for none).

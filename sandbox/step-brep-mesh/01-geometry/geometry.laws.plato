@@ -949,13 +949,6 @@ library BrepGeometryLaws
             ? g.Eval(c, g.Domain(c).SampleIn(t)).GapTo(g, g.SupportSurface(g.CurveAt(c).SupportsOf[k]))
             : 0.0;
 
-    // Every point of a surface curve's k-th pcurve lies on its space curve
-    // within the length tolerance: the first half of the point-set agreement,
-    // compared by point because the two parameterizations may differ.
-    // Measure PcurveToCurveGap.
-    Law_SurfaceCurvePcurveLiesOnCurve(g: GeometrySet, c: CurveIndex, t: Number, k: Integer, tol: Tolerances): Boolean
-        => g.CanEvaluate(c) ? g.PcurveToCurveGap(c, t, k) <= tol.Length.Value : true;
-
     // The measure of Law_SurfaceCurvePcurveLiesOnCurve, a length: the
     // distance from the k-th pcurve's point at sample t to the space curve; 0
     // when there is no k-th pcurve. The pcurve is sampled over the range that
@@ -965,7 +958,7 @@ library BrepGeometryLaws
     // domain gives no finite samples (review F4). Precondition:
     // g.CanEvaluate(c).
     PcurveToCurveGap(g: GeometrySet, c: CurveIndex, t: Number, k: Integer): Number
-        => g.PcurveToCurveGap(g.CurveAt(c).SpaceCurveOf, g.CurveAt(c).SupportsOf, t, k);
+        => g.PcurveToCurveGapOnce(c, t, k);
 
     // PcurveToCurveGap over the parts of a surface curve.
     PcurveToCurveGap(g: GeometrySet, spaceCurve: CurveIndex, supports: Array<CurveSupport>, t: Number, k: Integer): Number
@@ -983,9 +976,7 @@ library BrepGeometryLaws
     // with a line pcurve), t moved into the pcurve's own domain, where every
     // finite parameter's point lies on the line.
     PcurveSampleFor(g: GeometrySet, p: PcurveIndex, c: CurveIndex, t: Number): Number
-        => g.Domain(c).ParameterLength.IsFinite && g.Domain(c).ParameterLength > 0.0
-            ? g.Domain(p).IntoRange(g.PcurveRangeOver(p, c, g.Domain(c).Range).Lerp((g.Domain(c).SampleIn(t) - g.Domain(c).Range.Start) / g.Domain(c).ParameterLength))
-            : g.Domain(p).SampleIn(t);
+        => g.PcurveSampleForOnce(p, c, t);
 
     // Every point of a surface curve's space curve lies on its k-th pcurve
     // within the length tolerance: the second half of the point-set
@@ -1167,18 +1158,6 @@ library BrepGeometryLaws
             : WithinRichardson(g.CentralDifferenceOfDerivative(p, x, h), g.CentralDifferenceOfDerivative(p, x, h * 0.5),
                 g.SecondDerivative(p, x), g.PcurveRoundingAround(p, x, h) / (scale * h));
     }
-
-    // ClosestParameter on a pcurve returns its bounded representative: on a
-    // pcurve whose space point repeats with parameter period T, a value in
-    // [0, T] within the parameter floor; on any pcurve, a finite value.
-    Law_PcurveClosestParameterIsBounded(g: GeometrySet, p: PcurveIndex, t: Number, tol: Tolerances): Boolean
-        => g.CanEvaluate(p)
-            ? g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t))).IsFinite
-                && (g.PcurveParameterPeriod(p) > 0.0
-                    ? g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t))) >= -g.ParameterFloorOf(p, tol).Value
-                        && g.ClosestParameter(p, g.Eval(p, g.Domain(p).SampleIn(t))) <= g.PcurveParameterPeriod(p) + g.ParameterFloorOf(p, tol).Value
-                    : true)
-            : true;
 
     // A pcurve stays inside its surface's domain, within the parameter floor
     // (periodic directions contain every value). Measure PcurveDomainExcess,
@@ -1497,16 +1476,6 @@ library BrepGeometryLaws
     IsCanonical(d: SurfaceDomain, uv: UvCoordinate, tol: UvTolerance): Boolean
         => d.U.IsCanonical(uv.U, tol.U) && d.V.IsCanonical(uv.V, tol.V);
 
-    // Project is no worse than any sample, for any point p, as
-    // Law_ClosestParameterNoWorseThanSample on curves (review M4). A library
-    // law: it takes no tolerance.
-    Law_ProjectNoWorseThanSample(g: GeometrySet, s: SurfaceIndex, p: Point3D, uv: UvCoordinate): Boolean
-        => g.CanEvaluate(s)
-            ? g.Eval(s, g.Project(s, p)).Distance(p)
-                <= g.Eval(s, g.Domain(s).SampleIn(uv)).Distance(p)
-                    + ResolutionAt(g.EvaluationMagnitude(s, g.Project(s, p)) + g.EvaluationMagnitude(s, g.Domain(s).SampleIn(uv)) + p.PositionVector.Length).Value
-            : true;
-
     // At a minimizer inside a smooth patch and off collapsed lines, the
     // offset from p is orthogonal to both partials, within rounding, as
     // Law_ClosestParameterIsStationary. A library law: it takes no tolerance.
@@ -1728,18 +1697,12 @@ library BrepGeometryLaws
     // (https://en.wikipedia.org/wiki/Non-uniform_rational_B-spline). Shares no
     // code with BSplinePoint. Exponential in the degree; fine for a check.
     Oracle_BSplineCurvePoint(d: BSplineCurveData, t: Number): Point3D
-        => (d.ControlPoints.Count.Range.Reduce(Vector3D(0.0, 0.0, 0.0), (sum, i) =>
-                sum + d.ControlPoints[i].PositionVector * (d.Weights[i] * BasisFunction(d.Basis.Knots, d.Basis.SplineDomain.End, i, d.Basis.Degree, t)))
-            * (1.0 / d.ControlPoints.Count.MapRange(i =>
-                d.Weights[i] * BasisFunction(d.Basis.Knots, d.Basis.SplineDomain.End, i, d.Basis.Degree, t)).SumOf)).ToPoint;
+        => d.Oracle_BSplineCurvePointOnce(t);
 
     // A spline parameter-plane curve's point by the definition, as
     // Oracle_BSplineCurvePoint in the plane.
     Oracle_BSplineCurve2DPoint(d: BSplineCurve2DData, t: Number): UvCoordinate
-        => UvCoordinate(0.0, 0.0) + d.ControlPoints.Count.Range.Reduce(Vector2D(0.0, 0.0), (sum, i) =>
-                sum + (d.ControlPoints[i] - UvCoordinate(0.0, 0.0)) * (d.Weights[i] * BasisFunction(d.Basis.Knots, d.Basis.SplineDomain.End, i, d.Basis.Degree, t)))
-            * (1.0 / d.ControlPoints.Count.MapRange(i =>
-                d.Weights[i] * BasisFunction(d.Basis.Knots, d.Basis.SplineDomain.End, i, d.Basis.Degree, t)).SumOf);
+        => d.Oracle_BSplineCurve2DPointOnce(t);
 
     // A spline surface's point by the definition, as the tensor product of
     // the two bases over the weighted net.

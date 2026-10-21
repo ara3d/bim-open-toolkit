@@ -35,11 +35,5 @@ library BrepTopologyGiven
     // Law_ParameterizationSignIsConstantOnFace's body, ok its whole-model
     // guard.
     ParameterizationSignIsConstantOnFaceGiven(m: BrepModel, ok: Boolean, site: CoedgeSite, t: Number): Boolean
-        => ok
-            ? (m.IsCoedgeSiteInRange(site)
-                ? (m.ParameterizationSignAt(site, t) == 0
-                    ? true
-                    : (m.ParameterizationSignAt(site, t) == 1) == m.Geometry.NormalAgreesWithParameterization(m.Faces[site.Face].Surface))
-                : true)
-            : true;
+        => m.ParameterizationSignIsConstantOnFaceGivenOnce(ok, site, t);
 }

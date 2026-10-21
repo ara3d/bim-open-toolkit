@@ -136,18 +136,7 @@ library BrepCheckingGeometryHoisted
     // Check_SurfaceCurvePcurveLiesOnCurve with IsWellFormed run once and each
     // curve's samples built once.
     Check_SurfaceCurvePcurveLiesOnCurveHoisted(m: BrepModel, plan: SamplePlan): Check
-    {
-        var ok = m.Geometry.IsWellFormed;
-        var samples = m.CurveSampleTable(ok, plan);
-        return GuardedSamplesVacuous(ok, m.Tolerances.Length.Value)
-            ? NoSampleCheck("Law_SurfaceCurvePcurveLiesOnCurve")
-            : CheckGridWithin("Law_SurfaceCurvePcurveLiesOnCurve", m.Geometry.Curves.Count, 2 * plan.Count,
-                (c, j) => m.Geometry.CanEvaluateGiven(ok, CurveIndex(c))
-                    ? m.Geometry.PcurveToCurveGap(CurveIndex(c), samples[c][j % plan.Count], j / plan.Count)
-                    : 0.0,
-                m.Tolerances.Length.Value,
-                (c, j) => m.CurveSite(CurveIndex(c)));
-    }
+        => m.Check_SurfaceCurvePcurveLiesOnCurveOnce(plan);
 
     // Check_SurfaceCurveLiesOnPcurve with IsWellFormed run once and each
     // curve's samples built once.

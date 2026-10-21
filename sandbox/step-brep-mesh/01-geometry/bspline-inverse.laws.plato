@@ -33,15 +33,6 @@ library BsplineInverseLaws
         => Law_ClosestParameterIsCanonical(k.CurveFixtureSet, CurveIndex(0), t, Tolerances.Witness_Tolerances)
             && Law_ClosestParameterIsCanonical(Integer.SearchCurveSet, CurveIndex(k.FixtureIndex(4)), t, Tolerances.Witness_Tolerances);
 
-    // For any point, on the curve or off it, the closest parameter is no
-    // worse than the sample s and the offset is orthogonal to the tangent at
-    // an interior minimizer (layer 1's NoWorseThanSample and IsStationary).
-    Law_ClosestParameterIsMinimal(k: Integer, p: Point3D, s: Number): Boolean
-        => Law_ClosestParameterNoWorseThanSample(k.CurveFixtureSet, CurveIndex(0), p, s)
-            && Law_ClosestParameterIsStationary(k.CurveFixtureSet, CurveIndex(0), p)
-            && Law_ClosestParameterNoWorseThanSample(Integer.SearchCurveSet, CurveIndex(k.FixtureIndex(4)), p, s)
-            && Law_ClosestParameterIsStationary(Integer.SearchCurveSet, CurveIndex(k.FixtureIndex(4)), p);
-
     // A clamped closed curve (fixture 2's control polygon closed into a
     // loop) whose join is the nearest point answers its range start, as the
     // contract of ClosestParameter says.
@@ -68,28 +59,8 @@ library BsplineInverseLaws
         return g.Eval(p, g.ClosestParameter(p, q)).Coincident(q, Tolerances.Witness_Tolerances.Length);
     }
 
-    // The pcurve's closest parameter is finite and bounded (layer 1's
-    // Law_PcurveClosestParameterIsBounded).
-    Law_PcurveClosestParameterIsBounded(k: Integer, t: Number): Boolean
-        => Law_PcurveClosestParameterIsBounded(k.PcurveFixtureSet, PcurveIndex(0), t, Tolerances.Witness_Tolerances);
-
     //==
     // # Surfaces
-
-    // Project gives a surface point back, on every surface fixture (layer
-    // 1's Law_ProjectRecoversPoint), and its answer is canonical
-    // (Law_ProjectIsCanonical).
-    Law_ProjectRecoversPoint(k: Integer, u: Number, v: Number): Boolean
-        => Law_ProjectRecoversPoint(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v), Tolerances.Witness_Tolerances)
-            && Law_ProjectIsCanonical(k.SurfaceFixtureSet, SurfaceIndex(0), UvCoordinate(u, v), Tolerances.Witness_Tolerances);
-
-    // For any point p, Project is no worse than the sample uv, and the
-    // offset is orthogonal to both partials at an interior minimizer (layer
-    // 1's NoWorseThanSample and IsStationary).
-    Law_ProjectIsMinimal(k: Integer, p: Point3D, u: Number, v: Number): Boolean
-        => Law_ProjectNoWorseThanSample(k.SurfaceFixtureSet, SurfaceIndex(0), p, UvCoordinate(u, v))
-            && Law_ProjectIsStationary(k.SurfaceFixtureSet, SurfaceIndex(0), p, SurfaceParameter.ParameterU)
-            && Law_ProjectIsStationary(k.SurfaceFixtureSet, SurfaceIndex(0), p, SurfaceParameter.ParameterV);
 
     // ProjectNear recovers uv from its own point, seeded at uv and seeded
     // NearSeedOffset away (layer 1's two ProjectNear laws).

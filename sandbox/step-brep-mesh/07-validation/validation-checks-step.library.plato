@@ -129,25 +129,20 @@ library BrepCheckingStep
 
     // Law_CurveClosureDecidedByEnds at every decoded curve.
     Check_CurveClosureDecidedByEnds(f: Part21File): Check
-        => CheckAll("Law_CurveClosureDecidedByEnds", f.DecodeBrep.Model.Geometry.Curves.Count,
-            k => Law_CurveClosureDecidedByEnds(f, k), k => Provenance.KernelCurve(CurveIndex(k)));
+        => f.Check_CurveClosureDecidedByEndsOnce();
 
     // Law_SurfaceClosureDecidedBySides at every decoded surface and both
     // parameters.
     Check_SurfaceClosureDecidedBySides(f: Part21File): Check
-        => CheckGrid("Law_SurfaceClosureDecidedBySides", f.DecodeBrep.Model.Geometry.Surfaces.Count, 2,
-            (k, w) => Law_SurfaceClosureDecidedBySides(f, k, w == 0 ? SurfaceParameter.ParameterU : SurfaceParameter.ParameterV),
-            (k, w) => Provenance.KernelSurface(SurfaceIndex(k)));
+        => f.Check_SurfaceClosureDecidedBySidesOnce();
 
     // Law_MirrorFoldRecordedOnce at every decoded face.
     Check_MirrorFoldRecordedOnce(f: Part21File): Check
-        => CheckAll("Law_MirrorFoldRecordedOnce", f.DecodeBrep.Model.Faces.Count,
-            k => Law_MirrorFoldRecordedOnce(f, k), k => AtFace(k));
+        => f.Check_MirrorFoldRecordedOnceOnce();
 
     // Law_LeftHandedSurfacesAreFolded at every decoded face (review F2).
     Check_LeftHandedSurfacesAreFolded(f: Part21File): Check
-        => CheckAll("Law_LeftHandedSurfacesAreFolded", f.DecodeBrep.Model.Faces.Count,
-            k => Law_LeftHandedSurfacesAreFolded(f, k), k => AtFace(k));
+        => f.Check_LeftHandedSurfacesAreFoldedOnce();
 
     // Law_DecodedTolerancesWellFormed.
     Check_DecodedTolerancesWellFormed(f: Part21File): Check
@@ -155,7 +150,7 @@ library BrepCheckingStep
 
     // Law_RepairsAreDiagnosed at every repair.
     Check_RepairsAreDiagnosed(f: Part21File): Check
-        => CheckAll("Law_RepairsAreDiagnosed", f.DecodeBrep.Map.Repairs.Count, r => Law_RepairsAreDiagnosed(f, r), r => Provenance.WholeInput);
+        => f.Check_RepairsAreDiagnosedOnce();
 
     // Law_ProvenanceCoversModel.
     Check_ProvenanceCoversModel(f: Part21File): Check
@@ -164,26 +159,24 @@ library BrepCheckingStep
     // Law_ProvenanceSourcesDistinct at every pair of sources (quadratic as
     // written; the sorted ByInstance table makes it a scan of neighbours).
     Check_ProvenanceSourcesDistinct(f: Part21File): Check
-        => CheckGrid("Law_ProvenanceSourcesDistinct", f.SourceCount, f.SourceCount,
-            (a, b) => Law_ProvenanceSourcesDistinct(f, a, b), (a, b) => Provenance.WholeInput);
+        => f.Check_ProvenanceSourcesDistinctOnce();
 
     // Law_ProvenanceLookupInvertsSources at every source.
     Check_ProvenanceLookupInvertsSources(f: Part21File): Check
-        => CheckAll("Law_ProvenanceLookupInvertsSources", f.SourceCount, a => Law_ProvenanceLookupInvertsSources(f, a), a => Provenance.WholeInput);
+        => f.Check_ProvenanceLookupInvertsSourcesOnce();
 
     // Law_SourceKindMatchesTable at every source.
     Check_SourceKindMatchesTable(f: Part21File): Check
-        => CheckAll("Law_SourceKindMatchesTable", f.SourceCount, a => Law_SourceKindMatchesTable(f, a), a => Provenance.WholeInput);
+        => f.Check_SourceKindMatchesTableOnce();
 
     // Law_RepairedSourcesAreUnmapped at every repair.
     Check_RepairedSourcesAreUnmapped(f: Part21File): Check
-        => CheckAll("Law_RepairedSourcesAreUnmapped", f.DecodeBrep.Map.Repairs.Count, r => Law_RepairedSourcesAreUnmapped(f, r), r => Provenance.WholeInput);
+        => f.Check_RepairedSourcesAreUnmappedOnce();
 
     // Law_ReachedInstancesAreAccountedFor at every occurrence and every
     // instance position (the reached list of an occurrence is never longer).
     Check_ReachedInstancesAreAccountedFor(f: Part21File): Check
-        => CheckGrid("Law_ReachedInstancesAreAccountedFor", f.DecodeBrep.Map.Occurrences.Count, f.Instances.Count,
-            (o, k) => Law_ReachedInstancesAreAccountedFor(f, o, k), (o, k) => Provenance.WholeInput);
+        => f.Check_ReachedInstancesAreAccountedForOnce();
 
     // Law_VertexCountMatchesInstances.
     Check_VertexCountMatchesInstances(f: Part21File): Check
@@ -227,13 +220,12 @@ library BrepCheckingStep
     // Law_CirclePeriodIsTwoPi at every decoded curve, with the decoded
     // model's angle parameter floor (a circle's parameter is an angle).
     Check_CirclePeriodIsTwoPi(f: Part21File): Check
-        => CheckAll("Law_CirclePeriodIsTwoPi", f.DecodeBrep.Model.Geometry.Curves.Count,
-            k => Law_CirclePeriodIsTwoPi(f, k, f.DecodeBrep.Model.Tolerances.AngleParameter), k => Provenance.KernelCurve(CurveIndex(k)));
+        => f.Check_CirclePeriodIsTwoPiOnce();
 
     // Law_AngleUnitIsReported at every context of the file (a position past
     // the used contexts is vacuous).
     Check_AngleUnitIsReported(f: Part21File): Check
-        => CheckAll("Law_AngleUnitIsReported", f.Instances.Count, c => Law_AngleUnitIsReported(f, c), c => f.AtInstance(c));
+        => f.Check_AngleUnitIsReportedOnce();
 
     // Law_UncertaintyDefaultExactlyWhenAbsent.
     Check_UncertaintyDefaultExactlyWhenAbsent(f: Part21File): Check
@@ -241,7 +233,7 @@ library BrepCheckingStep
 
     // Law_ToleranceCoversStatedUncertainties at every context position.
     Check_ToleranceCoversStatedUncertainties(f: Part21File): Check
-        => CheckAll("Law_ToleranceCoversStatedUncertainties", f.Instances.Count, c => Law_ToleranceCoversStatedUncertainties(f, c), c => f.AtInstance(c));
+        => f.Check_ToleranceCoversStatedUncertaintiesOnce();
 
     // Law_ModelUnitIsRootUnit.
     Check_ModelUnitIsRootUnit(f: Part21File): Check
@@ -249,41 +241,39 @@ library BrepCheckingStep
 
     // Law_EdgeSenseCopied at every decoded edge.
     Check_EdgeSenseCopied(f: Part21File): Check
-        => CheckAll("Law_EdgeSenseCopied", f.DecodeBrep.Model.Edges.Count, e => Law_EdgeSenseCopied(f, e), e => AtEdge(e));
+        => f.Check_EdgeSenseCopiedOnce();
 
     // Law_PcurvesComeFromPcurveInstances at every decoded pcurve.
     Check_PcurvesComeFromPcurveInstances(f: Part21File): Check
-        => CheckAll("Law_PcurvesComeFromPcurveInstances", f.DecodeBrep.Model.Geometry.Pcurves.Count, k => Law_PcurvesComeFromPcurveInstances(f, k), k => Provenance.WholeInput);
+        => f.Check_PcurvesComeFromPcurveInstancesOnce();
 
     // Law_DeclaredClosedCopied at every decoded shell.
     Check_DeclaredClosedCopied(f: Part21File): Check
-        => CheckAll("Law_DeclaredClosedCopied", f.DecodeBrep.Model.Shells.Count, s => Law_DeclaredClosedCopied(f, s), s => AtShell(s));
+        => f.Check_DeclaredClosedCopiedOnce();
 
     // Law_OuterFlagClearedWhenDoubled at every decoded face.
     Check_OuterFlagClearedWhenDoubled(f: Part21File): Check
-        => CheckAll("Law_OuterFlagClearedWhenDoubled", f.DecodeBrep.Model.Faces.Count, k => Law_OuterFlagClearedWhenDoubled(f, k), k => AtFace(k));
+        => f.Check_OuterFlagClearedWhenDoubledOnce();
 
     // Law_OuterFlagCopiedWhenSingle at every decoded face and bound.
     Check_OuterFlagCopiedWhenSingle(f: Part21File): Check
-        => CheckGrid("Law_OuterFlagCopiedWhenSingle", f.DecodeBrep.Model.Faces.Count, f.DecodeBrep.Model.MostBounds,
-            (k, j) => Law_OuterFlagCopiedWhenSingle(f, k, j), (k, j) => AtFace(k));
+        => f.Check_OuterFlagCopiedWhenSingleOnce();
 
     // Law_MergedVerticesCoincide at every repair.
     Check_MergedVerticesCoincide(f: Part21File): Check
-        => CheckAll("Law_MergedVerticesCoincide", f.DecodeBrep.Map.Repairs.Count, r => Law_MergedVerticesCoincide(f, r), r => Provenance.WholeInput);
+        => f.Check_MergedVerticesCoincideOnce();
 
     // Law_FoldPreservesInteriorSide at every decoded face and bound.
     Check_FoldPreservesInteriorSide(f: Part21File): Check
-        => CheckGrid("Law_FoldPreservesInteriorSide", f.DecodeBrep.Model.Faces.Count, f.DecodeBrep.Model.MostBounds,
-            (k, j) => Law_FoldPreservesInteriorSide(f, k, j), (k, j) => AtFace(k));
+        => f.Check_FoldPreservesInteriorSideOnce();
 
     // Law_FoldFlipsExactlyRecorded at every decoded face.
     Check_FoldFlipsExactlyRecorded(f: Part21File): Check
-        => CheckAll("Law_FoldFlipsExactlyRecorded", f.DecodeBrep.Model.Faces.Count, k => Law_FoldFlipsExactlyRecorded(f, k), k => AtFace(k));
+        => f.Check_FoldFlipsExactlyRecordedOnce();
 
     // Law_FoldRecordsNameFalseFlags at every fold record.
     Check_FoldRecordsNameFalseFlags(f: Part21File): Check
-        => CheckAll("Law_FoldRecordsNameFalseFlags", f.DecodeBrep.Map.Folds.Count, r => Law_FoldRecordsNameFalseFlags(f, r), r => Provenance.WholeInput);
+        => f.Check_FoldRecordsNameFalseFlagsOnce();
 
     //==
     // # The schema table and the text round trip (self-tests)

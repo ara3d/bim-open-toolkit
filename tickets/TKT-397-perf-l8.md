@@ -1,13 +1,14 @@
 ---
 id: TKT-397
 title: STEP mesher complexity chunk L8: Editing and repair: *SetByMask, FacesAtVertexByCoedges, PlanOfIndexed with one RepairIndex, CostOfBound, DirtyAfterOnce
-status: open
+status: done
 depends_on: []
 owner:
 fence: [sandbox/step-mesh-staging/perf-editing-repair/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-349, TKT-356]
 created: 2026-10-21
+closed: 2026-10-21
 ---
 
 ## Acceptance criteria

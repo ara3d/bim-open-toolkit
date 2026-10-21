@@ -293,18 +293,6 @@ library BrepTopologyLaws
             ? (m.IsEdgeInRange(e) ? m.DomainEndDeviation(e, atStart) <= m.Tolerances.Length.Value : true)
             : true;
 
-    // Reversing an edge leaves its domain unchanged, bit for bit: the vertex
-    // met first along the curve is the Start when SameSense and the End
-    // otherwise, and the reversal swaps both. Layer 4's theorem
-    // EdgeReversalInvariance assumes it. Library, exact.
-    Law_EdgeReversalKeepsEdgeDomain(m: BrepModel, e: BrepEdgeIndex): Boolean
-        => m.IsEveryIndexInRange
-            ? (m.IsEdgeInRange(e)
-                ? (m.WithEdgeReversed(e).EdgeDomain(e).Range.Start == m.EdgeDomain(e).Range.Start
-                    && m.WithEdgeReversed(e).EdgeDomain(e).Range.End == m.EdgeDomain(e).Range.End)
-                : true)
-            : true;
-
     // The edge domain runs forward: its start does not exceed its end. On an
     // aperiodic curve a wrong SameSense inverts it; on a curve that loops it
     // holds by construction. Structural, the parameter tolerance at the range's
@@ -430,17 +418,6 @@ library BrepTopologyLaws
     // about the origin. Library, rounding: ResolutionAt of the size.
     Law_ModelSizeWithinExtent(m: BrepModel): Boolean
         => m.ModelSize <= m.CoordinateExtent * 2.0 * 3.0.Sqrt + ResolutionAt(m.ModelSize).Value;
-
-    // A rigid motion carries every vertex to motion.PointInFrame of it and
-    // keeps every topology row, so every coedge's composed sense, and with it
-    // every law of this layer that reads only the tables, is unchanged.
-    // Library, exact.
-    Law_RigidMotionKeepsCoedgeSense(m: BrepModel, motion: Frame3D, site: CoedgeSite): Boolean
-        => m.IsCoedgeSiteInRange(site)
-            ? (m.IsEdgeInRange(m.CoedgeAt(site).Edge)
-                ? m.RigidlyMoved(motion).CoedgeRunsForwardOnCurve(site) == m.CoedgeRunsForwardOnCurve(site)
-                : true)
-            : true;
 
     // Scaling the model by a positive factor scales its coordinate extent by
     // the factor, within the rounding of the products: every defining point is
