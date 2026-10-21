@@ -38,7 +38,7 @@ library BrepFoundationConstantsLaws
         return 1.0 + u == 1.0
             && 1.0 + u * 2.0 != 1.0
             && x > 0.0
-            && x + x * u * 2.0 != x
+            && x + x * (u * 2.0) != x
             && x * 0.5 + x * 0.5 * u * 2.0 == x * 0.5;
     }
 

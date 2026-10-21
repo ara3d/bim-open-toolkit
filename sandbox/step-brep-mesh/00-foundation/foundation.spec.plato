@@ -109,7 +109,9 @@ spec SmallestNormal(_: Number): Number
 {
     // Exact on purpose: the comparison defines normality for a power of two.
     ensures result > 0.0;
-    ensures result + result * Number.RoundingUnit * 2.0 != result;
+    // result * (2u) is the smallest subnormal and the sum is exact; written
+    // result * u * 2.0 the product result * u underflows to zero first.
+    ensures result + result * (Number.RoundingUnit * 2.0) != result;
     ensures result * 0.5 + result * 0.5 * Number.RoundingUnit * 2.0 == result * 0.5;
 }
 
