@@ -1,7 +1,7 @@
 # prepare: closure decided without evaluating a B-spline
 
 Ticket: TKT-348
-Status: ready: D1
+Status: merged 8984df4b (D1, 2026-10-21; the .plato files are deleted, the library holds them)
 
 ## Done
 
