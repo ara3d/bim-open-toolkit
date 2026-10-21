@@ -40,14 +40,7 @@ library BrepFoundation
     // which is the smallest positive subnormal in the C# backend
     // (float.Epsilon). The comparisons here define u; they compare nothing.
     RoundingUnit(_: Number): Number
-    {
-        var u = 1.0;
-        while (1.0 + u != 1.0)
-        {
-            u = u * 0.5;
-        }
-        return u;
-    }
+        => Number.RoundingUnitConstant;
 
     // The smallest positive normal Number: 2^-1022 (about 2.2e-308) in 64
     // bits, 2^-126 (about 1.2e-38) in 32. Below it the spacing of Numbers is
@@ -55,15 +48,7 @@ library BrepFoundation
     // halved while x / 2 is still normal; a power of two y is normal exactly
     // when adding y * 2u to it changes it.
     SmallestNormal(_: Number): Number
-    {
-        var step = Number.RoundingUnit * 2.0;
-        var x = 1.0;
-        while (x * 0.5 + x * 0.5 * step != x * 0.5)
-        {
-            x = x * 0.5;
-        }
-        return x;
-    }
+        => Number.SmallestNormalConstant;
 
     // The smallest difference this design treats as resolvable between values
     // whose magnitude is at most |magnitude|: 32 unit roundoffs of it, sixteen

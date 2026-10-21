@@ -1,0 +1,91 @@
+//==
+// # Arithmetic resolution as closed forms: laws (complexity sweep, chunk I1)
+//
+// The closed forms equal the halving loops bit for bit (run under cpu64 and
+// under gpu32: one expression, two profiles), meet RoundingUnit's and
+// SmallestNormal's contracts, and give ResolutionAt's value at every
+// magnitude with no halving. The count witness for ResolutionAtCounted is read
+// by Law_WorkIsWithinSlope (layer 00).
+//
+// Sections, in order:
+//  - Equality with the loops
+//  - Agreement with ResolutionAt
+//  - Count witness
+
+library BrepFoundationConstantsLaws
+{
+    //==
+    // # Equality with the loops
+    //
+    // The constants are powers of two, never zero, NaN or signed zero, so ==
+    // is equality bit for bit.
+
+    // RoundingUnitConstant is the loop's 2^-53 under cpu64 and 2^-24 under gpu32.
+    Law_RoundingUnitConstantEqualsLoop(_: Integer): Boolean
+        => Number.RoundingUnitConstant == Number.RoundingUnitByHalving;
+
+    // SmallestNormalConstant is the loop's 2^-1022 under cpu64 and 2^-126 under gpu32.
+    Law_SmallestNormalConstantEqualsLoop(_: Integer): Boolean
+        => Number.SmallestNormalConstant == Number.SmallestNormalByHalving;
+
+    // The constants meet RoundingUnit's and SmallestNormal's ensures in
+    // foundation.spec.plato, which hold on the library functions until merge
+    // and on these after it.
+    Law_ConstantsMeetTheSpec(_: Integer): Boolean
+    {
+        var u = Number.RoundingUnitConstant;
+        var x = Number.SmallestNormalConstant;
+        return 1.0 + u == 1.0
+            && 1.0 + u * 2.0 != 1.0
+            && x > 0.0
+            && x + x * u * 2.0 != x
+            && x * 0.5 + x * 0.5 * u * 2.0 == x * 0.5;
+    }
+
+    //==
+    // # Agreement with ResolutionAt
+
+    // ResolutionAtConstant is ResolutionAt bit for bit at every magnitude:
+    // both NaN at a NaN magnitude, else equal.
+    Law_ResolutionAtConstantAgrees(magnitude: Number): Boolean
+    {
+        var a = ResolutionAtConstant(magnitude).Value;
+        var b = ResolutionAt(magnitude).Value;
+        return a.IsNaN ? b.IsNaN : a == b;
+    }
+
+    // ResolutionAtCounted does no halving at any magnitude, and its value is
+    // ResolutionAtConstant's.
+    Law_ResolutionAtConstantDoesNoHalvings(magnitude: Number): Boolean
+    {
+        var c = ResolutionAtCounted(magnitude);
+        var a = c.Value.Value;
+        var b = ResolutionAtConstant(magnitude).Value;
+        return c.Work.Flips == 0 && (a.IsNaN ? b.IsNaN : a == b);
+    }
+
+    //==
+    // # Count witness
+
+    // The halvings (Flips) of n calls to ResolutionAtCounted, at magnitudes 0,
+    // 1,000, 2,000, ...
+    ResolutionAtWork(n: Integer): WorkBudget
+        => n.Range.Reduce(Flips(0), (w, i) => w.Add(ResolutionAtCounted(i.ToNumber * 1000.0).Work));
+
+    // The same n calls to ResolutionAt by halving.
+    ResolutionAtByHalvingWork(n: Integer): WorkBudget
+        => n.Range.Reduce(Flips(0), (w, i) => w.Add(ResolutionAtByHalvingCounted(i.ToNumber * 1000.0).Work));
+
+    // ResolutionAt does at most one halving (Flips) per call, at 8 and 64
+    // calls; the constant form does none, and the halving form about 1,130
+    // per call under cpu64 (150 under gpu32).
+    Witness_ResolutionAtWork(_: WorkClaim): WorkClaim
+        => WorkClaim("ResolutionAt: halvings per call", Flips(1), [8, 64], n => ResolutionAtWork(n));
+
+    // The witness tells the two forms apart: the halving form exceeds its
+    // slope at the smaller size, and gives the same Resolution on every call.
+    Law_ResolutionAtWitnessRejectsHalving(_: Integer): Boolean
+        => !ResolutionAtByHalvingWork(8).IsWithin(Flips(1).Times(8))
+            && 8.Range.All(i => ResolutionAtByHalvingCounted(i.ToNumber * 1000.0).Value.Value
+                == ResolutionAtConstant(i.ToNumber * 1000.0).Value);
+}
