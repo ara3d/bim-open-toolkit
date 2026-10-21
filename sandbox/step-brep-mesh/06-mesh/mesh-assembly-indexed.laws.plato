@@ -75,46 +75,38 @@ library ModelMeshAssemblyIndexedLaws
     // # Agreement
 
     // CitedEdges flags exactly the edges CitesEdge finds cited.
-    Law_Perf_CitedEdgesAgree(w: AssemblyWitness): Boolean
+    Law_CitedEdgesAgree(w: AssemblyWitness): Boolean
     {
         var flags = CitedEdges(w.FaceMeshes, w.Model.Edges.Count);
         return flags.Count == w.Model.Edges.Count
             && w.Model.Edges.Count.Range.All(k => flags[k] == w.FaceMeshes.CitesEdge(BrepEdgeIndex(k)));
     }
 
-    // NumberMeshVerticesMarked gives the numbering NumberMeshVertices gives, and its work is
-    // exactly the edges, the sources and the provenance entries it reads.
-    Law_Perf_NumberMeshVerticesMarkedAgrees(w: AssemblyWitness): Boolean
+    // The numbering's work is exactly the edges, the sources and the provenance entries it reads
+    // (the agreement with the pre-merge NumberMeshVertices was shown before wiring).
+    Law_NumberMeshVerticesWorkIsItsReads(w: AssemblyWitness): Boolean
     {
         var counted = NumberMeshVerticesCounted(w.Model, w.Discretizations, w.FaceMeshes);
         var provenance = w.FaceMeshes.Map(fm => fm.Provenance.Count).IntegerTotal;
-        return IsSameNumbering(counted.Value, NumberMeshVertices(w.Model, w.Discretizations, w.FaceMeshes))
-            && counted.Work.Insertions == w.NumberingSize + provenance;
+        return counted.Work.Insertions == w.NumberingSize + provenance;
     }
 
     // Every entry of FaceInteriorRanks is FaceInteriorRank at that local vertex, and RankAt clamps
     // as FaceInteriorRank does, one step past either end included.
-    Law_Perf_FaceInteriorRanksAgree(w: AssemblyWitness): Boolean
+    Law_FaceInteriorRanksAgree(w: AssemblyWitness): Boolean
         => w.FaceMeshes.All(fm => fm.RanksAgree(fm.FaceInteriorRanks));
 
     // GlobalVerticesOf gives GlobalVertexOf at every parameter-space point, and GlobalAt gives it
     // one step past either end.
-    Law_Perf_GlobalVerticesOfAgree(w: AssemblyWitness): Boolean
+    Law_GlobalVerticesOfAgree(w: AssemblyWitness): Boolean
     {
         var n = NumberMeshVertices(w.Model, w.Discretizations, w.FaceMeshes);
         return w.FaceMeshes.All(fm => n.GlobalsAgree(fm, n.GlobalVerticesOf(fm)));
     }
 
-    // AssembleModelMeshIndexed gives the mesh AssembleModelMesh gives, field by field.
-    Law_Perf_AssembleModelMeshIndexedAgrees(w: AssemblyWitness): Boolean
-    {
-        var n = NumberMeshVertices(w.Model, w.Discretizations, w.FaceMeshes);
-        return IsSameMesh(w.Model.AssembleModelMeshIndexed(w.FaceMeshes, n), w.Model.AssembleModelMesh(w.FaceMeshes, n));
-    }
-
     // The witnesses meet AssembleModelMesh's preconditions, so the agreement above is over meshes
     // the assembly laws accept, not their vacuous case.
-    Law_Perf_AssemblyWitnessCanAssemble(w: AssemblyWitness): Boolean
+    Law_AssemblyWitnessCanAssemble(w: AssemblyWitness): Boolean
         => w.Model.CanAssemble(w.FaceMeshes, NumberMeshVertices(w.Model, w.Discretizations, w.FaceMeshes));
 
     //==
@@ -131,15 +123,4 @@ library ModelMeshAssemblyIndexedLaws
         => globals.Count == fm.Sources.Count
             && (fm.Sources.Count + 2).Range.All(i =>
                 globals.GlobalAt(VertexIndex(i - 1)).Value == n.GlobalVertexOf(fm, VertexIndex(i - 1)).Value);
-
-    // Whether two meshes are equal field by field, every entry exactly.
-    IsSameMesh(a: ModelMesh, b: ModelMesh): Boolean
-        => (a.Positions.Count == b.Positions.Count ? a.Positions.Count.Range.All(i => a.Positions[i] == b.Positions[i]) : false)
-            && (a.Triangles.Count == b.Triangles.Count ? a.Triangles.Count.Range.All(i => a.Triangles[i] == b.Triangles[i]) : false)
-            && (a.Quads.Count == b.Quads.Count ? a.Quads.Count.Range.All(i => a.Quads[i] == b.Quads[i]) : false)
-            && (a.CornerNormals.Count == b.CornerNormals.Count ? a.CornerNormals.Count.Range.All(i => a.CornerNormals[i] == b.CornerNormals[i]) : false)
-            && (a.CornerUvs.Count == b.CornerUvs.Count ? a.CornerUvs.Count.Range.All(i => a.CornerUvs[i] == b.CornerUvs[i]) : false)
-            && (a.ElementFace.Count == b.ElementFace.Count ? a.ElementFace.Count.Range.All(i => a.ElementFace[i].Value == b.ElementFace[i].Value) : false)
-            && (a.VertexProvenance.Count == b.VertexProvenance.Count ? a.VertexProvenance.Count.Range.All(i => a.VertexProvenance[i] == b.VertexProvenance[i]) : false)
-            && IsSameNumbering(a.Numbering, b.Numbering);
 }

@@ -240,19 +240,10 @@ library ModelMeshNumbering
     // when some face mesh cites the edge, else empty, so an edge whose faces all failed to mesh
     // leaves no vertex without a position. Face runs: the face mesh's face-interior vertex count.
     // faceMeshes is indexed by BrepFaceIndex (see CanAssemble); a face with no entry gets an empty
-    // run. Reference body: CitesEdge makes it quadratic, where one pass marking cited edges is
-    // linear in the total size of the face meshes.
+    // run. The body is NumberMeshVerticesCounted (mesh-numbering-indexed.library.plato): one pass
+    // marking cited edges, linear in the total size of the face meshes (chunk M1, 2026-10-21).
     NumberMeshVertices(m: BrepModel, d: EdgeDiscretizations, faceMeshes: Array<FaceMesh>): MeshVertexNumbering
-    {
-        var edgeCounts = m.Edges.Count.MapRange(k => faceMeshes.CitesEdge(BrepEdgeIndex(k))
-            ? d.InteriorPointCount(BrepEdgeIndex(k))
-            : 0);
-        var faceCounts = m.Faces.Count.MapRange(k => faceMeshes.IsValidIndex(k)
-            ? faceMeshes[k].FaceInteriorVertexCount
-            : 0);
-        var edgeStarts = RunStarts(m.Vertices.Count, edgeCounts);
-        return MeshVertexNumbering(m.Vertices.Count, edgeStarts, RunStarts(edgeStarts.Last, faceCounts));
-    }
+        => NumberMeshVerticesCounted(m, d, faceMeshes).Value;
 
     //==
     // # Face mesh points to sites and global vertices

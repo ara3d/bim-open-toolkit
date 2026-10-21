@@ -1,7 +1,7 @@
 # perf-assembly: number and assemble the model mesh in linear time (complexity sweep chunk M1)
 
 Ticket: TKT-366
-Status: ready: M1
+Status: merged: M1 (2026-10-21, files moved into 06-mesh as mesh-numbering-indexed, mesh-assembly-indexed, mesh-assembly-witness.types, mesh-assembly-indexed.laws)
 
 ## Done
 - M1, the commit that adds this file, about 0.5 h against 2 h expected. Candidates 8 and 9 of `docs/plans/step-mesher-complexity.md`.
