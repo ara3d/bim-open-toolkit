@@ -1,7 +1,7 @@
 ---
 id: TKT-460
 title: STEP mesher: chordal-only refinement leaves tiny mitred fillets as boundary fans that overlap their neighbours, so SHO/ODIN-W160 is no longer closed (8 non-manifold, 16 misoriented edges since V1G-4)
-status: claimed
+status: done
 depends_on: []
 owner: session 5135435e
 session: 5135435e-eb61-4194-b168-7b93c64dd2fe
@@ -10,6 +10,7 @@ workflow: [W3]
 related: [TKT-399, TKT-421, TKT-455]
 created: 2026-10-22
 claimed: 2026-10-22
+closed: 2026-10-22
 kind: defect
 ---
 
