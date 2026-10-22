@@ -1,0 +1,72 @@
+// Extracted by step-corpus-harness extract (TKT-439) on 2026-10-22 from C:/Users/cdigg/git/3d-format-shootout/data/submodules/3D-Step-Models-Library/SHO/c211_case_with_odin_v1.step,
+// faces 339 of the prepared model with a ring of 0: 1 faces, 7 edges.
+// Witness face k is source face [339][k]. Meshed the host's way at chordal 1.0000000474974513:
+//   face 339 (witness face 0): cdt, 19 triangles, 0 quads in the file, cdt, 19 triangles, 0 quads in the witness, the same mesh
+// One open shell in a shell-set body holds the faces; tolerances and unit are the source model's.
+library CorpusWitnessC211CaseWithOdinV1Face339
+{
+    Witness_C211CaseWithOdinV1Face339(_: BrepModel): BrepModel
+        => BrepModel(GeometrySet([
+                    BrepCurve.BSpline(BSplineCurveData(SplineBasis(3, KnotVector([
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0663561283554486,
+                                        0.0663561283554486,
+                                        0.132712256710897,
+                                        0.132712256710897,
+                                        0.19910876029402,
+                                        0.19910876029402,
+                                        0.265505263877142,
+                                        0.265505263877142,
+                                        0.265505263877142,
+                                        0.265505263877142])), [
+                                Point3D(-62.1236352174424, -46.7000000625849, 142.916562807197),
+                                Point3D(-62.1236352174424, -46.7000000625849, 143.137749901715),
+                                Point3D(-62.1381880605816, -46.6555251454833, 143.372679668597),
+                                Point3D(-62.1898997390249, -46.4766202491555, 143.803292533107),
+                                Point3D(-62.2262271115606, -46.3422566558528, 143.999102647689),
+                                Point3D(-62.2941536770761, -46.0331414187173, 144.308372378124),
+                                Point3D(-62.3303166156792, -45.8372495752894, 144.44290499196),
+                                Point3D(-62.3825297147277, -45.4063892630449, 144.622036676681),
+                                Point3D(-62.3979473246686, -45.1713140562814, 144.666562807197),
+                                Point3D(-62.3997916719904, -44.9500000625849, 144.666562807197)], [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0])),
+                    BrepCurve.Line(Point3D(-62.1236352174424, -46.7000000625849, 140.666562807197), Vector3D(0.0, 0.0, -10.0)),
+                    BrepCurve.Line(Point3D(-62.4000000089407, -44.9000000625849, 138.066562807197), Vector3D(0.0, 5.4513250555292e-15, -10.0)),
+                    BrepCurve.Line(Point3D(-56.4000000089407, -50.9000000625849, 140.666562807197), Vector3D(0.0, 0.0, -10.0)),
+                    BrepCurve.Circle(Frame3D(Point3D(-56.4000000089407, -44.9000000625849, 135.666562807197), Direction3D(Vector3D(-0.7071067811865476, -0.7071067811865476, 0.0)), Direction3D(Vector3D(-0.7071067811865476, 0.7071067811865476, 0.0)), Direction3D(Vector3D(0.0, 0.0, -1.0))), 6.0),
+                    BrepCurve.Circle(Frame3D(Point3D(-56.4000000089407, -44.9000000625849, 144.666562807197), Direction3D(Vector3D(-0.7071067811865476, -0.7071067811865476, 2.049712446989412e-48)), Direction3D(Vector3D(0.7071067811865476, -0.7071067811865476, 2.049712446989412e-48)), Direction3D(Vector3D(0.0, 2.89873114149737e-48, 1.0))), 6.0),
+                    BrepCurve.Circle(Frame3D(Point3D(-56.4000000089407, -44.9000000625849, 163.69), Direction3D(Vector3D(-0.7071067811865476, -0.7071067811865476, 3.9252311467094385e-17)), Direction3D(Vector3D(0.7071067811865476, -0.7071067811865476, -3.9252311467094336e-17)), Direction3D(Vector3D(5.55111512312578e-17, 3.08148791101958e-32, 1.0))), 6.0)], [], [], [BrepSurface.Cylinder(Frame3D(Point3D(-56.4000000089407, -44.9000000625849, 138.066562807197), Direction3D(Vector3D(-0.7071067811865476, -0.7071067811865476, -3.8546689132168305e-16)), Direction3D(Vector3D(0.7071067811865476, -0.7071067811865476, -3.8546689132168305e-16)), Direction3D(Vector3D(0.0, -5.4513250555292e-16, 1.0))), 6.0)], []), [
+                BrepVertex(Point3D(-56.4000000089407, -50.9000000625849, 135.666562807197)),
+                BrepVertex(Point3D(-62.1236352174424, -46.7000000625849, 135.666562807197)),
+                BrepVertex(Point3D(-62.3997916719904, -44.9500000625849, 144.666562807197)),
+                BrepVertex(Point3D(-62.4000000089407, -44.9000000625849, 144.666562807197)),
+                BrepVertex(Point3D(-62.1236352174424, -46.7000000625849, 142.916562807197)),
+                BrepVertex(Point3D(-62.4000000089407, -44.9000000625849, 163.69)),
+                BrepVertex(Point3D(-56.4000000089407, -50.9000000625849, 163.69))], [
+                BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(4), true),
+                BrepEdge(BrepVertexIndex(3), BrepVertexIndex(2), CurveIndex(5), true),
+                BrepEdge(BrepVertexIndex(4), BrepVertexIndex(2), CurveIndex(0), true),
+                BrepEdge(BrepVertexIndex(4), BrepVertexIndex(1), CurveIndex(1), true),
+                BrepEdge(BrepVertexIndex(5), BrepVertexIndex(3), CurveIndex(2), true),
+                BrepEdge(BrepVertexIndex(6), BrepVertexIndex(0), CurveIndex(3), true),
+                BrepEdge(BrepVertexIndex(5), BrepVertexIndex(6), CurveIndex(6), true)], [BrepLoop.EdgeLoop([
+                        Coedge(BrepEdgeIndex(1), EdgeOrientation.Forward),
+                        Coedge(BrepEdgeIndex(2), EdgeOrientation.Reversed),
+                        Coedge(BrepEdgeIndex(3), EdgeOrientation.Forward),
+                        Coedge(BrepEdgeIndex(0), EdgeOrientation.Reversed),
+                        Coedge(BrepEdgeIndex(5), EdgeOrientation.Reversed),
+                        Coedge(BrepEdgeIndex(6), EdgeOrientation.Reversed),
+                        Coedge(BrepEdgeIndex(4), EdgeOrientation.Forward)])], [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, true)])], [BrepShell([BrepFaceIndex(0)], false)], [BrepBody.ShellSet([ShellIndex(0)])], Tolerances(LengthTolerance(0.01), AngleTolerance(Angle(1e-09)), ParameterTolerance(0.01), ParameterTolerance(2.112319181647101e-06)), LengthUnit.Millimetre);
+}

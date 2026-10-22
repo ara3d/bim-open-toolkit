@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1), V1G-11 in 8a30a057, V1G-12 in c82a14a7, V1G-13 in f0fd91a3 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change, V1G-15 in 87ca2e47
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1), V1G-11 in 8a30a057, V1G-12 in c82a14a7, V1G-13 in f0fd91a3 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change, V1G-15 in 87ca2e47 | ready: V1G-15w (TKT-460), V1G-16 (TKT-464)
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -107,6 +107,21 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
   - Not done: TKT-460's first box, a law over a witness cut from the fillet (a mitred quarter-cylinder pair at 0.2 mm is a model to build by hand); the evidence is the harness's on ODIN-W160 and W161.
 - V1G-15w (TKT-460), about 0.5 h, the first box of TKT-460. `step-corpus-harness extract ODIN-W160.STEP 3364,3398 <out> --ring 1` (bim-open-data 8677dd0, on a regeneration of 4a30959f, the library before V1G-15) wrote `corpus-witness-odin-w160-fillet.library.plato`: 7 faces (3364, 3385, 3398, 3402, 3409, 3414, 3431), 50 edges, each fillet meshed as in the file (6 triangles). `Law_V1Gate_OdinW160FilletIsManifoldAndOriented` (`corpus-witness-odin-w160-fillet.laws.plato`): no non-manifold and no misoriented edge in the witness's mesh under `HostMeshingOptions(1.0)`; the measure counts non-manifold edges.
   - Compiled, budget 120 s, on a `git archive` of 4a30959f with this folder's two files: fail, measure 8, as the corpus run's 8 non-manifold edges. Warm server on HEAD 612400ae (V1G-15 merged in 87ca2e47): pass, 15 s.
+- V1G-16 (TKT-464), about 2 h. Cause: not the refinement test and not an attainability test. c211 face 339 (a quarter cylinder of radius 6, 28 long, CDT of 17 triangles) has its long fans t3, t10 and t11 marked by the chordal test (centroid 1.11, side midpoints up to 1.324), but every insertion that would split them is refused by F2's `CavityIsThick` (TKT-401). Off-centres of t3 and t10 lie outside the face (u 7.50 and 7.67, past the line edge at u = 7.069); the side-midpoint fallbacks and t11's off-centre lie inside, about 10 mm from every corner, and their flips carry the cavity (13 or 14 triangles) to the boundary segment p0 p1 at v = 6.6, 0.05 mm long (0.0083 rad). A triangle's altitude is never more than its shortest side, so no triangle on that segment reaches `ThinBound` (0.1 mm, ten tolerances), and the new apex makes it a little thinner (0.050 to 0.044), so the "thicker than before" branch fails too. Refinement stops after one point. Traced with a probe on the extracted one-face model (8 s a run), replaying each round's trials guard by guard.
+  - Fix, `v1-thick.library.plato` (library `V1Thick`): `ThinBoundOf` asks each written triangle for `ThinBound` or half its shortest side, whichever is less, and at least two length tolerances; `CavityIsThickV1` keeps the insertion when every written triangle meets its own bound, or, as before, when the cavity's thinnest is thicker than the thinnest it replaces. Triangles with long sides, such as F2's bump top slivers, meet the same bound as before.
+  - Laws, `v1-thick.laws.plato` (`V1ThickLaws`) over the extracted witness `corpus-witness-c211-339.library.plato` (`Witness_C211CaseWithOdinV1Face339`, 1 face, 7 edges, the same 19-triangle mesh as in the file): `Law_V1Gate_C211Face339WithinChordal` (every triangle's corner mean and chord midpoints within 1 mm plus the length tolerance; measure the worst) fails on HEAD with 1.3243, the corpus figure; `Law_V1Gate_ThinBoundOfIsBetweenTheToleranceAndThinBound` (25 sampled cases) passes.
+  - Compiled, budget 600 s, `git archive` of 612400ae with the three files, without and with the two call sites wired, 21 law classes (V1ThickLaws, FaceMeshingInsertionClearanceLaws, InsertionBuiltLaws, NeighboursCarriedLaws, BoundaryIndexLaws, TriangulationFastLaws, TriangulationLaws, FaceMeshingLaws, TriangulatedWitnessLaws, PolesWitnessLaws, V1PoleChecksLaws, FaceMeshingLiftIndexedLaws, RefinementAttainableLaws, V1GateLaws, V1PlaneLaws, V1GateSplitsLaws, V1KeepLaws, V1AxleLaws, V1BandLaws, FaceMeshingEdgeOnMarksLaws, FaceMeshingGridChordalLaws): 127 laws, 126 pass and the c211 law fails without; 127 pass with. `Law_V1Faces_BumpTopHasNoDegenerateElement` passes on both.
+  - Harness on scratch regenerations of 612400ae without and with the rule (bim-open-data 8677dd0, `gallery --parallel`):
+
+| File | 612400ae | with V1G-16 |
+|---|---|---|
+| c211_case_with_odin_v1 | boundary 69, over-chordal 1 (face 339), flipped 5 | boundary 69, over-chordal 0, flipped 5 |
+| ODIN-W160, ODIN-W161 | closed and oriented, contract holds | the same mesh digest |
+| ANN-MB2 | flipped 1 | the same mesh digest |
+| moon_buggy, LENA-R8 (boundary 2,026), MAYA-W160, NINA-B400 | contract holds | the same mesh digests |
+| RCB-F9T | boundary 416, degenerate 2 | the same mesh digest |
+
+  - Overlap: the change is to F2's guard (v1-faces' `insertion-clearance.library.plato`), not to `SurfacePassCarriedCounted`; it touches neither E4's seed functions nor P2's FoldAgainstBoundary reason.
 
 ## Gate and quality: every law of layer 5
 
@@ -447,6 +462,10 @@ V1G-8 (TKT-429):
 - In `JoinedByCut` (05-face-meshing/uv-regions.library.plato): `var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);` => `var end = m.BandEndCopy(f, a, i, b, j);`, and the function's comment says the cut ends at "the copy of b's point nearest it on the face's side (BandEndCopy)".
 - Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
 
+V1G-16 (TKT-464):
+- `CavityIsThick` (05-face-meshing/insertion-clearance.library.plato) takes `CavityIsThickV1`'s body, and `ThinBoundOf` and `IsThickTriangle` (v1-thick.library.plato) move into that file's Thickness section; delete `CavityIsThickV1`. Its callers, `TryInsertionIndexed` (triangulation-built-indexed.library.plato) and `TryInsertionInto` (triangulation-built.library.plato), stay as they are. The file header's sentence on the rule then reads: every triangle its insertion writes reaches ThinBound or half its shortest side (at least two tolerances), or the cavity is thicker than the triangles it replaces. (The checked copy instead renamed the two call sites to `CavityIsThickV1`; the same behaviour.)
+- Move `corpus-witness-c211-339.library.plato` to `08-pipeline/pipeline-corpus-witness-c211-339.library.plato`, and `v1-thick.laws.plato` to `05-face-meshing/insertion-clearance-v1.laws.plato` (library `V1ThickLaws`). The c211 law takes about 1.5 s.
+
 V1G-15w (TKT-460):
 - Move `corpus-witness-odin-w160-fillet.library.plato` to `08-pipeline/pipeline-corpus-witness-odin-w160-fillet.library.plato`, beside ANN-MB2's, and its law into `08-pipeline/pipeline-corpus-witnesses.laws.plato` (or that folder as `pipeline-corpus-witness-odin-w160-fillet.laws.plato`, library `V1GateCorpusWitnessLaws`). Its run needs a budget of about 20 s.
 
@@ -543,8 +562,16 @@ V1G-5 (triage):
 | V1G-13: latitude table, reading the refinement test and the pole segments | 20 min | 1 run |
 | V1G-13: three scratch regenerations (in-place edit, 60 degree pole step, the staged form) | 7 min, background | 3 regenerations, 3 builds, 9 runs |
 | V1G-13: pole and refinement laws, two copies | 1.3 min | 2 |
+| V1G-15w: harness build against the V1G-15 library (failed: host API), regeneration of 4a30959f and harness build | 6 min and 9 min, background | 2 builds, 1 regeneration |
+| V1G-15w: extract, law, laws on HEAD and on 4a30959f (fresh folder compile) | 20 s, 15 s, 84 s | 3 |
+| V1G-16: face probe on the whole c211 file, extract of face 339 (both mesh the whole file) | 6 min and 7 min | 2 |
+| V1G-16: one-face trace probe, guard by guard | 8 s a run | 6 builds, 6 runs |
+| V1G-16: patched generated C# (trial), regeneration of 612400ae, two harness builds | 21 s, 9 min background, 1 min | 1 regeneration, 3 builds |
+| V1G-16: guard set, 9 files on two builds | 17 min, background | 18 |
+| V1G-16: laws, two fresh compiled copies, 127 laws each | 2.3 and 4 min, background | 2 |
 
 ## Lessons
+- `step-corpus-harness extract` with a ring of 0 gives a one-face model that a probe reaches in seconds (parse, prepare, SubModel, host discretization, then the library's own steps), where the whole c211 file took 6 minutes a run; extract once, then probe the witness.
 - The compile cache follows the folder path: a fresh scratch folder cost 6.8 minutes, the same folder rerun about 1 minute. Keep one scratch folder per check.
 - The spike's dumped regions let a Python reproduction of the rule decide the corpus effect on all 45 faces in seconds, before any regeneration; it caught MAYA 1599, which the rule alone would have accepted.
 - Sixteen laws over the same eight witnesses at a 20 s budget made almost every law a budget error: the laws share the cores, so each law's wall time is the batch's. A larger budget gave the verdicts in 3 minutes.
