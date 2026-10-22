@@ -64,10 +64,6 @@ library BrepCheckingFaceMeshing
     Check_ElementFacesFaceNormal(m: BrepModel, fm: FaceMesh): Check
         => fm.CheckElements("Law_ElementFacesFaceNormal", k => Law_ElementFacesFaceNormal(m, fm, k));
 
-    // Law_QuadConvex at every quad. Structure (an exact sign): Error.
-    Check_QuadConvex(fm: FaceMesh): Check
-        => CheckAll("Law_QuadConvex", fm.Quads.Count, q => Law_QuadConvex(fm, FaceIndex(q)), q => Provenance.KernelFace(fm.Face));
-
     //==
     // # The face mesh: geometry (geometry)
 
@@ -78,25 +74,6 @@ library BrepCheckingFaceMeshing
     Check_PointNormalIsFaceNormal(m: BrepModel, fm: FaceMesh): Check
         => fm.CheckPoints("Law_PointNormalIsFaceNormal", i => Law_PointNormalIsFaceNormal(m, fm, i));
 
-    // Law_ElementNormalAgreesWithSurface at every element, measured by
-    // ElementNormalDeviation in radians (0 on an element touching a collapsed
-    // line, where the law is vacuous) against SurfaceAngular. Geometry: W/E.
-    Check_ElementNormalAgreesWithSurface(m: BrepModel, fm: FaceMesh, c: FaceMeshingCriteria): Check
-        => CheckAllWithin("Law_ElementNormalAgreesWithSurface", fm.ElementCount,
-            k => m.ElementNormalExcess(fm, ElementIndex(k)),
-            c.SurfaceAngular.Radians,
-            k => Provenance.KernelFace(fm.Face));
-
-    // Law_SurfaceEdgeNormalTurnWithinSurfaceAngular at every element and
-    // corner slot, measured by EdgeNormalTurn in radians on surface edges (0
-    // on model-edge segments and collapsed lines) against SurfaceAngular.
-    // Geometry: W/E.
-    Check_SurfaceEdgeNormalTurnWithinSurfaceAngular(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria): Check
-        => CheckGridWithin("Law_SurfaceEdgeNormalTurnWithinSurfaceAngular", fm.ElementCount, 4,
-            (k, j) => m.NormalTurnExcess(d, fm, ElementIndex(k), j),
-            c.SurfaceAngular.Radians,
-            (k, j) => Provenance.KernelFace(fm.Face));
-
     // Law_ElementDeviationWithinSurfaceChordal at every element, measured by
     // ElementChordalDeviation against SurfaceChordal plus Tolerances.Length.
     // Geometry: W/E.
@@ -105,14 +82,6 @@ library BrepCheckingFaceMeshing
             k => m.DeviationExcess(d, fm, ElementIndex(k)),
             c.SurfaceChordal + m.Tolerances.Length.Value,
             k => Provenance.KernelFace(fm.Face));
-
-    // Law_QuadPlanarWithinSurfaceChordal at every quad, measured by QuadWarp
-    // against SurfaceChordal. Geometry: W/E.
-    Check_QuadPlanarWithinSurfaceChordal(fm: FaceMesh, c: FaceMeshingCriteria): Check
-        => CheckAllWithin("Law_QuadPlanarWithinSurfaceChordal", fm.Quads.Count,
-            q => fm.IsMeasurableQuad(FaceIndex(q)) ? fm.QuadWarp(FaceIndex(q)) : 0.0,
-            c.SurfaceChordal,
-            q => Provenance.KernelFace(fm.Face));
 
     //==
     // # The face mesh's parameter-space triangulation (structure)
@@ -341,22 +310,6 @@ library BrepCheckingFaceMeshing
     // boundary point.
     SlotOfBoundaryPoint(r: UvRegion, a: Integer): Integer
         => a - r.LoopOffset(r.LoopOfBoundaryPoint(a));
-
-    // ElementNormalDeviation in radians behind
-    // Law_ElementNormalAgreesWithSurface's guard and exemption.
-    ElementNormalExcess(m: BrepModel, fm: FaceMesh, k: ElementIndex): Number
-        => m.CanMeasure(fm, k) ? (m.TouchesCollapsedLine(fm, k) ? 0.0 : m.ElementNormalDeviation(fm, k).Radians) : 0.0;
-
-    // EdgeNormalTurn in radians behind
-    // Law_SurfaceEdgeNormalTurnWithinSurfaceAngular's guard and exemption.
-    NormalTurnExcess(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, k: ElementIndex, j: Integer): Number
-        => (m.CanMeasure(fm, k) && m.IsDiscretizedFace(fm.Face, d))
-            ? ((j >= 0 && j < fm.ElementCorners(k).Count)
-                ? (m.IsSurfaceEdge(d, fm, fm.ElementCorners(k)[j], fm.ElementCorners(k).AtModulo(j + 1))
-                    ? fm.EdgeNormalTurn(k, j).Radians
-                    : 0.0)
-                : 0.0)
-            : 0.0;
 
     // ElementChordalDeviation behind Law_ElementDeviationWithinSurfaceChordal's
     // guard.

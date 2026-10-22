@@ -344,31 +344,11 @@ library BrepCheckingLaws
             ? m.ImageAt(d.ByEdge[k], j, img => Law_ImageChordWithinChordal(m, d.ByEdge[k], c, img, plan, i))
             : true;
 
-    // Check_ElementNormalAgreesWithSurface agrees with its law at element k
-    // of the face mesh.
-    Law_FaceElementNormalCheckAgrees(m: BrepModel, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex): Boolean
-        => (c.SurfaceAngular.Radians >= 0.0 ? m.Check_ElementNormalAgreesWithSurface(fm, c).Holds : false)
-            ? Law_ElementNormalAgreesWithSurface(m, fm, c, k)
-            : true;
-
-    // Check_SurfaceEdgeNormalTurnWithinSurfaceAngular agrees with its law at
-    // element k and edge j.
-    Law_NormalTurnCheckAgrees(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex, j: Integer): Boolean
-        => ((c.SurfaceAngular.Radians >= 0.0 && j >= 0 && j < 4) ? m.Check_SurfaceEdgeNormalTurnWithinSurfaceAngular(d, fm, c).Holds : false)
-            ? Law_SurfaceEdgeNormalTurnWithinSurfaceAngular(m, d, fm, c, k, j)
-            : true;
-
     // Check_ElementDeviationWithinSurfaceChordal agrees with its law at
     // element k.
     Law_ElementDeviationCheckAgrees(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex): Boolean
         => ((c.SurfaceChordal >= 0.0 && m.Tolerances.IsWellFormed) ? m.Check_ElementDeviationWithinSurfaceChordal(d, fm, c).Holds : false)
             ? Law_ElementDeviationWithinSurfaceChordal(m, d, fm, c, k)
-            : true;
-
-    // Check_QuadPlanarWithinSurfaceChordal agrees with its law at quad q.
-    Law_QuadPlanarCheckAgrees(fm: FaceMesh, c: FaceMeshingCriteria, q: FaceIndex): Boolean
-        => (c.SurfaceChordal >= 0.0 ? fm.Check_QuadPlanarWithinSurfaceChordal(c).Holds : false)
-            ? Law_QuadPlanarWithinSurfaceChordal(fm, c, q)
             : true;
 
     //==

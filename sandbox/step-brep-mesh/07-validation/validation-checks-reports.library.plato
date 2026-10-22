@@ -403,7 +403,9 @@ library BrepCheckingReports
         };
 
     // The checks of layer 5's laws over one face mesh that need neither the edge
-    // discretizations nor the outcome, in one family.
+    // discretizations nor the outcome, in one family. The quality checks (element normal
+    // against the surface, side-normal turn, quad planarity and convexity) are not run here:
+    // they are FaceQualityValidation's, in layer 10 (the version 1 gate split).
     FaceMeshOwnReport(m: BrepModel, fm: FaceMesh, c: FaceMeshingCriteria, family: CheckFamily): Report
         => match (family)
         {
@@ -416,8 +418,6 @@ library BrepCheckingReports
                     "Local vertex fibres are identifications does not hold."),
                 ExactReport(m.Check_ElementFacesFaceNormal(fm),
                     "Element faces face normal does not hold."),
-                ExactReport(fm.Check_QuadConvex,
-                    "Quad convex does not hold."),
                 ExactReport(fm.Check_TriangulationCornersInRange,
                     "Triangulation corners in range does not hold."),
                 ExactReport(m.Check_ElementPositiveInChart(fm),
@@ -426,11 +426,7 @@ library BrepCheckingReports
                     "Element spans below half period does not hold.")]);
             GeometryChecks => MergeAll([
                 ExactReport(m.Check_PointNormalIsFaceNormal(fm),
-                    "Point normal is face normal does not hold."),
-                MeasuredReport(m.Check_ElementNormalAgreesWithSurface(fm, c),
-                    "Element normal agrees with surface does not hold."),
-                MeasuredReport(fm.Check_QuadPlanarWithinSurfaceChordal(c),
-                    "Quad planar within surface chordal does not hold.")]);
+                    "Point normal is face normal does not hold.")]);
             QualityChecks => Report.Empty;
             OracleChecks => Report.Empty;
             SelfTestChecks => Report.Empty;
@@ -448,8 +444,6 @@ library BrepCheckingReports
                 ExactReport(d.Check_ProvenanceMatchesSource(fm),
                     "Provenance matches source does not hold.")]);
             GeometryChecks => MergeAll([
-                MeasuredReport(m.Check_SurfaceEdgeNormalTurnWithinSurfaceAngular(d, fm, c),
-                    "Surface edge normal turn within surface angular does not hold."),
                 MeasuredReport(m.Check_ElementDeviationWithinSurfaceChordal(d, fm, c),
                     "Element deviation within surface chordal does not hold."),
                 MeasuredReport(m.Check_SurfaceWithinSurfaceChordalOfElement(d, fm, c),

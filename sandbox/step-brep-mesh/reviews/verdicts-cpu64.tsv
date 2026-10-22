@@ -51,7 +51,6 @@ BrepCheckingLaws.Law_EdgeDomainEndsCheckAgrees	pass
 BrepCheckingLaws.Law_EdgeOnSurfaceCheckAgrees	pass	
 BrepCheckingLaws.Law_ElementDeviationCheckAgrees	pass	
 BrepCheckingLaws.Law_ElementNormalCheckAgrees	pass	
-BrepCheckingLaws.Law_FaceElementNormalCheckAgrees	pass	
 BrepCheckingLaws.Law_FailingCheckAllNamesAFailingSample	skipped	no values for holds: Function1<Integer,Boolean>: a function-typed parameter, and no Witness_* returns Function1
 BrepCheckingLaws.Law_FailingCheckAllWithinNamesAFailingSample	skipped	no values for measure: Function1<Integer,Number>: a function-typed parameter, and no Witness_* returns Function1
 BrepCheckingLaws.Law_FailingElementNormalCheckNamesAnElement	pass	
@@ -61,13 +60,11 @@ BrepCheckingLaws.Law_ImageChordCheckAgrees	pass
 BrepCheckingLaws.Law_LengthToleranceResolvableCheckAgrees	pass	
 BrepCheckingLaws.Law_MaxLengthCheckAgrees	pass	
 BrepCheckingLaws.Law_MergeAllIsCleanExactlyWhenEveryPartIsClean	pass	
-BrepCheckingLaws.Law_NormalTurnCheckAgrees	pass	
 BrepCheckingLaws.Law_OracleRequiresWhatGeometricRequires	pass	
 BrepCheckingLaws.Law_OuterShellExactVolumePositive	pass	
 BrepCheckingLaws.Law_PcurveCheckAgrees	pass	
 BrepCheckingLaws.Law_PlanarOracleEqualsDiskArea	pass	
 BrepCheckingLaws.Law_PointsOnCurveCheckAgrees	pass	
-BrepCheckingLaws.Law_QuadPlanarCheckAgrees	pass	
 BrepCheckingLaws.Law_ReducedEulerMatchesOracle	pass	
 BrepCheckingLaws.Law_ReevaluationCheckAgrees	pass	
 BrepCheckingLaws.Law_SagittaCheckAgrees	pass	
@@ -740,6 +737,9 @@ FaceQualityLaws.Law_QualityRequestsOnBoxes	pass
 FaceQualityLaws.Law_RefinedNoFlippableEdge	pass	
 FaceQualityLaws.Law_StripPassAgrees	pass	
 FaceQualityLaws.Law_SurfaceEdgeNormalTurnWithinSurfaceAngular	pass	
+FaceQualityValidationLaws.Law_FaceElementNormalCheckAgrees	pass	
+FaceQualityValidationLaws.Law_NormalTurnCheckAgrees	pass	
+FaceQualityValidationLaws.Law_QuadPlanarCheckAgrees	pass	
 FacetedLaws.Law_CoincidenceRootsByGridAgrees	pass	
 FacetedLaws.Law_FacetedAgrees	pass	
 FacetedLaws.Law_FacetedAgreesOnWitnesses	pass	
