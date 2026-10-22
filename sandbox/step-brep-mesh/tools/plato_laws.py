@@ -13,11 +13,19 @@ instead of the 25 s a cold `plato run` compile takes (0.7 s with no edit, 12 s f
 call after the server starts; 2026-10-18). Prints type errors, one line per law and a summary;
 exits 1 on a type error or a law that fails or errors, 2 when the server's answer is not
 understood.
+
+The server does not always match a bare law name, so the script rewrites each bare `Law_X`, and
+`Law_X(signature)` for an overload, as `Block.Law_X` for every block of the compiled folders that
+declares it; a path in MSYS form (/c/...) is read as C:/...; and an empty run is asked once more
+before it is reported, since the server can answer 0 laws once right after an edit (TKT-427).
 """
 import argparse
+import glob
 import json
 import os
+import re
 import sys
+import time
 import urllib.request
 
 URL = "http://127.0.0.1:8768/mcp"
@@ -33,6 +41,49 @@ LIBRARY = [
 
 
 TIMEOUT = 1800
+
+BLOCK = re.compile(r"^\s*(?:library|laws)\s+(\w+)")
+LAW = re.compile(r"^\s+(Law_\w+)\s*\([^()]*\)\s*:")
+
+
+def windows_path(path):
+    """C:/x for the MSYS form /c/x, which os.path.abspath would read as C:/c/x; any other path unchanged."""
+    match = re.match(r"^/([A-Za-z])(/.*)?$", path)
+    return f"{match.group(1).upper()}:{match.group(2) or '/'}" if match else path
+
+
+def law_blocks(folders):
+    """Law name -> the blocks (library or laws) declaring it, over the .plato files under the folders."""
+    blocks = {}
+    for folder in folders:
+        for path in glob.glob(os.path.join(folder, "**", "*.plato"), recursive=True):
+            block = None
+            with open(path, encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    header = BLOCK.match(line)
+                    if header:
+                        block = header.group(1)
+                        continue
+                    law = LAW.match(line)
+                    if law and block:
+                        blocks.setdefault(law.group(1), []).append(block)
+    return blocks
+
+
+def qualified(filter_text, folders):
+    """The filter with each bare law name, or law name with a signature, rewritten as Block.Law for every
+    block declaring it; block names, Block.Law names and names declared nowhere are kept as given."""
+    # Split on the commas outside parentheses: a signature holds commas of its own.
+    names = [re.sub(r"\(.*$", "", t).strip() for t in re.split(r",(?![^()]*\))", filter_text) if t.strip()]
+    if not any(n.rpartition(".")[2].startswith("Law_") for n in names):
+        return filter_text
+    blocks = law_blocks(folders)
+    out = []
+    for name in names:
+        block, _, law = name.rpartition(".")
+        bare = law.startswith("Law_") and not block and law in blocks
+        out.extend([f"{b}.{law}" for b in blocks[law]] if bare else [name])
+    return ",".join(dict.fromkeys(out))
 
 
 def post(body, session=None):
@@ -70,14 +121,19 @@ def main():
                              "running a request the client gave up on, so a full sweep needs a longer wait")
     args = parser.parse_args()
     TIMEOUT = args.timeout
+    for key in ("library", "report", "baseline"):
+        if getattr(args, key):
+            setattr(args, key, windows_path(getattr(args, key)))
+    args.staging = [windows_path(s) for s in args.staging]
 
     _, session = post({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
         "protocolVersion": "2025-03-26", "capabilities": {},
         "clientInfo": {"name": "plato_laws.py", "version": "1"}}})
     post({"jsonrpc": "2.0", "method": "notifications/initialized"}, session)
 
-    arguments = {"filter": args.filter, "profile": args.profile}
     library = LIBRARY[:-1] + [os.path.abspath(args.library).replace("\\", "/")] if args.library else LIBRARY
+    arguments = {"filter": qualified(args.filter, library + [os.path.abspath(s) for s in args.staging])
+                 if args.filter != "none" else args.filter, "profile": args.profile}
     if args.staging or args.library:
         arguments["folders"] = ",".join(library + [os.path.abspath(s) for s in args.staging])
     for key in ("types", "report", "baseline", "budget"):
