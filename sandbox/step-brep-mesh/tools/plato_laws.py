@@ -23,7 +23,9 @@ holds: with --rerun-budget S each budget error is run again alone with a budget 
 the settled verdict replaces it (TKT-401 and TKT-399 were failures recorded as budget errors for
 days). --coverage FILE writes one row per law: its verdict, the cases run, how the cases were made
 (exhaustive, sampled, or one case for an input-free law), and the detail, so a law that passes on
-one case or on 25 generated values can be told from one that passes on every witness.
+one case or on 25 generated values can be told from one that passes on every witness. A law whose
+Premise_<Law> companion held on no case is reported "vacuous" (Plato 00610b70, TKT-437) and fails the
+run like a fail; the coverage table gives the premise-held count of every pass with a companion.
 
 Before the laws, the program the C# regeneration compiles (shipped-program.txt: the stdlib tiers and layers 00 to
 08 alone) is type-checked on its own, and a type error there fails the run: the whole program the laws need can
@@ -59,10 +61,10 @@ TIMEOUT = 1800
 BLOCK = re.compile(r"^\s*(?:library|laws)\s+(\w+)")
 LAW = re.compile(r"^\s+(Law_\w+)\s*\([^()]*\)\s*:")
 # One result line of the server: LawResult.ToString() in Plato's LawRunner.cs.
-RESULT = re.compile(r"^(pass|fail|error|obligation|skipped)\s+(\S+)\s*(.*)$")
-CASES = re.compile(r"\((\d+) cases(, exhaustive)?\)")
+RESULT = re.compile(r"^(pass|fail|error|obligation|skipped|vacuous)\s+(\S+)\s*(.*)$")
+CASES = re.compile(r"\((\d+) cases(, exhaustive)?(?:, premise held on (\d+))?\)")
 BUDGET = re.compile(r"over the [\d.]+s budget|still running after|time budget exceeded")
-VERDICTS = ("pass", "fail", "error", "obligation", "skipped")
+VERDICTS = ("pass", "fail", "error", "obligation", "skipped", "vacuous")
 
 
 def windows_path(path):
@@ -218,13 +220,14 @@ def check_shipped(library_root, profile):
 
 
 def coverage_row(verdict, law, detail):
-    """Law, verdict, cases, how the cases were made, detail: one row of the --coverage table."""
+    """Law, verdict, cases, how the cases were made, the cases where its premise held (blank when the law has no
+    Premise_ companion; Plato 00610b70, TKT-437), detail: one row of the --coverage table."""
     cases = CASES.search(detail)
     if verdict == "pass" and cases:
         count = int(cases.group(1))
         mode = "exhaustive" if cases.group(2) else ("one case" if count == 1 else "sampled")
-        return [law, verdict, str(count), mode, ""]
-    return [law, verdict, "", "-", detail]
+        return [law, verdict, str(count), mode, cases.group(3) or "", ""]
+    return [law, verdict, "", "-", "", detail]
 
 
 def main():
@@ -297,7 +300,7 @@ def main():
           f"{sum(map(is_budget_error, laws))} of the errors over budget; passes by cases: {json.dumps(modes)}")
     if args.coverage:
         with open(args.coverage, "w", encoding="utf-8", newline="\n") as f:
-            f.write("law\tverdict\tcases\tmode\tdetail\n")
+            f.write("law\tverdict\tcases\tmode\tpremise_held\tdetail\n")
             f.writelines("\t".join(row) + "\n" for row in rows)
     if args.filter != "none" and data.get("laws", 0) == 0:
         # The server answers "0 laws, 0 type errors" when a file fails to parse (TKT-337), so an
@@ -312,8 +315,9 @@ def main():
     # does not parse can never turn a failing run into a pass.
     counts = {} if args.rerun_budget else data.get("counts", {})
     failed = data.get("isError") or bool(compile_errors(data)) or data.get("typeErrorCount", 0) > 0 \
-        or tally["fail"] > 0 or tally["error"] > 0 or skipped \
-        or counts.get("fail", 0) > 0 or counts.get("error", 0) > 0 or shipped_errors > 0
+        or tally["fail"] > 0 or tally["error"] > 0 or tally["vacuous"] > 0 or skipped \
+        or counts.get("fail", 0) > 0 or counts.get("error", 0) > 0 or counts.get("vacuous", 0) > 0 \
+        or shipped_errors > 0
     return 1 if failed else 0
 
 

@@ -16,7 +16,7 @@ claimed: 2026-10-22
 ## Acceptance criteria
 
 - [x] a Premise_<Law> companion with the law's parameters, like Measure_<Law>, is evaluated on every case; the result line gives cases and premise-held counts
-- [ ] a law with a premise companion that held on no case is reported vacuous, and plato_laws.py counts it as a failure
+- [x] a law with a premise companion that held on no case is reported vacuous, and plato_laws.py counts it as a failure
 - [x] Law_PendingRequestIsInSomeOutcome and Law_RigidFrameIsOrthonormal report vacuous before a witness is added
 
 Reliability report docs/plans/step-mesher-reliability-2026-10-22.md, class A. A guarded law (p ? q : true) passes whether or not p ever held; Law_PendingRequestIsInSomeOutcome held on no witness with a pending request, and the proofs track flagged two more as vacuous by reading. The Plato repository is v1-compiler's fence.
