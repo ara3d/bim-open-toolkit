@@ -1,7 +1,7 @@
 //==
 // # The constrained Delaunay seed by insertion: laws (track v1-edges, chunk E4, TKT-468)
 //
-// The seed (cdt-seed.library.plato) on regions built here: pad arrays (an outer rectangle whose
+// The seed (triangulation-cdt-seed.library.plato) on regions built here: pad arrays (an outer rectangle whose
 // bottom side holds a point at every unit, and a grid of square holes in aligned rows, the shape
 // that breaks ear clipping over bridged rings) and a rectangle with every side subdivided (one
 // loop, straight angles everywhere). On each: n + 2h - 2 triangles when every point is a boundary
