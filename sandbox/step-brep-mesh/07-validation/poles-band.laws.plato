@@ -1,7 +1,7 @@
 //==
 // # Version 1: a band's seam cut goes to the side the face lies on, laws (TKT-429)
 //
-// The torus band witnesses of v1-band.library.plato meshed by MeshFace at chordal 0.05 (layer
+// The torus band witnesses (Witness_TorusBand, validation-witnesses.library.plato) meshed by MeshFace at chordal 0.05 (layer
 // 08's defaults, triangles): the outer half's mesh lies on the outer half of the tube and the
 // inner half's on the inner, each with the area of its half within 2 percent.
 //

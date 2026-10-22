@@ -11,11 +11,10 @@
 // file bounds the outer. The face lies to the left of each of its loops, so the cut must leave the
 // first circle to its left: BandEndCopy takes, among the copies of the second circle's point one
 // period apart in the cross direction, the nearest one strictly to the left of the first circle's
-// step at the cut's start.
+// step at the cut's start. The torus band witnesses are layer 7's (Witness_TorusBand).
 //
 // Sections, in order:
 //  - The cut's far end
-//  - Torus band witnesses
 
 library V1Band
 {
@@ -49,32 +48,4 @@ library V1Band
     // The distance between two parameter points in natural units.
     UvDistance(a: UvCoordinate, b: UvCoordinate): Number
         => ((a.U - b.U) * (a.U - b.U) + (a.V - b.V) * (a.V - b.V)).Sqrt;
-
-    //==
-    // # Torus band witnesses
-
-    // Half the tube of the torus of major radius R and minor radius r about the z axis, between
-    // its bottom circle (z = -r, radius R, closed at (R, 0, -r)) and its top circle (z = r, closed
-    // at (R, 0, r)): one face on the torus, sense true. When outer, the bottom circle runs with u
-    // and the top against it, so the face on their left is the outer half (through v = 0, R to
-    // R + r from the axis, area 2 pi r (pi R + 2 r)); otherwise both run the other way and the
-    // face is the inner half (R - r to R, area 2 pi r (pi R - 2 r)). Only face meshing reads it:
-    // the shell is stated closed although the half tube is not.
-    Witness_TorusBand(_: BrepModel, major: Number, minor: Number, outer: Boolean): BrepModel
-        => BrepModel(
-            GeometrySet(
-                [BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0 - minor)), major),
-                 BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, minor)), major)],
-                [],
-                [],
-                [BrepSurface.Torus(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), major, minor, TorusPart.Full)], []),
-            [BrepVertex(Point3D(major, 0.0, 0.0 - minor)), BrepVertex(Point3D(major, 0.0, minor))],
-            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true),
-             BrepEdge(BrepVertexIndex(1), BrepVertexIndex(1), CurveIndex(1), true)],
-            [BrepLoop.EdgeLoop([CoedgeOf(0, outer)]), BrepLoop.EdgeLoop([CoedgeOf(1, outer.Not)])],
-            [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, false), FaceBound(BrepLoopIndex(1), true, false)])],
-            [ClosedShellOf([0])],
-            [BrepBody.ManifoldSolid(ShellIndex(0))],
-            Tolerances.Witness_Tolerances,
-            LengthUnit.Metre);
 }

@@ -424,7 +424,9 @@ library UvRegions
 
     // The two winding loops a and b of a band pair as one loop that closes in
     // the plane. The cut runs straight in parameters from a's point `start`
-    // to the copy `end` of b's point nearest it (NearestPair); its interior
+    // to the copy `end` of b's point nearest it (NearestPair), on the face's
+    // side (BandEndCopy: on a torus band the copies across can be equally
+    // near, TKT-429); its interior
     // points split it into CutSegmentCount equal steps. The loop is: a from
     // start round to its continued copy start + D (D = a's displacement);
     // the far copy of the cut, its points SeamCut(far side, k) for k up; b
@@ -440,7 +442,7 @@ library UvRegions
         var j = pair % b.Points.Count;
         var d = m.LoopDisplacement(f, a);
         var start = a.Points[i];
-        var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);
+        var end = m.BandEndCopy(f, a, i, b, j);
         var n = m.CutSegmentCount(f, start, end, c);
         var far = d.U != 0.0 ? (d.U > 0.0 ? DomainSide.UMax : DomainSide.UMin) : (d.V > 0.0 ? DomainSide.VMax : DomainSide.VMin);
         var cut = (n - 1).MapRange(k => start.CutPoint(end, n, k + 1));
