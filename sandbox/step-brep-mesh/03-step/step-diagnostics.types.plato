@@ -64,6 +64,8 @@ type StepDiagnosticCode
     | ClosedEdgeVerticesMerged
     | ZeroLengthEdgeDropped
     | EdgeClosureUndecided
+    | CoedgeSenseFlipped
+    | EdgeReversedToChain
     | NestedOrientedEdge
     | TwoOuterBounds
     | ClosedShellHasFreeEdges

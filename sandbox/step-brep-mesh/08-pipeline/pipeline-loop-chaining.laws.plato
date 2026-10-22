@@ -1,5 +1,5 @@
 //==
-// # Edge loops re-chained: laws (track v1-edges, chunk E1, TKT-413 and TKT-419)
+// # Edge loops re-chained: laws (TKT-413 and TKT-419)
 //
 // Chaining leaves every positive witness's loops and edges as written. It restores a box loop
 // with any one coedge's sense flipped, and a pentagon loop with any one or two senses flipped,
@@ -8,13 +8,13 @@
 // arc coedge sense alone is wrong in one loop by a coedge flip. It keeps a loop no sense chains.
 // Through PrepareModel it restores the unit cube with one flipped coedge and the sector with
 // swapped arcs, reporting each change once. The laws read layer 7's witnesses and layer 3's
-// raw cube, so at merge they belong in layer 8.
+// raw cube, so they live in layer 8.
 //
 // Sections, in order:
 //  - Models
 //  - Laws
 
-library V1EdgesLoopChainingLaws
+library StepLoopChainingLaws
 {
     //==
     // # Models
@@ -182,18 +182,16 @@ library V1EdgesLoopChainingLaws
 
     // Through PrepareModel, the raw unit cube with coedge 1 of loop 0 flipped gives the loops of
     // the cube as written, with one STEP-COEDGE-SENSE-FLIPPED diagnostic measuring position 1; the
-    // cube as written gives none and the same loops as PrepareModel.
+    // cube as written gives none.
     Law_V1Edges_PrepareChainsFlippedCube(_: Integer): Boolean
     {
         var code = "STEP-COEDGE-SENSE-FLIPPED";
         var plain = RawDecodedModel.Witness_RawUnitCube.PrepareModel;
-        var chainedPlain = RawDecodedModel.Witness_RawUnitCube.PrepareModelChained;
-        var repaired = RawCubeWithFlip(0, 1).PrepareModelChained;
+        var repaired = RawCubeWithFlip(0, 1).PrepareModel;
         var flips = repaired.Diagnostics.FlatMap(d => d.Code == code ? [d] : repaired.Diagnostics.Take(0));
         return plain.Model.Loops.Count.Range.All(k =>
-                SameCoedges(repaired.Model.Loops[k].CoedgesOf, plain.Model.Loops[k].CoedgesOf)
-                && SameCoedges(chainedPlain.Model.Loops[k].CoedgesOf, plain.Model.Loops[k].CoedgesOf))
-            && chainedPlain.Diagnostics.CodeCount(code) == 0
+                SameCoedges(repaired.Model.Loops[k].CoedgesOf, plain.Model.Loops[k].CoedgesOf))
+            && plain.Diagnostics.CodeCount(code) == 0
             && flips.Count == 1
             && flips[0].Measure == 1.0;
     }

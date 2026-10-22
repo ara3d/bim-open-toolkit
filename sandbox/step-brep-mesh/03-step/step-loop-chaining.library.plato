@@ -1,5 +1,5 @@
 //==
-// # Edge loops re-chained (track v1-edges, chunk E1, TKT-413 and TKT-419)
+// # Edge loops re-chained (TKT-413 and TKT-419)
 //
 // Layer 3, a preparation repair. STEP requires an edge loop to chain head to tail (edge_loop WR1,
 // layer 2's Law_LoopsChainEndToStart): each oriented edge ends at the vertex the next one starts
@@ -26,15 +26,15 @@
 // loop that cites it wants that citation changed, so the reversal mends each of them and breaks
 // none; otherwise each change is a coedge flip.
 //
-// Runs after Reduced, which merges loop-joint vertices within the tolerance, so a loop whose gaps
+// PrepareModelWith runs LoopsChained after Reduced, which merges loop-joint vertices within the tolerance, so a loop whose gaps
 // are within the tolerance chains there first and is not re-sensed here.
 //
 // Sections, in order:
 //  - One loop
 //  - The model
-//  - Preparation
+//  - Reporting
 
-library V1EdgesLoopChaining
+library StepLoopChaining
 {
     //==
     // # One loop
@@ -180,21 +180,7 @@ library V1EdgesLoopChaining
         => m.WithEdgesReversed(m.EdgesToReverse).WithLoopsChained;
 
     //==
-    // # Preparation
-
-    // The diagnostic for coedge position i of an edge loop whose sense the chaining flipped: a
-    // warning at the loop's instance, Measure the position in the loop as written.
-    CoedgeSenseFlippedDiagnostic(where: Provenance, i: Integer): Diagnostic
-        => Diagnostic(Severity.Warning, "STEP-COEDGE-SENSE-FLIPPED",
-            "An oriented edge of this edge loop carries the sense that breaks the loop's head-to-tail chain; its sense was flipped so the loop chains.",
-            where, i.ToNumber);
-
-    // The diagnostic for an edge the chaining reversed: a warning at the edge's instance, Measure
-    // the number of loop citations the reversal mended.
-    EdgeReversedDiagnostic(where: Provenance, mended: Integer): Diagnostic
-        => Diagnostic(Severity.Warning, "STEP-EDGE-REVERSED",
-            "This edge's two vertices run against every loop that cites it; it was read with its vertices the other way round, which makes its arc the complementary one.",
-            where, mended.ToNumber);
+    // # Reporting
 
     // The number of coedges of m that cite edge e.
     CitationCount(m: BrepModel, e: Integer): Integer
@@ -211,32 +197,12 @@ library V1EdgesLoopChaining
         var turned = m.WithEdgesReversed(reversed);
         var chained = turned.WithLoopsChained;
         var reversals = m.Edges.Count.Range.FlatMap(e => reversed[e]
-            ? [EdgeReversedDiagnostic(Provenance.AtInstance(raw.Sources.Edges[e].Instance), m.CitationCount(e))]
+            ? [Diagnose(StepDiagnosticCode.EdgeReversedToChain, Provenance.AtInstance(raw.Sources.Edges[e].Instance), m.CitationCount(e).ToNumber)]
             : raw.Diagnostics.Take(0));
         var flips = m.Loops.Count.Range.FlatMap(l =>
             ChangedSensePositions(turned.Loops[l], chained.Loops[l]).Map(i =>
-                CoedgeSenseFlippedDiagnostic(Provenance.AtInstance(raw.Sources.Loops[l].Instance), i)));
+                Diagnose(StepDiagnosticCode.CoedgeSenseFlipped, Provenance.AtInstance(raw.Sources.Loops[l].Instance), i.ToNumber)));
         return RawDecodedModel(chained, raw.Occurrences, raw.Sources, raw.Folds, raw.Repairs, raw.Units,
             raw.LengthFactor, raw.AngleFactor, raw.Diagnostics.Concatenate(reversals).Concatenate(flips));
     }
-
-    // PrepareModelWith with the loops chained after the reduction repairs: its steps (1) to (4) as
-    // PrepareModelWith states, with LoopsChained between (2) and (3), so the orientation fold and
-    // the closure marks see chained loops.
-    PrepareModelWithChained(raw: RawDecodedModel, policy: DecodePolicy): DecodedModel
-    {
-        var size = raw.Model.ModelSize;
-        var extent = raw.Model.CoordinateExtent;
-        var tolerances = ModelTolerances(raw.Units.UsedContextsOf(raw.Occurrences), raw.Model.Unit, size, extent, policy);
-        var reduced = raw.WithModel(raw.Model.WithTolerances(tolerances)).Reduced.LoopsChained;
-        var folds = reduced.Folds.Concatenate(reduced.MirrorFolds);
-        var folded = reduced.Model.WithFacesReversedMarked(FoldParity(folds, reduced.Model.Faces.Count));
-        var model = folded.WithGeometry(folded.Geometry.WithClosures(folded.Geometry.ClosureMarks(tolerances)));
-        var map = ProvenanceMap(reduced.Occurrences, reduced.Sources, reduced.Sources.ByInstanceOrder, folds, reduced.Repairs);
-        return DecodedModel(model, map, reduced.Diagnostics.Concatenate(raw.ToleranceDiagnostics(tolerances, size, extent, policy)), size, extent);
-    }
-
-    // PrepareModel with the loops chained.
-    PrepareModelChained(raw: RawDecodedModel): DecodedModel
-        => raw.PrepareModelWithChained(DecodePolicy.StandardPolicy);
 }

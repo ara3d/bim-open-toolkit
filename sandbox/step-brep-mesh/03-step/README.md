@@ -32,6 +32,7 @@ P41, P42, P43 are ISO 10303-21, -41, -42, -43; AIM is the AP242 integrated schem
 | `step-schema-table.library.plato` | library | `StepSchemaTable` | `SupportedSchema`: the entity table, 225 entries (121 Decoded, 60 Ignored, 44 Unsupported) |
 | `step-where.library.plato` | library | `StepWhereRules` | the EXPRESS functions WHERE rules call, restated over a `Part21File` |
 | `step-diagnostics.library.plato` | library | `StepDiagnostics` | `Diagnose` (severity, code, message per code), `CodeOf`, `HasCode` |
+| `step-loop-chaining.library.plato` | library | `StepLoopChaining` | `LoopsChained` (run by `PrepareModelWith` after `Reduced`): an edge loop that does not chain head to tail is re-chained with the fewest sense changes, an arc on a wrapping curve written with its vertices the wrong way round is reversed (`STEP-EDGE-REVERSED`), any other change is a coedge flip (`STEP-COEDGE-SENSE-FLIPPED`); a loop no sense chains is kept (TKT-413, TKT-419) |
 | `step.library.plato` | library | `StepReading` | `DecodeBrep`, `DecodeBrepWith` (now `PrepareModelWith` of `DecodeRaw`), the host obligation `DecodeRaw`, `PrepareModel` and its parts, the policy, units and tolerance, occurrences, provenance queries |
 | `step-part21.laws.plato` | laws | `Part21ReadingLaws` | the file as data |
 | `step-schema.laws.plato` | laws | `StepSchemaModelLaws` | the table and a file's conformance to it |

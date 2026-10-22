@@ -695,6 +695,13 @@ TYPE-CATALOG.md sections 13 and 15; the README lists the helpers. Blocks `BrepRe
 
 Format: date, layer, old name, new name, reason.
 
+- 2026-10-22, 3, `StepDiagnosticCode` gains `CoedgeSenseFlipped` (`STEP-COEDGE-SENSE-FLIPPED`,
+  Warning, `AboutInstance`; Measure the coedge's position in its loop as written) and
+  `EdgeReversedToChain` (`STEP-EDGE-REVERSED`, Warning, `AboutInstance`; Measure the loop citations
+  mended); new library `StepLoopChaining` (`LoopsChained`, `WithLoopsRepaired`, `ChainedCoedges`,
+  `EdgesToReverse`, ...) and `PrepareModelWith` runs `LoopsChained` after `Reduced`: an edge loop
+  that does not chain head to tail is re-chained, reversing arcs written with their vertices the
+  wrong way round (TKT-413, TKT-419, E1).
 - 2026-10-22, 2, `ShellPolyEdges` gains `EdgeLow` and `EdgeHigh` (the two point classes of the
   implicit edge of each rank), and a use's key is the rank of its edge's pair of classes, not
   `a * N + b`; `ImplicitEdgeUseList` added (layer 2, the uses as three parallel arrays);
