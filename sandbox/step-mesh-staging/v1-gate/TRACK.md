@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1), V1G-11 in 8a30a057, V1G-12 in c82a14a7, V1G-13 in f0fd91a3 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change, V1G-15 in 87ca2e47, V1G-15w in 544b8967 | ready: V1G-15w (TKT-460), V1G-16 (TKT-464)
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1), V1G-11 in 8a30a057, V1G-12 in c82a14a7, V1G-13 in f0fd91a3 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change, V1G-15 in 87ca2e47, V1G-15w in 544b8967 | ready: V1G-15w (TKT-460), V1G-16 (TKT-464), V1G-17 (TKT-456)
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -25,6 +25,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-15 | TKT-460 | ODIN-W160 and W161's fillet flaps | 2 h |
 | V1G-15w | TKT-460 | a law over a witness cut from ODIN-W160's fillet | 0.5 h |
 | V1G-16 | TKT-464 | c211 face 339's fans left over the chordal bound | 2 h |
+| V1G-17 | TKT-456 | agreement laws for the live insertion passes; self-comparing agreement laws in layers 04 to 05 | 2 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -124,6 +125,12 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
   - Overlap: the change is to F2's guard (v1-faces' `insertion-clearance.library.plato`), not to `SurfacePassCarriedCounted`; it touches neither E4's seed functions nor P2's FoldAgainstBoundary reason.
   - Added after the first report: `ChangedAreThickV1`, the same rule for `ChangedAreThick`, the guard of TriangulationFast's `TryInsertion` (the Local reference of the insertion passes). Without it the live passes and the Local reference disagree on c211 face 339 once V1G-16 merges (V1G-17's agreement laws check this).
   - Thinness on the guard set (the supervisor's condition): the eight files with the same mesh digest have the same elements. On c211 the smallest triangle altitude over the file is unchanged (0.0036 mm, face 32, a face the rule does not touch), and two faces' smallest altitudes fall: face 339 from 0.050 to 0.044 (the triangle on its 0.05 mm segment, whose new apex is the split the chordal bound needs) and face 98 from 0.095 to 0.091; both stay above the 0.01 mm length tolerance, four and nine times over. No rule that splits face 339's fans can keep that segment's triangle at 0.050, since every such split moves its apex.
+- V1G-17 (TKT-456), about 1.5 h. Laws only.
+  - New, `v1-agreement.laws.plato` (`V1GateAgreementLaws`): `SurfacePassCarried`, `AnglePassCarried` and `TryInsertionIndexed`, the passes the mesher runs, against TriangulationFast's Local reference (`SurfacePassLocal`, `AnglePassLocal`, `TryInsertion`): the same triangulation point for point and triangle for triangle, carried positions on the surface, and the carried neighbour table equal to `NeighbourSlots` of the result; the trial at every triangle's off-centre, guarded and not. Each from the constrained triangulation and from the refined one. `Law_V1Gate_LivePassesAgree` (the 42 triangulated witnesses), `...OnStars` (14 plane star cases and the 13-hole region), `...OnC211Face339` (the V1G-16 witness under the host's options at 1 mm; the samples' criteria refine it past 120 s). `Law_V1Gate_DelaunayedIndexedAgreesWithScanned` and `...OnStars`: the indexed flips against `Delaunayed`, which scans the region for constraints, replacing laws that compared `TriangulateRegionCdt` with `CdtWithIndexedFlips`, a copy of its own body.
+  - The claims are conditionals, not `&&`: a disagreement in `&&` evaluated every operand and threw an index error instead of failing.
+  - Self-comparing conjuncts, each checked to be an alias at HEAD 93c60c6b: `RefineToSurfaceByInsertion` is `...Indexed` is `...Carried`; `TriangulateRegionCdt` is `TriangulateRegionCdtIndexed` (both `...IndexedCounted().Value`), and `CdtWithIndexedFlips` restates `...IndexedCounted`; `IsSimpleRegion` is `IsSimpleRegionIndexed`; `SelfIntersectionRequests` is `SelfIntersectionRequestsFrom` over `CollidingSegments`. Deleted or cut by the merge instructions below; the scripted edits are `v1g17_edits.py` in the session scratchpad, quoted there.
+  - Checks, compiled, budget 600 s, two `git archive` copies of 93c60c6b with V1G-16's files and this file. A, V1G-16 wired in full (`CavityIsThickV1` at both live call sites, `ChangedAreThickV1` in `TryInsertion`) and the deletions applied: 17 classes (V1GateAgreementLaws, BoundaryIndexLaws, TriangulationCdtIndexedLaws, UvRegionCollisionLaws, V1ThickLaws, InsertionBuiltLaws, FaceMeshingInsertionClearanceLaws, NeighboursCarriedLaws, TriangulationFastLaws, TriangulationLaws, FaceMeshingLaws, TriangulatedWitnessLaws, RefinementAttainableLaws, V1GateLaws, V1PlaneLaws, FaceMeshingEdgeOnMarksLaws, FaceMeshingGridChordalLaws), 112 laws, 112 pass. B, the live guard wired but not the Local one: `Law_V1Gate_LivePassesAgreeOnC211Face339` fails, the other four pass, so the law sees a live pass that drifts from its reference. HEAD with this file alone (warm server): the five pass.
+  - Not done: finding 6's laws in the other layers (00-01, 02, 07, 09, 11) and the orphan helpers it lists; TKT-456's second box names the whole list, so it stays open. The Built generation (finding 14a) stays until after version 1, as asked.
 
 ## Gate and quality: every law of layer 5
 
@@ -464,6 +471,12 @@ V1G-8 (TKT-429):
 - In `JoinedByCut` (05-face-meshing/uv-regions.library.plato): `var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);` => `var end = m.BandEndCopy(f, a, i, b, j);`, and the function's comment says the cut ends at "the copy of b's point nearest it on the face's side (BandEndCopy)".
 - Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
 
+V1G-17 (TKT-456), with or after V1G-16 (the c211 law reads V1G-16's witness and needs both guards changed):
+- Move `v1-agreement.laws.plato` to `05-face-meshing/insertion-live-agreement.laws.plato` (library `V1GateAgreementLaws`).
+- `05-face-meshing/uv-boundary-index.laws.plato`: delete `CdtWithIndexedFlips`, `Law_DelaunayedIndexedAgrees`, `Law_DelaunayedIndexedAgreesOnStars`, `Law_RefineIndexedAgrees`, `RefineIndexedAgreesOnPlane` and `Law_RefineIndexedAgreesOnStars`; `Law_ThirteenHolesAgree` keeps only `r.ConstrainedAgreesOn(r.TriangulateRegionCdt(PlaneChart(0)))`, its comment saying the flips and refinement are V1GateAgreementLaws'.
+- `05-face-meshing/triangulation-cdt-indexed.laws.plato`: `CdtIndexedAgreesOn` and `Law_TriangulateRegionCdtIndexedAgrees` keep only their `CdtSeedAgreesOn` half; their comments say the triangulation is not compared because it is the same function.
+- `08-pipeline/pipeline-collide.laws.plato`: drop the `IsSimpleRegionIndexed(tol) == IsSimpleRegion(tol)` conjuncts from `Law_CollidingSegmentsAgrees`, `Law_CollidingSegmentsAgreesOnCatalog` and `FaceCollisionsAgree`, and the `SameRequests(SelfIntersectionRequestsFrom, SelfIntersectionRequests)` conjunct from `FaceCollisionsAgree`; then delete `SameRequests`, which has no caller left. Comments follow.
+
 V1G-16 (TKT-464):
 - `CavityIsThick` and `ChangedAreThick` (05-face-meshing/insertion-clearance.library.plato) take `CavityIsThickV1`'s and `ChangedAreThickV1`'s bodies, and `ThinBoundOf` and `IsThickTriangle` (v1-thick.library.plato) move into that file's Thickness section; delete the two V1 functions. `ChangedAreThick`'s caller, `TryInsertion` (triangulation-fast.library.plato), stays as it is. Its callers, `TryInsertionIndexed` (triangulation-built-indexed.library.plato) and `TryInsertionInto` (triangulation-built.library.plato), stay as they are. The file header's sentence on the rule then reads: every triangle its insertion writes reaches ThinBound or half its shortest side (at least two tolerances), or the cavity is thicker than the triangles it replaces. (The checked copy instead renamed the two call sites to `CavityIsThickV1`; the same behaviour.)
 - Move `corpus-witness-c211-339.library.plato` to `08-pipeline/pipeline-corpus-witness-c211-339.library.plato`, and `v1-thick.laws.plato` to `05-face-meshing/insertion-clearance-v1.laws.plato` (library `V1ThickLaws`). The c211 law takes about 1.5 s.
@@ -571,6 +584,10 @@ V1G-5 (triage):
 | V1G-16: patched generated C# (trial), regeneration of 612400ae, two harness builds | 21 s, 9 min background, 1 min | 1 regeneration, 3 builds |
 | V1G-16: guard set, 9 files on two builds | 17 min, background | 18 |
 | V1G-16: laws, two fresh compiled copies, 127 laws each | 2.3 and 4 min, background | 2 |
+| V1G-16 addendum: c211 smallest altitudes on both builds | 12 min, background | 2 |
+| V1G-17: reading the findings, aliases, the Local and Carried passes | 25 min | 0 |
+| V1G-17: agreement laws on HEAD (warm; the c211 law hit 120 s at the samples' criteria, then 33 s at 1 mm) | 5 min and 1.3 min | 2 |
+| V1G-17: two checked copies, fresh compiles, then reruns of the agreement laws | 6 min background, 2.5 min | 4 |
 
 ## Lessons
 - `step-corpus-harness extract` with a ring of 0 gives a one-face model that a probe reaches in seconds (parse, prepare, SubModel, host discretization, then the library's own steps), where the whole c211 file took 6 minutes a run; extract once, then probe the witness.

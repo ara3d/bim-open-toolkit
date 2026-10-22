@@ -1,0 +1,158 @@
+//==
+// # The live insertion passes agree with the Local reference (TKT-456)
+//
+// The mesher refines through SurfacePassCarried, AnglePassCarried and their trial
+// TryInsertionIndexed (triangulation-neighbours-carried.library.plato,
+// triangulation-built-indexed.library.plato). Until now the only agreement laws on the insertion
+// passes compared the Built generation with the Local one (InsertionBuiltLaws), neither of which
+// the mesher runs. These laws compare the live forms with TriangulationFast's Local reference
+// (SurfacePassLocal, AnglePassLocal, TryInsertion), which rebuilds its neighbour table from
+// scratch, scans the region for every boundary and inside test and holds no positions: the same
+// triangulation point for point and triangle for triangle, the carried positions on the
+// surface, and the carried neighbour table equal to NeighbourSlots of the result. Each claim runs
+// from a constrained triangulation and from a refined one (interior points), on the triangulated
+// witnesses, the plane stars and the 13-hole region, and on c211 face 339, whose off-centres
+// fall outside the face and whose fallbacks reach the thickness guard (TKT-464). Two flip claims
+// replace laws that compared TriangulateRegionCdt with a copy of itself: the indexed flips
+// against Delaunayed, which reads the region's constraints by scanning.
+//
+// Sections, in order:
+//  - Pass and trial claims
+//  - Flip claims
+//  - Laws
+
+library V1GateAgreementLaws
+{
+    //==
+    // # Pass and trial claims
+
+    // SurfacePassCarried from t (positioned, with its table built from scratch) gives
+    // SurfacePassLocal's triangulation under the triangles NeedsRefinement marks, positions on
+    // face f's surface, and a table equal to NeighbourSlots of its triangles.
+    SurfacePassCarriedAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): Boolean
+    {
+        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
+        var surface = m.NeedsRefinement(f, r, t, [false].Take(0), c);
+        var x = r.BoundaryIndexOf(m.RegionTolerance(f, chart));
+        var carried = m.SurfacePassCarried(f, x, chart, least, m.Positioned(f, t).WithNeighbourTable, surface);
+        var u = carried.Positioned.Triangulation;
+        return SameUvTriangulation(u, m.SurfacePassLocal(f, r, chart, t, surface, c))
+            ? (m.HoldsItsPositions(f, carried.Positioned) && SameSlots(carried.Neighbours, NeighbourSlots(u.Triangles, u.Points.Count)))
+            : false;
+    }
+
+    // AnglePassCarried from t gives AnglePassLocal's triangulation over the triangles below the
+    // angle, positions on the surface, and the table NeighbourSlots builds.
+    AnglePassCarriedAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): Boolean
+    {
+        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
+        var bad = m.BelowAngleKnown(f, t, [false].Take(0), [false].Take(0));
+        var x = r.BoundaryIndexOf(m.RegionTolerance(f, chart));
+        var carried = m.AnglePassCarried(f, x, chart, least, m.Positioned(f, t).WithNeighbourTable, bad);
+        var u = carried.Positioned.Triangulation;
+        return SameUvTriangulation(u, m.AnglePassLocal(f, r, chart, t, bad, c))
+            ? (m.HoldsItsPositions(f, carried.Positioned) && SameSlots(carried.Neighbours, NeighbourSlots(u.Triangles, u.Points.Count)))
+            : false;
+    }
+
+    // The trial of the off-centre of triangle k of t, with the guard `guarded`: TryInsertionIndexed
+    // keeps the point exactly when TryInsertion does, its writes give TryInsertion's triangles,
+    // its neighbour writes give NeighbourSlots of them, and it evaluates the surface at most once,
+    // exactly once for a kept point.
+    TrialIndexedAgreesAt(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, k: Integer, guarded: Boolean, c: FaceMeshingCriteria): Boolean
+    {
+        var points = t.Points.Map(z => chart.ChartPoint(z));
+        var nb = NeighbourSlots(t.Triangles, t.Points.Count);
+        var uv = chart.OffCentre(points, t.Triangles[k]);
+        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
+        var after = m.TryInsertion(f, r, chart, t.Points, points, t.Triangles, nb, k, uv, least, guarded);
+        var pointsIn = new List<Point2D>().AddRange(points);
+        var posIn = new List<Point3D>().AddRange(m.Positioned(f, t).Positions);
+        var trisIn = new List<TriangleFace>().AddRange(t.Triangles);
+        var nbIn = new List<Integer>().AddRange(nb);
+        var x = m.TryInsertionIndexed(f, r.BoundaryIndexOf(m.RegionTolerance(f, chart)), chart, least, guarded, k, uv, pointsIn, posIn, trisIn, nbIn);
+        var tris = x.WithTriangles(trisIn).Freeze();
+        // Conditionals, not &&, which evaluates every operand: when the verdicts differ, the
+        // table NeighbourSlots builds over the wrong point count indexes past its end.
+        return x.Kept == (after.Count > t.Triangles.Count)
+            ? ((x.Kept ? x.Evaluations == 1 : x.Evaluations <= 1)
+                ? (SameTriangles(tris, after) ? SameSlots(x.WithNeighbours(nbIn).Freeze(), NeighbourSlots(after, t.Points.Count + (x.Kept ? 1 : 0))) : false)
+                : false)
+            : false;
+    }
+
+    // TrialIndexedAgreesAt at every triangle of t, unguarded and guarded.
+    TrialsIndexedAgreeOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): Boolean
+        => t.Triangles.Count.Range.All(k => m.TrialIndexedAgreesAt(f, r, chart, t, k, false, c) && m.TrialIndexedAgreesAt(f, r, chart, t, k, true, c));
+
+    // The three claims under criteria c from the constrained triangulation of region r and from
+    // its refinement.
+    LivePassesAgreeOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, c: FaceMeshingCriteria): Boolean
+    {
+        var t = r.TriangulateRegionCdt(chart);
+        var refined = m.RefineToSurfaceByInsertion(f, r, chart, t, c);
+        return m.SurfacePassCarriedAgreesOn(f, r, chart, t, c) && m.SurfacePassCarriedAgreesOn(f, r, chart, refined, c)
+            && m.AnglePassCarriedAgreesOn(f, r, chart, t, c) && m.AnglePassCarriedAgreesOn(f, r, chart, refined, c)
+            && m.TrialsIndexedAgreeOn(f, r, chart, t, c) && m.TrialsIndexedAgreeOn(f, r, chart, refined, c);
+    }
+
+    // LivePassesAgreeOn region r moved into the unit square, on the unit box's plane face 0.
+    LivePassesAgreeOnPlane(r: UvRegion): Boolean
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var q = UnitSquareRegion(r);
+        return m.LivePassesAgreeOn(BrepFaceIndex(0), q, m.ChartOf(BrepFaceIndex(0), q), TriCriteria(0));
+    }
+
+    //==
+    // # Flip claims
+
+    // TriangulateRegionCdtIndexedCounted's triangulation with the scanning Delaunayed in place of
+    // DelaunayedIndexed: the same seed and point holes, the constraints read by
+    // UvRegion.IsConstrained instead of the NextBoundaryTable.
+    CdtWithScannedFlips(r: UvRegion, chart: FaceChart): UvTriangulation
+    {
+        var points = r.BoundaryPoints.Map(uv => chart.ChartPoint(uv));
+        var seed = r.CdtSeedIndexedCounted(points);
+        var pointHoles = r.Holes.Count.Range.FlatMap(h =>
+            r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : [h].Take(0));
+        var triangles = r.Delaunayed(points, pointHoles.Reduce(seed.Value, (ts, p) => ts.WithPointInserted(p, points)));
+        return UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
+    }
+
+    //==
+    // # Laws
+
+    // On every triangulated witness, the live passes and trial agree with the Local reference.
+    Law_V1Gate_LivePassesAgree(w: TriangulatedWitness): Boolean
+        => w.Model.LivePassesAgreeOn(w.Face, w.Region, w.Chart, TriCriteria(0));
+
+    // On star case k % 5 and the 13-hole region, as regions of the unit box's plane face 0 (the
+    // angle pass tries points near every hole), the live passes and trial agree.
+    Law_V1Gate_LivePassesAgreeOnStars(k: Integer): Boolean
+        => LivePassesAgreeOnPlane(StarCase(k % 5)) && (k % 5 == 0 ? LivePassesAgreeOnPlane(HolesRegion(13)) : true);
+
+    // On c211 face 339 (Witness_C211CaseWithOdinV1Face339, a quarter cylinder with a 0.05 mm
+    // boundary segment), its region under the host's options at a 1 mm bound, the live passes and
+    // trial agree under those options (the samples' criteria refine it past the law budget).
+    Law_V1Gate_LivePassesAgreeOnC211Face339(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_C211CaseWithOdinV1Face339;
+        var f = BrepFaceIndex(0);
+        var c = HostMeshingOptions(1.0).Face;
+        var r = m.RegionOf(f, m.TriDiscretizations, c);
+        return m.LivePassesAgreeOn(f, r, m.ChartOf(f, r), c);
+    }
+
+    // On every triangulated witness, the indexed flips give the scanning flips' triangulation,
+    // which is the witness's constrained triangulation.
+    Law_V1Gate_DelaunayedIndexedAgreesWithScanned(w: TriangulatedWitness): Boolean
+        => SameTriangulation(w.Cdt, w.Region.CdtWithScannedFlips(w.Chart));
+
+    // On star case k, jagged case k and (at k = 0) the 13-hole region, the indexed flips give the
+    // scanning flips' triangulation.
+    Law_V1Gate_DelaunayedIndexedAgreesWithScannedOnStars(k: Integer): Boolean
+        => SameTriangulation(StarCase(k).TriangulateRegionCdt(PlaneChart(0)), StarCase(k).CdtWithScannedFlips(PlaneChart(0)))
+            && SameTriangulation(JaggedCase(k).TriangulateRegionCdt(PlaneChart(0)), JaggedCase(k).CdtWithScannedFlips(PlaneChart(0)))
+            && (k == 0 ? SameTriangulation(HolesRegion(13).TriangulateRegionCdt(PlaneChart(0)), HolesRegion(13).CdtWithScannedFlips(PlaneChart(0))) : true);
+}
