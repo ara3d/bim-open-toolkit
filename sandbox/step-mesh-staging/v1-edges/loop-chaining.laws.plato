@@ -1,0 +1,213 @@
+//==
+// # Edge loops re-chained: laws (track v1-edges, chunk E1, TKT-413 and TKT-419)
+//
+// Chaining leaves every positive witness's loops and edges as written. It restores a box loop
+// with any one coedge's sense flipped, and a pentagon loop with any one or two senses flipped,
+// by coedge flips (lines). It restores a cylinder sector whose two arcs were written with their
+// vertices swapped by reversing the arcs, the MAYA pattern of TKT-413 and TKT-419, and one whose
+// arc coedge sense alone is wrong in one loop by a coedge flip. It keeps a loop no sense chains.
+// Through PrepareModel it restores the unit cube with one flipped coedge and the sector with
+// swapped arcs, reporting each change once. The laws read layer 7's witnesses and layer 3's
+// raw cube, so at merge they belong in layer 8.
+//
+// Sections, in order:
+//  - Models
+//  - Laws
+
+library V1EdgesLoopChainingLaws
+{
+    //==
+    // # Models
+
+    // The same coedges: one count, and at every position the same edge in the same sense.
+    SameCoedges(a: Array<Coedge>, b: Array<Coedge>): Boolean
+        => a.Count == b.Count
+            ? a.Count.Range.All(i => a[i].Edge == b[i].Edge && a[i].IsForward == b[i].IsForward)
+            : false;
+
+    // The coedges with the sense of every position i flipped whose bit i is set in mask.
+    WithSensesFlipped(coedges: Array<Coedge>, mask: Integer): Array<Coedge>
+        => coedges.Count.MapRange(i => (mask / (2.Power(i))) % 2 == 1 ? coedges[i].FlippedCoedge : coedges[i]);
+
+    // 2 to the power k, for k >= 0.
+    Power(b: Integer, k: Integer): Integer
+        => k.Range.Reduce(1, (p, i) => p * b);
+
+    // The number of bits set in mask, for mask >= 0 below 2^16.
+    BitCount(mask: Integer): Integer
+        => 16.Range.Reduce(0, (n, i) => n + (mask / (2.Power(i))) % 2);
+
+    // A pentagon of five vertices on the unit circle and five edges, edge k between vertices k and
+    // k + 1 mod 5, stored from k to k + 1 when k is even and from k + 1 to k when k is odd, all on
+    // curve 0, a line (chaining reads only whether a curve wraps). Its one loop runs 0, 1, 2, 3, 4: forward on the even
+    // edges, reversed on the odd ones, so it chains. No face, shell or body.
+    Pentagon(_: BrepModel): BrepModel
+        => BrepModel(
+            GeometrySet([LineBetween(Point3D(0.0, 0.0, 0.0), Point3D(1.0, 0.0, 0.0))], [], [], [], []),
+            5.MapRange(k => BrepVertex(Point3D((1.2566370614359172 * k.ToNumber).Cos, (1.2566370614359172 * k.ToNumber).Sin, 0.0))),
+            5.MapRange(k => k % 2 == 0
+                ? BrepEdge(BrepVertexIndex(k), BrepVertexIndex((k + 1) % 5), CurveIndex(0), true)
+                : BrepEdge(BrepVertexIndex((k + 1) % 5), BrepVertexIndex(k), CurveIndex(0), true)),
+            [BrepLoop.EdgeLoop(BrepModel.PentagonCoedges)],
+            [], [], [],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    // The pentagon's chained coedges.
+    PentagonCoedges(_: BrepModel): Array<Coedge>
+        => 5.MapRange(k => Coedge(BrepEdgeIndex(k), k % 2 == 0 ? EdgeOrientation.Forward : EdgeOrientation.Reversed));
+
+    // The raw unit cube with the sense of coedge i of loop l flipped.
+    RawCubeWithFlip(l: Integer, i: Integer): RawDecodedModel
+    {
+        var raw = RawDecodedModel.Witness_RawUnitCube;
+        var m = raw.Model;
+        var loops = m.Loops.Count.MapRange(k => k == l
+            ? BrepLoop.EdgeLoop(m.Loops[k].CoedgesOf.WithSensesFlipped(2.Power(i)))
+            : m.Loops[k]);
+        return raw.WithModel(BrepModel(m.Geometry, m.Vertices, m.Edges, loops, m.Faces, m.Shells, m.Bodies, m.Tolerances, m.Unit));
+    }
+
+    // The cylinder sector of radius 1, height 1 and sweep 1 radian (layer 7's CylinderSector) with
+    // the vertices of its two arcs, edges 1 and 4, swapped: each arc then runs 2 pi - 1 radians,
+    // and the four loops that cite them (the caps and the curved patch) no longer chain.
+    SectorWithArcsSwapped(_: BrepModel): BrepModel
+    {
+        var m = BrepModel.Witness_Cylinder(1.0, 1.0, Angle(1.0));
+        return m.WithEdgesReversed(m.Edges.Count.MapRange(k => k == 1 || k == 4));
+    }
+
+    // The same edges: one count, and at every position the same vertices, curve and sense.
+    SameEdges(a: Array<BrepEdge>, b: Array<BrepEdge>): Boolean
+        => a.Count == b.Count
+            ? a.Count.Range.All(k => a[k].Start == b[k].Start && a[k].End == b[k].End
+                && a[k].Curve == b[k].Curve && a[k].SameSense == b[k].SameSense)
+            : false;
+
+    // The same loops, coedge for coedge.
+    SameLoops(a: Array<BrepLoop>, b: Array<BrepLoop>): Boolean
+        => a.Count == b.Count ? a.Count.Range.All(k => SameCoedges(a[k].CoedgesOf, b[k].CoedgesOf)) : false;
+
+    // The raw unit cube with its model replaced by m: the cube's occurrences and sources, whose
+    // tables have a row for every vertex, edge and loop index of the cylinder sector.
+    RawSector(m: BrepModel): RawDecodedModel
+    {
+        var raw = RawDecodedModel.Witness_RawUnitCube;
+        return raw.WithModel(m);
+    }
+
+    // The number of diagnostics with the given code.
+    CodeCount(ds: Array<Diagnostic>, code: String): Integer
+        => ds.Reduce(0, (n, d) => d.Code == code ? n + 1 : n);
+
+    //==
+    // # Laws
+
+    // Every edge loop of every positive witness already chains and is left exactly as written.
+    Law_V1Edges_ChainingKeepsChainedLoops(_: Integer): Boolean
+        => BrepModel.WitnessCount.Range.All(k =>
+            BrepModel.WitnessAt(k).IsEveryIndexInRange
+                ? BrepModel.WitnessAt(k).Loops.All(l => SameCoedges(BrepModel.WitnessAt(k).ChainedLoop(l).CoedgesOf, l.CoedgesOf))
+                : true);
+
+    // On the unit box, a loop with any one coedge's sense flipped is chained back to the loop as
+    // written: 6 loops, 4 positions.
+    Law_V1Edges_ChainingRestoresOneFlip(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_UnitBox;
+        return m.Loops.All(l => l.CoedgesOf.Count.Range.All(i =>
+            SameCoedges(m.ChainedCoedges(l.CoedgesOf.WithSensesFlipped(2.Power(i))), l.CoedgesOf)));
+    }
+
+    // On the pentagon, every set of one or two flipped senses (15 sets, the MAYA loop's two
+    // non-adjacent circles among them) is chained back to the loop as written, and the chained
+    // loop differs from the flipped one at exactly the flipped positions.
+    Law_V1Edges_ChainingRestoresPentagon(_: Integer): Boolean
+    {
+        var m = BrepModel.Pentagon;
+        var written = BrepModel.PentagonCoedges;
+        return 32.Range.All(mask => mask.BitCount == 0 || mask.BitCount > 2 ? true
+            : SameCoedges(m.ChainedCoedges(written.WithSensesFlipped(mask)), written)
+                && ChangedSensePositions(BrepLoop.EdgeLoop(written.WithSensesFlipped(mask)), BrepLoop.EdgeLoop(written)).Count == mask.BitCount);
+    }
+
+    // Every edge and loop of every positive witness is left exactly as written by the whole
+    // repair, reversals included.
+    Law_V1Edges_RepairKeepsWitnesses(_: Integer): Boolean
+        => BrepModel.WitnessCount.Range.All(k =>
+            BrepModel.WitnessAt(k).IsEveryIndexInRange
+                ? SameEdges(BrepModel.WitnessAt(k).WithLoopsRepaired.Edges, BrepModel.WitnessAt(k).Edges)
+                    && SameLoops(BrepModel.WitnessAt(k).WithLoopsRepaired.Loops, BrepModel.WitnessAt(k).Loops)
+                : true);
+
+    // The sector whose arcs were written with their vertices swapped is repaired by reversing
+    // exactly those two arcs, back to the sector as built, with no coedge flipped.
+    Law_V1Edges_RepairReversesSwappedArcs(_: Integer): Boolean
+    {
+        var sector = BrepModel.Witness_Cylinder(1.0, 1.0, Angle(1.0));
+        var broken = BrepModel.SectorWithArcsSwapped;
+        var reversed = broken.EdgesToReverse;
+        var repaired = broken.WithLoopsRepaired;
+        return broken.Loops.Any(l => broken.ChainsEndToStart(l).Not)
+            && reversed.Count.Range.All(k => reversed[k] == (k == 1 || k == 4))
+            && SameEdges(repaired.Edges, sector.Edges)
+            && SameLoops(repaired.Loops, sector.Loops);
+    }
+
+    // On the sector with the sense of the bottom arc's coedge flipped in the curved patch's loop
+    // only, the bottom cap's loop still chains with the arc as written, so the arc is not
+    // reversed; the coedge is flipped back.
+    Law_V1Edges_RepairFlipsArcCoedgeWhenAnotherLoopChains(_: Integer): Boolean
+    {
+        var sector = BrepModel.Witness_Cylinder(1.0, 1.0, Angle(1.0));
+        var loops = sector.Loops.Count.MapRange(l => l == 2
+            ? BrepLoop.EdgeLoop(sector.Loops[l].CoedgesOf.WithSensesFlipped(1))
+            : sector.Loops[l]);
+        var broken = BrepModel(sector.Geometry, sector.Vertices, sector.Edges, loops, sector.Faces,
+            sector.Shells, sector.Bodies, sector.Tolerances, sector.Unit);
+        var repaired = broken.WithLoopsRepaired;
+        return broken.EdgesToReverse.All(r => r == false)
+            && SameEdges(repaired.Edges, sector.Edges)
+            && SameLoops(repaired.Loops, sector.Loops);
+    }
+
+    // A loop that no choice of senses chains (pentagon edges 0 and 2, which share no vertex) is
+    // left as written.
+    Law_V1Edges_ChainingKeepsUnchainableLoop(_: Integer): Boolean
+    {
+        var m = BrepModel.Pentagon;
+        var broken = [Coedge(BrepEdgeIndex(0), EdgeOrientation.Forward), Coedge(BrepEdgeIndex(2), EdgeOrientation.Forward)];
+        return SameCoedges(m.ChainedCoedges(broken), broken);
+    }
+
+    // Through PrepareModel, the raw unit cube with coedge 1 of loop 0 flipped gives the loops of
+    // the cube as written, with one STEP-COEDGE-SENSE-FLIPPED diagnostic measuring position 1; the
+    // cube as written gives none and the same loops as PrepareModel.
+    Law_V1Edges_PrepareChainsFlippedCube(_: Integer): Boolean
+    {
+        var code = "STEP-COEDGE-SENSE-FLIPPED";
+        var plain = RawDecodedModel.Witness_RawUnitCube.PrepareModel;
+        var chainedPlain = RawDecodedModel.Witness_RawUnitCube.PrepareModelChained;
+        var repaired = RawCubeWithFlip(0, 1).PrepareModelChained;
+        var flips = repaired.Diagnostics.FlatMap(d => d.Code == code ? [d] : repaired.Diagnostics.Take(0));
+        return plain.Model.Loops.Count.Range.All(k =>
+                SameCoedges(repaired.Model.Loops[k].CoedgesOf, plain.Model.Loops[k].CoedgesOf)
+                && SameCoedges(chainedPlain.Model.Loops[k].CoedgesOf, plain.Model.Loops[k].CoedgesOf))
+            && chainedPlain.Diagnostics.CodeCount(code) == 0
+            && flips.Count == 1
+            && flips[0].Measure == 1.0;
+    }
+
+    // Through LoopsChained, the sector with swapped arcs gets its arcs back and two
+    // STEP-EDGE-REVERSED diagnostics, each measuring the two loop citations it mended, and no
+    // coedge flip.
+    Law_V1Edges_LoopsChainedReportsReversals(_: Integer): Boolean
+    {
+        var raw = RawSector(BrepModel.SectorWithArcsSwapped).LoopsChained;
+        var reversals = raw.Diagnostics.FlatMap(d => d.Code == "STEP-EDGE-REVERSED" ? [d] : raw.Diagnostics.Take(0));
+        return SameEdges(raw.Model.Edges, BrepModel.Witness_Cylinder(1.0, 1.0, Angle(1.0)).Edges)
+            && reversals.Count == 2
+            && reversals.All(d => d.Measure == 2.0)
+            && raw.Diagnostics.CodeCount("STEP-COEDGE-SENSE-FLIPPED") == 0;
+    }
+}

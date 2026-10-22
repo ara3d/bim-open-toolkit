@@ -1,13 +1,15 @@
 ---
 id: TKT-419
 title: STEP mesher: an edge whose two vertices are written against its loop's vertex chain turns a 9.6 degree arc into a 350 degree one, and 27 MAYA plane faces cross themselves
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 53a578f9
+session: 53a578f9-98e0-45c4-bc66-a8c1cacb3bae
 fence: [sandbox/step-brep-mesh/03-step/**, sandbox/step-brep-mesh/11-repair/**]
 workflow: [W3]
 related: [TKT-412, TKT-413]
 created: 2026-10-22
+claimed: 2026-10-22
 kind: defect
 ---
 
