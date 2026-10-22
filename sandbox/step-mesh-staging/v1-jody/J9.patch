@@ -635,7 +635,7 @@ index 43b50c8..2388be0 100644
      // The state before refinement for discretizations d and face outcomes made by the caller (the
      // host meshes its first pass on every core): round 0, no floors, the blocking requests of every
 diff --git a/sandbox/step-brep-mesh/VOCABULARY.md b/sandbox/step-brep-mesh/VOCABULARY.md
-index 4c60462..b42f788 100644
+index 4c60462..ab33702 100644
 --- a/sandbox/step-brep-mesh/VOCABULARY.md
 +++ b/sandbox/step-brep-mesh/VOCABULARY.md
 @@ -415,8 +415,10 @@ layer's own and may change inside the layer.
@@ -651,15 +651,17 @@ index 4c60462..b42f788 100644
  - `EdgeRefinementRequest { Edge: BrepEdgeIndex; Reason: RefinementReason; Chordal: Number; Segments: Integer }`.
  - `Discretize(m, e, c, floors)`, `DiscretizeAll(m, c, floors)` (total: `Undiscretized` for a
    rejected edge), `Refine(m, d, requests, c)` (only the requested edges change),
-@@ -1026,3 +1028,11 @@ the name review. One line per change; the layer READMEs' "Changes to the contrac
+@@ -1026,3 +1028,13 @@ the name review. One line per change; the layer READMEs' "Changes to the contrac
    `SameConnectivity`, `RigidlyMoved`, `ScaledPoint`, `ScaledBy(m)`, `SameFaceMesh`,
    `SameFaceMeshOutcome`, `Law_RequestsNameEdgesOfTheirFace` deleted for their owners' (fix wave);
    `WithEveryFaceReversed` and the criteria `ScaledBy`s deleted or moved down (name review).
 +- 2026-10-22, 4, 5 and 8, `RefinementReason` gains `FoldAgainstBoundary`: a triangle that still
 +  folds after refinement with a side on a boundary segment asks for that edge to be split into
 +  twice its segments (layer 5's `FoldRequestsOf`, `face-meshing-fold-requests.library.plato`;
-+  diagnostic FACE-FOLD-AGAINST-BOUNDARY). It keeps the face's mesh (`IsBlocking` false), and the
-+  host's loop answers it: (new) `IsAnsweredByHost(reason)` is `IsBlocking` or the fold, and layer
-+  8's `BlockingRequests`, which `BlockingStateOf` and `BlockingOnly` read, keeps the requests it
-+  accepts. `ReasonName`, `IsBlocking` and `RequestDiagnostic` gain the arm (v1-jody J9, after
++  diagnostic FACE-FOLD-AGAINST-BOUNDARY). Two properties of a reason are now distinct: blocking
++  (`IsBlocking`) withholds the face's mesh until the request is answered; answered by the host
++  ((new) `IsAnsweredByHost`) keeps the request pending in the host's loop. Every blocking reason is
++  answered by the host; FoldAgainstBoundary is answered but not blocking, so a fold the rounds
++  cannot resolve keeps its mesh rather than becoming a hole. Layer 8's `BlockingRequests`, which
++  `BlockingStateOf` and `BlockingOnly` read, keeps the requests the host answers. `ReasonName`, `IsBlocking` and `RequestDiagnostic` gain the arm (v1-jody J9, after
 +  v1-faces' P2; v1-edges' `SplitAt` (E5c) goes beside it).
