@@ -1,7 +1,7 @@
 # v1-jody: small closed B-spline loops of the M2-JODY-W377 files discretized and meshed
 
 Ticket: TKT-431, TKT-453
-Status: ready: J1, J2, J3, J4
+Status: merged: J1 in 8af85727 | ready: J2, J3, J4
 
 ## Chunks
 
