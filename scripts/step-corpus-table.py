@@ -32,7 +32,7 @@ BEGIN, END = '<!-- step-corpus-table:begin -->', '<!-- step-corpus-table:end -->
 STAGES = ['ParseMs', 'DecodeMs', 'PrepareMs', 'TablesMs', 'EdgesMs', 'FacesMs', 'RefineMs', 'AssembleMs']
 CSV_COLUMNS = [
     'file', 'status', 'outcome', 'process_ms', 'total_ms', 'parse_ms', 'decode_ms', 'prepare_ms', 'tables_ms',
-    'edges_ms', 'faces_ms', 'refine_ms', 'assemble_ms', 'faces', 'faces_meshed', 'faces_threw', 'edges',
+    'edges_ms', 'faces_ms', 'refine_ms', 'assemble_ms', 'contract_ms', 'faces', 'faces_meshed', 'faces_threw', 'edges',
     'edges_threw', 'mesh_vertices', 'mesh_triangles', 'mesh_quads', 'hash', 'closed', 'oriented', 'boundary_edges',
     'nonmanifold_edges', 'misoriented_edges', 'closed_shells_closed', 'closed_shells', 'boundary_open_shell',
     'boundary_edge_cited_once', 'boundary_beside_unmeshed_face', 'boundary_gap', 'boundary_inside_face', 'contract', 'over_chordal', 'flipped', 'degenerate', 'unexplained',
@@ -143,6 +143,7 @@ def per_file(files, previous):
                        unexplained=field(r'unexplained (\d+)', con, int), worst_excess=field(r'worst-excess (\S+)', con),
                        cause='; '.join(f'{k} {v}' for k, v in sorted(why.items())),
                        closed_shells_closed=s.get('ClosedShellsClosed', ''),
+                       contract_ms=round(s['ContractMs']) if s.get('ContractMs') is not None else '',
                        closed_shells=field(r'closed shells (\d+/\d+)', s.get('Boundary')),
                        **{col: field(cause + r' (\d+)', s.get('Boundary'), int) for cause, col in CAUSES.items()},
                        **{k[:-2].lower() + '_ms': round(s.get(k, 0)) for k in STAGES})
@@ -166,6 +167,7 @@ def summary(files, rows, previous):
            + " (open shell and edge cited once are the file's; the others are the mesher's).",
            f"- Process time {sum(r['process_ms'] for r in rows) / 1000:,.1f} s; warm stages (s): "
            + ', '.join(f"{k[:-2].lower()} {sum(r['summary'].get(k, 0) for r in files if r['summary']) / 1000:,.1f}" for k in STAGES)
+           + f"; contract check {sum(r['summary'].get('ContractMs') or 0 for r in files if r['summary']) / 1000:,.1f}"
            + f"; warm median {statistics.median([r['total_ms'] for r in done]) / 1000 if done else 0:.2f} s.",
            f"- Face paths: {dict(Counter(f['path'] for r in files for f in r['faces'] or []))}."]
     curves = defaultdict(Counter)
