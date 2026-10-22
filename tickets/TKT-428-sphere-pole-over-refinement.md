@@ -1,14 +1,16 @@
 ---
 id: TKT-428
 title: STEP mesher: sphere faces over-refine near their poles, 14,500 to 19,600 triangles and up to 9 s per face on moon_buggy_asm.stp, 86% of them within 20 degrees of a pole
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 5135435e
+session: 5135435e-eb61-4194-b168-7b93c64dd2fe
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3]
 related: [TKT-323, TKT-325, TKT-399, TKT-420]
 confidence: medium
 created: 2026-10-22
+claimed: 2026-10-22
 kind: defect
 ---
 

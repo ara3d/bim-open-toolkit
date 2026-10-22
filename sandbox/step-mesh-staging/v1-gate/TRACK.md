@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e | ready: V1G-8, V1G-10 (its harness half in bim-open-data 66f0da1), V1G-11, V1G-12 | V1G-9: diagnosed, no library change
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e | ready: V1G-8, V1G-10 (its harness half in bim-open-data 66f0da1), V1G-11, V1G-12, V1G-13 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -20,6 +20,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-10 | TKT-455 | the contract check and the gate claim measure a quad's split as a whole, and mesh to surface by projection | 2 h |
 | V1G-11 | TKT-455 | one chordal measure for an element and its splits, used by the grid keep rule and the gate claim | 2 h |
 | V1G-12 | TKT-430 | a two-circle cylinder whose circle vertices are not on one generator gets its quad grid | 1 h |
+| V1G-13 | TKT-428 | spheres and cones over-refined at their poles | 2 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -77,6 +78,10 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 - V1G-12 (TKT-430), about 0.8 h. No type added. Cause: the band cut (JoinedByCut) starts at the sample point of the first circle nearest the second; when the two circles' vertices are not on one generator, that point is not the vertex, so the circle's side of the joined loop runs through the circle's own vertex, and `SideIsOneCarrier` (05-face-meshing/uv-regions.library.plato) rejects a side with a vertex inside it: no four sides, no grid, CDT and refinement instead. Fix: `SideIsOneCarrierV1` (v1-axle.library.plato, library `V1Axle`) lets a vertex lie inside a side when both its neighbours on the loop are samples of the side's carrier edge (a vertex flanked by samples of one edge is that closed edge's own vertex). Witness `Witness_CylinderBandTurned(r, h)` (same file): the cylinder band with its top circle's vertex at (-r, 0, h), half a turn from the bottom's. Laws (`V1AxleLaws`, v1-axle.laws.plato), 2: `Law_V1Gate_TurnedCylinderBandIsAGrid`, `Law_V1Gate_CylinderBandIsAGrid` (quads only, every quad within the bound as both splits).
   - Compiled, budget 120 s, on V1G-11's wired copy (HEAD ad646aa6 with T1, V1G-10 and V1G-11 applied), without and with the edit; filter `V1AxleLaws`, `BrepWitnessesLaws`, `FaceMeshingChartsLaws`, `FaceMeshingGridChordalLaws`, `Law_V1Faces_GridKeptWhereCurvedAtMostOneWay`: without, 52 of 53 pass (the turned band gets no grid); with, 53 of 53.
   - moon_buggy_asm.stp on a scratch regeneration of the with-copy and the staged libraries: faces 13, 20, 29, 32, 64, 71, 74, 79, 86, 126, 135, 138 and 145 take the grid branch, 24 quads each, 1.5 to 7.1 ms per face (the ticket measured 224,506 triangles and 34 s of face time for them, on an older build); the contract check reports 0 faces over the chordal bound.
+- V1G-13 (TKT-428), about 1.4 h, partial. Found under V1G-4's chordal-only refinement: a triangle with two corners on a pole segment (the same 3D point) collapses, and Lift drops it, but the chordal round still tested it: its zero 3D area reads as a fold, and the surface over it is far from the flat "triangle", so each round inserted points beside the pole, which made more such triangles. Fix: `WithoutCollapsedMarks` (v1-poles-refine.library.plato, library `V1PoleRefine`) clears the refinement mark of every triangle that collapses at a pole (`IsCollapsedElement`), applied in V1G-4's `RefinementRoundChordal` only, so the shared refinement test and the reference paths the agreement laws compare are untouched.
+  - Scratch regenerations of V1G-12's wired copy without and with the edit (Plato c8c83c8b), harness at bim-open-data HEAD: moon_buggy_asm.stp's 14 sphere faces 3,352 to 3,698 triangles each without, 2,928 each with, 60 to 210 ms per face; the cones 26, 76 and 132 about 704 triangles each; the whole file's contract check goes from 3 faces with flipped elements (the cones) to holding on all 162 faces (0 over-chordal, 0 flipped). `witness:Sphere:254` at chordal 1: 3,074 to 2,926 triangles, the cap within 10 degrees of the south pole 128 to 92.
+  - Laws, compiled, budget 120 s, the same two copies: `PolesWitnessLaws`, `V1PoleChecksLaws`, `FaceMeshingLiftIndexedLaws`, `RefinementAttainableLaws`, `TriangulatedWitnessLaws`, `NeighboursCarriedLaws`, `V1GateLaws`: 49 laws, 49 pass on both, no verdict changed.
+  - Not met: TKT-428's "under 2,000 triangles" per sphere (2,928). The remaining density is not the pole segment: a 60 degree pole step in place of the 15 degree one (tried on a scratch copy) gave 3,042, more. The mesh stays near uniform in the sphere's (u, v) chart, about 150 to 190 triangles per 10 degree band at every latitude, so the bands near the poles, a tenth of the area, are about 5 times denser than the equator. Reaching the bound's own count (about 1,000 to 1,500 for edges up to 45 mm on a 254 mm radius) needs refinement or triangulation in a chart whose u scale follows the latitude, a larger change. The ticket's law (pole-cap count bounded by the band's) is not written for the same reason.
 
 ## Gate and quality: every law of layer 5
 
@@ -417,6 +422,10 @@ V1G-8 (TKT-429):
 - In `JoinedByCut` (05-face-meshing/uv-regions.library.plato): `var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);` => `var end = m.BandEndCopy(f, a, i, b, j);`, and the function's comment says the cut ends at "the copy of b's point nearest it on the face's side (BandEndCopy)".
 - Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
 
+V1G-13 (TKT-428):
+- In `RefinementRoundChordal` (05-face-meshing/face-meshing-v1-plane.library.plato, merged with V1G-4): `var surface = m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least);` => `var surface = s.Current.Positioned.Triangulation.WithoutCollapsedMarks(m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least));`.
+- Move `v1-poles-refine.library.plato` to `05-face-meshing/face-meshing-v1-poles-refine.library.plato` (library `V1PoleRefine`).
+
 V1G-12 (TKT-430):
 - `SideIsOneCarrier` (05-face-meshing/uv-regions.library.plato) => `r.SideIsOneCarrierV1(corners, k)` (its only caller is `QuadSidesIn`, face-meshing-chart-speeds.library.plato; the edit was checked at that call site).
 - Move `v1-axle.library.plato` to `05-face-meshing/face-meshing-v1-axle.library.plato` (library `V1Axle`; `Witness_CylinderBandTurned` may go beside `Witness_CylinderBand` in 07-validation/validation-witnesses.library.plato instead) and `v1-axle.laws.plato` to `08-pipeline/pipeline-v1-axle.laws.plato` (it reads `V1GateOptions` and `QuadSplitsWithinV1`).
@@ -497,6 +506,9 @@ V1G-5 (triage):
 | V1G-12: cause, side rule, witness, laws | 25 min | 0 |
 | V1G-12: without and with the edit, compiled | 1.7 min | 2 |
 | V1G-12: scratch regeneration, harness on moon_buggy | 2.5 min | 1 regeneration, 1 build, 2 runs |
+| V1G-13: latitude table, reading the refinement test and the pole segments | 20 min | 1 run |
+| V1G-13: three scratch regenerations (in-place edit, 60 degree pole step, the staged form) | 7 min, background | 3 regenerations, 3 builds, 9 runs |
+| V1G-13: pole and refinement laws, two copies | 1.3 min | 2 |
 
 ## Lessons
 - The compile cache follows the folder path: a fresh scratch folder cost 6.8 minutes, the same folder rerun about 1 minute. Keep one scratch folder per check.
