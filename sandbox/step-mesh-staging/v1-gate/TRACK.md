@@ -486,7 +486,7 @@ V1G-8 (TKT-429):
 - Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
 
 V1G-18 (TKT-456), independent of V1G-16 and V1G-17 (no file in common):
-- `git apply sandbox/step-mesh-staging/v1-gate/v1g18-law-cuts.patch` at the toolkit root (made against 93c60c6b; it applies to HEAD's files, which are the same). Then delete the patch file.
+- `git show 4282ebf7:sandbox/step-mesh-staging/v1-gate/v1g18-law-cuts.patch | git apply -` at the toolkit root (made against 93c60c6b; it applies to HEAD's files, which are the same; reading the committed blob avoids a checkout's CRLF conversion of the patch). Then delete the patch file.
 
 V1G-17 (TKT-456), with or after V1G-16 (the c211 law reads V1G-16's witness and needs both guards changed):
 - Move `v1-agreement.laws.plato` to `05-face-meshing/insertion-live-agreement.laws.plato` (library `V1GateAgreementLaws`).
