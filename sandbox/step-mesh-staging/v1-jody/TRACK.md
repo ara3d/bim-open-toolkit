@@ -1,7 +1,7 @@
 # v1-jody: small closed B-spline loops of the M2-JODY-W377 files discretized and meshed
 
-Ticket: TKT-431, TKT-453
-Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0
+Ticket: TKT-431, TKT-453, TKT-414
+Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0 | ready: J5
 
 ## Chunks
 
@@ -10,6 +10,7 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0
 | J1 | TKT-431 | The 24 one-edge plane loops of the two M2-JODY-W377 files discretized: a B-spline written unclamped in periodic form is decided closed from its record | 2 h |
 | J2 | TKT-453 | A closed span whose ends coincide fails the segment test, so small closed loops are not meshed as triangles | 1 h |
 | J4 | (supervisor's performance finding) | The other `Count.Range.Take(0)` empties replaced by one layer-0 helper, `Integer.NoIndices` (J4.patch) | 1 h |
+| J5 | TKT-414 | NINA-B222's 16 surface-curve edges that give 0 segments discretize, and an edge the discretizer refuses is reported | 2 h |
 | J3 | (supervisor's performance finding) | Reduced and ChangedSensePositions build a filter's empty case as `[k].Take(0)`, not an eagerly built `n.Range.Take(0)`: prepare no longer O(V^2 + E^2) | 1 h |
 
 ## Done
@@ -43,6 +44,10 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0
   | 05-face-meshing/face-meshing.library.plato:363, 365 | CollapsedToTriangle | 4 | yes (Lift); not edited: the file holds another session's uncommitted edits. Two lines for the merge: `4.Range.Take(0)` => `Integer.NoIndices` |
 
   The quadratic and cubic sites are all in laws, checks and validation; the two on the meshing path build 3 or 4 elements. Laws: the 53 law blocks of layers 02, 05, 06 and 07 with J3's and the prepare laws, 462 pass, 0 fail, 6 skipped (function-typed parameters, unrelated). ELLA-W1, C# regenerated from HEAD ad646aa6 without and with J4 (0 degraded bodies each), three alternating warm runs: faces 350, 232, 318 ms without and 295, 254, 218 with, edges 586, 497, 508 and 584, 522, 503, digest 7FC34C435864049C in all six: no difference beyond noise, as the 3- and 4-element sites predict. (Prepare is still 3.2 to 4.3 s there: J3 is not in ad646aa6.)
+- J5 (TKT-414), see the commit, about 3 h against 2 h (a C# probe over the decoded file to classify the 16 edges, and two whole-corpus runs). 16 SURFACE_CURVE edges of SHO/NINA-B222-W1x2.STEP, mastered by their first pcurve, returned 0 segments in 0.2 to 0.4 ms with no diagnostic. Eight have a master 2D B-spline circle on a plane, closed by its record but given the Aperiodic domain [0, 2 pi] (a closed edge got [a, a], arcs across the join backward ranges); eight have a master 2D line along u on a cylinder whose v velocity is a rounding residue (7e-17 to 6e-16), which `ParameterPeriodOn`'s exact zero test missed, so the line had no period and its vertices' parameters came out near 1e14. All 16 ranges fail `IsTractableRange`; layer 8's `CanDiscretizeInRange` tests only Start < End, so the increasing absurd ones went unreported, and the host asks for no edge diagnostics. Staged in `surface-curve-pcurve-domain.library.plato`: `ParameterPeriodOnV1` (a component within the arithmetic resolution of the other counts as zero), `MasterPcurveDomainV1` (a bounded master domain made Closed when the 2D record closes, `IsClosedRecord` with `HasInterpolatedEnds`), `CanDiscretizeInRangeV1` (asks `IsTractableRange`), `UndiscretizedEdgeMeasured` (names the refused ranges, measures the span), `EdgeDiagnosticsInRangeV1`, and V1 copies of the edge-domain path for the laws. No type added.
+  - Laws (block `V1JodySurfaceCurvePcurveDomainLaws`, cpu64): 5 pass, with v1-edges' 4 surface-curve laws in the same run: a residue line has the u period where the library finds none, and an exactly axial or a slanted line keeps the library's answer; the residue-line arc's range is [pi / 2, pi] and tractable (the library's is not); NINA-B222's spline circle (pcurve #1200) closes by its record, its closed edge gets one period (library [a, a]) and the arc from 5.5 to 0.8 gets [5.5, 0.8 + 2 pi] (library backward); every edge of the ten positive witnesses and of v1-edges' surface-curve witnesses keeps its edge range exactly; a line edge of length 1,000, which the discretizer refuses at the host's criteria while the library's guard accepts it and layer 8 says nothing, is reported once with measure 1,000, and the positive witnesses' diagnostics are unchanged.
+  - Corpus, C# regenerated from toolkit ab717770 without and with J5 wired in (0 degraded bodies each), harness `all ... 120 --path host --parallel`, all 88 files done in both: 87 files identical in every edge's segment count, every face's path, triangles and quads, and the mesh digest. NINA-B222: the 16 edges discretize (1 to 18 segments), its 26 undiscretized faces mesh (13 by CDT, 13 by grid), its 145 shells all close with 0 boundary edges, and edges 1241 and 1459, which the discretizer gives 2 segments in both runs, are no longer refined to 96 and 64 for the faces around the unmeshed ones (probe). Corpus totals: undiscretized faces 26 to 0, zero-segment edges 16 to 0, meshed faces 192,404 to 192,433 of 192,457, fully meshed files 81 to 82.
+  - Not done here: the host (bim-open-data `StepPlatoMesher`) does not ask for layer 8's edge diagnostics, so an undiscretized edge still reaches the corpus tables as a bare 0 there; see Requests.
 
 ## Merge instructions
 
@@ -64,9 +69,19 @@ J4:
 - `git apply sandbox/step-mesh-staging/v1-jody/J4.patch` (11 hunks, 10 files: the helper in 00-foundation/foundation.library.plato and the nine sites in the table above), then delete `no-indices.library.plato`.
 - `05-face-meshing/face-meshing.library.plato`, `CollapsedToTriangle`, lines 363 and 365: both `4.Range.Take(0)` => `Integer.NoIndices` (not in the patch: the file held another session's edits).
 
+J5 (TKT-414):
+- `surface-curve-pcurve-domain.library.plato`: `IsNegligibleBeside`, `HasInterpolatedEnds`, `SameUv`, `IsClosedRecord` into `01-geometry/geometry-curves.library.plato` beside `ParameterPeriodOn`; `ParameterPeriodOn`'s body => `ParameterPeriodOnV1`'s; `MasterPcurveDomain`'s body => `MasterPcurveDomainV1`'s (its comment then names the closed record); delete `ParameterPeriodOnV1`, `PcurveParameterPeriodV1`, `MasterPcurveDomainV1`, `DomainV1`, `IsPcurveMastered`, `MasterOf`, `PcurveSearchDomainV1`, `PcurveClosestParameterV1`, `ClosestParameterV1`, `EdgeDomainV1`, which are library functions with those two bodies changed. The comment above `PcurveParameterPeriod` (exact zero test) changes with it.
+- `04-discretization/discretization-guards.library.plato`, `CanDiscretizeInRange`: body => `(c.IsWellFormed && m.IsEdgeEvaluable(e)) ? m.IsTractableRange(e, c, m.EdgeDomain(e).Range) : false` (`CanDiscretizeInRangeV1`'s).
+- `08-pipeline/pipeline.library.plato`, `UndiscretizedEdge(e)` => `UndiscretizedEdgeMeasured(m, e)` (message and measure), and `EdgeDiagnosticsInRange` calls it (`EdgeDiagnosticsInRangeV1`'s body); the IsTractableRange comment in `discretization-edge-domain.library.plato` that says layer 8 reports the refusal is then true.
+- `surface-curve-pcurve-domain.laws.plato` (block `V1JodySurfaceCurvePcurveDomainLaws`) into `08-pipeline` beside `pipeline-surface-curve-domain.laws.plato` (it reads `SurfaceCurveEdge`). After the rewire, the `EdgeDomainV1` comparisons and the library-side clauses (`ParameterPeriodOn(d) == 0`, `EdgeDomain` backward or [a, a], `CanDiscretizeInRange` accepting, `EdgeDiagnosticsInRange` empty) compare a function with itself or assert the old defect: keep the fixed-side clauses, drop `Law_V1Jody_EdgeDomainV1Unchanged`.
+
 ## Contract requests
 
 - None.
+
+## Requests to other tracks
+
+- bim-open-data host (`StepPlatoMesher` / `StepPlatoTables`), not blocking: report layer 8's `EdgeDiagnosticsInRange` for every edge the host leaves undiscretized (a row message in the corpus harness's edge table), so a refused edge is never a bare 0 in the corpus output. J5 makes the library's diagnostic agree with the discretizer; the host still has to ask for it.
 
 ## Findings
 
@@ -88,6 +103,9 @@ J4:
 | J4: edits, call graph, laws | 15 | 2 law runs (one 100 s sweep) |
 | J4: regenerations and timing | 12 | 2 regenerations, 2 builds, 6 timed meshings |
 | J4: moving the library edit into staging | 5 | 1 law run |
+| J5: probe and cause | 35 | 3 probe builds, 1 regeneration |
+| J5: staging and laws | 40 | 6 law runs |
+| J5: regeneration with the fix (one failed on my wiring script), NINA run, two whole-corpus runs | 60 | 2 regenerations, 2 builds, 176 file runs |
 
 ## Lessons
 
@@ -96,4 +114,5 @@ J4:
 - Comparing library trees with `git rev-parse <commit>:<path>` is instant; extracting each commit to diff took 2 minutes for nothing.
 - A witness copied from a corpus record does not reproduce a defect that turns on exact equality of evaluated points: the corpus edge's ends were equal, the copy's differed by rounding. A C# probe over the decoded model found that in one run; a witness built so equality holds by construction (a clamped loop) then showed the defect.
 - bim-open-data's `regen-step-brep.ps1` at 48420e3 reads `tools/shipped-program.txt` from the library commit, so it cannot regenerate a library commit from before that file; check out the script's commit that matches the library first.
+- A wiring script that splices a replacement by hand must not use `` in the replacement text: it wrote a literal `` into three library files of the scratch copy and cost one failed regeneration. Parse the edited files with the pinned CLI before regenerating.
 - Plato's `&&` in a law did not short-circuit an index past an array's end; use `?:`.
