@@ -1,0 +1,131 @@
+//==
+// # The refinement's face angle made attainable (TKT-406)
+//
+// Refinement flags a triangle when the face normal turns by more than SurfaceAngular along a
+// side that is not a boundary segment (RefinementTestCached.SideNormalsTurn), and inserts its
+// circumcentre; the insertion is refused when the new point lands within the minimum length
+// (`least`, EffectiveMinLength) of a corner. Layer 04 meets its own 15 degree bound on every arc
+// unless that same minimum length caps the count (ArcLengthCap): on an arc whose radius is near
+// the minimum length a quarter circle gets one to five segments, and its chords turn by 18 to
+// 90 degrees. No interior point then brings the sides beside such a chord under the angle, and
+// the interior cannot be split finer than the minimum length either, so refinement flagged
+// triangles it could never fix and inserted until the guard refused every point (idea 28 of
+// docs/plans/step-mesher-ideas-evaluation.md: all 82,450 flags on four files came from
+// SideNormalsTurn; EMMY-W1's four-edge cylinders have arcs of one and four segments).
+//
+// Here a side counts only when refinement can split it: its surface chord is at least twice the
+// minimum length, so its midpoint is at least that far from both ends. This is layer 04's rule
+// for edges carried to the face (an arc's chord is split only while both halves stay at least the
+// minimum length), and it makes the side test attainable: every side it flags can be halved, and
+// every side the guard would refuse to split is left alone. On a face whose sides turn by at most
+// SurfaceAngular before they shrink to twice the minimum length (every face of the witness models
+// at chordal 1/100, the sphere and both tori at 0.05 and the cone at 0.01), the test is
+// SideNormalsTurn's, Boolean for Boolean. The centroid and chordal tests are unchanged.
+//
+// Sections, in order:
+//  - The side test
+//  - The pass
+//  - Refinement
+
+library RefinementAttainable
+{
+    //==
+    // # The side test
+
+    // Whether the face normal turns by more than SurfaceAngular along some side of tri that is
+    // not a boundary segment and whose surface chord is at least twice least, so that its
+    // midpoint would pass the insertion guard. No evaluation: the normals and positions are
+    // cached.
+    SideNormalsTurnAttainable(r: UvRegion, pt: PositionedTriangulation, tri: TriangleFace, pn: PointNormals, c: FaceMeshingCriteria, least: Number): Boolean
+        => 3.Range.Any(j => r.IsConstrained(tri.Corner(j), tri.Corner(j + 1))
+            ? false
+            : (pn.Normals[tri.Corner(j)].AngleBetween(pn.Normals[tri.Corner(j + 1)]).Radians > c.SurfaceAngular.Radians
+                ? pt.Positions[tri.Corner(j)].Distance(pt.Positions[tri.Corner(j + 1)]) >= 2.0 * least
+                : false));
+
+    // TriangleCentroidTest with SideNormalsTurnAttainable in place of SideNormalsTurn.
+    TriangleCentroidTestAttainable(m: BrepModel, f: BrepFaceIndex, r: UvRegion, pt: PositionedTriangulation, pn: PointNormals, k: Integer, c: FaceMeshingCriteria, least: Number): CentroidTest
+        => r.SideNormalsTurnAttainable(pt, pt.Triangulation.Triangles[k], pn, c, least)
+            ? CentroidTest(true, 0)
+            : m.CentroidNormalTest(f, pt, pn, k, c);
+
+    //==
+    // # The pass
+
+    // NeedsRefinementCachedCounted with TriangleCentroidTestAttainable: the same evaluations,
+    // counted the same way (the side test reads two cached positions, no evaluation).
+    NeedsRefinementAttainableCounted(m: BrepModel, f: BrepFaceIndex, r: UvRegion, pt: PositionedTriangulation, known: Array<Boolean>, c: FaceMeshingCriteria, least: Number): Counted<Array<Boolean>>
+    {
+        var t = pt.Triangulation;
+        var tris = t.Triangles;
+        var tested = tris.Count.MapRange(k => (k < known.Count ? known[k] : false).Not);
+        var marks = new List<Boolean>().AddRange(t.Points.Map(x => false));
+        var i = 0;
+        while (i < tris.Count)
+        {
+            if (tested[i])
+            {
+                marks = marks.Set(tris[i].A.Value, true).Set(tris[i].B.Value, true).Set(tris[i].C.Value, true);
+            }
+            i = i + 1;
+        }
+        var corners = marks.Freeze();
+        var pn = m.PointNormalsOf(f, t, corners);
+        var first = tris.Count.MapRange(k => tested[k] ? m.TriangleCentroidTestAttainable(f, r, pt, pn, k, c, least) : CentroidTest(false, 0));
+        var pending = tris.Count.MapRange(k => tested[k] ? first[k].Fails.Not : false);
+        var nb = NeighbourSlots(tris, t.Points.Count);
+        var sources = (3 * tris.Count).MapRange(s => SampleSlot(tris, nb, pending, s));
+        var sampled = (3 * tris.Count).MapRange(s => r.IsSampled(tris, pending, sources, s));
+        var samples = (3 * tris.Count).MapRange(s => sampled[s]
+            ? m.SideSampleOf(f, pt, tris[s / 3], s % 3)
+            : SideSample(0.0, Point3D(0.0, 0.0, 0.0)));
+        var value = tris.Count.MapRange(k => tested[k] ? r.TriangleNeedsRefinementCached(pt, first[k], samples, sources, k, c) : false);
+        var work = corners.TrueCount + first.Reduce(0, (n, x) => n + x.Evaluations) + 3 * sampled.TrueCount;
+        return Counted(value, Evaluations(work));
+    }
+
+    // NeedsRefinementAttainableCounted's marks.
+    NeedsRefinementAttainable(m: BrepModel, f: BrepFaceIndex, r: UvRegion, pt: PositionedTriangulation, known: Array<Boolean>, c: FaceMeshingCriteria, least: Number): Array<Boolean>
+        => m.NeedsRefinementAttainableCounted(f, r, pt, known, c, least).Value;
+
+    //==
+    // # Refinement
+
+    // RefineToSurfaceByInsertionIndexed with NeedsRefinementAttainable in place of
+    // NeedsRefinementCached: the same passes, guards and stopping rule. Its work is the passes
+    // run, as Flips.
+    RefineToSurfaceByInsertionAttainableCounted(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): Counted<UvTriangulation>
+    {
+        var planar = m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord;
+        var x = r.BoundaryIndexOf(m.RegionTolerance(f, chart));
+        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
+        var none = [0].Take(0);
+        var current = m.Positioned(f, t);
+        var known = t.Triangles.Map(z => false);
+        var refused = t.Triangles.Map(z => false);
+        var good = t.Triangles.Map(z => false);
+        var pass = 0;
+        var changed = true;
+        while (pass < 40 && changed)
+        {
+            var now = current.Triangulation;
+            var surface = planar ? now.Triangles.Map(z => false) : m.NeedsRefinementAttainable(f, r, current, known, c, least);
+            var mid = m.SurfacePassIndexed(f, x, chart, least, current, surface);
+            var carried = now.Triangles.CarriedMarks(refused, none, mid.Triangulation.Triangles);
+            var goodMid = now.Triangles.CarriedMarks(good, none, mid.Triangulation.Triangles);
+            var bad = m.BelowAngleKnown(f, mid.Triangulation, carried, goodMid);
+            var next = m.AnglePassIndexed(f, x, chart, least, mid, bad);
+            refused = mid.Triangulation.Triangles.CarriedMarks(carried, bad, next.Triangulation.Triangles);
+            good = mid.Triangulation.Triangles.CarriedMarks(mid.Triangulation.AngleGoodMarks(carried, bad), none, next.Triangulation.Triangles);
+            known = KnownGood(now, surface, next.Triangulation);
+            changed = next.Triangulation.Points.Count > now.Points.Count;
+            current = next;
+            pass = pass + 1;
+        }
+        return Counted(current.Triangulation, Flips(pass));
+    }
+
+    // RefineToSurfaceByInsertionAttainableCounted's triangulation.
+    RefineToSurfaceByInsertionAttainable(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
+        => m.RefineToSurfaceByInsertionAttainableCounted(f, r, chart, t, c).Value;
+}
