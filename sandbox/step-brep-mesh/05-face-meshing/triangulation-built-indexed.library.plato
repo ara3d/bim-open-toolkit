@@ -132,7 +132,7 @@ library TriangulationBuiltIndexed
         var cavity = good ? x.Next.FlipCavityIndexed(q, u, a, b, e, d, p, points, tris, nb) : NoTriangleWrites(0);
         var fan = good ? q.FanOf(tris.Count, cavity, nb) : [0].Take(0);
         var angles = (good && guarded) ? fan.CavityAngles(cavity, points.Count, at, pos, tris) : [1.0, 0.0];
-        var kept = good ? angles[0] > angles[1] : false;
+        var kept = good ? (angles[0] > angles[1] && m.CavityIsThick(cavity, points.Count, at, pos, tris)) : false;
         return TrialInsertion(kept, uv, p, at,
             kept ? cavity : NoTriangleWrites(0),
             kept ? 2 : 0,

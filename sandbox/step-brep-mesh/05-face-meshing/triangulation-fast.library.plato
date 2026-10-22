@@ -235,7 +235,7 @@ library TriangulationFast
             : false;
         var inserted = good ? r.InsertedLocally(points.Concatenate([p]), tris, nb, q, u, a, b, e, d, pts.Count) : tris;
         var angles = (good && guarded) ? m.ChangedAnglesAt(f, pts.Concatenate([uv]), tris, inserted, tris.ChangedNear(nb, inserted, q)) : [1.0, 0.0];
-        return (good && angles[0] > angles[1]) ? inserted : tris;
+        return (good && angles[0] > angles[1]) ? (m.ChangedAreThick(f, pts.Concatenate([uv]), tris, inserted, tris.ChangedNear(nb, inserted, q)) ? inserted : tris) : tris;
     }
 
     //==
