@@ -5,11 +5,11 @@
 // B-spline with 19 control points (a 16-sided polygon round the origin, its first 3 points
 // repeated at the end) and 23 uniform knots from -0.1875 in steps of 0.0625, so its domain is
 // [0, 1]; its ends are (0.5, 0, 0), the vertex of the one-edge loop that cites it. #66971 is the
-// same form at radius 0.2 with non-uniform knots written to 13 digits; its ends are (0.2, 0, 0). The record test
-// decides it closed, its evaluated ends agree, and with the Closed mark a closed edge on it gets
-// the domain [0, 1] and is discretized; without the mark, the library today, it gets [0, 0] and
-// is Undiscretized. A wrapped record with one end point moved, or one knot spacing changed,
-// stays Undecided; a clamped record keeps EndsClosure's answer.
+// same form at radius 0.2 with non-uniform knots written to 13 digits; its ends are (0.2, 0, 0).
+// The record test decides both closed, their evaluated ends agree, and with the Closed mark a
+// closed edge on either gets the domain [0, 1] and is discretized; without the mark, the library
+// today, it gets [0, 0] and is Undiscretized. A wrapped record with one end point moved, or one
+// knot spacing changed, stays Undecided; a record EndsClosure decides keeps its decision.
 //
 // Sections, in order:
 //  - Witnesses

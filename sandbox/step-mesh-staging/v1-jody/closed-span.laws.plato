@@ -1,0 +1,105 @@
+//==
+// # A closed span fails the segment test: laws (track v1-jody, TKT-453)
+//
+// A clamped closed B-spline loop whose ends are one point exactly: at a chordal bound above its
+// diameter the library's bisection keeps its whole span as one segment; with a closed span
+// failing it splits until every segment meets the angular bound or stands at the length floor.
+// The witness copies of the M2-JODY-W377 records (V1JodyWrappedSplineClosureLaws) end a few
+// rounding errors apart, a chord of noise the library already splits on; in the corpus file the
+// 0.5 mm circles' ends are equal and the whole span passes (TKT-453). The 0.2 mm circle gets the
+// same parameters from both. On every open edge of the ten positive witnesses, where no
+// seed span is closed, the bisection is the library's, bit for bit.
+//
+// Sections, in order:
+//  - Cases
+//  - Laws
+
+library V1JodyClosedSpanLaws
+{
+    //==
+    // # Cases
+
+    // The host's criteria: DefaultCriteria at a chordal bound of 1 (mm, the model's unit).
+    HostCriteria(_: Integer): DiscretizationCriteria
+        => DefaultCriteria(1.0);
+
+    // Criteria whose chordal bound, 1.5, is clearly above the clamped loop's diameter (about 1).
+    CoarseCriteria(_: Integer): DiscretizationCriteria
+        => DefaultCriteria(1.5);
+
+    // A clamped cubic B-spline loop about 1 across whose first and last control points are both
+    // (0.5, 0, 0), so its two ends are that point exactly, with simple interior knots, so it has
+    // no breakpoint and its only seed span is the whole loop. Layer 3's EndsClosure decides it
+    // closed.
+    ClampedLoop(_: Integer): BSplineCurveData
+        => 0.JodySplineWith(
+            [Point3D(0.5, 0.0, 0.0), Point3D(0.5, 0.5, 0.0), Point3D(-0.5, 0.5, 0.0),
+             Point3D(-0.5, -0.5, 0.0), Point3D(0.5, -0.5, 0.0), Point3D(0.5, 0.0, 0.0)],
+            [0.0, 0.0, 0.0, 0.0, 1.0 / 3.0, 2.0 / 3.0, 1.0, 1.0, 1.0, 1.0]);
+
+    // The closed edge on the record from v back to v, the curve marked Closed.
+    MarkedEdge(d: BSplineCurveData, v: Point3D): BrepModel
+        => BrepModel.JodyEdge(d, v, true);
+
+    // The library's bisection of edge e over its domain.
+    LibraryBisection(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria): EdgeDiscretization
+        => m.BisectedCachedCounted(e, c, m.EdgeImages(e), m.EdgeDomain(e).Range).Value;
+
+    // The bisection with a closed span failing, of edge e over its domain.
+    ClosedSpanBisection(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria): EdgeDiscretization
+        => m.BisectedClosedCounted(e, c, m.EdgeImages(e), m.EdgeDomain(e).Range).Value;
+
+    // Whether the closed edge on the record from v gets one segment from the library's bisection
+    // at criteria c, and at least least segments from the bisection with the closed-span test,
+    // each meeting the angular bound or at the length floor.
+    SplitsClosedEdge(d: BSplineCurveData, v: Point3D, c: DiscretizationCriteria, least: Integer): Boolean
+    {
+        var m = MarkedEdge(d, v);
+        var e = BrepEdgeIndex(0);
+        var after = m.ClosedSpanBisection(e, c);
+        return m.LibraryBisection(e, c).SegmentCount == 1
+            && after.SegmentCount >= least
+            && after.SegmentCount.Range.All(i => m.TangentDeviationHolds(after, c, SamplePlan.DiscretizationPlan, i));
+    }
+
+    // Whether the two arrays hold the same numbers in the same order, exactly.
+    SameNumbers(a: Array<Number>, b: Array<Number>): Boolean
+        => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
+
+    // Whether every open edge of m (not from a vertex back to itself) with a non-empty domain
+    // gets the same parameters from both bisections at criteria c.
+    SameOnEveryEdge(m: BrepModel, c: DiscretizationCriteria): Boolean
+        => m.Edges.Count.Range.All(i =>
+            (m.IsClosedEdge(BrepEdgeIndex(i)) ? false : m.EdgeDomain(BrepEdgeIndex(i)).Range.Start < m.EdgeDomain(BrepEdgeIndex(i)).Range.End)
+                ? m.ClosedSpanBisection(BrepEdgeIndex(i), c).Parameters.SameNumbers(m.LibraryBisection(BrepEdgeIndex(i), c).Parameters)
+                : true);
+
+    //==
+    // # Laws
+
+    // At a chordal bound above its diameter, the clamped loop gets at least 8 segments, each
+    // within the angular bound or at the length floor, where the library's bisection gives 1
+    // and the closed-edge minimum then makes a triangle. Layer 3 already decides it closed:
+    // the defect does not wait on J1.
+    Law_V1Jody_ClosedSpanSplits(_: Integer): Boolean
+        => 0.ClampedLoop.EndsClosure(Tolerances.Witness_Tolerances.Length).IsClosed
+            && 0.ClampedLoop.SplitsClosedEdge(Point3D(0.5, 0.0, 0.0), 0.CoarseCriteria, 8);
+
+    // The 0.2 mm circle's ends lie about 1e-14 apart (its knots repeat to 13 digits), so the
+    // library's bisection already splits its whole span on a chord of noise; with the
+    // closed-span test it gets the same parameters, at the host's bound.
+    Law_V1Jody_NearlyClosedSpanUnchanged(_: Integer): Boolean
+    {
+        var m = MarkedEdge(0.JodySmallSpline, Point3D(0.2, 0.0, 0.0));
+        var e = BrepEdgeIndex(0);
+        return m.ClosedSpanBisection(e, 0.HostCriteria).Parameters.SameNumbers(m.LibraryBisection(e, 0.HostCriteria).Parameters)
+            && m.LibraryBisection(e, 0.HostCriteria).SegmentCount >= 8;
+    }
+
+    // On every open edge of the ten positive witnesses, at the default chordal bound of 0.01 and
+    // the host's 1, the bisection with the closed-span test is the library's.
+    Law_V1Jody_OpenSpansUnchanged(_: Integer): Boolean
+        => 10.Range.All(k => BrepModel.WitnessAt(k).SameOnEveryEdge(DefaultCriteria(0.01))
+            && BrepModel.WitnessAt(k).SameOnEveryEdge(0.HostCriteria));
+
+}

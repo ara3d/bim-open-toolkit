@@ -1,0 +1,86 @@
+//==
+// # A closed span fails the segment test (track v1-jody, TKT-453)
+//
+// Layer 4's bisection tests each seed span as one segment. On a closed edge with no interior
+// breakpoint (a B-spline with simple knots), the only seed span is [start, start + period], and
+// its two ends are one point: the chord has zero length, so TangentDeviation reads 0
+// (AngleOrZero of a zero vector), the length limit passes, and the sagitta is the loop's
+// diameter. When the diameter is within the chordal bound (1 mm in the host; the M2-JODY-W377
+// circles have radius 0.5, 0.45 and 0.2 mm), the span passes, the bisection keeps one segment,
+// and RaisedToCount gives the closed-edge minimum: a triangle, each segment turning 120 degrees
+// against a 15 degree bound.
+//
+// A segment from a point back to itself over two different parameters is no chord of the arc
+// between them, so it fails, whatever the other criteria say. On an edge that is not degenerate
+// (a degenerate edge never reaches the bisection) the bisection keeps every piece at least the
+// effective minimum length, which is at least the length tolerance, so only a seed span can have
+// coincident ends: a closed edge's whole span, or a span from a self-intersection back to it.
+// Every other span's test is unchanged.
+//
+// Sections, in order:
+//  - The test
+//  - The bisection with the test
+
+library V1JodyClosedSpan
+{
+    //==
+    // # The test
+
+    // True when the piece [a, b] runs from a point back to the same point, within the length
+    // tolerance, over two different parameters.
+    IsClosedSpan(m: BrepModel, a: BisectionEnd, b: BisectionEnd): Boolean
+        => a.Parameter != b.Parameter && a.Point.Distance(b.Point) <= m.Tolerances.Length.Value;
+
+    // BisectionCached's SegmentFailsCachedCounted with a closed span failing first, at no cost.
+    SegmentFailsClosedCounted(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: BisectionEnd, b: BisectionEnd, images: Array<EdgeImage>): Counted<Boolean>
+        => m.IsClosedSpan(a, b)
+            ? Counted(true, Projections(0))
+            : m.SegmentFailsCachedCounted(e, c, a, b, images);
+
+    //==
+    // # The bisection with the test
+    //
+    // BisectionCached's SplitSpanCachedCounted and BisectedCachedCounted with
+    // SegmentFailsClosedCounted in place of SegmentFailsCachedCounted, line for line; at merge
+    // the test moves into SegmentFailsCachedCounted and these two go.
+
+    // SplitSpanCachedCounted with SegmentFailsClosedCounted.
+    SplitSpanClosedCounted(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: BisectionEnd, b: BisectionEnd, depth: Integer, images: Array<EdgeImage>): Counted<Array<BisectionEnd>>
+    {
+        var none = [a].Take(0);
+        if (depth >= 40)
+        {
+            return Counted(none, Projections(0));
+        }
+        var test = m.SegmentFailsClosedCounted(e, c, a, b, images);
+        if (test.Value.Not)
+        {
+            return Counted(none, test.Work);
+        }
+        var t = (a.Parameter + b.Parameter) * 0.5;
+        var p = m.PointOnEdge(e, t);
+        var shortest = c.EffectiveMinLength(m.Tolerances);
+        if ((a.Point.Distance(p) >= shortest ? p.Distance(b.Point) >= shortest : false).Not)
+        {
+            return Counted(none, test.Work.Add(Evaluations(1)));
+        }
+        var anchors = m.AnchorsCounted(images, p);
+        var middle = BisectionEnd(t, p, anchors.Value);
+        var below = m.SplitSpanClosedCounted(e, c, a, middle, depth + 1, images);
+        var above = m.SplitSpanClosedCounted(e, c, middle, b, depth + 1, images);
+        return Counted(
+            below.Value.Concatenate([middle]).Concatenate(above.Value),
+            test.Work.Add(Evaluations(1)).Add(anchors.Work).Add(below.Work).Add(above.Work));
+    }
+
+    // BisectedCachedCounted with SplitSpanClosedCounted.
+    BisectedClosedCounted(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, images: Array<EdgeImage>, range: NumberInterval): Counted<EdgeDiscretization>
+    {
+        var seeds = m.EdgeSeedsGiven(e, range);
+        var ends = seeds.Map(t => m.BisectionEndCounted(e, t, images));
+        var spans = (seeds.Count - 1).MapRange(k => m.SplitSpanClosedCounted(e, c, ends[k].Value, ends[k + 1].Value, 0, images));
+        var all = [ends[0].Value].Concatenate((seeds.Count - 1).Range.FlatMap(k => spans[k].Value.Concatenate([ends[k + 1].Value])));
+        var work = ends.Reduce(Projections(0), (w, x) => w.Add(x.Work)).Add(spans.Reduce(Projections(0), (w, x) => w.Add(x.Work)));
+        return Counted(EdgeDiscretization(e, all.Map(x => x.Parameter), all.Map(x => x.Point)), work);
+    }
+}
