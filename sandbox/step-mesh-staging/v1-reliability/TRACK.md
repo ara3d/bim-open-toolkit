@@ -1,7 +1,7 @@
 # v1-reliability: why defects slip past the specs and laws, and checks that close the gaps
 
 Ticket: TKT-432, TKT-433, TKT-434, TKT-440 (built); TKT-436, TKT-437, TKT-438, TKT-439, TKT-441 (filed)
-Status: merged: R4 in 155609e6 (with v1-faces P1, which makes its law pass), R2A and R2B in 640a2005 | ready: R1, R2, R3, R5, R6 (tools, none into the library)
+Status: merged: R4 in 155609e6 (with v1-faces P1, which makes its law pass), R2A and R2B in 640a2005, R8 in 1ac28888 | ready: R1, R2, R3, R5, R6 (tools, none into the library)
 
 Report: `docs/plans/step-mesher-reliability-2026-10-22.md` (the defect tables, the classes with counts, the verdict).
 
