@@ -17,6 +17,7 @@ to merge into the library.
 | C4 | TKT-437 | Premise_<Law> companions counted; a law whose premise never held is vacuous | 2 h | about 1 h |
 | C5 | TKT-438 | `plato run --laws --differential`: interpreter against compiled C#, every witness, laws under 2 s | 1.5 h | about 1.5 h |
 | C6 | TKT-478 | "Circular expression" with no location: duplicate symbol Ids from concurrent compilations; located resolution errors | - | about 1.5 h |
+| C7 | TKT-479 | Warm server hang: compiled programs never unloaded; an unbounded interpreter run held its program's lock | - | about 3 h, most of it builds and tests on a loaded machine |
 | C3 | TKT-398 | Only if it blocks the corpus: it does not (both defects have library workarounds, and the regenerated library has no stub) | - | - |
 
 ## Done
