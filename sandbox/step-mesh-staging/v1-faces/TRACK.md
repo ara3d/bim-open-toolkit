@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1, F3, F3b, F2, F4b, P1 | dropped: F4a | handed over: P2 to v1-jody (J9, 3be261bd); cusps, planes and slits to v1-edges (E5) | TKT-466 diagnosed, closes with J9 | idle
+Status: merged: F1, F3, F3b, F2, F4b, P1 | dropped: F4a | handed over: P2 to v1-jody (J9, 3be261bd); cusps, planes and slits to v1-edges (E5) | TKT-466 diagnosed, closes with J9 | ready to merge: F5 | idle
 
 ## Chunks
 
@@ -104,7 +104,11 @@ Scratch state that is not in the repository: the regenerated C# and probe harnes
 
 - TKT-466 (ANN-MB2 cone face 1466), diagnosed, no chunk of its own: the two flipped elements sit at a sharp corner (vertex 11, where the rim meets the edge to point 12) of a nearly flat cone, where a parameter-plane triangle across the thin wedge winds backwards in space and refinement may not insert near the corner. Same family as P2; v1-jody's J9 reports ANN-MB2 free of flipped elements on its scratch regeneration, so the ticket closes with J9 (diagnosis in the ticket).
 
+- F5 (supervisor's request, 2026-10-22): `Law_EulerPoincareEvenAndBounded` (layer 2) draws random shell indices, and its manifold-shell premise (0eb11cd2) held on 1 of its 25 cases. `euler-cases.*.plato` gives it real cases: a `ManifoldShellCase` (name and model) for each of 13 layer 7 witness models whose shells are closed manifolds (unit box, box in millimetres, cylinder, sphere, torus, cone, block with a through hole, hollow box, B-spline patch solid, quarter cylinder, sphere by pole loops, hemispheres, torus at a vertex). `Law_EulerPoincarePremiseHoldsOnWitnesses` states the premise holds on every shell of each, so the cases stay real; `Law_EulerPoincareEvenAndBoundedOnWitnesses` states the law on every shell of each. Checked with the pinned CLI c8c83c8b (csharp, cpu64, 60 s budget) on `git archive` HEAD 22a3b2da plus the two files: all three laws pass, both new laws on 13 cases exhaustive (the premise held on all 13), the layer 2 law unchanged at 25 cases. 939 s, almost all of it the compile; the laws took 4.7 s. The warm server was hung, so this used the merge agent's `run_laws.sh`.
+
 ## Merge instructions
+
+- F5: move `euler-cases.types.plato` and `euler-cases.laws.plato` into `07-validation` (not 02-topology: the cases are layer 7 witnesses, which layer 2 cannot reference). No other edit.
 
 - **F4a merge stopped (merger, 2026-10-22).** On HEAD e2a2eedf (after V1G-4's chordal-only refinement, F2, F3, T1 and V1G-8), the merge instruction applied (`JoinedByCut` calls `NearestPairTied`, below V1G-8's `BandEndCopy`; `cut-pair.*.plato` in 05-face-meshing), compiled laws on a `git archive` of HEAD plus only F4a's files (pinned CLI e37c032f, csharp, cpu64, 60 s budget):
   - Without the wiring (HEAD plus the three cut-pair files): `Law_V1Faces_ApexCutFollowsGenerator` fails (case `ConeApexCase(0.05)`), `Law_V1Faces_ApexConeElementsFaceNormal` passes (25 cases).
