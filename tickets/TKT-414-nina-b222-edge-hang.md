@@ -1,13 +1,15 @@
 ---
 id: TKT-414
 title: STEP mesher: SHO/NINA-B222-W1x2.STEP does not finish edge discretization in 600 s; it stops with 32 of its 2,132 edges outstanding
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 53a578f9
+session: 53a578f9-98e0-45c4-bc66-a8c1cacb3bae
 fence: [sandbox/step-brep-mesh/04-discretization/**]
 workflow: [W3]
 related: [TKT-313, TKT-346, TKT-410]
 created: 2026-10-21
+claimed: 2026-10-22
 kind: defect
 ---
 
