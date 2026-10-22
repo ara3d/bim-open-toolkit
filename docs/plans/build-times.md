@@ -140,3 +140,19 @@ Command, run from the toolkit root, each into a fresh artifacts path with `MSBUI
 One run each, with other sessions building, so the 12 s gap is indicative; the project count is exact (counted from the `obj/` folders of the two artifacts paths).
 
 Found on the way: `node gates/host-smoke.mjs` fails with "host did not start" while a studio process runs from `src/studio/BimOpenFlow.Studio/bin/Debug`, because `dotnet run` cannot overwrite the locked DLLs. Setting `UseArtifactsOutput=true` and `ArtifactsPath=<scratch>` for the gate avoids it.
+
+## Ara3D.StepBrep regeneration: measured 2026-10-21 and 2026-10-22
+
+Command: `powershell -File deps/bim-open-data/tools/regen-step-brep.ps1` (track E of `docs/plans/step-mesher-v2.md`). The first run at a new Plato commit exports Plato with `git archive` and builds `Plato.CLI` under `%TEMP%\regen-step-brep\plato-<commit>-build` with `-m:1`. Later runs at that commit reuse the build and spend their time in the compiler (parse, type check, C# emit) and the stub check. Every run below had other sessions building on the same machine, which is the normal state during a wave.
+
+| Run | Wall seconds | Of which |
+|---|---|---|
+| Plato e37c032f, first run at the commit, library c47db0b3 | 1,227 | export 17, compiler build 628, generation 531 |
+| Same, from fresh clones with an empty TEMP | 109 | compiler build 23 (quiet machine) |
+| Same, fresh clone, compiler cached | 146 | |
+| Plato c8c83c8b, compiler built by another session, library before V1G-1 | 109 | |
+| Plato c8c83c8b, library HEAD, with check_generated.py | 150 | stub check under 1 |
+| Plato c8c83c8b, library 43dd439b (the version 1 merges) | 111 | |
+| Bisection regenerations (Plato c8c83c8b, libraries 8984df4b and c47db0b3) | 208 to 446 | |
+
+The compiler build is the one cost worth avoiding: 23 s on a quiet machine, 628 s under a wave's load. It happens once per Plato commit, so move the regeneration's Plato pin only with the commit the wave needs. A generation alone takes 1.5 to 2 minutes when the machine has room and up to 7.5 minutes under load. Copying the 1,481 output files into the checkout took 1 min 46 s once, on a busy disk.
