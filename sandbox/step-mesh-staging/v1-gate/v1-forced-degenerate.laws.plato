@@ -1,0 +1,48 @@
+// Laws of V1ForcedDegenerate (V1G-19), over the mesh of ANNA-B4 face 491's witness (Witness_AnnaB4Face491, one
+// zero-width face meshed as two triangles below the length tolerance) and its validation report under the host's
+// options at 1 mm, with the face's outcome diagnostics given: FACE-ZERO-WIDTH (as V1ZeroWidth reports it),
+// FACE-CUSP (as v1-edges' E5b will), and none.
+library V1ForcedDegenerateLaws
+{
+    // The witness's mesh and validation report, split by ExplainedReport for one face whose outcome carries a
+    // diagnostic with code c ("" for none).
+    ExplainedWitnessReport(c: String): Report
+    {
+        var m = BrepModel.Witness_AnnaB4Face491;
+        var o = HostMeshingOptions(1.0);
+        var mesh = m.MeshModel(o).Mesh;
+        var f = BrepFaceIndex(0);
+        var outcome = FaceMeshOutcome(EmptyFaceMesh(f), EdgeRefinementRequest.NoRequests,
+            c == "" ? [f.FaceDiagnostic(Severity.Warning, "", "")].Take(0) : [f.FaceDiagnostic(Severity.Warning, c, "explains")]);
+        return mesh.ExplainedReport(m.Tolerances, ExplanationsOfFaces([outcome]), m.Validated(mesh, o));
+    }
+
+    // Under explanation row k: no Error from the two checks, and at least one Warning of each check the
+    // unsplit report failed, every one carrying row k's sentence.
+    ExplainedByRow(k: Integer): Boolean
+    {
+        var row = ForcedDegenerateExplanations(0)[k];
+        var r = ExplainedWitnessReport(row.Code);
+        var two = r.Diagnostics.FlatMap(d => (d.Code == "ElementIsNotDegenerate" || d.Code == "VerticesOfOneComponentAreApart") ? [d] : [d].Take(0));
+        return two.Count > 0
+            && two.All(d => d.Severity == Severity.Warning
+                && (d.Code == "ElementIsNotDegenerate" ? d.Message == row.ElementMessage : d.Message == row.PairMessage))
+            && r.Diagnostics.Any(d => d.Code == "ElementIsNotDegenerate");
+    }
+
+    // A face reported FACE-ZERO-WIDTH explains its forced degenerate elements and close vertices.
+    Law_V1Gate_ZeroWidthExplainsDegenerateElements(_: Integer): Boolean
+        => ExplainedByRow(ExplanationIndexOf("FACE-ZERO-WIDTH"));
+
+    // A face reported FACE-CUSP explains them the same way.
+    Law_V1Gate_CuspExplainsDegenerateElements(_: Integer): Boolean
+        => ExplainedByRow(ExplanationIndexOf("FACE-CUSP"));
+
+    // The same degenerate elements on a face with no explaining diagnostic are still an Error.
+    Law_V1Gate_UnexplainedDegenerateElementIsAnError(_: Integer): Boolean
+        => ExplainedWitnessReport("").Diagnostics.Any(d => d.Code == "ElementIsNotDegenerate" && d.Severity == Severity.Error);
+
+    // Every explanation row's code is found at its own row, so the list has no duplicate.
+    Law_V1Gate_ForcedDegenerateCodesAreDistinct(_: Integer): Boolean
+        => ForcedDegenerateExplanations(0).Count.Range.All(k => ExplanationIndexOf(ForcedDegenerateExplanations(0)[k].Code) == k);
+}

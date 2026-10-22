@@ -1,0 +1,10 @@
+// Extracted by step-corpus-harness extract (TKT-439) on 2026-10-22 from C:/Users/cdigg/git/3d-format-shootout/data/submodules/3D-Step-Models-Library/SHO/ODIN-W260.STEP,
+// faces 2625 of the prepared model with a ring of 0: 1 faces, 2 edges.
+// Witness face k is source face [2625][k]. Meshed the host's way at chordal 1.0000000474974513:
+//   face 2625 (witness face 0): zero-width, 0 triangles, 0 quads in the file, zero-width, 0 triangles, 0 quads in the witness, the same mesh
+// One open shell in a shell-set body holds the faces; tolerances and unit are the source model's.
+library CorpusWitnessOdinW260Face2625
+{
+    Witness_OdinW260Face2625(_: BrepModel): BrepModel
+        => BrepModel(GeometrySet([BrepCurve.Line(Point3D(13.8816904998075, -11.542018641015499, -10.015451331401895), Vector3D(0.0, 0.0, -1000.0)), BrepCurve.Line(Point3D(13.882690499807499, -11.542018641015499, -10.015451331427304), Vector3D(0.0, 0.0, -1000.0))], [], [], [BrepSurface.Plane(Frame3D(Point3D(13.882690499807499, -11.542018641015499, -10.015451331427304), Direction3D(Vector3D(0.0, 0.0, -1.0)), Direction3D(Vector3D(1.0, 0.0, 0.0)), Direction3D(Vector3D(0.0, -1.0, 0.0))))], []), [BrepVertex(Point3D(13.8816904998075, -11.542018641015499, -10.015451331427304)), BrepVertex(Point3D(13.8816904998075, -11.542018641015499, -10.815451331427305))], [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(0), true), BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(1), true)], [BrepLoop.EdgeLoop([Coedge(BrepEdgeIndex(0), EdgeOrientation.Reversed), Coedge(BrepEdgeIndex(1), EdgeOrientation.Forward)])], [BrepFace(SurfaceIndex(0), false, [FaceBound(BrepLoopIndex(0), true, true)])], [BrepShell([BrepFaceIndex(0)], false)], [BrepBody.ShellSet([ShellIndex(0)])], Tolerances(LengthTolerance(0.001), AngleTolerance(Angle(1e-09)), ParameterTolerance(0.001), ParameterTolerance(3.5140601150909026e-05)), LengthUnit.Millimetre);
+}

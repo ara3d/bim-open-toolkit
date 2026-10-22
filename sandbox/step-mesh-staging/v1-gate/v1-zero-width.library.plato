@@ -1,0 +1,74 @@
+//==
+// # Version 1: a face with no width is meshed with the triangles its boundary forces (V1G-19)
+//
+// A face whose region encloses no area wider than the tolerance (IsZeroWidthRegion: SHO/ANNA-B4.step face 491,
+// 0.0007 mm wide, and SHO/ODIN-W260.STEP face 2625, 0.001 mm, both at a tolerance of 0.001) was left unmeshed
+// with FACE-ZERO-WIDTH, so the closed shell around it stayed open along its boundary. Under the supervisor's rule
+// for cusps, an element thinner than the tolerance that the file's geometry forces is meshed and diagnosed, not
+// left as a hole. ZeroWidthTriangles clips the face's one boundary loop down to triangles over its own boundary
+// points, cutting each time at the corner whose new diagonal is shortest in space, so a strip becomes a zigzag
+// of local triangles (a fan from one corner would chord across a curved strip). Every boundary segment is a side
+// of exactly one triangle and every diagonal of two, in opposite directions, and Lift places the boundary points
+// where the neighbouring faces place them, so the shell closes. FACE-ZERO-WIDTH stays, as a warning, to explain
+// the triangles: each is thinner than the tolerance and its normal says nothing about the surface's.
+//
+// Sections, in order:
+//  - Triangles
+//  - The outcome
+
+library V1ZeroWidth
+{
+    //==
+    // # Triangles
+
+    // The position in ring of the corner whose diagonal, from the corner before it to the corner after it, is
+    // shortest by the space points p; the first such corner on a tie. Precondition: ring has at least 3 corners.
+    ShortestDiagonalCorner(ring: Array<Integer>, p: Array<Point3D>): Integer
+    {
+        var n = ring.Count;
+        return n.Range.Reduce(0, (best, j) =>
+            p[ring[(j + n - 1) % n]].Distance(p[ring[(j + 1) % n]]) < p[ring[(best + n - 1) % n]].Distance(p[ring[(best + 1) % n]])
+                ? j : best);
+    }
+
+    // The n - 2 triangles over boundary points 0 to n - 1 (one loop, in its order), clipped one corner at a time
+    // at ShortestDiagonalCorner, each in the loop's direction; none for fewer than 3 points.
+    ClippedByShortestDiagonal(p: Array<Point3D>): Array<TriangleFace>
+    {
+        var ring = p.Count.Range;
+        var result = new List<TriangleFace>();
+        while (ring.Count > 3)
+        {
+            var n = ring.Count;
+            var j = ShortestDiagonalCorner(ring, p);
+            result = result.Add(TriangleOf(ring[(j + n - 1) % n], ring[j], ring[(j + 1) % n]));
+            ring = n.Range.FlatMap(k => k == j ? [ring[k]].Take(0) : [ring[k]]);
+        }
+        return ring.Count == 3 ? result.Add(TriangleOf(ring[0], ring[1], ring[2])).Freeze() : result.Freeze();
+    }
+
+    // The triangles region r of face f is meshed with when it has no width: its outer loop clipped by
+    // ClippedByShortestDiagonal over the surface points of its boundary points; none when r has holes.
+    ZeroWidthTriangles(m: BrepModel, f: BrepFaceIndex, r: UvRegion): Array<TriangleFace>
+        => r.Holes.Count == 0
+            ? ClippedByShortestDiagonal(r.BoundaryPoints.Map(uv => m.Geometry.Eval(m.SurfaceOf(f), uv)))
+            : [TriangleOf(0, 0, 0)].Take(0);
+
+    //==
+    // # The outcome
+
+    // The outcome for face f whose region r has no width: the lifted ZeroWidthTriangles over r's boundary
+    // points, no request, and FACE-ZERO-WIDTH as a warning that explains them; ZeroWidthOutcome (unmeshed, an
+    // error) when there are none (a region with holes, or fewer than 3 points).
+    ZeroWidthMeshedOutcome(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion): FaceMeshOutcome
+    {
+        var tris = m.ZeroWidthTriangles(f, r);
+        var t = UvTriangulation(r.BoundaryPoints, r.BoundarySources, tris,
+            [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
+        return tris.Count == 0
+            ? f.ZeroWidthOutcome
+            : FaceMeshOutcome(m.Lift(f, d, t), EdgeRefinementRequest.NoRequests,
+                [f.FaceDiagnostic(Severity.Warning, "FACE-ZERO-WIDTH",
+                    "This face's boundary encloses no area wider than the model's tolerance (a sliver or a strip); it is meshed with the triangles its boundary points force, each thinner than the tolerance, so the shell around it stays closed.")]);
+    }
+}

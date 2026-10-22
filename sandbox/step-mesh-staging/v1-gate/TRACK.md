@@ -27,6 +27,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-16 | TKT-464 | c211 face 339's fans left over the chordal bound | 2 h |
 | V1G-17 | TKT-456 | agreement laws for the live insertion passes; self-comparing agreement laws in layers 04 to 05 | 2 h |
 | V1G-18 | TKT-456 | the rest of finding 6: self-comparing agreement laws in layers 00-01, 02, 07, 09 and 11, and the orphan law helpers | 2 h |
+| V1G-19 | (corpus 2026-10-22 evening) | zero-width faces meshed with the triangles their boundary forces; one list of face diagnostics that explain forced degenerate elements | 2 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -145,6 +146,21 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
     - before: 179 laws, 157 pass, 14 fail, 8 skipped; after: 177 laws, 155 pass, 14 fail, 8 skipped. Law by law, the only differences are the two deleted laws, both passing before.
     - mutation copy (the edited copy with one reference side broken per kept agreement: `PolyPointOffset` from 1, `UseCount` plus 1, `ShellComponentCountByVertex` plus 1, `CostOfIndexed` over no faces): `Law_FacetedAgrees`, `Law_FacetedAgreesOnWitnesses`, `Law_ShellTablesAgree`, `Law_ShellTablesAgreeOnOddModels`, `Law_ShellComponentCountAgreesOnPolyLoops` and `Law_DiagnoseIndexedAgrees` all fail, so each kept agreement can fail.
   - Not touched: the library bodies finding 6 frees (`MarksCurve`, `MarksSurface`, `IsMarkedClosedSortedCounted`, the alias chains in 02, the 11 forwarders in validation-checks-mesh), as asked: laws and helpers only.
+- V1G-19, about 2.5 h. From the evening corpus run (docs/plans/step-mesher-corpus-2026-10-22-evening.md): SHO/ANNA-B4.step face 491 (0.0007 mm wide) and SHO/ODIN-W260.STEP face 2625 (0.001 mm), each a lens of two edges between one pair of vertices, four boundary points, were left unmeshed with FACE-ZERO-WIDTH (Error), so their shells stayed open (ANNA-B4 58 of 59, 4 boundary edges). The supervisor's rule for cusps applies: a sub-tolerance element the file forces is meshed and diagnosed.
+  - `v1-zero-width.library.plato` (`V1ZeroWidth`): `ZeroWidthMeshedOutcome` lifts `ZeroWidthTriangles`, the face's one loop clipped at the corner whose diagonal is shortest in space (a strip becomes a zigzag of local triangles; a fan would chord across a curved strip), over its own boundary points, so the neighbours' edges match; FACE-ZERO-WIDTH stays, as a Warning; a region with holes keeps `ZeroWidthOutcome`.
+  - Meshed, each face's two triangles failed layer 7's `ElementIsNotDegenerate` and `VerticesOfOneComponentAreApart` (the lens's two edge samples are within the tolerance and now one component), both Errors. The supervisor's decision: one rule, not a zero-width case. `v1-forced-degenerate.{types,library}.plato` (`V1ForcedDegenerate`): `ForcedDegenerateExplanations`, the one list (FACE-ZERO-WIDTH, and FACE-CUSP for v1-edges' E5b), each row a code and the two sentences a downgraded finding carries, naming it; `ExplainedReport`, after validation in `RunOutcomeFrom`, turns a failure of either check on an element of a face whose outcome carries a listed code (or a vertex pair whose two vertices are corners on one such face) into a Warning with that row's sentence; every other failure stays one Error at the first of them; a report with neither finding, or with no explained face, is returned as it is. v1-edges told to give FACE-CUSP's diagnostic and add no rule of its own; v1-proof sent the list and a tested harness diff (slivers and flips on such a face counted as excused, deviation still checked).
+  - Laws: `v1-zero-width.laws.plato` (`V1ZeroWidthLaws`): `Law_V1Gate_ShortestDiagonalClipIsADisc` (thin arc strips of 3 to 40 points: n - 2 triangles, every ring side once in the ring's direction, every other side as often each way); `Law_V1Gate_AnnaB4Face491IsMeshed` and `Law_V1Gate_OdinW260Face2625IsMeshed` over the extracted witnesses `corpus-witness-anna-b4-491.library.plato` and `corpus-witness-odin-w260-2625.library.plato` (triangles, no non-manifold or misoriented edge, FACE-ZERO-WIDTH a Warning, no Error). `v1-forced-degenerate.laws.plato` (`V1ForcedDegenerateLaws`): one law per code where the downgrade applies (`Law_V1Gate_ZeroWidthExplainsDegenerateElements`, `Law_V1Gate_CuspExplainsDegenerateElements`: the ANNA-B4 witness's mesh with that code on the face's outcome gives no Error from the two checks, every finding a Warning with the row's sentence), `Law_V1Gate_UnexplainedDegenerateElementIsAnError` (the same element with no code is still an Error), `Law_V1Gate_ForcedDegenerateCodesAreDistinct`.
+  - Checks, compiled, budget 600 s, `git archive` of 0c61bdc9 with the staged files, without and with the two wirings, 13 classes (ComponentChecksGivenLaws, FaceMeshingLaws, StepToMeshLaws, StepToMeshMeshedWitnessesLaws, StepToMeshTraceLaws, V1PinchLaws, V1ReliabilityCorpusWitnessLaws, V1GateCorpusWitnessLaws, V1GateLaws, V1PlaneLaws, TriangulatedWitnessLaws, V1ForcedDegenerateLaws, V1ZeroWidthLaws): 128 laws. Without: 114 pass, 5 fail (the five new witness laws), 2 errors, 7 obligations. With: 119 pass, the same 2 errors (the two `Law_PowerOfTwoScaling` laws, stopped by the runner's 120 s cap in both), 7 obligations. Law by law, the only changes are the five new laws.
+  - Harness on a scratch regeneration of the wired copy (bim-open-data HEAD, `gallery --parallel`), against the evening run's CSV (the same library: a661a43a..0c61bdc9 changes only tools):
+
+| File | Evening | With V1G-19 |
+|---|---|---|
+| ANNA-B4 | 1,168 of 1,169 faces, boundary 4, shells 58/59 | 1,169 of 1,169, closed and oriented, boundary 0, contract holds |
+| ODIN-W260 | 2,710 of 2,714, boundary 17, shells 377/378 | 2,711 of 2,714, boundary 13 (all beside the slit faces 2613, 2615, 2616, v1-edges' E5), shells 377/378 (the slits share face 2625's shell), contract holds |
+| c211, ODIN-W160, ANN-MB2, LENA-R8, MAYA-W160, NINA-B400, RCB-F9T | | the evening hashes, unchanged |
+| moon_buggy | | closed and oriented, contract holds (no zero-width face) |
+
+  - No other corpus file has a zero-width face (evening CSV), so no other file reaches the changed branch.
 
 ## Gate and quality: every law of layer 5
 
@@ -485,6 +501,11 @@ V1G-8 (TKT-429):
 - In `JoinedByCut` (05-face-meshing/uv-regions.library.plato): `var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);` => `var end = m.BandEndCopy(f, a, i, b, j);`, and the function's comment says the cut ends at "the copy of b's point nearest it on the face's side (BandEndCopy)".
 - Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
 
+V1G-19:
+- Move `v1-zero-width.library.plato` to `05-face-meshing/face-meshing-v1-zero-width.library.plato` (library `V1ZeroWidth`). In `MeshRegionOnceV1` (face-meshing-v1-pinch.library.plato): `(r.IsZeroWidthRegion(tol) ? f.ZeroWidthOutcome :` => `(r.IsZeroWidthRegion(tol) ? m.ZeroWidthMeshedOutcome(f, d, r) :`; its comment and `ZeroWidthOutcome`'s say a region with no width is meshed (V1ZeroWidth) and `ZeroWidthOutcome` is left for one with holes.
+- Move `v1-forced-degenerate.types.plato` and `v1-forced-degenerate.library.plato` to `07-validation/validation-v1-forced-degenerate.{types,library}.plato` (library `V1ForcedDegenerate`). In `RunOutcomeFrom` (08-pipeline/pipeline-run-states.library.plato): `m.Validated(mesh, o)` => `mesh.ExplainedReport(m.Tolerances, ExplanationsOfFaces(s.Outcomes), m.Validated(mesh, o))`; its comment says the two degenerate checks are split by the faces' explaining diagnostics.
+- Laws: `v1-zero-width.laws.plato` to `05-face-meshing/face-meshing-v1-zero-width.laws.plato`; `v1-forced-degenerate.laws.plato` to `07-validation/validation-v1-forced-degenerate.laws.plato`; the two witnesses to `08-pipeline/pipeline-corpus-witness-anna-b4-491.library.plato` and `08-pipeline/pipeline-corpus-witness-odin-w260-2625.library.plato`.
+
 V1G-18 (TKT-456), independent of V1G-16 and V1G-17 (no file in common):
 - `git show 4282ebf7:sandbox/step-mesh-staging/v1-gate/v1g18-law-cuts.patch | git apply -` at the toolkit root (made against 93c60c6b; it applies to HEAD's files, which are the same; reading the committed blob avoids a checkout's CRLF conversion of the patch). Then delete the patch file.
 
@@ -608,6 +629,10 @@ V1G-5 (triage):
 | V1G-18: reading finding 6, the aliases and the orphans (two helper scripts) | 40 min | 0 |
 | V1G-18: edit script, its two fixes (closing brace, empty sections) | 15 min | 3 |
 | V1G-18: baseline, edited and mutation copies (one round lost to HEAD not compiling), final copy | 25 min, background | 7 |
+| V1G-19: corpus report, the zero-width branch, the harness's explained rule | 20 min | 0 |
+| V1G-19: extracts of the two faces (each meshes its whole file) | 2 min, background | 2 |
+| V1G-19: wired copy, laws, regeneration and harness build; whole-file runs; probes of the validation errors | 25 min background, 6 min | 4 builds, 6 runs |
+| V1G-19: the explaining-code rule, its laws, the regression (two compiles, a regeneration, 10 files) | 35 min, background | 3 |
 
 ## Lessons
 - `step-corpus-harness extract` with a ring of 0 gives a one-face model that a probe reaches in seconds (parse, prepare, SubModel, host discretization, then the library's own steps), where the whole c211 file took 6 minutes a run; extract once, then probe the witness.
