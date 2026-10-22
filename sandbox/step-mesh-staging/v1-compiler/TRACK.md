@@ -125,6 +125,17 @@ to merge into the library.
 
 ## Lessons
 
+- Amend only with paths: `git commit --amend -- <paths>`. In a shared checkout a bare
+  `git commit --amend` takes the whole index, other sessions' staged work included; f97e2902
+  carried two renames the supervisor's v1-jody merge had staged. Never pass backticks inside an
+  unquoted heredoc to `git commit -F -`: the shell runs them (a7aeeb36 lost a phrase that way).
+- Escapes such as `\n` written through `python` or `sed` in the shell came out as real newlines in
+  C# sources twice; edit source text with the Edit tool.
+- Warm server replacement for TKT-478: `C:\Users\cdigg\.plato-cli\navmcp-a7aeeb36-clean` (Plato
+  a7aeeb36 with parakeet eedf2f0, studio bdbc49ef with ara3d-sdk 82df7322; built and smoke-tested
+  2026-10-22 on port 8779: the three backends agree, and two programs compiled at once three times
+  over gave no error).
+
 - A poll on a file fed by `cmd | grep | head` sees nothing until the command ends; two 10-minute
   waits were lost to it. Redirect the command to a file and poll that.
 - `bash` loops of `cp` over 1,500 files took two minutes on this machine; one `Copy-Item` is faster.
