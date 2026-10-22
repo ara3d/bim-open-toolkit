@@ -56,7 +56,7 @@ because the version 1 tracks are mid-flight.
 
 ## Contract requests
 - None. Wider changes (typed sentinels, `UvPointIndex` in `FaceMesh`, typed parameters in the
-  layer 1 arena API, `Sense` in the topology records) are tickets, listed in the review.
+  layer 1 arena API, `Sense` in the topology records) are tickets: TKT-448 to TKT-452 (library, after version 1) and TKT-442 to TKT-447 (Plato), ranked in the review.
 
 ## Requests to other tracks
 - v1-faces: the keep rule above replaces F1's element test with the contract's; no verdict
@@ -77,6 +77,7 @@ because the version 1 tracks are mid-flight.
 | Reading the design documents and the grid code | 15 min | |
 | T1: types, library, laws | 20 min | 1 type check (23 s), 1 law run (16 s) |
 | T1: TRACK.md and commit | 5 min | |
+| T1: laws use Corresponds in place of a 33rd hand-written Same* helper | 3 min | 1 law run (10 s), both pass |
 
 ## Lessons
 - The warm server type-checks a staging folder in 23 s and ran the seven laws in 14 s; the

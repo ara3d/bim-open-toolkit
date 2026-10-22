@@ -22,15 +22,10 @@ library V1TypesElementsLaws
             ? 0.MapRange(i => EmptyFaceMesh(BrepFaceIndex(i)))
             : w.FourSidedFaces.Map(f => w.Model.MeshFace(f, w.Discretizations, w.Criteria).Mesh);
 
-    // Whether arrays a and b hold equal indices in order. The count test guards the elements by
-    // a conditional: `&&` would read b past its end when a is longer.
-    SameVertexIndices(a: Array<VertexIndex>, b: Array<VertexIndex>): Boolean
-        => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
-
     // ShapeOf gives every element of every mesh the corners ElementCorners gives it.
     Law_V1Types_ShapeAgreesWithCorners(w: GridCase): Boolean
         => w.FourSidedMeshes.All(fm => fm.ElementCount.Range.All(k =>
-            SameVertexIndices(fm.ShapeOf(ElementIndex(k)).ShapeCorners, fm.ElementCorners(ElementIndex(k)))));
+            fm.ShapeOf(ElementIndex(k)).ShapeCorners.Corresponds(fm.ElementCorners(ElementIndex(k)), (a, b) => a == b)));
 
     // ShapeOf is total: one past the last element and -1 are NoElement, not an index error.
     Law_V1Types_ShapeOutOfRangeIsNoElement(w: GridCase): Boolean
@@ -46,7 +41,7 @@ library V1TypesElementsLaws
     // order, so the gate can read SplitsOf at merge without a verdict changing.
     Law_V1Types_SplitsMatchGateSplits(w: GridCase): Boolean
         => w.FourSidedMeshes.All(fm => fm.Quads.Count.Range.All(q =>
-            4.Range.All(i => SameVertexIndices(fm.Quads[q].SplitsOf.SplitTriangles[i].Vertices, fm.QuadSplitTriangles(q)[i]))));
+            4.Range.All(i => fm.Quads[q].SplitsOf.SplitTriangles[i].Vertices.Corresponds(fm.QuadSplitTriangles(q)[i], (a, b) => a == b))));
 
     // The both-splits distance is never below FlatElementDistance's, at every element's
     // parameter centroid lifted to the surface: a gap bound on it is at least as strict.
