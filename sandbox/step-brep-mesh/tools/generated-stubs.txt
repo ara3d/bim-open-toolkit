@@ -29,5 +29,4 @@ PrintStep
 ReachableOfKind
 ReachesItself
 ResolveContexts
-SecondDerivative
 SlotOf

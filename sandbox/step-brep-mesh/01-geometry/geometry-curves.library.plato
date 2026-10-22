@@ -801,11 +801,22 @@ library BrepGeometryCurves
         => g.PartialU(g.PcurveAt(p).Surface, g.Eval(g.PcurveAt(p).Curve, t)) * g.Derivative(g.PcurveAt(p).Curve, t).X
             + g.PartialV(g.PcurveAt(p).Surface, g.Eval(g.PcurveAt(p).Curve, t)) * g.Derivative(g.PcurveAt(p).Curve, t).Y;
 
-    // deferred: the chain rule to second order, S_uu u'^2 + 2 S_uv u' v' +
-    // S_vv v'^2 + S_u u'' + S_v v'', which needs the surface's second partials;
-    // the B-spline case has them (BSplinePartial), the analytic ones in closed
-    // form, the rest by a central difference of the surface partials.
-    SecondDerivative(g: GeometrySet, p: PcurveIndex, t: Number): Vector3D;
+    // The chain rule to second order, S_uu u'^2 + 2 S_uv u' v' + S_vv v'^2 +
+    // S_u u'' + S_v v'', with the surface's second partials from JetAt (closed
+    // form for every surface kind but Offset, whose JetWith arm is deferred: a
+    // pcurve on an offset surface still stops there, and no corpus file has
+    // one). TKT-475: without a body every check reaching a SURFACE_CURVE edge's
+    // pcurve threw.
+    SecondDerivative(g: GeometrySet, p: PcurveIndex, t: Number): Vector3D
+    {
+        var c = g.PcurveAt(p).Curve;
+        var uv = g.Eval(c, t);
+        var d = g.Derivative(c, t);
+        var dd = g.SecondDerivative(c, t);
+        var jet = g.JetAt(g.PcurveAt(p).Surface, uv.ToUvPoint);
+        return jet.DerivativeUU * (d.X * d.X) + jet.DerivativeUV * (2.0 * d.X * d.Y) + jet.DerivativeVV * (d.Y * d.Y)
+            + jet.DerivativeU * dd.X + jet.DerivativeV * dd.Y;
+    }
 
     // The parameter of pcurve p's space point nearest to q (contract
     // ClosestParameter on a pcurve). Chunk B body: a closed form where the

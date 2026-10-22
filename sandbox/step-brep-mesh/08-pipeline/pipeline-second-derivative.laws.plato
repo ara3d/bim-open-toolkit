@@ -1,4 +1,4 @@
-// TKT-475's law (second-derivative.library.plato), over the NINA-B222 corpus witness, whose four surface-curve edges
+// TKT-475's law (SecondDerivative of a pcurve, 01-geometry/geometry-curves.library.plato), over the NINA-B222 corpus witness, whose four surface-curve edges
 // are mastered by pcurves on its cylinder and planes.
 library V1ReliabilitySecondDerivativeLaws
 {
@@ -16,22 +16,22 @@ library V1ReliabilitySecondDerivativeLaws
         return narrow ? d.Range.Start + width * (i.ToNumber + 1.0) * 0.25 : i.ToNumber * 0.5;
     }
 
-    // At t, the body agrees with a central difference of the pcurve's first derivative, to within 1e-4 of the
+    // At t, SecondDerivative agrees with a central difference of the pcurve's first derivative, to within 1e-4 of the
     // second derivative's size plus one (the difference's truncation and rounding at h = 1e-4).
     MatchesCentralDifference(g: GeometrySet, p: PcurveIndex, t: Number): Boolean
     {
         var h = 1e-4;
         var difference = (g.Derivative(p, t + h) - g.Derivative(p, t - h)) * (0.5 / h);
-        var body = g.SecondDerivativeBody(p, t);
+        var body = g.SecondDerivative(p, t);
         return (body - difference).Length <= 1e-4 * (1.0 + body.Length);
     }
 
-    // The body's error against the central difference at t, relative to the second derivative's size plus one.
+    // SecondDerivative's error against the central difference at t, relative to the second derivative's size plus one.
     RelativeError(g: GeometrySet, p: PcurveIndex, t: Number): Number
     {
         var h = 1e-4;
         var difference = (g.Derivative(p, t + h) - g.Derivative(p, t - h)) * (0.5 / h);
-        var body = g.SecondDerivativeBody(p, t);
+        var body = g.SecondDerivative(p, t);
         return (body - difference).Length / (1.0 + body.Length);
     }
 
@@ -44,7 +44,7 @@ library V1ReliabilitySecondDerivativeLaws
     }
 
     // Every pcurve of the NINA-B222 witness has a second derivative, and it is the derivative's derivative. On the
-    // library, SecondDerivative(g, p, t) throws here.
+    // library before TKT-475, SecondDerivative(g, p, t) threw here.
     Law_V1Reliability_PcurveSecondDerivativeMatchesDifference(_: Integer): Boolean
     {
         var g = BrepModel.Witness_NinaB222W1x2Face678.Geometry;
