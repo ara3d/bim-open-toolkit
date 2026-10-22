@@ -48,4 +48,17 @@ library V1Thick
         return c.Triangles.All(t => m.IsThickTriangle(t, pi, at, pos))
             || m.ThinnestOf(c.Triangles, pi, at, pos) > m.ThinnestOf(replaced, pi, at, pos);
     }
+
+    // ChangedAreThick (TriangulationFast's TryInsertion, the Local reference of the insertion
+    // passes) with the same per-triangle bound as CavityIsThickV1: kept when every changed
+    // triangle of `after` is thick, or its thinnest is thicker than that of `before` there; corners
+    // evaluated on face f's surface at pts (the new point's parameters last).
+    ChangedAreThickV1(m: BrepModel, f: BrepFaceIndex, pts: Array<UvCoordinate>, before: Array<TriangleFace>, after: Array<TriangleFace>, changed: Array<Integer>): Boolean
+    {
+        var pos = new List<Point3D>().AddRange(pts.Map(uv => m.Geometry.Eval(m.SurfaceOf(f), uv)));
+        var pi = pts.Count - 1;
+        return changed.All(k => m.IsThickTriangle(after[k], pi, pos.At(pi), pos))
+            || m.ThinnestOf(changed.Map(k => after[k]), pi, pos.At(pi), pos)
+                > m.ThinnestOf(changed.FlatMap(k => k < before.Count ? [before[k]] : [before[0]].Take(0)), pi, pos.At(pi), pos);
+    }
 }
