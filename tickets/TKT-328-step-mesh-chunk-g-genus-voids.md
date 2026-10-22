@@ -1,7 +1,7 @@
 ---
 id: TKT-328
 title: STEP mesher in Plato, step G: solids with holes and hollow solids (genus and voids)
-status: claimed
+status: done
 depends_on: []
 owner: session cab91351
 session: cab91351-5bf8-4a98-95e5-92d43c79efbf
@@ -11,6 +11,7 @@ related: [TKT-323, TKT-314, TKT-315]
 confidence: high
 created: 2026-10-18
 claimed: 2026-10-18
+closed: 2026-10-22
 ---
 
 ## Acceptance criteria
