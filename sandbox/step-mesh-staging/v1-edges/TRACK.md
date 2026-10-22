@@ -1,7 +1,7 @@
 # v1-edges: edge discretization, edge identity, and the assembled mesh's watertightness
 
 Ticket: TKT-413, TKT-419, TKT-414, TKT-400
-Status: ready: E3, E1, E2, E4a, E4b, E5a | next: E5b
+Status: ready: E3, E1, E2, E4a, E4b, E5a | waiting: E5a' (on the merge of E4 and E5a), then E5b
 
 ## Chunks
 
@@ -12,6 +12,7 @@ Status: ready: E3, E1, E2, E4a, E4b, E5a | next: E5b
 | E4a | TKT-468, TKT-462 (mesher half) | The constrained Delaunay seed by insertion, with its laws and corpus witnesses | 1 day |
 | E4b | TKT-468 | The seed wired in place of the ear-clipped seed; the corpus check | 0.5 day |
 | E5a | TKT-468 (fallback), V1G-6 | The seed over repeated points: points within rounding (1e-12 of the face's size) one vertex, a vertex that close to a side splits it inside the seed, a side traversed both ways cancels in the fill, each corner back on the copy whose wedge holds the triangle; the E4b fallback removed | 1 day |
+| E5a' | (supervisor, 2026-10-22) | After E4 and E5a merge: `CdtSeedByInsertion` folded into `CdtSeedOverCopies`, one seed, `SeedInside` and the protected `SeedWithoutSlivers` branch gone, laws unchanged | 1 h |
 | E5b | (supervisor, 2026-10-22) | The simplicity test: exact touches and overlaps accepted, proper crossings refused; V1G-6's keyhole rule folded in; FACE-CUSP on a face with a triangle thinner than its tolerance | 0.5 day |
 | E5c | (supervisor, 2026-10-22, option 1) | `RefinementReason.SplitAt(Parameter)`: a blocking request that splits a shared edge at the point where a vertex of the face touches it, kept through later refinement; VOCABULARY.md's contract changes; witnesses ELLA-W1 304 and ODIN-W260 2613 on a scratch regeneration (both faces mesh, neighbours share the point, shells closed) | 1 day |
 | E5d | (supervisor, 2026-10-22, option b) | Proper crossings within the tolerance (c211 81/84/88, LENA-R8 258) resolved by splitting the crossed side at the offending vertex with E5c's request, the sliver beyond a both-ways side that cancels, FACE-CUSP; until then those faces stay unmeshed with FACE-LOOP-NOT-SIMPLE | after E5c |
