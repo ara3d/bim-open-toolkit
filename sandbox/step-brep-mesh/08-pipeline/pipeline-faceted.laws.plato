@@ -13,6 +13,7 @@
 //  - Faceted models
 //  - Agreement
 //  - Count witness
+//  - The large polygon (rank keys)
 
 library FacetedLaws
 {
@@ -126,7 +127,6 @@ library FacetedLaws
         var t = m.EdgeUseTable(s);
         return SameIntegers(p.PointRoots, roots)
             && SameIntegers(m.PolyPointOffsets(poly), (poly.Count + 1).MapRange(k => m.PolyPointOffset(poly, k)))
-            && SameIntegers(m.ImplicitEdgeUsesByOffsets(poly, roots), uses)
             && SameIntegers(p.SortedUses, uses.Sort((a, b) => a <= b))
             && SameIntegers(p.ImplicitFreeEdgeKeysSorted, m.ImplicitFreeEdgeKeys(s).Sort((a, b) => a <= b))
             && p.ImplicitEdgeCountSorted == m.ImplicitEdgeKeys(poly, roots).DistinctCount
@@ -232,4 +232,48 @@ library FacetedLaws
     // 4096 and 262144.
     Witness_FacetedCoincidenceWork(_: WorkClaim): WorkClaim
         => WorkClaim("CoincidenceRootsByGrid: pair tests per poly-loop point", Insertions(27), [64, 512], n => FacetedSheetWork(n));
+
+    //==
+    // # The large polygon (rank keys)
+
+    // The open one-face model whose bound is the poly loop of n points (cos 2 pi k / n,
+    // sin 2 pi k / n, 0).
+    LargePolygon(_: BrepModel, n: Integer): BrepModel
+        => BrepModel.FacetedModel([BrepLoop.PolyLoop(n.MapRange(k =>
+            Point3D((6.283185307179586 * k.ToNumber / n.ToNumber).Cos, (6.283185307179586 * k.ToNumber / n.ToNumber).Sin, 0.0)))],
+            false, -1);
+
+    // On LargePolygon(n), each point its own class: n implicit edges, all free, one boundary
+    // cycle, no defect; chi = V - E + 2F - L = n - n + 2 - 1 = 1, so chi + B = 2; the largest
+    // rank key below twice the use count. The classes 0 to n - 1 are given because the
+    // coincidence grid's sort of the points alone exceeds the 2 s law budget at the n that
+    // matters; the grid gives them on a smaller polygon (Law_V1Edges_PolygonRootsAreGridRoots).
+    RankedPolygonCountsHold(n: Integer): Boolean
+    {
+        var polygon = BrepModel.LargePolygon(n);
+        var p = polygon.ImplicitEdgesWithRoots(polygon.ShellPolyBounds(ShellIndex(0)), n.Range);
+        var edges = p.ImplicitEdgeCountSorted;
+        var free = p.ImplicitFreeEdgeKeysSorted;
+        var cycles = p.BoundaryCyclesOfFreeEdges(free);
+        return edges == n
+            && p.EdgeLow.Count == n
+            && p.SortedUses[p.SortedUses.Count - 1] < 2 * p.SortedUses.Count
+            && free.Count == n
+            && cycles == 1
+            && p.PolyEdgeUseDefectsSorted(false) == 0
+            && n - edges + 2 - 1 + cycles == 2;
+    }
+
+    // The counts hold on a polygon of 33,000 poly points, past the 32,768 where the packed key
+    // (a * N + b) * 2 + 1 overflows a 32-bit Integer.
+    Law_V1Edges_RankedKeysOnLargePolygon(_: Integer): Boolean
+        => 33000.RankedPolygonCountsHold;
+
+    // On a polygon of 500 points the coincidence grid makes every point its own class, the
+    // classes RankedPolygonCountsHold assumes.
+    Law_V1Edges_PolygonRootsAreGridRoots(_: Integer): Boolean
+    {
+        var polygon = BrepModel.LargePolygon(500);
+        return SameIntegers(polygon.CoincidenceRootsByGrid(polygon.ShellPolyPoints(ShellIndex(0))), 500.Range);
+    }
 }

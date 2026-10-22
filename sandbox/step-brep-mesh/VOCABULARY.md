@@ -695,6 +695,11 @@ TYPE-CATALOG.md sections 13 and 15; the README lists the helpers. Blocks `BrepRe
 
 Format: date, layer, old name, new name, reason.
 
+- 2026-10-22, 2, `ShellPolyEdges` gains `EdgeLow` and `EdgeHigh` (the two point classes of the
+  implicit edge of each rank), and a use's key is the rank of its edge's pair of classes, not
+  `a * N + b`; `ImplicitEdgeUseList` added (layer 2, the uses as three parallel arrays);
+  `ImplicitEdgeUsesByOffsets`, `ImplicitEdgeUsesOf`, `ImplicitEdgeUse` deleted: the packed key
+  overflowed a 32-bit Integer above about 32,768 poly points (TKT-400, E3).
 - 2026-10-21, 3, `StepDiagnosticCode` gains `EdgeClosureUndecided` (`STEP-EDGE-CLOSURE-UNDECIDED`,
   Warning, `AboutInstance`; Measure the curve's instance id): `Reduced` keeps an edge whose
   curve's closure it cannot decide without evaluating a B-spline and reports it (TKT-348, D1).

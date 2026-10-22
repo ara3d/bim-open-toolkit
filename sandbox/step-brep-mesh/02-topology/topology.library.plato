@@ -1007,8 +1007,9 @@ library BrepTopology
 
     // The implicit edges of the poly bounds, one key per use: the unordered
     // pair of point classes (a, b), a < b, of two consecutive points, keyed
-    // a * N + b with N the point count; a pair whose points share a class is
-    // no edge. Precondition: pointRoots indexes the bounds' points in order.
+    // by the rank of the pair among the distinct pairs in ascending order
+    // (below the use count at any point count); a pair whose points share a
+    // class is no edge. Precondition: pointRoots indexes the bounds' points in order.
     ImplicitEdgeKeys(m: BrepModel, poly: Array<FaceBound>, pointRoots: Array<Integer>): Array<Integer>
         => m.ImplicitEdgeUses(poly, pointRoots).Map(u => u / 2);
 
@@ -1016,23 +1017,7 @@ library BrepTopology
     // runs the use from the smaller class to the larger, key * 2 otherwise,
     // the bound's Orientation composed with the loop's order.
     ImplicitEdgeUses(m: BrepModel, poly: Array<FaceBound>, pointRoots: Array<Integer>): Array<Integer>
-        => m.ImplicitEdgeUsesByOffsets(poly, pointRoots);
-
-    // The implicit edge uses of one poly bound whose first point is at
-    // position offset.
-    ImplicitEdgeUsesOf(m: BrepModel, b: FaceBound, offset: Integer, pointRoots: Array<Integer>): Array<Integer>
-    {
-        var c = m.Loops[b.Loop].PolyLoopPointsOf.Count;
-        var n = pointRoots.Count;
-        return c.Range.FlatMap(i => m.ImplicitEdgeUse(pointRoots[offset + i], pointRoots[offset + (i + 1) % c], b.Orientation, n));
-    }
-
-    // The use of the implicit edge from class a to class b, as
-    // ImplicitEdgeUses encodes it; none when a == b.
-    ImplicitEdgeUse(m: BrepModel, a: Integer, b: Integer, orientation: Boolean, n: Integer): Array<Integer>
-        => a == b
-            ? [0].Take(0)
-            : [(a.Min(b) * n + a.Max(b)) * 2 + ((a < b) == orientation ? 1 : 0)];
+        => m.ImplicitEdgeUsesRanked(poly, pointRoots);
 
     // V - E + 2F - L of the counts: the Euler characteristic of the shell when
     // its cells are open disks with holes, open arcs, and points.
