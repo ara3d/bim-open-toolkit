@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e | ready: V1G-8, V1G-10 (its harness half in bim-open-data 66f0da1), V1G-11 | V1G-9: diagnosed, no library change
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e | ready: V1G-8, V1G-10 (its harness half in bim-open-data 66f0da1), V1G-11, V1G-12 | V1G-9: diagnosed, no library change
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -19,6 +19,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-9 | TKT-455 | moon_buggy's B-spline faces 41 and 117 reported at 3.8 times the chordal bound | 2 h |
 | V1G-10 | TKT-455 | the contract check and the gate claim measure a quad's split as a whole, and mesh to surface by projection | 2 h |
 | V1G-11 | TKT-455 | one chordal measure for an element and its splits, used by the grid keep rule and the gate claim | 2 h |
+| V1G-12 | TKT-430 | a two-circle cylinder whose circle vertices are not on one generator gets its quad grid | 1 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -73,6 +74,9 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 - V1G-11 (TKT-455), about 1.3 h. No type added; uses T1's `ElementShape` and `QuadSplits`. Library `V1Chordal` (v1-chordal.library.plato, for layer 5): `ElementWithinChordal` and its parts (`ElementPieces`: a triangle alone, a quad as its split on A C and its split on B D; `PieceWithinChordal`: each triangle to the surface by projection at its corner mean and sampled chord midpoints, the surface over each triangle at its parameter centroid and sampled parameter midpoints to the nearer triangle of the piece), with the points' parameters and positions given as functions and the caller naming the sampled sides. Library `V1Keep` (v1-keep.library.plato): `GridElementKeptV1`, T1's `GridElementKept` with its chordal half on `ElementWithinChordal` (sampled sides: not boundary segments of the region). `V1GateSplits` (v1-splits.library.plato, V1G-10's, restaged): `QuadSplitsWithinV1` is now `ElementWithinChordal` on the quad (sampled sides: surface edges), its own split code removed; `ForcedQuadGrid` added beside `ForcedQuadMesh`. So the keep rule and the gate claim are one definition. Laws (`V1KeepLaws`, v1-keep.laws.plato), 3: `Law_V1Gate_KeepRuleAndGateAgree` (on the skewed patch's top, the bump top at 0.3 and the flat patch, forced to one quad, the keep rule's verdict is the gate claim's), `Law_V1Gate_SkewedTopKeepsItsGrid`, `Law_V1Gate_BumpTopStillRefusedAGrid`.
   - Compiled, budget 120 s, two copies of HEAD ad646aa6 with T1 and V1G-10 applied by their merge instructions, without and with this chunk's one edit (`GridElementKept` => `GridElementKeptV1`); filter `V1KeepLaws`, `V1GateSplitsLaws`, `V1GateLaws`, `FaceMeshingGridChordalLaws` (F1), `V1TypesElementsLaws` (T1), `Law_V1Faces_GridKeptWhereCurvedAtMostOneWay` (v1-faces' keep half, copied from its staging folder): without, 19 pass, 1 fail (`Law_V1Gate_SkewedTopKeepsItsGrid`: T1's per-triangle rule refuses the skewed top), 2 error; with, 20 pass, 2 error. The 2 errors are the same in both: T1's `Law_V1Types_DecisionAgreesWithLibrary` and `Law_V1Types_EarlyExitAgreesWithAll` throw "no ground TIR for moved member" on the pinned CLI e37c032f (a compiler stub in T1's laws, not this chunk).
   - moon_buggy_asm.stp on a scratch regeneration of the with-copy plus the staged libraries (Plato c8c83c8b), harness at bim-open-data HEAD (with 66f0da1): faces 41 and 117 take the grid branch, 13 quads each; the contract check reports 0 faces over the chordal bound (worst excess -0.0003). Its 180 misoriented edges are TKT-429, fixed by V1G-8, which HEAD does not have yet; its 3 faces with flipped elements are the cones (v1-faces F4).
+- V1G-12 (TKT-430), about 0.8 h. No type added. Cause: the band cut (JoinedByCut) starts at the sample point of the first circle nearest the second; when the two circles' vertices are not on one generator, that point is not the vertex, so the circle's side of the joined loop runs through the circle's own vertex, and `SideIsOneCarrier` (05-face-meshing/uv-regions.library.plato) rejects a side with a vertex inside it: no four sides, no grid, CDT and refinement instead. Fix: `SideIsOneCarrierV1` (v1-axle.library.plato, library `V1Axle`) lets a vertex lie inside a side when both its neighbours on the loop are samples of the side's carrier edge (a vertex flanked by samples of one edge is that closed edge's own vertex). Witness `Witness_CylinderBandTurned(r, h)` (same file): the cylinder band with its top circle's vertex at (-r, 0, h), half a turn from the bottom's. Laws (`V1AxleLaws`, v1-axle.laws.plato), 2: `Law_V1Gate_TurnedCylinderBandIsAGrid`, `Law_V1Gate_CylinderBandIsAGrid` (quads only, every quad within the bound as both splits).
+  - Compiled, budget 120 s, on V1G-11's wired copy (HEAD ad646aa6 with T1, V1G-10 and V1G-11 applied), without and with the edit; filter `V1AxleLaws`, `BrepWitnessesLaws`, `FaceMeshingChartsLaws`, `FaceMeshingGridChordalLaws`, `Law_V1Faces_GridKeptWhereCurvedAtMostOneWay`: without, 52 of 53 pass (the turned band gets no grid); with, 53 of 53.
+  - moon_buggy_asm.stp on a scratch regeneration of the with-copy and the staged libraries: faces 13, 20, 29, 32, 64, 71, 74, 79, 86, 126, 135, 138 and 145 take the grid branch, 24 quads each, 1.5 to 7.1 ms per face (the ticket measured 224,506 triangles and 34 s of face time for them, on an older build); the contract check reports 0 faces over the chordal bound.
 
 ## Gate and quality: every law of layer 5
 
@@ -413,6 +417,10 @@ V1G-8 (TKT-429):
 - In `JoinedByCut` (05-face-meshing/uv-regions.library.plato): `var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);` => `var end = m.BandEndCopy(f, a, i, b, j);`, and the function's comment says the cut ends at "the copy of b's point nearest it on the face's side (BandEndCopy)".
 - Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
 
+V1G-12 (TKT-430):
+- `SideIsOneCarrier` (05-face-meshing/uv-regions.library.plato) => `r.SideIsOneCarrierV1(corners, k)` (its only caller is `QuadSidesIn`, face-meshing-chart-speeds.library.plato; the edit was checked at that call site).
+- Move `v1-axle.library.plato` to `05-face-meshing/face-meshing-v1-axle.library.plato` (library `V1Axle`; `Witness_CylinderBandTurned` may go beside `Witness_CylinderBand` in 07-validation/validation-witnesses.library.plato instead) and `v1-axle.laws.plato` to `08-pipeline/pipeline-v1-axle.laws.plato` (it reads `V1GateOptions` and `QuadSplitsWithinV1`).
+
 V1G-11 (TKT-455), after T1 and V1G-10:
 - Move `v1-chordal.library.plato` to `05-face-meshing/face-meshing-v1-chordal.library.plato` (library `V1Chordal`), `v1-keep.library.plato` to `05-face-meshing/face-meshing-v1-keep.library.plato` (library `V1Keep`), `v1-keep.laws.plato` to `08-pipeline/pipeline-v1-keep.laws.plato` (it reads `V1GateOptions` and `ForcedQuadGrid`).
 - T1's `GridElementKept` (05-face-meshing/element-shape.library.plato) => `m.GridElementKeptV1(f, r, g, k, bound)`; T1's `GridTriangleWithinChordal` then has no caller: delete it.
@@ -486,6 +494,9 @@ V1G-5 (triage):
 | V1G-11: the shared measure, keep rule, laws | 35 min | 0 |
 | V1G-11: two wired copies, compiled | 3 min | 2 |
 | V1G-11: scratch regeneration, harness on moon_buggy | 5 min, background | 1 regeneration, 1 build, 2 runs |
+| V1G-12: cause, side rule, witness, laws | 25 min | 0 |
+| V1G-12: without and with the edit, compiled | 1.7 min | 2 |
+| V1G-12: scratch regeneration, harness on moon_buggy | 2.5 min | 1 regeneration, 1 build, 2 runs |
 
 ## Lessons
 - The compile cache follows the folder path: a fresh scratch folder cost 6.8 minutes, the same folder rerun about 1 minute. Keep one scratch folder per check.

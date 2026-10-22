@@ -1,0 +1,41 @@
+//==
+// # Version 1: a band's side may pass through its own circle's vertex, laws (TKT-430)
+//
+// The cylinder band whose circle vertices are half a turn apart meshes as a quad grid within the
+// chordal bound, as the band whose vertices lie on one generator does.
+//
+// Sections, in order:
+//  - Bands
+
+library V1AxleLaws
+{
+    //==
+    // # Bands
+
+    // Face 0 of model m meshed by MeshFace at chordal 0.01, quads preferred.
+    BandFaceMesh(m: BrepModel): FaceMesh
+    {
+        var c = V1GateOptions(0.01).Face;
+        return m.MeshFace(BrepFaceIndex(0), m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors), c).Mesh;
+    }
+
+    // True when face 0 of model m meshes as quads only, every quad within the chordal bound as
+    // both splits.
+    MeshesAsAGridWithin(m: BrepModel): Boolean
+    {
+        var c = V1GateOptions(0.01).Face;
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        var fm = m.BandFaceMesh;
+        var bound = c.SurfaceChordal + m.Tolerances.Length.Value;
+        return fm.Quads.Count > 0 && fm.Triangles.Count == 0
+            && fm.Quads.Count.Range.All(q => m.QuadSplitsWithinV1(d, fm, q, bound));
+    }
+
+    // The band with its circle vertices half a turn apart gets a quad grid within the bound.
+    Law_V1Gate_TurnedCylinderBandIsAGrid(_: Integer): Boolean
+        => BrepModel.Witness_CylinderBandTurned(1.0, 1.0).MeshesAsAGridWithin;
+
+    // The band with its vertices on one generator still does.
+    Law_V1Gate_CylinderBandIsAGrid(_: Integer): Boolean
+        => BrepModel.Witness_CylinderBand(1.0, 1.0).MeshesAsAGridWithin;
+}

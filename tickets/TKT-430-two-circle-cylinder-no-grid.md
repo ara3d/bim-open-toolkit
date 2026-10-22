@@ -1,14 +1,16 @@
 ---
 id: TKT-430
 title: STEP mesher: two-circle cylinder faces whose circle vertices are not on one generator get no quad grid and refine to up to 51,768 triangles (moon_buggy_asm.stp's axle, face 29)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 5135435e
+session: 5135435e-eb61-4194-b168-7b93c64dd2fe
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3]
 related: [TKT-323, TKT-405]
 confidence: medium
 created: 2026-10-22
+claimed: 2026-10-22
 kind: defect
 ---
 
