@@ -25,6 +25,10 @@ days). --coverage FILE writes one row per law: its verdict, the cases run, how t
 (exhaustive, sampled, or one case for an input-free law), and the detail, so a law that passes on
 one case or on 25 generated values can be told from one that passes on every witness.
 
+Before the laws, the program the C# regeneration compiles (shipped-program.txt: the stdlib tiers and layers 00 to
+08 alone) is type-checked on its own, and a type error there fails the run: the whole program the laws need can
+hide a call from layer 00 to 08 into layers 09 to 11 (the V1G-1 merge, 7a59273d). --no-shipped-check skips it.
+
 The server does not always match a bare law name, so the script rewrites each bare `Law_X`, and
 `Law_X(signature)` for an overload, as `Block.Law_X` for every block of the compiled folders that
 declares it; a path in MSYS form (/c/...) is read as C:/...; and an empty run is asked once more
@@ -166,6 +170,53 @@ def settled(result, arguments, budget):
     return again[0], law, f"{again[2]}  [settled alone at {budget:g}s; first run: {detail}]"
 
 
+SHIPPED = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shipped-program.txt")
+
+
+def shipped_program(library_root):
+    """The folders and excluded file names of the program the regeneration compiles (shipped-program.txt), with
+    the library's layers under library_root: what Ara3D.StepBrep is made from, without layers 09 to 11 or staging."""
+    stdlib = os.path.dirname(LIBRARY[0])
+    tiers, globs, layers = [], [], []
+    with open(SHIPPED, encoding="utf-8") as f:
+        for line in f:
+            words = line.split("#", 1)[0].split()
+            if words and words[0] == "stdlib":
+                tiers.append(f"{stdlib}/{words[1]}")
+            elif words and words[0] == "exclude":
+                globs += words[1:]
+            elif words and words[0] == "layer":
+                layers.append(f"{library_root}/{words[1]}")
+    excluded = sorted({os.path.basename(p) for tier in tiers for g in globs for p in glob.glob(os.path.join(tier, g))})
+    return tiers + layers, excluded
+
+
+def compile_errors(data):
+    """The compilation's own errors: parse and symbol-resolution failures, which the server reports as ok false with
+    an errors list and 0 type errors (TKT-337, F-60). Read only typeErrors, a run that did not compile looks clean:
+    that is how the V1G-1 merge's 12 unresolved symbols passed its check."""
+    errors = [e if isinstance(e, str) else json.dumps(e) for e in data.get("errors", [])]
+    return errors or (["the server answered ok false with no errors listed"] if data.get("ok") is False else [])
+
+
+def check_shipped(library_root, profile):
+    """Type-check the shipped program alone. The whole program a law run compiles can hide a call from layers 00 to
+    08 into 09 to 11 (the V1G-1 merge, 7a59273d: 12 symbol errors the regeneration hit and the server did not).
+    Returns the number of type errors, or None when the server's answer is not understood."""
+    folders, excluded = shipped_program(library_root)
+    data = call({"filter": "none", "profile": profile, "folders": ",".join(folders), "recursive": False,
+                 "exclude": ",".join(excluded), "types": "all"})
+    if data is None:
+        return None
+    errors = compile_errors(data) + data.get("typeErrors", [])
+    count = len(compile_errors(data)) + data.get("typeErrorCount", len(data.get("typeErrors", [])))
+    for error in errors[:20]:
+        print("shipped program: " + (error if isinstance(error, str) else json.dumps(error)))
+    print(f"shipped program (shipped-program.txt: {len(folders)} folders, {len(excluded)} stdlib files excluded): "
+          f"{count} type errors")
+    return count
+
+
 def coverage_row(verdict, law, detail):
     """Law, verdict, cases, how the cases were made, detail: one row of the --coverage table."""
     cases = CASES.search(detail)
@@ -198,6 +249,8 @@ def main():
                         help="run each budget error again alone with this budget and report the settled verdict")
     parser.add_argument("--coverage", metavar="FILE",
                         help="write a tab-separated table: law, verdict, cases, how the cases were made, detail")
+    parser.add_argument("--no-shipped-check", action="store_true",
+                        help="skip the type check of the shipped program (layers 00 to 08 alone, shipped-program.txt)")
     parser.add_argument("--timeout", type=float, default=TIMEOUT,
                         help=f"seconds to wait for the server's answer; default {TIMEOUT}. The server keeps "
                              "running a request the client gave up on, so a full sweep needs a longer wait")
@@ -217,9 +270,14 @@ def main():
     for key in ("types", "report", "baseline", "budget"):
         if getattr(args, key) is not None:
             arguments[key] = getattr(args, key)
+    shipped_errors = 0 if args.no_shipped_check else check_shipped(library[-1], args.profile)
+    if shipped_errors is None:
+        return 2
     data = run(arguments)
     if data is None:
         return 2
+    for error in compile_errors(data):
+        print("compile: " + error)
     for error in data.get("typeErrors", []):
         print(error if isinstance(error, str) else json.dumps(error))
     results = [parse_result(line) for line in data.get("results", [])]
@@ -253,9 +311,9 @@ def main():
     # The server's own counts decide too, unless reruns settled its errors, so a result line this script
     # does not parse can never turn a failing run into a pass.
     counts = {} if args.rerun_budget else data.get("counts", {})
-    failed = data.get("isError") or data.get("typeErrorCount", 0) > 0 \
+    failed = data.get("isError") or bool(compile_errors(data)) or data.get("typeErrorCount", 0) > 0 \
         or tally["fail"] > 0 or tally["error"] > 0 or skipped \
-        or counts.get("fail", 0) > 0 or counts.get("error", 0) > 0
+        or counts.get("fail", 0) > 0 or counts.get("error", 0) > 0 or shipped_errors > 0
     return 1 if failed else 0
 
 

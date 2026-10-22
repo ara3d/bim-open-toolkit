@@ -8,20 +8,31 @@ LIB="$(cd "$(dirname "$0")/.." && pwd)"
 W="${1:-${TMPDIR:-/tmp}/compile-layers-00-08}"
 CLI="${2:-C:/Users/cdigg/.plato-cli/c8c83c8b/Plato.CLI.dll}"
 PLATO=/c/Users/cdigg/git/plato
-rm -rf "$W"; mkdir -p "$W/in/foundation" "$W/in/geometry" "$W/in/library" "$W/out"
-for t in foundation geometry; do
+# The tiers, excluded stdlib names and layers come from shipped-program.txt, the one list plato_laws.py reads too.
+LIST="$(dirname "$0")/shipped-program.txt"
+TIERS=$(awk '$1 == "stdlib" { print $2 }' "$LIST")
+EXCLUDE=$(awk '$1 == "exclude" { for (i = 2; i <= NF; i++) print $i }' "$LIST")
+LAYERS=$(awk '$1 == "layer" { print $2 }' "$LIST")
+rm -rf "$W"; mkdir -p "$W/in/library" "$W/out"
+INPUTS=()
+for t in $TIERS; do
+  mkdir -p "$W/in/$t"
+  INPUTS+=("$(cygpath -m "$W")/in/$t")
   for f in "$PLATO/stdlib/$t"/*.plato; do
-    case "$(basename "$f")" in brep.*|remeshing.*|lattices.*) ;; *) cp "$f" "$W/in/$t/";; esac
+    keep=1
+    for g in $EXCLUDE; do case "$(basename "$f")" in $g) keep=0;; esac; done
+    [ $keep = 1 ] && cp "$f" "$W/in/$t/"
   done
 done
-for l in 00-foundation 01-geometry 02-topology 03-step 04-discretization 05-face-meshing 06-mesh 07-validation 08-pipeline; do
+INPUTS+=("$(cygpath -m "$W")/in/library")
+for l in $LAYERS; do
   for f in "$LIB/$l"/*.plato; do
     case "$f" in *.spec.plato) ;; *) cp "$f" "$W/in/library/";; esac
   done
 done
 cd "$PLATO"
 set +e
-dotnet "$CLI" "$(cygpath -m "$W")/in/foundation" "$(cygpath -m "$W")/in/geometry" "$(cygpath -m "$W")/in/library" \
+dotnet "$CLI" "${INPUTS[@]}" \
   --out="$(cygpath -m "$W")/out" --profile=cpu64 > "$W/log.txt" 2>&1
 code=$?
 tail -3 "$W/log.txt"

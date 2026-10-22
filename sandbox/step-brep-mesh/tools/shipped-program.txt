@@ -1,0 +1,20 @@
+# The program the C# regeneration compiles (deps/bim-open-data/tools/regen-step-brep.ps1: $stdlibExcluded and
+# $layers), and so the program that ships as Ara3D.StepBrep. Read by plato_laws.py, which type-checks this program
+# before every law run, and by compile-layers-00-08.sh. regen-step-brep.ps1 keeps its own copy of the list until it
+# reads this file (TKT-433's request to v1-close); a change here must be made there too.
+#
+#   stdlib <tier>        a folder of the Plato stdlib, top level only
+#   exclude <glob>...    stdlib file names left out
+#   layer <folder>       a library layer, top level only; *.spec.plato files are always left out
+stdlib foundation
+stdlib geometry
+exclude brep.* remeshing.* lattices.*
+layer 00-foundation
+layer 01-geometry
+layer 02-topology
+layer 03-step
+layer 04-discretization
+layer 05-face-meshing
+layer 06-mesh
+layer 07-validation
+layer 08-pipeline

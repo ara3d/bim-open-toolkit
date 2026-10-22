@@ -155,6 +155,16 @@ second when nothing changed. Its price is memory: F-58 saw the server grow to 2.
 set is one fixed path, not a fresh path per call. This belongs in `plato_laws.py` (this track's fence). The merge
 agent's 00-to-08 compile with the pinned CLI is the same check, run cold once per merge; both can stay.
 
+Built afterwards: `tools/shipped-program.txt` holds the folder list, and both `plato_laws.py` and
+`compile-layers-00-08.sh` read it. Testing the check on a copy of the library at 7a59273d showed a second cause. The
+server did report the 12 unresolved symbols, as `ok: false` with an `errors` list, but with 0 type errors, and
+`plato_laws.py` read only `typeErrors`. So the merge check would have passed on any folder set. The script now prints
+the compilation's own errors and fails on them, in the shipped check and in the law run. It is the same defect as
+TKT-337 ("0 laws" on a parse failure), which the earlier mitigation had only turned into "no laws matched". At
+7a59273d the shipped check reports 14 errors in 2 s warm, and the pinned CLI fails the same copy in 52 s. Today both
+pass the shipped set, while the whole working tree does not compile: a "Circular expression" in an uncommitted edit
+outside layers 00 to 08, which the script used to report only as "no laws matched".
+
 ## Verdict: are the specs and laws working?
 
 Where they work: the laws hold the library to itself. The 1,188 passing laws, most of them agreement laws between
