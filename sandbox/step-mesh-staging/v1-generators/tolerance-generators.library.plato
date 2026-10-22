@@ -1,0 +1,41 @@
+//==
+// # Tolerance generators
+//
+// Generators for the law runner (Plato TKT-446): a library function
+// Generate_X(seed: Integer): T makes the runner draw every T, as a law argument
+// or as a field of another value, from its generators and witnesses only, with
+// a seed from 0 to 15, never field by field. Before, the runner built a
+// LengthTolerance from any Number and handed the model-validity laws of
+// TKT-423 tolerances of 0 or -0.5 that no constructor of the library makes.
+// Each generator below makes only what the decoder can make: a positive finite
+// tolerance.
+
+library V1GeneratorsTolerances
+{
+    // A positive finite length tolerance from 1e-8 to 0.25 model units: the
+    // magnitudes of real files' length uncertainty, and coarser ones.
+    Generate_LengthTolerance(seed: Integer): LengthTolerance
+        => LengthTolerance(seed.V1GeneratorsMagnitude);
+
+    // A positive finite angle tolerance from 1e-10 to 2.5e-3 radians.
+    Generate_AngleTolerance(seed: Integer): AngleTolerance
+        => AngleTolerance(Angle(seed.V1GeneratorsMagnitude * 0.01));
+
+    // A positive finite parameter tolerance from 1e-8 to 0.25.
+    Generate_ParameterTolerance(seed: Integer): ParameterTolerance
+        => ParameterTolerance(seed.V1GeneratorsMagnitude);
+
+    // A model's tolerances as the decoder builds them (step-raw-witnesses'
+    // tolerances): the parameter floors derived from the length tolerance at a
+    // model a metre across, not drawn on their own.
+    Generate_Tolerances(seed: Integer): Tolerances
+    {
+        var length = seed.Generate_LengthTolerance;
+        return Tolerances(length, seed.Generate_AngleTolerance, length.LengthParameterFloor(1000.0), length.AngleParameterFloor(1000.0, 1000.0));
+    }
+
+    // 10^-(1 + seed mod 8), times 2.5 for seeds 8 and above: sixteen
+    // magnitudes from 1e-8 to 0.25.
+    V1GeneratorsMagnitude(seed: Integer): Number
+        => 0.1.Pow((seed % 8 + 1).ToNumber) * (seed < 8 ? 1.0 : 2.5);
+}
