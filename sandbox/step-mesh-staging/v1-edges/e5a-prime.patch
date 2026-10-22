@@ -1,3 +1,16 @@
+diff --git a/sandbox/step-brep-mesh/05-face-meshing/README.md b/sandbox/step-brep-mesh/05-face-meshing/README.md
+index acc71c9..440b4da 100644
+--- a/sandbox/step-brep-mesh/05-face-meshing/README.md
++++ b/sandbox/step-brep-mesh/05-face-meshing/README.md
+@@ -38,7 +38,7 @@ Algorithms were deferred by the design pass, every one with a contract in `face-
+ | `insertion-clearance.{types,library,laws}.plato` | library `FaceMeshingInsertionClearance` (TKT-401): `ThinBound` (ten length tolerances), `AltitudeUnlessCollapsed`, `ThinnestOf`, `CavityIsThick` and `ChangedAreThick`, which the three insertion tests call: a point is kept only when the triangles it writes are thick enough or thicker than those they replace; `BumpTop` and `Law_V1Faces_BumpTopHasNoDegenerateElement` |
+ | `insertion-clearance-v1.laws.plato` | library `V1ThickLaws` (TKT-464): c211 face 339 meshes within its chordal bound (`Law_V1Gate_C211Face339WithinChordal`, with its measure), and `ThinBoundOf` lies between the length tolerance and `ThinBound`; `CavityIsThick` and `ChangedAreThick` hold each written triangle to `ThinBoundOf` |
+ | `insertion-live-agreement.laws.plato` | library `V1GateAgreementLaws` (5 laws, TKT-456): the live insertion passes (`SurfacePassCarried`, `AnglePassCarried`, `TryInsertionIndexed`) agree with TriangulationFast's Local reference point for point, with positions on the surface and the carried neighbour table, from a constrained and a refined start, on the triangulated witnesses, the plane stars, the 13-hole region and c211 face 339; the indexed flips agree with `Delaunayed` |
+-| `triangulation-cdt-seed.{library,laws}.plato` | library `V1EdgesCdtSeed` (TKT-468): `CdtSeedByInsertion`, the constrained Delaunay seed by point insertion, segment recovery and the inside test, with no bridges and no ear clipping; the reference `Law_V1Edges_CopiesSeedAgreesOnSimpleRegions` compares with since E5a; and `V1EdgesCdtSeedLaws` (3 laws: the seed's facts on synthetic pad arrays, agreement where ear clipping is complete, point holes) |
++| `triangulation-cdt-seed.{library,laws}.plato` | library `V1EdgesCdtSeed` (TKT-468): the parts of the constrained Delaunay seed (its state, point insertion with Lawson flips, Sloan's segment recovery, the sliver tests, `SeedCompleteCount`), with no bridges and no ear clipping, which `CdtSeedOverCopies` puts together (E5a'); and `V1EdgesCdtSeedLaws` (3 laws: the seed's facts on synthetic pad arrays, agreement where ear clipping is complete, point holes) |
+ | `triangulation-cdt-seed-copies.library.plato` | library `V1EdgesCdtSeedCopies` (TKT-468, E5a): `CdtSeedOverCopies`, the constrained Delaunay seed over repeated points (rounding-level merge, chains through vertices on a segment, sides run both ways cancel, corners back on their copies by wedge), and `CdtSeedOfRegionOverCopies`, the seed `TriangulateRegionCdtIndexedCounted` uses |
+ | `parameter-floor.{types,laws}.plato` | `StripCase`, library `GeometryParameterFloorLaws` (TKT-459): `Law_V1Faces_BSplineStripMeshes` (a 0.2 mm strip on a B-spline patch moving 24 mm per unit meshes, no FACE-ZERO-WIDTH) and `Law_V1Faces_FloorKeptOffSplines` (on layer 7's ten witnesses every non-B-spline parameter keeps the floor `UnitSpeedFloor`, `ParameterFloorAlong` before TKT-459, and a B-spline's is no coarser) |
+ | `pole-closure.{types,library,laws}.plato` | library `FaceMeshingPoleClosure` (TKT-411): `ClosedAtPole` (Unwrap's last step: a loop through a pole cannot wind round its free parameter), `ClosedAlong`, `IsFreeAlongAt`, `ExpandedWinding`, `ShiftedAfter`, `PoleGapTolerance` (the gap `ExpandedPoint` expands a pole at); `PoleLune` and `FaceMeshingPoleClosureLaws` (2 laws) |
 diff --git a/sandbox/step-brep-mesh/05-face-meshing/triangulation-cdt-seed-copies.library.plato b/sandbox/step-brep-mesh/05-face-meshing/triangulation-cdt-seed-copies.library.plato
 index 7b6d0c8..b6847cc 100644
 --- a/sandbox/step-brep-mesh/05-face-meshing/triangulation-cdt-seed-copies.library.plato
@@ -318,6 +331,19 @@ index fa7ce48..a10c2ca 100644
  
      // The number of triangles a complete seed of r has: n + 2 h - 2 over its n boundary points
      // and its h loops of three or more points besides the outer one, plus one for each point on
+diff --git a/sandbox/step-brep-mesh/08-pipeline/README.md b/sandbox/step-brep-mesh/08-pipeline/README.md
+index b431f69..da47fa6 100644
+--- a/sandbox/step-brep-mesh/08-pipeline/README.md
++++ b/sandbox/step-brep-mesh/08-pipeline/README.md
+@@ -37,7 +37,7 @@ and `CrossCheck(mesh, level, criteria)`, all at the options' `ConformanceLevel`
+ | `pipeline-corpus-witness-odin-w160-fillet.{library,laws}.plato` | `Witness_OdinW160Face3364And3398` (SHO/ODIN-W160 fillets 3364 and 3398 with a ring of 1, extracted before V1G-15) and library `V1GateCorpusWitnessLaws` (TKT-460): `Law_V1Gate_OdinW160FilletIsManifoldAndOriented`, no non-manifold and no misoriented edge, and its measure, the non-manifold count |
+ | `pipeline-corpus-witness-c211-339.library.plato` | `Witness_C211CaseWithOdinV1Face339` (u-blox SHO/c211_case_with_odin_v1 face 339, a quarter cylinder with a 0.05 mm boundary segment, TKT-464); its law is in `05-face-meshing/insertion-clearance-v1.laws.plato` |
+ | `pipeline-cdt-seed-witnesses.laws.plato`, `pipeline-witness-{lara-pads,nora-plane,rcb-plane}.library.plato` | library `V1EdgesCdtSeedWitnessLaws` (3 laws, TKT-468): the seed's facts on CEL/LARA faces 742 and 504, SHO/NORA-B100 face 2745 and POS/RCB-F9T(AP214) face 874, each region built as the host builds it; the three corpus witnesses |
+-| `pipeline-cdt-seed-copies.laws.plato` | library `V1EdgesCdtSeedCopiesLaws` (6 laws, TKT-468): the seed over copies on V1G-6's keyhole, a slit, CEL/LENA-R8 face 1349 and a cancelled tail; it agrees with `CdtSeedByInsertion` on simple regions and holds on E4a's corpus witnesses |
++| `pipeline-cdt-seed-copies.laws.plato` | library `V1EdgesCdtSeedCopiesLaws` (4 laws, TKT-468): the seed over copies on V1G-6's keyhole, a slit, CEL/LENA-R8 face 1349 and a cancelled tail |
+ | `pipeline-second-derivative.laws.plato` | library `V1ReliabilitySecondDerivativeLaws` (TKT-475): `Law_V1Reliability_PcurveSecondDerivativeMatchesDifference`, every pcurve of the NINA-B222 witness has a second derivative that matches a central difference of its derivative, and its measure, the worst relative error |
+ | `pipeline.spec.plato` | invariants of the 4 types, 9 function contracts, 5 theorems |
+ | `pipeline-decided.{types,library,laws,spec}.plato` | section 5: `MeshResult = Succeeded \| Incomplete \| Failed`, `ToMeshResult(m, outcome)` through layer 7's `CheckCheckedMesh`, `IsSucceeded`; blocks `StepToMeshDecided`, `StepToMeshDecidedLaws` (1 law) (catalog merge, 2026-10-20). `MeshModel` still returns `MeshOutcome` |
 diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-cdt-seed-copies.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-cdt-seed-copies.laws.plato
 index 7efdb85..b0be6fc 100644
 --- a/sandbox/step-brep-mesh/08-pipeline/pipeline-cdt-seed-copies.laws.plato
