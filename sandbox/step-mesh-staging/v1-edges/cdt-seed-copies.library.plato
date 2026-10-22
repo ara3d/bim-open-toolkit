@@ -1,0 +1,522 @@
+//==
+// # The constrained Delaunay seed over repeated points (track v1-edges, chunk E5a, TKT-468)
+//
+// Layer 05-face-meshing, beside V1EdgesCdtSeed (cdt-seed.library.plato), whose state, insertion,
+// flips and segment recovery it reuses. That seed skips a point that coincides with an earlier
+// one and its segments, so a loop through one point twice (V1G-6's keyholes, LENA-R8 face 1349)
+// comes out with a triangle over the hole, and CdtSeedOfRegion falls back to ear clipping there.
+// A weakly simple region touches itself without crossing: a loop passes one point twice, a
+// vertex lies on another side, a side is run along both ways (a slit, or a zero-width tail).
+// Here:
+//  - points within the merge distance (1e-12 of the region's extent, rounding: ELLA-W1 304's
+//    touches are 1e-18 off, ODIN-W260 2613's 4e-16) are one vertex, the first one inserted;
+//  - each boundary segment is recovered between the vertices of its ends, as a chain through any
+//    vertex lying on it (within rounding of the line, strictly between the ends);
+//  - each piece of a chain is a side of the triangulation; a side run along both ways cancels
+//    (its winding number is zero), so it seeds no triangle of the region but still stops the
+//    flood: without that, ODIN-W260 2613's tail seeds the outside;
+//  - each corner of a kept triangle goes back on the copy of its vertex whose wedge (from the
+//    copy's next point counter-clockwise round to its previous point; the region lies on the left
+//    of its loops) holds the direction to the triangle's centroid.
+// A region whose segments properly cross is outside this contract (E5b refuses it); a segment
+// that cannot be recovered there leaves the flood free to leak.
+//
+// The pieces are kept in a table, one List<Integer>: entries 0 to m the offsets of each vertex's
+// entries (m the point count with the three corners of the enclosing triangle), then per vertex
+// one entry 2 w + d for each piece with w at its other end, d 0 when the piece runs from the
+// vertex to w, 1 when it runs from w to the vertex.
+//
+// Sections, in order:
+//  - Repeated points
+//  - Chains through vertices on a segment
+//  - The table of pieces
+//  - Removing slivers, keeping the region
+//  - Copies and wedges
+//  - The seed
+
+library V1EdgesCdtSeedCopies
+{
+    //==
+    // # Repeated points
+
+    // The corner of triangle t, or of a triangle across one of its sides, within distance eps of
+    // point p; -1 when none is. A point within rounding of a vertex lands in a triangle with that
+    // vertex as a corner, or across a side from one.
+    SeedNearCorner(s: List<Integer>, cap: Integer, points: Array<Point2D>, t: Integer, p: Integer, eps: Number): Integer
+    {
+        var found = s.SeedNearOwnCorner(points, t, p, eps);
+        var j = 0;
+        while (j < 3 && found < 0)
+        {
+            var u = s.SeedAcross(cap, t, j);
+            if (u >= 0)
+            {
+                found = s.SeedNearOwnCorner(points, u, p, eps);
+            }
+            j = j + 1;
+        }
+        return found;
+    }
+
+    // The corner of triangle t within distance eps of point p; -1 when none is.
+    SeedNearOwnCorner(s: List<Integer>, points: Array<Point2D>, t: Integer, p: Integer, eps: Number): Integer
+    {
+        var a = s.SeedCorner(t, 0);
+        var b = s.SeedCorner(t, 1);
+        var c = s.SeedCorner(t, 2);
+        return points[a].Distance(points[p]) <= eps ? a
+            : (points[b].Distance(points[p]) <= eps ? b
+            : (points[c].Distance(points[p]) <= eps ? c : -1));
+    }
+
+    //==
+    // # Chains through vertices on a segment
+
+    // A vertex w next to vertex u in the state (a corner of a triangle about u) that lies on the
+    // segment from u to v: within 1e-12 |uv| |uw| of its line, and strictly between u and v; the
+    // nearest to u when there are several; -1 when none does.
+    SeedOnSegmentNeighbour(s: List<Integer>, cap: Integer, points: Array<Point2D>, u: Integer, v: Integer): Integer
+    {
+        var start = s.SeedAt(cap, u);
+        var found = -1;
+        var t = start;
+        var going = start >= 0;
+        var steps = 0;
+        while (going && steps < cap)
+        {
+            var j = s.SeedCornerSlot(t, u);
+            var k = 1;
+            while (k < 3)
+            {
+                var w = s.SeedCorner(t, j + k);
+                if (SeedLiesOnSegment(points, u, v, w))
+                {
+                    if (found < 0)
+                    {
+                        found = w;
+                    }
+                    else
+                    {
+                        if (points[u].Distance(points[w]) < points[u].Distance(points[found]))
+                        {
+                            found = w;
+                        }
+                    }
+                }
+                k = k + 1;
+            }
+            t = s.SeedAcross(cap, t, j + 2);
+            going = t >= 0 && t != start;
+            steps = steps + 1;
+        }
+        return found;
+    }
+
+    // Whether point w lies on the segment from u to v: within 1e-12 |uv| |uw| of its line and
+    // strictly between its ends.
+    SeedLiesOnSegment(points: Array<Point2D>, u: Integer, v: Integer, w: Integer): Boolean
+    {
+        var a = points[u];
+        var b = points[v];
+        var c = points[w];
+        var along = (c.X - a.X) * (b.X - a.X) + (c.Y - a.Y) * (b.Y - a.Y);
+        var length2 = (b.X - a.X) * (b.X - a.X) + (b.Y - a.Y) * (b.Y - a.Y);
+        return w != u && w != v && along > 0.0 && along < length2
+            && TwiceSignedArea(a, b, c).Abs <= 1e-12 * a.Distance(b) * a.Distance(c);
+    }
+
+    // The state with the segment from u to v made a chain of sides: recovered by SeedWithSegment
+    // from the current vertex to v; when that leaves no side because a vertex lies on the
+    // segment, the chain steps to that vertex and goes on. At most cap steps.
+    SeedWithChain(s0: List<Integer>, cap: Integer, points: Array<Point2D>, next: Array<Integer>, u: Integer, v: Integer): List<Integer>
+    {
+        var s = s0;
+        var current = u;
+        var steps = 0;
+        while (current != v && current >= 0 && steps < cap)
+        {
+            s = s.SeedWithSegment(cap, points, next, current, v);
+            current = s.SeedHasSide(cap, current, v) ? v : s.SeedOnSegmentNeighbour(cap, points, current, v);
+            steps = steps + 1;
+        }
+        return s;
+    }
+
+    // The pieces of the segment from u to v in the state, coded a m + b for a piece from a to b:
+    // the side u-v, or the side to the vertex on the segment nearest u and on from there. A piece
+    // that is not a side ends the chain with a piece to v (the flood may then leak).
+    SeedChainPieces(s: List<Integer>, cap: Integer, points: Array<Point2D>, u: Integer, v: Integer): Array<Integer>
+    {
+        var m = points.Count;
+        var pieces = [0].Take(0);
+        var current = u;
+        var steps = 0;
+        while (current != v && steps < cap)
+        {
+            var w = s.SeedHasSide(cap, current, v) ? v : s.SeedOnSegmentNeighbour(cap, points, current, v);
+            var to = w < 0 ? v : w;
+            pieces = pieces.Concatenate([current * m + to]);
+            current = to;
+            steps = steps + 1;
+        }
+        return pieces;
+    }
+
+    //==
+    // # The table of pieces
+
+    // The table of the directed pieces (codes a m + b) over m vertices.
+    SeedPieceTable(pieces: Array<Integer>, m: Integer): List<Integer>
+    {
+        var degree = new Buffer<Integer>(m + 1);
+        var k = 0;
+        while (k <= m)
+        {
+            degree = degree.Set(k, 0);
+            k = k + 1;
+        }
+        k = 0;
+        while (k < pieces.Count)
+        {
+            var a = pieces[k] / m;
+            var b = pieces[k] % m;
+            degree = degree.Set(a, degree.At(a) + 1).Set(b, degree.At(b) + 1);
+            k = k + 1;
+        }
+        var table = new List<Integer>().Add(m + 1);
+        var cursor = new Buffer<Integer>(m);
+        k = 0;
+        while (k < m)
+        {
+            cursor = cursor.Set(k, table.At(k));
+            table = table.Add(table.At(k) + degree.At(k));
+            k = k + 1;
+        }
+        var total = table.At(m);
+        while (table.Count < total)
+        {
+            table = table.Add(0);
+        }
+        k = 0;
+        while (k < pieces.Count)
+        {
+            var a = pieces[k] / m;
+            var b = pieces[k] % m;
+            table = table.Set(cursor.At(a), 2 * b).Set(cursor.At(b), 2 * a + 1);
+            cursor = cursor.Set(a, cursor.At(a) + 1).Set(b, cursor.At(b) + 1);
+            k = k + 1;
+        }
+        return table;
+    }
+
+    // Whether a piece joins vertices a and b, either way.
+    SeedIsPiece(table: List<Integer>, a: Integer, b: Integer): Boolean
+        => table.SeedPieceTurns(a, b, true) > 0;
+
+    // The pieces from a to b less the pieces from b to a; with any set, the number of pieces
+    // between them either way.
+    SeedPieceTurns(table: List<Integer>, a: Integer, b: Integer, any: Boolean): Integer
+    {
+        var turns = 0;
+        var k = table.At(a);
+        while (k < table.At(a + 1))
+        {
+            var e = table.At(k);
+            if (e / 2 == b)
+            {
+                turns = turns + (any ? 1 : (e % 2 == 0 ? 1 : -1));
+            }
+            k = k + 1;
+        }
+        return turns;
+    }
+
+    //==
+    // # Removing slivers, keeping the region
+
+    // SeedWithoutSlivers with the protected sides those of the table: a sliver's longest side is
+    // never flipped when it is a piece.
+    SeedWithoutSliversOf(s0: List<Integer>, cap: Integer, points: Array<Point2D>, table: List<Integer>, n: Integer): List<Integer>
+    {
+        var s = s0;
+        var changed = true;
+        var passes = 0;
+        while (changed && passes < 8 * n)
+        {
+            changed = false;
+            var t = 0;
+            while (t < s.At(0))
+            {
+                if (s.SeedIsSliver(points, t))
+                {
+                    var j = s.SeedLongestSide(points, t);
+                    var u = s.SeedAcross(cap, t, j);
+                    var a = s.SeedCorner(t, j);
+                    var b = s.SeedCorner(t, j + 1);
+                    var c = s.SeedCorner(t, j + 2);
+                    if (u >= 0)
+                    {
+                        if (table.SeedIsPiece(a, b).Not)
+                        {
+                            var d = s.SeedCorner(u, s.SeedSide(u, b, a) + 2);
+                            if (TwiceSignedArea(points[a], points[d], points[c]) > 0.0 && TwiceSignedArea(points[d], points[b], points[c]) > 0.0)
+                            {
+                                s = s.SeedFlipped(cap, t, j);
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+                t = t + 1;
+            }
+            passes = passes + 1;
+        }
+        return s;
+    }
+
+    // Per triangle of the state, whether it lies in the region: the triangles with a side a to b
+    // that more pieces run along from a to b than from b to a, then every triangle reached from
+    // them across a side that is no piece.
+    SeedInsideOf(s: List<Integer>, cap: Integer, table: List<Integer>): Array<Boolean>
+    {
+        var count = s.At(0);
+        var inside = new Buffer<Boolean>(count);
+        var stack = new List<Integer>();
+        var t = 0;
+        while (t < count)
+        {
+            var seeded = table.SeedPieceTurns(s.SeedCorner(t, 0), s.SeedCorner(t, 1), false) > 0
+                || table.SeedPieceTurns(s.SeedCorner(t, 1), s.SeedCorner(t, 2), false) > 0
+                || table.SeedPieceTurns(s.SeedCorner(t, 2), s.SeedCorner(t, 0), false) > 0;
+            inside = inside.Set(t, seeded);
+            if (seeded)
+            {
+                stack = stack.Add(t);
+            }
+            t = t + 1;
+        }
+        var top = stack.Count;
+        while (top > 0)
+        {
+            top = top - 1;
+            var x = stack.At(top);
+            var k = 0;
+            while (k < 3)
+            {
+                var u = s.SeedAcross(cap, x, k);
+                if (u >= 0)
+                {
+                    if (inside.At(u).Not && table.SeedIsPiece(s.SeedCorner(x, k), s.SeedCorner(x, k + 1)).Not)
+                    {
+                        inside = inside.Set(u, true);
+                        stack = stack.Pushed(top, u);
+                        top = top + 1;
+                    }
+                }
+                k = k + 1;
+            }
+        }
+        return inside.Freeze();
+    }
+
+    //==
+    // # Copies and wedges
+
+    // Whether direction d (from a vertex) lies in the wedge that turns counter-clockwise from
+    // direction o to direction q, ends left out. Directions o and q the same: the whole turn
+    // (a slit's or a tail's end). Opposite: the half turn on the left of o.
+    SeedInWedge(o: Vector2D, q: Vector2D, d: Vector2D): Boolean
+    {
+        var oq = o.X * q.Y - o.Y * q.X;
+        var od = o.X * d.Y - o.Y * d.X;
+        var dq = d.X * q.Y - d.Y * q.X;
+        var qd = q.X * d.Y - q.Y * d.X;
+        var dout = d.X * o.Y - d.Y * o.X;
+        return oq > 0.0 ? (od > 0.0 && dq > 0.0)
+            : (oq < 0.0 ? (qd >= 0.0 && dout >= 0.0).Not
+            : (o.X * q.X + o.Y * q.Y < 0.0 ? od > 0.0 : true));
+    }
+
+    // The copy of vertex v (a point i with placed[i] = v) whose wedge holds the direction from v
+    // to g: from i's next point counter-clockwise round to its previous point, both taken at their
+    // vertices. A copy on no segment holds every direction. v itself when no copy's wedge holds
+    // it (a crossing region) or v has one copy.
+    SeedCopyFacing(points: Array<Point2D>, next: Array<Integer>, prev: Array<Integer>, placed: Array<Integer>, copies: List<Integer>, v: Integer, g: Point2D): Integer
+    {
+        var first = copies.At(v);
+        var last = copies.At(v + 1);
+        var found = -1;
+        var k = first;
+        while (k < last && found < 0 && last - first > 1)
+        {
+            var i = copies.At(k);
+            if (next[i] < 0)
+            {
+                found = i;
+            }
+            else
+            {
+                var c = points[v];
+                var o = points[placed[next[i]]];
+                var q = points[placed[prev[i]]];
+                if (SeedInWedge(Vector2D(o.X - c.X, o.Y - c.Y), Vector2D(q.X - c.X, q.Y - c.Y), Vector2D(g.X - c.X, g.Y - c.Y)))
+                {
+                    found = i;
+                }
+            }
+            k = k + 1;
+        }
+        return found < 0 ? v : found;
+    }
+
+    // The copies of each vertex, as a table: entries 0 to n the offsets, then per vertex v the
+    // points i with placed[i] = v.
+    SeedCopyTable(placed: Array<Integer>, n: Integer): List<Integer>
+    {
+        var count = new Buffer<Integer>(n);
+        var k = 0;
+        while (k < n)
+        {
+            count = count.Set(k, 0);
+            k = k + 1;
+        }
+        k = 0;
+        while (k < n)
+        {
+            count = count.Set(placed[k], count.At(placed[k]) + 1);
+            k = k + 1;
+        }
+        var table = new List<Integer>().Add(n + 1);
+        var cursor = new Buffer<Integer>(n);
+        k = 0;
+        while (k < n)
+        {
+            cursor = cursor.Set(k, table.At(k));
+            table = table.Add(table.At(k) + count.At(k));
+            k = k + 1;
+        }
+        while (table.Count < table.At(n))
+        {
+            table = table.Add(0);
+        }
+        k = 0;
+        while (k < n)
+        {
+            table = table.Set(cursor.At(placed[k]), k);
+            cursor = cursor.Set(placed[k], cursor.At(placed[k]) + 1);
+            k = k + 1;
+        }
+        return table;
+    }
+
+    // The point before each point on its loop: prev[next[a]] = a; -1 for a point on no segment.
+    SeedPreviousTable(next: Array<Integer>): Array<Integer>
+    {
+        var prev = new Buffer<Integer>(next.Count);
+        var k = 0;
+        while (k < next.Count)
+        {
+            prev = prev.Set(k, -1);
+            k = k + 1;
+        }
+        k = 0;
+        while (k < next.Count)
+        {
+            if (next[k] >= 0)
+            {
+                prev = prev.Set(next[k], k);
+            }
+            k = k + 1;
+        }
+        return prev.Freeze();
+    }
+
+    //==
+    // # The seed
+
+    // The constrained Delaunay seed of the region whose boundary points are points (in the chart)
+    // and whose boundary segments are next (NextBoundaryTable), weakly simple: points within
+    // rounding of each other one vertex, a segment through a vertex a chain, a side run along
+    // both ways a constraint that seeds nothing, each corner on the copy whose wedge holds its
+    // triangle. Triangles over the point indices 0 to n - 1, counter-clockwise.
+    CdtSeedOverCopies(points: Array<Point2D>, next: Array<Integer>): Array<TriangleFace>
+    {
+        var n = points.Count;
+        var cap = 2 * (n + 3);
+        var lowX = n.Range.Reduce(Number.MaxValue, (m, i) => m.Min(points[i].X));
+        var lowY = n.Range.Reduce(Number.MaxValue, (m, i) => m.Min(points[i].Y));
+        var highX = n.Range.Reduce(0.0 - Number.MaxValue, (m, i) => m.Max(points[i].X));
+        var highY = n.Range.Reduce(0.0 - Number.MaxValue, (m, i) => m.Max(points[i].Y));
+        var size = (highX - lowX).Max(highY - lowY).Max(Number.SmallestNormal);
+        var eps = 1e-12 * size;
+        var cx = (lowX + highX) * 0.5;
+        var cy = (lowY + highY) * 0.5;
+        var big = 64.0 * size;
+        var all = points.Concatenate([Point2D(cx - 2.0 * big, cy - big), Point2D(cx + 2.0 * big, cy - big), Point2D(cx, cy + 2.0 * big)]);
+        var s = EmptySeedState(n + 3, cap).Set(0, 1).WithSeedTriangle(cap, 0, n, n + 1, n + 2, -1, -1, -1);
+        var placed = new Buffer<Integer>(n);
+        var order = all.SeedInsertionOrder(n);
+        var last = 0;
+        var k = 0;
+        while (k < n)
+        {
+            var p = order[k];
+            var t = s.SeedLocate(cap, all, last, p);
+            var same = t < 0 ? -1 : s.SeedNearCorner(cap, all, t, p, eps);
+            if (t >= 0 && same < 0)
+            {
+                s = s.SeedInserted(cap, all, t, p);
+                placed = placed.Set(p, p);
+                last = s.SeedAt(cap, p);
+            }
+            else
+            {
+                placed = placed.Set(p, same < 0 ? p : same);
+            }
+            k = k + 1;
+        }
+        var at = placed.Freeze();
+        s = s.SeedWithoutSlivers(cap, all, next, false, n);
+        var a = 0;
+        while (a < n)
+        {
+            if (next[a] >= 0)
+            {
+                if (at[a] != at[next[a]])
+                {
+                    s = s.SeedWithChain(cap, all, next, at[a], at[next[a]]);
+                }
+            }
+            a = a + 1;
+        }
+        var pieces = n.Range.FlatMap(i => next[i] < 0 ? [0].Take(0)
+            : (at[i] == at[next[i]] ? [0].Take(0) : s.SeedChainPieces(cap, all, at[i], at[next[i]])));
+        var table = pieces.SeedPieceTable(n + 3);
+        s = s.SeedWithoutSliversOf(cap, all, table, n);
+        var inside = s.SeedInsideOf(cap, table);
+        var prev = next.SeedPreviousTable;
+        var copies = at.SeedCopyTable(n);
+        return s.At(0).Range.FlatMap(t =>
+            (inside[t] && s.SeedCorner(t, 0) < n && s.SeedCorner(t, 1) < n && s.SeedCorner(t, 2) < n)
+                ? [s.SeedTriangleOnCopies(all, next, prev, at, copies, t)]
+                : [TriangleOf(0, 0, 0)].Take(0));
+    }
+
+    // Triangle t with each corner on the copy whose wedge holds the triangle's centroid.
+    SeedTriangleOnCopies(s: List<Integer>, points: Array<Point2D>, next: Array<Integer>, prev: Array<Integer>, placed: Array<Integer>, copies: List<Integer>, t: Integer): TriangleFace
+    {
+        var a = s.SeedCorner(t, 0);
+        var b = s.SeedCorner(t, 1);
+        var c = s.SeedCorner(t, 2);
+        var g = Point2D((points[a].X + points[b].X + points[c].X) / 3.0, (points[a].Y + points[b].Y + points[c].Y) / 3.0);
+        return TriangleOf(SeedCopyFacing(points, next, prev, placed, copies, a, g),
+            SeedCopyFacing(points, next, prev, placed, copies, b, g),
+            SeedCopyFacing(points, next, prev, placed, copies, c, g));
+    }
+
+    // The seed of region r in its chart over repeated points: CdtSeedOverCopies over the region's
+    // chart points and its NextBoundaryTable. Replaces V1EdgesCdtSeed's CdtSeedOfRegion and its
+    // ear-clipping fallback.
+    CdtSeedOfRegionOverCopies(r: UvRegion, points: Array<Point2D>): Array<TriangleFace>
+        => points.CdtSeedOverCopies(r.NextBoundaryTable);
+}

@@ -1,0 +1,110 @@
+//==
+// # The seed over repeated points: laws (track v1-edges, chunk E5a, TKT-468)
+//
+// CdtSeedOverCopies (cdt-seed-copies.library.plato) on weakly simple regions: V1G-6's keyhole (one
+// loop through (1.5, 0) twice), a square with a slit cut into it (the slit's tip point once, its
+// mouth point twice), LENA-R8 face 1349 (two pinch vertices), and a rectangle with a zero-width
+// tail whose last side runs back over its first (ODIN-W260 2613's shape). Where no segment runs
+// through a vertex the seed has the facts of V1EdgesCdtSeedLaws' SeedFactsHold: n + 2h - 2
+// triangles, every boundary segment a side of exactly one triangle, the region's area, no
+// triangle below the floor. On simple regions it is E4a's seed, count and area.
+//
+// Sections, in order:
+//  - Regions
+//  - Laws
+
+library V1EdgesCdtSeedCopiesLaws
+{
+    //==
+    // # Regions
+
+    // The square [0, 3] x [0, 3] with a slit from the middle of its top side down to (1.5, 1):
+    // the loop runs along the slit down and back up, so (1.5, 3) is passed twice.
+    SlitSquareRegion(_: Integer): UvRegion
+        => UvRegion(PlainLoop([UvCoordinate(0.0, 0.0), UvCoordinate(3.0, 0.0), UvCoordinate(3.0, 3.0), UvCoordinate(1.5, 3.0),
+                UvCoordinate(1.5, 1.0), UvCoordinate(1.5, 3.0), UvCoordinate(0.0, 3.0)]),
+            [PlainLoop([UvCoordinate(0.0, 0.0)])].Take(0));
+
+    // The rectangle [0, 1] x [2, 5] with a zero-width tail down to (0, 0): the loop goes up the
+    // tail to (0, 2), round the rectangle, and down its left side and the tail back to (0, 0), so
+    // its last side runs over its first and through (0, 2).
+    TailedRectangleRegion(_: Integer): UvRegion
+        => UvRegion(PlainLoop([UvCoordinate(0.0, 0.0), UvCoordinate(0.0, 2.0), UvCoordinate(1.0, 2.0), UvCoordinate(1.0, 5.0), UvCoordinate(0.0, 5.0)]),
+            [PlainLoop([UvCoordinate(0.0, 0.0)])].Take(0));
+
+    // The four facts of a seed (V1EdgesCdtSeedLaws.SeedFactsHold) for CdtSeedOverCopies.
+    CopiesSeedFactsHold(r: UvRegion): Boolean
+    {
+        var points = r.PlainPoints;
+        var next = r.NextBoundaryTable;
+        var tris = points.CdtSeedOverCopies(next);
+        var area = r.RegionArea(points);
+        return tris.Count == r.SeedCompleteCount
+            && next.Count.Range.All(a => next[a] < 0 ? true : tris.HasSideOnce(a, next[a]))
+            && (tris.TrianglesArea(points) - area).Abs <= 1e-9 * area.Abs
+            && tris.All(t => t.IsAboveAreaFloor(points));
+    }
+
+    // Whether CdtSeedOverCopies and E4a's CdtSeedByInsertion give r the same count and area.
+    CopiesSeedAgrees(r: UvRegion): Boolean
+    {
+        var points = r.PlainPoints;
+        var next = r.NextBoundaryTable;
+        var old = points.CdtSeedByInsertion(next);
+        var seed = points.CdtSeedOverCopies(next);
+        return seed.Count == old.Count && (seed.TrianglesArea(points) - old.TrianglesArea(points)).Abs <= 1e-9 * old.TrianglesArea(points).Abs;
+    }
+
+    //==
+    // # Laws
+
+    // V1G-6's keyhole: 6 triangles, every segment a side by its own indices (the pinch's two copies
+    // each on their own side of the hole), the area 8.5; E4a's seed made 7, one over the hole.
+    Law_V1Edges_CopiesSeedOnKeyhole(_: Integer): Boolean
+        => KeyholeLoopRegion(0).CopiesSeedFactsHold;
+
+    // The slit square: 5 triangles, both sides of the slit kept, area 9.
+    Law_V1Edges_CopiesSeedOnSlit(_: Integer): Boolean
+        => SlitSquareRegion(0).CopiesSeedFactsHold;
+
+    // LENA-R8 face 1349 (two pinch vertices): the facts hold.
+    Law_V1Edges_CopiesSeedOnLenaR8Face1349(_: Integer): Boolean
+        => LenaR8Face1349Region(0).CopiesSeedFactsHold;
+
+    // The tailed rectangle: the tail runs both ways and cancels, so the seed is the rectangle's 2
+    // triangles, area 3, every triangle's corners on the rectangle (none at the tail's end).
+    Law_V1Edges_CopiesSeedCancelsTail(_: Integer): Boolean
+    {
+        var r = TailedRectangleRegion(0);
+        var points = r.PlainPoints;
+        var tris = points.CdtSeedOverCopies(r.NextBoundaryTable);
+        return tris.Count == 2 && (tris.TrianglesArea(points) - 3.0).Abs <= 1e-9
+            && tris.All(t => t.A.Value != 0 && t.B.Value != 0 && t.C.Value != 0);
+    }
+
+    // On simple regions the seed is E4a's, count and area: pad arrays 1 x 1 and 3 x 2, a
+    // rectangle with 5 points a side, and the shipped star cases 1 to 3 (holes, a point hole).
+    Law_V1Edges_CopiesSeedAgreesOnSimpleRegions(_: Integer): Boolean
+        => PadArray(1, 1).CopiesSeedAgrees && PadArray(3, 2).CopiesSeedAgrees && SubdividedRectangle(3.0, 1.0, 5).CopiesSeedAgrees
+            && StarCase(1).CopiesSeedAgrees && StarCase(2).CopiesSeedAgrees && StarCase(3).CopiesSeedAgrees;
+
+    // On E4a's corpus witnesses (CEL/LARA faces 504 and 742, SHO/NORA-B100 2745, POS/RCB-F9T
+    // 874, built as the host builds them) the seed has the four facts.
+    Law_V1Edges_CopiesSeedOnCorpusWitnesses(_: Integer): Boolean
+        => BrepModel.Witness_LaraPadFaces.CopiesWitnessFactsHold(0) && BrepModel.Witness_LaraPadFaces.CopiesWitnessFactsHold(1)
+            && BrepModel.Witness_NoraPlane2745.CopiesWitnessFactsHold(0) && BrepModel.Witness_RcbPlane874.CopiesWitnessFactsHold(0);
+
+    // The four facts of CdtSeedOverCopies on face k of m, in its chart.
+    CopiesWitnessFactsHold(m: BrepModel, k: Integer): Boolean
+    {
+        var r = m.WitnessFaceRegion(k);
+        var points = m.WitnessFacePoints(k, r);
+        var next = r.NextBoundaryTable;
+        var tris = points.CdtSeedOverCopies(next);
+        var area = r.RegionArea(points);
+        return tris.Count == points.Count + 2 * r.WideHoles - 2
+            && next.Count.Range.All(a => next[a] < 0 ? true : tris.HasSideOnce(a, next[a]))
+            && (tris.TrianglesArea(points) - area).Abs <= 1e-9 * area.Abs
+            && tris.All(t => t.IsAboveAreaFloor(points));
+    }
+}
