@@ -54,3 +54,5 @@ step-corpus-harness gallery witness:Sphere:254 w.glb --chordal 1
 ```
 
 The latitude table came from a scratch script over the GLB's triangles (unindexed positions, bounding-box centre). TKT-399 (the curved-face check laws on the sphere and torus) and TKT-325 (step C, poles) are the nearest tickets; neither names the triangle count.
+
+Note 2026-10-22 (v1-gate, V1G-13, commit 85cdfaaf): staged a partial fix. The chordal round no longer refines triangles that collapse at a pole, so moon_buggy's spheres mesh in 2,928 triangles each (from about 3,500 after V1G-4) in 60 to 210 ms, and the cones 26, 76 and 132 in about 704 without folds (the file's contract check holds on all 162 faces). Left open on the count boxes (the pole-cap law and under 2,000 triangles per sphere): the remaining density comes from a mesh near uniform in the (u, v) chart, and the change that would fix it, a latitude-scaled chart, is element count rather than the version 1 contract, so it waits for after version 1 as TKT-458 (idea). The cone box is met by the same fix (face time and folds), pending the merge.
