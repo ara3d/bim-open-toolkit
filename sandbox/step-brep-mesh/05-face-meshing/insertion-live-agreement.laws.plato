@@ -113,7 +113,7 @@ library V1GateAgreementLaws
     CdtWithScannedFlips(r: UvRegion, chart: FaceChart): UvTriangulation
     {
         var points = r.BoundaryPoints.Map(uv => chart.ChartPoint(uv));
-        var triangles = r.Delaunayed(points, r.CdtSeedOfRegion(points));
+        var triangles = r.Delaunayed(points, r.CdtSeedOfRegionOverCopies(points));
         return UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
     }
 

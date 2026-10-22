@@ -600,19 +600,4 @@ library V1EdgesCdtSeed
         var wide = r.Holes.Reduce(0, (h, l) => l.Points.Count >= 3 ? h + 1 : h);
         return next.Count + 2 * wide - 2 + next.Reduce(0, (k, b) => b < 0 ? k + 1 : k);
     }
-
-    // The seed of region r in its chart: CdtSeedByInsertion over the region's chart points and
-    // its NextBoundaryTable when that seed is complete (SeedCompleteCount triangles), else
-    // today's ear-clipped seed with its point holes inserted. The new seed misses the count only where
-    // a point coincides with another (a loop through a pinch vertex twice, V1G-6's keyholes):
-    // the supervisor accepted this fallback until track v1-edges' chunk E5, which merges such
-    // points and removes it (2026-10-22, TKT-468).
-    CdtSeedOfRegion(r: UvRegion, points: Array<Point2D>): Array<TriangleFace>
-    {
-        var seed = points.CdtSeedByInsertion(r.NextBoundaryTable);
-        var pointHoles = r.Holes.Count.Range.FlatMap(h =>
-            r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : [h].Take(0));
-        return seed.Count == r.SeedCompleteCount ? seed
-            : pointHoles.Reduce(r.CdtSeedIndexedCounted(points).Value, (ts, p) => ts.WithPointInserted(p, points));
-    }
 }

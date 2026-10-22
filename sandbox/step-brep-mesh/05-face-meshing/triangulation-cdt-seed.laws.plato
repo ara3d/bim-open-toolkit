@@ -125,23 +125,12 @@ library V1EdgesCdtSeedLaws
 
     // On star cases 1 and 3 (shipped laws' StarCase: a star with holes and a point hole at
     // (0, 1.3)) the seed is complete, SeedCompleteCount triangles (the point hole inside two
-    // more), and CdtSeedOfRegion is that seed. A failure here once was an index of -1: the
+    // more), and the mesher's seed (CdtSeedOfRegionOverCopies, E5a) has that count. A failure here once was an index of -1: the
     // generated code evaluates both operands of &&.
     Law_V1Edges_SeedHoldsPointHoles(_: Integer): Boolean
         => StarCase(1).PlainPoints.CdtSeedByInsertion(StarCase(1).NextBoundaryTable).Count == StarCase(1).SeedCompleteCount
             && StarCase(3).PlainPoints.CdtSeedByInsertion(StarCase(3).NextBoundaryTable).Count == StarCase(3).SeedCompleteCount
-            && StarCase(1).CdtSeedOfRegion(StarCase(1).PlainPoints).Count == StarCase(1).SeedCompleteCount;
-
-    // V1G-6's keyhole, one loop through (1.5, 0) twice: the seed skips the second copy, loses the
-    // two segments at it and makes 7 triangles where a complete seed has 6 (one covers the hole),
-    // so CdtSeedOfRegion gives today's ear-clipped seed (E5 removes the fallback).
-    Law_V1Edges_SeedFallsBackOnKeyhole(_: Integer): Boolean
-    {
-        var r = KeyholeLoopRegion(0);
-        var points = r.PlainPoints;
-        return points.CdtSeedByInsertion(r.NextBoundaryTable).Count != r.SeedCompleteCount
-            && r.CdtSeedOfRegion(points).Count == r.CdtSeedIndexedCounted(points).Value.Count;
-    }
+            && StarCase(1).CdtSeedOfRegionOverCopies(StarCase(1).PlainPoints).Count == StarCase(1).SeedCompleteCount;
 
     // The new seed and today's have the same count and area on r.
     SeedAgrees(r: UvRegion): Boolean

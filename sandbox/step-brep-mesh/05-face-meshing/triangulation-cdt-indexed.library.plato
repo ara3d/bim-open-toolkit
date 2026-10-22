@@ -509,7 +509,7 @@ library TriangulationCdtIndexed
     TriangulateRegionCdtIndexedCounted(r: UvRegion, chart: FaceChart): Counted<UvTriangulation>
     {
         var points = r.BoundaryPoints.Map(uv => chart.ChartPoint(uv));
-        var triangles = r.NextBoundaryTable.DelaunayedIndexed(points, r.CdtSeedOfRegion(points));
+        var triangles = r.NextBoundaryTable.DelaunayedIndexed(points, r.CdtSeedOfRegionOverCopies(points));
         return Counted(UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0)), Insertions(points.Count));
     }
 

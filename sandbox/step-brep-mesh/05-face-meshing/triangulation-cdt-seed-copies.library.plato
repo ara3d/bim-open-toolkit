@@ -1,10 +1,10 @@
 //==
 // # The constrained Delaunay seed over repeated points (track v1-edges, chunk E5a, TKT-468)
 //
-// Layer 05-face-meshing, beside V1EdgesCdtSeed (cdt-seed.library.plato), whose state, insertion,
+// Layer 05-face-meshing, beside V1EdgesCdtSeed (triangulation-cdt-seed.library.plato), whose state, insertion,
 // flips and segment recovery it reuses. That seed skips a point that coincides with an earlier
 // one and its segments, so a loop through one point twice (V1G-6's keyholes, LENA-R8 face 1349)
-// comes out with a triangle over the hole, and CdtSeedOfRegion falls back to ear clipping there.
+// comes out with a triangle over the hole, and E4b's CdtSeedOfRegion fell back to ear clipping there.
 // A weakly simple region touches itself without crossing: a loop passes one point twice, a
 // vertex lies on another side, a side is run along both ways (a slit, or a zero-width tail).
 // Here:
@@ -515,8 +515,8 @@ library V1EdgesCdtSeedCopies
     }
 
     // The seed of region r in its chart over repeated points: CdtSeedOverCopies over the region's
-    // chart points and its NextBoundaryTable. Replaces V1EdgesCdtSeed's CdtSeedOfRegion and its
-    // ear-clipping fallback.
+    // chart points and its NextBoundaryTable. TriangulateRegionCdtIndexedCounted calls it; it
+    // replaced E4b's CdtSeedOfRegion and its ear-clipping fallback (E5a).
     CdtSeedOfRegionOverCopies(r: UvRegion, points: Array<Point2D>): Array<TriangleFace>
         => points.CdtSeedOverCopies(r.NextBoundaryTable);
 }
