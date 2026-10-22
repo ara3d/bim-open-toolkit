@@ -1,0 +1,87 @@
+//==
+// # Version 1: one chordal measure for an element and the ways it may be drawn (TKT-455, V1G-11)
+//
+// The contract counts an element within the chordal bound when every way a renderer may draw it
+// is: a triangle as itself, a quad as either diagonal split. The grid keep rule (layer 5, on a grid
+// before lifting) and the gate claim (layer 8, on a lifted face mesh) both decide this, and they
+// must not disagree, so both call ElementWithinChordal. A drawn piece (a triangle alone, or the two
+// triangles of a split) is within `bound` when each of its triangles lies within `bound` of the
+// surface (its corner mean and the chord midpoints of its sampled sides, by projection) and the
+// surface over each triangle lies within `bound` of the piece as a whole (the surface points at the
+// triangle's parameter centroid and at its sampled sides' parameter midpoints, each to the nearer
+// triangle of the piece). Measuring a split as a whole, not triangle by triangle, keeps a surface
+// point that an uneven parametrization places beside its own triangle, on the other one, from
+// counting against a split that covers it (moon_buggy_asm.stp's B-spline faces 41 and 117).
+//
+// The caller gives the parameters and positions of the element's points as functions, and says
+// which sides are sampled: the sides that are not boundary segments, whose deviation the edge
+// discretization already bounds. A split's diagonal is never a boundary segment.
+//
+// Sections, in order:
+//  - Pieces
+//  - Elements
+
+library V1Chordal
+{
+    //==
+    // # Pieces
+
+    // The surface point of face f at the parameters of the point at index a, b's midpoint between.
+    SurfaceAtMidpoint(m: BrepModel, f: BrepFaceIndex, uv: Function1<VertexIndex, UvCoordinate>, a: VertexIndex, b: VertexIndex): Point3D
+        => m.Geometry.Eval(m.SurfaceOf(f), uv(a).UvMidpoint(uv(b)));
+
+    // The distance from p to the nearer triangle of piece, its corners placed by pos.
+    PieceDistance(piece: Array<TriangleFace>, pos: Function1<VertexIndex, Point3D>, p: Point3D): Number
+        => piece.Reduce(Number.MaxValue, (best, t) => best.Min(UnsignedDistanceToTriangle(p, pos(t.A), pos(t.B), pos(t.C))));
+
+    // How far triangle t, placed by pos, strays from face f's surface: the larger surface distance
+    // (by projection) of its corner mean and of each sampled side's chord midpoint.
+    TriangleOffSurface(m: BrepModel, f: BrepFaceIndex, pos: Function1<VertexIndex, Point3D>, t: TriangleFace, sampled: Function2<VertexIndex, VertexIndex, Boolean>): Number
+    {
+        var cs = t.Vertices;
+        var ps = cs.Map(v => pos(v));
+        return 3.Range.Reduce(m.SurfaceDistance(f, ps.AverageOfPoints), (worst, j) =>
+            sampled(cs[j], cs[(j + 1) % 3]) ? worst.Max(m.SurfaceDistance(f, ps[j].HalfwayPoint(ps[(j + 1) % 3]))) : worst);
+    }
+
+    // How far the surface over triangle t of piece strays from the piece: the larger distance,
+    // to the nearer triangle of the piece, of the surface points at t's parameter centroid and at
+    // each sampled side's parameter midpoint.
+    SurfaceOffPiece(m: BrepModel, f: BrepFaceIndex, uv: Function1<VertexIndex, UvCoordinate>, pos: Function1<VertexIndex, Point3D>, piece: Array<TriangleFace>, t: TriangleFace, sampled: Function2<VertexIndex, VertexIndex, Boolean>): Number
+    {
+        var cs = t.Vertices;
+        var mean = cs.Map(v => uv(v).ToPoint2D).AverageOfPoints;
+        var centroid = m.Geometry.Eval(m.SurfaceOf(f), UvCoordinate(mean.X, mean.Y));
+        return 3.Range.Reduce(piece.PieceDistance(pos, centroid), (worst, j) =>
+            sampled(cs[j], cs[(j + 1) % 3])
+                ? worst.Max(piece.PieceDistance(pos, m.SurfaceAtMidpoint(f, uv, cs[j], cs[(j + 1) % 3])))
+                : worst);
+    }
+
+    // True when piece is within `bound` of face f's surface both ways (each triangle to the
+    // surface, the surface over each triangle to the piece). The tests run one after another, each
+    // only when the ones before held (a conditional: `&&` evaluates both sides).
+    PieceWithinChordal(m: BrepModel, f: BrepFaceIndex, uv: Function1<VertexIndex, UvCoordinate>, pos: Function1<VertexIndex, Point3D>, piece: Array<TriangleFace>, sampled: Function2<VertexIndex, VertexIndex, Boolean>, bound: Number): Boolean
+        => piece.All(t => m.TriangleOffSurface(f, pos, t, sampled) <= bound
+            ? m.SurfaceOffPiece(f, uv, pos, piece, t, sampled) <= bound
+            : false);
+
+    //==
+    // # Elements
+
+    // The pieces element e may be drawn as, each measured as a whole: a triangle alone; a quad as
+    // its split on A C and its split on B D. None for NoElement.
+    ElementPieces(e: ElementShape): Array<Array<TriangleFace>>
+        => match (e) {
+            TriangleShape(t) => [[t]];
+            QuadShape(q) => [[q.SplitsOf.OnAC.First, q.SplitsOf.OnAC.Second], [q.SplitsOf.OnBD.First, q.SplitsOf.OnBD.Second]];
+            NoElement(k) => [[TriangleFace(VertexIndex(0), VertexIndex(0), VertexIndex(0))]].Take(0);
+        };
+
+    // The contract's chordal claim on element e of face f: every piece it may be drawn as within
+    // `bound`. False for NoElement.
+    ElementWithinChordal(m: BrepModel, f: BrepFaceIndex, uv: Function1<VertexIndex, UvCoordinate>, pos: Function1<VertexIndex, Point3D>, e: ElementShape, sampled: Function2<VertexIndex, VertexIndex, Boolean>, bound: Number): Boolean
+        => e.IsElementShape
+            ? e.ElementPieces.All(piece => m.PieceWithinChordal(f, uv, pos, piece, sampled, bound))
+            : false;
+}

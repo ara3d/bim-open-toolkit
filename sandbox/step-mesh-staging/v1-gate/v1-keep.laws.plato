@@ -1,0 +1,55 @@
+//==
+// # Version 1: the grid keep rule on the one chordal measure, laws (V1G-11)
+//
+// The keep rule (GridElementKeptV1) and the gate claim (QuadSplitsWithinV1) give one verdict on
+// the same quad, and the keep rule now keeps a grid that lies on its surface although the
+// surface's parametrization is uneven, and still refuses one that does not.
+//
+// Sections, in order:
+//  - One verdict
+//  - Kept and refused grids
+
+library V1KeepLaws
+{
+    //==
+    // # One verdict
+
+    // The keep rule on the top face of model m forced to one quad, and the gate claim on that quad
+    // lifted, at chordal 0.01: true when they agree.
+    KeepAndGateAgreeOnTop(m: BrepModel): Boolean
+    {
+        var c = V1GateOptions(0.01).Face;
+        var f = BrepFaceIndex(1);
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        var g = m.ForcedQuadGrid(f, d, c);
+        var bound = c.SurfaceChordal + m.Tolerances.Length.Value;
+        return m.GridElementKeptV1(f, m.RegionOf(f, d, c), g, ElementIndex(0), bound)
+            == m.QuadSplitsWithinV1(d, m.Lift(f, d, g), 0, bound);
+    }
+
+    // On the skewed patch's top (on its surface, unevenly parametrized), on the bump solid's top at
+    // 0.3 (off its surface) and on the flat patch (bump 0), the keep rule and the gate claim agree.
+    Law_V1Gate_KeepRuleAndGateAgree(_: Integer): Boolean
+        => BrepModel.Witness_SkewedPatchSolid(0.9).KeepAndGateAgreeOnTop
+            && BrepModel.Witness_BSplinePatchSolid(0.3).KeepAndGateAgreeOnTop
+            && BrepModel.Witness_BSplinePatchSolid(0.0).KeepAndGateAgreeOnTop;
+
+    //==
+    // # Kept and refused grids
+
+    // The number of quads MeshFace gives the top face of model m at chordal 0.01, quads preferred.
+    TopQuadCount(m: BrepModel): Integer
+    {
+        var c = V1GateOptions(0.01).Face;
+        return m.MeshFace(BrepFaceIndex(1), m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors), c).Mesh.Quads.Count;
+    }
+
+    // The skewed patch's top keeps its grid (one quad on the flat patch): the keep rule no longer
+    // counts the diagonal's parameter midpoint against the triangle it does not land on.
+    Law_V1Gate_SkewedTopKeepsItsGrid(_: Integer): Boolean
+        => BrepModel.Witness_SkewedPatchSolid(0.9).TopQuadCount > 0;
+
+    // The bump solid's top at 0.3 is refused a grid, as F1 and T1 refuse it.
+    Law_V1Gate_BumpTopStillRefusedAGrid(_: Integer): Boolean
+        => BrepModel.Witness_BSplinePatchSolid(0.3).TopQuadCount == 0;
+}
