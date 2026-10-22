@@ -61,7 +61,7 @@ Approach 1, with approach 3's `Parallel.For` and the intrinsics refresh done fir
 ## Decisions for the owner
 
 - Do fast paths live in Plato as certified branches, or in the C# host as a switch before the library call? Default: Plato, each with a law against the general path, so both engines agree. **Owner, 2026-10-21: Plato, with laws.**
-- May the host run edges and faces on all cores now, before Plato has any parallel construct? Default: yes, failures still isolated per row. **Owner, 2026-10-21: no.** `Rows` stays single-threaded, so the recommendation's first step drops `Parallel.For` and keeps the intrinsics refresh.
+- May the host run edges and faces on all cores now, before Plato has any parallel construct? Default: yes, failures still isolated per row. **Owner: yes** (2026-10-21, in chat with the TKT-403 builder; reaffirmed 2026-10-22). `Rows` runs on all cores since bim-open-data `3245cb7` (TKT-403).
 - Should the angle-quality pass run on planar faces at all in version 1? Default: off for planes (the boundary is locked, so no angle guarantee exists anyway, MESHING-REQUIREMENTS finding 8). **Owner, 2026-10-21: off for planes.**
 - Is a cross-file mesh cache keyed by geometry fingerprint acceptable given per-face provenance? Default: no, until a measurement shows repeated geometry dominates. (Not asked; the default stands.)
 - Should integer-snapped predicates replace floating ones, changing bitwise results on both engines? Default: defer until a robustness defect names them. (Not asked; the default stands.)
