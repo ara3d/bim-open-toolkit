@@ -1,21 +1,22 @@
 //==
-// # The closure of a B-spline written in wrapped form: laws (track v1-jody, TKT-431)
+// # The closure of a B-spline written in wrapped form: laws (TKT-431)
 //
 // The witnesses are two curves of SHO/M2-JODY-W377-00C_PCIE-UART.step. #64592 is a cubic
 // B-spline with 19 control points (a 16-sided polygon round the origin, its first 3 points
 // repeated at the end) and 23 uniform knots from -0.1875 in steps of 0.0625, so its domain is
 // [0, 1]; its ends are (0.5, 0, 0), the vertex of the one-edge loop that cites it. #66971 is the
 // same form at radius 0.2 with non-uniform knots written to 13 digits; its ends are (0.2, 0, 0).
-// The record test decides both closed, their evaluated ends agree, and with the Closed mark a
-// closed edge on either gets the domain [0, 1] and is discretized; without the mark, the library
-// today, it gets [0, 0] and is Undiscretized. A wrapped record with one end point moved, or one
-// knot spacing changed, stays Undecided; a record EndsClosure decides keeps its decision.
+// EndsClosure decides both closed, their evaluated ends agree, and with the Closed mark a closed
+// edge on either gets the domain [0, 1] and is discretized; without the mark (the library before
+// TKT-431) it gets [0, 0] and is Undiscretized. A wrapped record with one end point moved, or one
+// knot spacing changed, stays Undecided. The laws read layer 4's DiscretizeAllRanged, so they
+// live in layer 8.
 //
 // Sections, in order:
 //  - Witnesses
 //  - Laws
 
-library V1JodyWrappedSplineClosureLaws
+library StepWrappedSplineClosureLaws
 {
     //==
     // # Witnesses
@@ -94,19 +95,17 @@ library V1JodyWrappedSplineClosureLaws
     //==
     // # Laws
 
-    // Whether the record is well shaped and in wrapped form, the record test decides it closed,
-    // and layer 3's EndsClosure leaves it Undecided.
+    // Whether the record is well shaped and in wrapped form, and EndsClosure decides it closed.
     IsClosedOnlyWrapped(d: BSplineCurveData): Boolean
     {
         var tol = Tolerances.Witness_Tolerances.Length;
         return d.IsWellShaped
             && d.IsWrappedForm(tol)
-            && d.EndsClosureWrapped(tol).IsDecided
-            && d.EndsClosureWrapped(tol).IsClosed
-            && d.EndsClosure(tol).IsDecided.Not;
+            && d.EndsClosure(tol).IsDecided
+            && d.EndsClosure(tol).IsClosed;
     }
 
-    // Both corpus records are closed by the record test and Undecided by EndsClosure.
+    // Both corpus records are unclamped and closed by the record test.
     Law_V1Jody_CorpusSplinesAreClosed(_: Integer): Boolean
         => 0.JodySpline.IsClosedOnlyWrapped && 0.JodySmallSpline.IsClosedOnlyWrapped;
 
@@ -130,47 +129,19 @@ library V1JodyWrappedSplineClosureLaws
     Law_V1Jody_NotWrappedStaysUndecided(_: Integer): Boolean
     {
         var tol = Tolerances.Witness_Tolerances.Length;
-        return 0.JodySplineMovedEnd.EndsClosureWrapped(tol).IsDecided.Not
-            && 0.JodySplineMovedKnot.EndsClosureWrapped(tol).IsDecided.Not;
+        return 0.JodySplineMovedEnd.EndsClosure(tol).IsDecided.Not
+            && 0.JodySplineMovedKnot.EndsClosure(tol).IsDecided.Not;
     }
-
-    // On every B-spline record of the catalog arena, EndsClosureWrapped gives EndsClosure's
-    // decision wherever EndsClosure decides.
-    Law_V1Jody_DecidedUnchanged(_: Integer): Boolean
-    {
-        var g = GeometrySet.Witness_CatalogArena;
-        var tol = Tolerances.Witness_Tolerances.Length;
-        return g.Curves.All(c => c.WrappedAgreesWhereDecided(tol));
-    }
-
-    // For a B-spline record whose closure EndsClosure decides, EndsClosureWrapped's decision is
-    // the same; true for every other record.
-    WrappedAgreesWhereDecided(c: BrepCurve, tol: LengthTolerance): Boolean
-        => match (c)
-        {
-            Line(origin, velocity) => true;
-            Circle(placement, radius) => true;
-            Ellipse(placement, semiAxis1, semiAxis2) => true;
-            Hyperbola(placement, semiAxis, semiImaginaryAxis) => true;
-            Parabola(placement, focalDistance) => true;
-            Polyline(points) => true;
-            BSpline(data) => data.EndsClosure(tol).IsDecided.Not
-                || (data.EndsClosureWrapped(tol).IsDecided && data.EndsClosureWrapped(tol).IsClosed == data.EndsClosure(tol).IsClosed);
-            Trimmed(basis, range, sameSense) => true;
-            Composite(segments) => true;
-            Offset(basis, distance, reference) => true;
-            OnSurface(spaceCurve, supports, master) => true;
-        };
 
     // The defect and its fix on one edge: without the Closed mark (the library's decision) the
     // closed edge on the record from v back to v has the domain [0, 0] and DiscretizeAllRanged
-    // leaves it Undiscretized; with the mark EndsClosureWrapped decides, its domain is [0, 1]
+    // leaves it Undiscretized; with the mark EndsClosure decides, its domain is [0, 1]
     // and it is discretized with at least the closed-edge minimum of segments.
     FixedOnEdge(spline: BSplineCurveData, v: Point3D): Boolean
     {
         var c = DefaultCriteria(0.001);
         var before = BrepModel.JodyEdge(spline, v, false);
-        var after = BrepModel.JodyEdge(spline, v, spline.EndsClosureWrapped(Tolerances.Witness_Tolerances.Length).IsClosed);
+        var after = BrepModel.JodyEdge(spline, v, spline.EndsClosure(Tolerances.Witness_Tolerances.Length).IsClosed);
         var r0 = before.EdgeDomain(BrepEdgeIndex(0)).Range;
         var r1 = after.EdgeDomain(BrepEdgeIndex(0)).Range;
         var d0 = before.DiscretizeAllRanged(c, SegmentFloors.NoFloors).ByEdge[0];
@@ -183,7 +154,7 @@ library V1JodyWrappedSplineClosureLaws
             && d1.SegmentCount >= c.ClosedEdgeMinimum;
     }
 
-    // Both corpus records' closed edges: Undiscretized today, discretized with the fix.
+    // Both corpus records' closed edges: Undiscretized without the Closed mark, discretized with it.
     Law_V1Jody_ClosedEdgeDiscretizes(_: Integer): Boolean
         => 0.JodySpline.FixedOnEdge(Point3D(0.5, 0.0, 0.0)) && 0.JodySmallSpline.FixedOnEdge(Point3D(0.2, 0.0, 0.0));
 }

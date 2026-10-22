@@ -33,6 +33,7 @@ P41, P42, P43 are ISO 10303-21, -41, -42, -43; AIM is the AP242 integrated schem
 | `step-where.library.plato` | library | `StepWhereRules` | the EXPRESS functions WHERE rules call, restated over a `Part21File` |
 | `step-diagnostics.library.plato` | library | `StepDiagnostics` | `Diagnose` (severity, code, message per code), `CodeOf`, `HasCode` |
 | `step-loop-chaining.library.plato` | library | `StepLoopChaining` | `LoopsChained` (run by `PrepareModelWith` after `Reduced`): an edge loop that does not chain head to tail is re-chained with the fewest sense changes, an arc on a wrapping curve written with its vertices the wrong way round is reversed (`STEP-EDGE-REVERSED`), any other change is a coedge flip (`STEP-COEDGE-SENSE-FLIPPED`); a loop no sense chains is kept (TKT-413, TKT-419) |
+| `step-wrapped-spline-closure.library.plato` | library | `StepWrappedSplineClosure` | `IsWrappedForm` and its first-order estimate of the end gap (`WrappedEndGapEstimate`), which `EndsClosure` reads: an unclamped B-spline written in wrapped form is decided closed from its record (TKT-431) |
 | `step.library.plato` | library | `StepReading` | `DecodeBrep`, `DecodeBrepWith` (now `PrepareModelWith` of `DecodeRaw`), the host obligation `DecodeRaw`, `PrepareModel` and its parts, the policy, units and tolerance, occurrences, provenance queries |
 | `step-part21.laws.plato` | laws | `Part21ReadingLaws` | the file as data |
 | `step-schema.laws.plato` | laws | `StepSchemaModelLaws` | the table and a file's conformance to it |
@@ -292,8 +293,10 @@ first and last points; a clamped B-spline's first and last control points, which
 interpolates (P42 4.5.34), so `EndsClosure(data, tol)` needs no evaluation; a trim of such a
 spline over exactly its whole domain the same way; evaluated ends only for a kind that reaches no
 B-spline (`ReachesSpline`, through trims, composites, offsets and a surface curve's master
-pcurve). An unclamped B-spline, a trim over part of one, or a composite, offset or surface curve
-over one stays `Undecided`. `DecidesClosed` reads `Undecided` as not closed, so no mark is written
+pcurve). An unclamped B-spline in wrapped form (a periodic spline written unclamped: its last p
+control points repeat its first p and its end knot spacings repeat its start's, `IsWrappedForm`,
+TKT-431) is closed. Any other unclamped B-spline, a trim over part of one, or a composite, offset
+or surface curve over one stays `Undecided`. `DecidesClosed` reads `Undecided` as not closed, so no mark is written
 for it; `Reduced` never drops an undecided edge, whatever its vertices, and records one
 `EdgeClosureUndecided` warning at the edge's instance with the curve's instance id as its
 measure. Laws: `Law_ClosureDecisionReturnsForEveryKind`, `Law_ClosureDecisionIsTheEnds`,

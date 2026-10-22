@@ -537,13 +537,15 @@ library StepReading
 
     // A B-spline's closure from its record alone: with clamped knots its
     // ends are its first and last control points, so it is closed exactly
-    // when they coincide within tol (weights do not move a clamped end);
-    // otherwise its ends are interior to the control polygon and the
-    // decision is Undecided. Precondition: at least one control point.
+    // when they coincide within tol (weights do not move a clamped end); an
+    // unclamped record in wrapped form (a periodic spline written unclamped,
+    // IsWrappedForm, step-wrapped-spline-closure.library.plato; TKT-431) is
+    // closed; any other unclamped record is Undecided. Precondition: the
+    // record is well shaped.
     EndsClosure(d: BSplineCurveData, tol: LengthTolerance): DecidedClosure
         => d.Basis.HasClampedEnds
             ? DecidedClosure.Decided(d.ControlPoints.First.Coincident(d.ControlPoints.Last, tol))
-            : DecidedClosure.UndecidedSplineClosure;
+            : (d.IsWrappedForm(tol) ? DecidedClosure.Decided(true) : DecidedClosure.UndecidedSplineClosure);
 
     // A trimmed curve's closure from its record: a trim of a clamped
     // B-spline over exactly its whole domain has the spline's ends (the

@@ -1,5 +1,5 @@
 //==
-// # The closure of a B-spline written in wrapped form (track v1-jody, TKT-431)
+// # The closure of a B-spline written in wrapped form (TKT-431)
 //
 // Layer 3 decides a B-spline's closure from its record alone (TKT-348): a clamped spline's ends
 // are its first and last control points; every unclamped spline was Undecided, so it got no
@@ -25,13 +25,13 @@
 // moves by about p delta / h times the spread of the control points it combines. The record
 // counts as wrapped when that first-order estimate, plus the largest distance between paired
 // control points, is within tol; the laws check the answer against evaluation on both corpus
-// records. Any other unclamped record stays Undecided.
+// records. Any other unclamped record stays Undecided. EndsClosure (step.library.plato) decides a
+// record in wrapped form closed.
 //
 // Sections, in order:
 //  - The wrapped form
-//  - The decision
 
-library V1JodyWrappedSplineClosure
+library StepWrappedSplineClosure
 {
     //==
     // # The wrapped form
@@ -92,15 +92,4 @@ library V1JodyWrappedSplineClosure
             && p.Range.All(i => d.Weights[n - p + i] == d.Weights[i])
             && d.WrappedEndGapEstimate <= tol.Value;
     }
-
-    //==
-    // # The decision
-
-    // Layer 3's EndsClosure with the wrapped form decided: a clamped record as there; an
-    // unclamped one in wrapped form is closed; any other unclamped record is Undecided.
-    // Precondition: d.IsWellShaped.
-    EndsClosureWrapped(d: BSplineCurveData, tol: LengthTolerance): DecidedClosure
-        => d.Basis.HasClampedEnds
-            ? DecidedClosure.Decided(d.ControlPoints.First.Coincident(d.ControlPoints.Last, tol))
-            : (d.IsWrappedForm(tol) ? DecidedClosure.Decided(true) : DecidedClosure.UndecidedSplineClosure);
 }
