@@ -1,7 +1,7 @@
 # v1-compiler: Plato compiler defects that cost corpus faces or split the interpreter from compiled C#
 
 Ticket: TKT-410, TKT-355 (TKT-398 left: it blocks nothing in the corpus)
-Status: ready: C1, C2, C4 | working: C5
+Status: ready: C1, C2, C4, C5
 
 Fence: this folder, `tickets/TKT-410*`, `tickets/TKT-355*`, and the Plato repository
 (`C:\Users\cdigg\git\plato`: `writers/`, `src/`, `tests/`, `docs/interpreter.md`), committed there.
@@ -15,7 +15,7 @@ to merge into the library.
 | C1 | TKT-410 | Why `BisectionCached.SagittaByHullBoundGiven` has no ground TIR; fix in the compiler | 2 h | about 2.5 h, most of it cold builds |
 | C2 | TKT-355 | Cause of the three interpreter/compiled divergences; fix with a regression test | 2 h | about 1 h |
 | C4 | TKT-437 | Premise_<Law> companions counted; a law whose premise never held is vacuous | 2 h | about 1 h |
-| C5 | TKT-438 | `plato run --laws --differential`: interpreter against compiled C#, every witness, laws under 2 s | 1.5 h | |
+| C5 | TKT-438 | `plato run --laws --differential`: interpreter against compiled C#, every witness, laws under 2 s | 1.5 h | about 1.5 h |
 | C3 | TKT-398 | Only if it blocks the corpus: it does not (both defects have library workarounds, and the regenerated library has no stub) | - | - |
 
 ## Done
@@ -55,6 +55,13 @@ to merge into the library.
 - The warm law server on 8768 (`PlatoNavigationMcp`, built from Plato `951a70ab`) does not have
   either fix; restart it from `c8c83c8b` so `plato_laws.py --backend csharp` agrees.
 
+- C5: no library change. For each sweep, also run the differential (Plato `ec51f061` or later):
+  `dotnet <Plato.CLI.dll> run stdlib/foundation stdlib/geometry stdlib/graphics <toolkit>/sandbox/step-brep-mesh --recursive --exclude=brep.types.plato --exclude=brep.library.plato --exclude=brep.concepts.plato --laws --differential --profile=cpu64 --budget=2 --report=<file>`,
+  run from the Plato checkout. It exits 1 on any disagreement, and the report's first line is
+  `# differential: N mismatch(es)`, followed by one `# differs` line each. The first such file is
+  `verdicts-differential-cpu64.tsv` here: 0 mismatches over 1,376 laws and 204 witnesses in 255 s.
+  The warm server takes `backend=differential` once it runs Plato `ec51f061`.
+
 ## Contract requests
 
 ## Requests to other tracks
@@ -84,6 +91,10 @@ to merge into the library.
 - PlatoTests fails 4 tests at HEAD before and after these commits: the two conversion inventories
   (stale since 2026-10-17), plato-438 (TypeScript casing), and `stdlib/future/collision.library.plato`
   declaring a bodiless signature.
+
+- The first differential run over the mesher found 178 mismatches, none of them real: a compiled
+  `String` read back as the C# struct (82 witnesses), and closures compared for equality. Both are
+  fixed in `ec51f061`. Since TKT-355, the engines agree on every law and witness under 2 s.
 
 ## Durations
 | Step | Wall time | Runs |

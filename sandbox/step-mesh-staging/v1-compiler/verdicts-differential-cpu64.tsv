@@ -1,0 +1,1378 @@
+# plato run --laws --differential --profile=cpu64 --budget=2, Plato ec51f061, library 3cc4c194 (layers 00-09, stdlib foundation, geometry, graphics), 2026-10-22: 1,376 laws, 204 witnesses, 255 s
+# differential: 0 mismatch(es)
+BisectionCachedLaws.Law_BisectedCachedWitnessSizes	pass	1167	
+BisectionCachedLaws.Law_EstimatedSagittaWithinBudget	pass	226	
+BisectionCachedLaws.Law_SagittaGivenAgrees	pass	60	
+BoundaryIndexLaws.Law_DelaunayedIndexedAgrees	pass	3	
+BoundaryIndexLaws.Law_DelaunayedIndexedAgreesOnStars	pass	244	
+BoundaryIndexLaws.Law_InCircleOfSortedAgrees	pass	685	
+BoundaryIndexLaws.Law_IsConstrainedInAgrees	pass	46	
+BoundaryIndexLaws.Law_IsConstrainedInAgreesOnStars	pass	226	
+BoundaryIndexLaws.Law_IsStrictlyInsideIndexedAgrees	error	2000	w = TriangulatedWitness("Cylinder face 0", 1, BrepModel(GeometrySet([BrepCurve.Circle(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 1), BrepCurve.Circle(Frame3D(Point3D(0, 0, 1), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 1), BrepCurve.Line(Point3D(1, 0, 0), Vector3D(0...
+BoundaryIndexLaws.Law_IsStrictlyInsideIndexedAgreesOnJagged	pass	1658	
+BoundaryIndexLaws.Law_IsStrictlyInsideIndexedAgreesOnStars	pass	1897	
+BoundaryIndexLaws.Law_RefineIndexedAgrees	pass	16	
+BoundaryIndexLaws.Law_RefineIndexedAgreesOnStars	pass	371	
+BoundaryIndexLaws.Law_SplitSideSlotIndexedAgrees	pass	85	
+BoundaryIndexLaws.Law_ThirteenHolesAgree	pass	624	
+BrepCheckingClaimsLaws.Law_CheckKeepsLawName	pass	0	
+BrepCheckingClaimsLaws.Law_CompensatedSumAgreesWithLibrary	pass	5	
+BrepCheckingClaimsLaws.Law_CompensatedSumCountsTerms	pass	1	
+BrepCheckingClaimsLaws.Law_CompensatedSumErrorIsNonNegative	pass	1	
+BrepCheckingClaimsLaws.Law_LevelProofProvesItsLevel	pass	4	
+BrepCheckingClaimsLaws.Law_OracleAgreesIffWithinAllowance	pass	1	
+BrepCheckingClaimsLaws.Law_OracleOfOtherKindNeverAgrees	pass	0	
+BrepCheckingClaimsLaws.Law_PairScopeRespectsBudget	pass	2	
+BrepCheckingClaimsLaws.Law_PerElementScopeIsUnlimited	pass	1	
+BrepCheckingClaimsLaws.Law_RoundingAllowanceIsCountTimesResolution	pass	2	
+BrepCheckingClaimsLaws.Law_RoundingAllowanceKeepsKind	pass	0	
+BrepCheckingClaimsLaws.Law_StructuralProofIsNotOracle	pass	0	
+BrepCheckingClaimsLaws.Law_ToCheckRecordKeepsLaw	pass	1	
+BrepCheckingClaimsLaws.Law_ToCheckRecordPreservesExactHolds	pass	1	
+BrepCheckingClaimsLaws.Law_ToCheckRecordPreservesHolds	pass	5	
+BrepCheckingDefectsLaws.Law_ByClassCountsEveryDefect	pass	25	
+BrepCheckingDefectsLaws.Law_ByFaceRowsNameTheirFace	pass	150	
+BrepCheckingDefectsLaws.Law_DefectOfInvertsExpectedLaw	pass	49	
+BrepCheckingDefectsLaws.Law_DefectsOfCleanReportIsEmpty	pass	7	
+BrepCheckingDefectsLaws.Law_DefectsOfEmptyReportIsEmpty	pass	4	
+BrepCheckingDefectsLaws.Law_EveryFailedCheckIsADefect	pass	201	
+BrepCheckingDefectsLaws.Law_FlippedFaceReportHasMisorientedFace	pass	44	
+BrepCheckingDefectsLaws.Law_HeldCheckHasNoDefect	pass	2	
+BrepCheckingDefectsLaws.Law_UnknownLawIsUnclassified	pass	0	
+BrepCheckingLaws.Law_CheckAllHoldsExactlyWhenEverySampleHolds	skipped	3	no values for holds: Function1<Integer,Boolean>: a function-typed parameter, and no Witness_* returns Function1
+BrepCheckingLaws.Law_CheckAllWithinHoldsExactlyWhenEveryMeasureIsWithin	skipped	2	no values for measure: Function1<Integer,Number>: a function-typed parameter, and no Witness_* returns Function1
+BrepCheckingLaws.Law_CheckGridHoldsExactlyWhenEverySampleHolds	skipped	2	no values for holds: Function2<Integer,Integer,Boolean>: a function-typed parameter, and no Witness_* returns Function2
+BrepCheckingLaws.Law_CheckGridWithinHoldsExactlyWhenEveryMeasureIsWithin	skipped	2	no values for measure: Function2<Integer,Integer,Number>: a function-typed parameter, and no Witness_* returns Function2
+BrepCheckingLaws.Law_CornerNormalCheckAgrees	pass	32	
+BrepCheckingLaws.Law_CorpusCountsPositive	pass	14	
+BrepCheckingLaws.Law_CorpusEntryExercisesAFeature	pass	1	
+BrepCheckingLaws.Law_CorpusMeasuresSensible	pass	3	
+BrepCheckingLaws.Law_CorpusNamesUnique	pass	41	
+BrepCheckingLaws.Law_DegenerateEdgeCheckAgrees	pass	13	
+BrepCheckingLaws.Law_EdgeDomainEndsCheckAgrees	pass	16	
+BrepCheckingLaws.Law_EdgeOnSurfaceCheckAgrees	pass	43	
+BrepCheckingLaws.Law_ElementDeviationCheckAgrees	pass	5	
+BrepCheckingLaws.Law_ElementNormalCheckAgrees	pass	13	
+BrepCheckingLaws.Law_FailingCheckAllNamesAFailingSample	skipped	0	no values for holds: Function1<Integer,Boolean>: a function-typed parameter, and no Witness_* returns Function1
+BrepCheckingLaws.Law_FailingCheckAllWithinNamesAFailingSample	skipped	0	no values for measure: Function1<Integer,Number>: a function-typed parameter, and no Witness_* returns Function1
+BrepCheckingLaws.Law_FailingElementNormalCheckNamesAnElement	pass	81	
+BrepCheckingLaws.Law_FailingReevaluationCheckNamesAVertex	pass	42	
+BrepCheckingLaws.Law_GeometricRequiresWhatStructuralRequires	pass	0	
+BrepCheckingLaws.Law_ImageChordCheckAgrees	pass	8	
+BrepCheckingLaws.Law_LengthToleranceResolvableCheckAgrees	pass	2	
+BrepCheckingLaws.Law_MaxLengthCheckAgrees	pass	6	
+BrepCheckingLaws.Law_MergeAllIsCleanExactlyWhenEveryPartIsClean	pass	7	
+BrepCheckingLaws.Law_OracleRequiresWhatGeometricRequires	pass	4	
+BrepCheckingLaws.Law_OuterShellExactVolumePositive	pass	34	
+BrepCheckingLaws.Law_PcurveCheckAgrees	pass	2	
+BrepCheckingLaws.Law_PlanarOracleEqualsDiskArea	pass	37	
+BrepCheckingLaws.Law_PointsOnCurveCheckAgrees	pass	5	
+BrepCheckingLaws.Law_ReducedEulerMatchesOracle	pass	3	
+BrepCheckingLaws.Law_ReevaluationCheckAgrees	pass	15	
+BrepCheckingLaws.Law_SagittaCheckAgrees	pass	5	
+BrepCheckingLaws.Law_TangentDeviationCheckAgrees	pass	13	
+BrepCheckingLaws.Law_TurningAngleCheckAgrees	pass	12	
+BrepCheckingLaws.Law_VertexOnCurveCheckAgrees	pass	4	
+BrepCheckingLaws.Law_VoidShellExactVolumeNegative	pass	1	
+BrepCheckingOnceLaws.Law_RawStepClaimsAgree	pass	80	
+BrepCheckingProofsKernelLaws.Law_ChainedLoopIffChains	pass	15	
+BrepCheckingProofsKernelLaws.Law_ChainedLoopRecordsLoop	pass	5	
+BrepCheckingProofsKernelLaws.Law_ClosedShellIffEdgesUsedTwice	pass	44	
+BrepCheckingProofsKernelLaws.Law_ClosedShellRecordsCounts	pass	11	
+BrepCheckingProofsKernelLaws.Law_ConnectedShellIffOneComponent	pass	18	
+BrepCheckingProofsKernelLaws.Law_ConnectedShellRecordsShell	pass	7	
+BrepCheckingProofsKernelLaws.Law_InRangeModelIffIndicesInRange	pass	4	
+BrepCheckingProofsKernelLaws.Law_InRangeModelKeepsModel	pass	2	
+BrepCheckingProofsKernelLaws.Law_OrientedShellIffCoherent	pass	12	
+BrepCheckingProofsKernelLaws.Law_OrientedShellKeepsCounts	pass	20	
+BrepCheckingProofsKernelLaws.Law_PositiveWitnessShellsAreClosed	pass	5	
+BrepCheckingProofsKernelLaws.Law_PreparedModelIffTolerancesWellFormed	pass	14	
+BrepCheckingProofsKernelLaws.Law_PreparedModelRecordsPreparation	pass	9	
+BrepCheckingProofsKernelLaws.Law_ResolvableModelIffResolvable	pass	18	
+BrepCheckingProofsKernelLaws.Law_ResolvableModelRecordsExtent	pass	5	
+BrepCheckingProofsLaws.Law_ValidatedReportIffClean	error	2362	k = -1, l = 3  took 2.36s, over the 2s budget (stopped in case 5)
+BrepCheckingProofsLaws.Law_ValidatedReportRecordsLevel	error	2007	k = -1, l = 5  took 2.01s, over the 2s budget (stopped in case 7)
+BrepCheckingProofsRegionsLaws.Law_BowtieIsNotSimple	pass	11	
+BrepCheckingProofsRegionsLaws.Law_ClosedUvLoopIffUnwound	pass	3	
+BrepCheckingProofsRegionsLaws.Law_ClosedUvLoopRecordsFace	pass	2	
+BrepCheckingProofsRegionsLaws.Law_OrientedUvRegionIffWindings	pass	8	
+BrepCheckingProofsRegionsLaws.Law_OrientedUvRegionRecordsFace	pass	2	
+BrepCheckingProofsRegionsLaws.Law_SimpleUvLoopIffSimpleRegion	pass	13	
+BrepCheckingProofsRegionsLaws.Law_SimpleUvLoopRecordsTolerance	pass	19	
+BrepCheckingSamplersLaws.Law_CanEvaluateGivenAgrees	pass	32	
+BrepCheckingSamplersLaws.Law_CheckCurveSamplesRunsIsWellFormedOnce	pass	24	
+BrepCheckingSitesLaws.Law_PcurveSiteTableVisitsEachEdgeOnce	pass	2	
+BrepCheckingSitesLaws.Law_SharedPcurvesBoxReachesEveryBranch	pass	21	
+BrepCheckingSitesLaws.Law_SiteFamilySizes	pass	6	
+BrepCheckingSitesLaws.Law_SiteTablesAgree	pass	48	
+BrepCheckingSitesLaws.Law_SiteTablesAgreeOnWitness	pass	1	
+BrepCrossCheckingMasksLaws.Law_FacesWithElementsAgrees	pass	4	
+BrepEditingLaws.Law_ClosureContainsSelection	pass	20	
+BrepEditingLaws.Law_ClosureHoldsEdgesOfFace	pass	1	
+BrepEditingLaws.Law_ClosureHoldsFacesOfEdge	pass	2	
+BrepEditingLaws.Law_ClosureIsInRange	pass	11	
+BrepEditingLaws.Law_EulerOperatorKeepsCharacteristic	pass	3	
+BrepEditingLaws.Law_InRangeEditIsApplied	pass	11	
+BrepEditingLaws.Law_InvalidationCoversChangedFaces	pass	85	
+BrepEditingLaws.Law_InvalidationIsInRange	pass	11	
+BrepEditingLaws.Law_InverseUndoes	pass	13	
+BrepEditingLaws.Law_OutOfRangeEditIsRefused	pass	7	
+BrepEditingLaws.Law_RefusedLeavesModelUnchanged	pass	11	
+BrepEditingLaws.Law_RemoveFaceRemapDropsTheFace	pass	2	
+BrepEditingLaws.Law_ReversedLoopStillChains	pass	1	
+BrepEditingLaws.Law_TransformInverseRestoresVertices	pass	17	
+BrepEditingPerfLaws.Law_ClosureOfVerticesOnceAgrees	pass	256	
+BrepEditingPerfLaws.Law_ComposeWithIdentityIsIdentity	pass	18	
+BrepEditingPerfLaws.Law_CoversSortedAgrees	pass	93	
+BrepEditingPerfLaws.Law_DirtyAfterOnceAgrees	pass	384	
+BrepEditingPerfLaws.Law_InvalidationSetsAreSorted	pass	81	
+BrepEditingPerfLaws.Law_RemapIsIdentityForGeometricEdits	pass	16	
+BrepEditingPerfLaws.Law_ScriptInverseUndoes	pass	1229	
+BrepEditingPerfLaws.Law_ScriptInverseUndoesFromFive	pass	751	
+BrepEditingPerfLaws.Law_ScriptInverseUndoesOnCylinder	pass	871	
+BrepEditingPerfLaws.Law_SetsByMaskAgree	pass	171	
+BrepFoundationBudgetsLaws.Law_ElapsedIsNonNegative	pass	0	
+BrepFoundationBudgetsLaws.Law_TimeBudgetIsNonNegative	pass	18	
+BrepFoundationBudgetsLaws.Law_WithinBudgetIsMonotone	pass	2	
+BrepFoundationBudgetsLaws.Law_WorkBudgetIsNonNegative	pass	1	
+BrepFoundationBudgetsLaws.Law_WorkIsWithinItsSum	pass	1	
+BrepFoundationBudgetsLaws.Law_WorkTotalIsAdditive	pass	2	
+BrepFoundationConstantsLaws.Law_ConstantsMeetTheSpec	pass	2	
+BrepFoundationConstantsLaws.Law_ResolutionAtConstantAgrees	pass	6	
+BrepFoundationConstantsLaws.Law_ResolutionAtConstantDoesNoHalvings	pass	3	
+BrepFoundationConstantsLaws.Law_ResolutionAtWitnessRejectsHalving	pass	7	
+BrepFoundationConstantsLaws.Law_RoundingUnitConstantEqualsLoop	pass	19	
+BrepFoundationConstantsLaws.Law_SmallestNormalConstantEqualsLoop	pass	5	
+BrepFoundationCountsLaws.Law_ClosedEdgeMinimumIsThree	pass	0	
+BrepFoundationCountsLaws.Law_CountHashAgreesWithEquality	pass	2	
+BrepFoundationCountsLaws.Law_CountOfIsNonNegative	pass	1	
+BrepFoundationCountsLaws.Law_DeeperIsDeeper	pass	2	
+BrepFoundationCountsLaws.Law_NextRoundIsLater	pass	5	
+BrepFoundationCountsLaws.Law_NonZeroCountOfIsPositive	pass	1	
+BrepFoundationCountsLaws.Law_SampleCountIsAtLeastTwo	pass	1	
+BrepFoundationCountsLaws.Law_SamplesOfSegmentsOfIsIdentity	pass	1	
+BrepFoundationCountsLaws.Law_SegmentCountIsAtLeastOne	pass	1	
+BrepFoundationCountsLaws.Law_SegmentsOfSamplesOfIsIdentity	pass	2	
+BrepFoundationDecidedLaws.Law_DecidedAngleRoundTrips	pass	2	
+BrepFoundationDecidedLaws.Law_DecidedDirectionRoundTrips	pass	4	
+BrepFoundationDecidedLaws.Law_DecidedEdgeIndexRoundTrips	pass	3	
+BrepFoundationDecidedLaws.Law_DecidedFaceIndexRoundTrips	pass	3	
+BrepFoundationDecidedLaws.Law_DecidedLengthRoundTrips	pass	2	
+BrepFoundationDecidedLaws.Law_DecidedNumberRoundTrips	pass	9	
+BrepFoundationDecidedLaws.Law_DecidedParameterRoundTrips	pass	2	
+BrepFoundationDecidedLaws.Law_DecidedPointRoundTrips	pass	5	
+BrepFoundationDecidedLaws.Law_DecidedRangeRoundTrips	pass	2	
+BrepFoundationDecidedLaws.Law_DecidedRoundRoundTrips	pass	3	
+BrepFoundationDecidedLaws.Law_DecidedSignRoundTrips	pass	15	
+BrepFoundationDecidedLaws.Law_DecidedUvRoundTrips	pass	7	
+BrepFoundationDecidedLaws.Law_KeepReasonRoundTrips	pass	1	
+BrepFoundationDecidedLaws.Law_UndecidedReasonRoundTrips	pass	4	
+BrepFoundationDecidedLaws.Law_WorkStrictlyDecreasesOrTerminal	pass	2	
+BrepFoundationIndicesLaws.Law_EdgeKeyIsOrdered	pass	4	
+BrepFoundationIndicesLaws.Law_EdgeKeyIsSymmetric	pass	2	
+BrepFoundationIndicesLaws.Law_EndSampleHasNoInteriorSlot	pass	1	
+BrepFoundationIndicesLaws.Law_HalfEdgeAndReverseShareKey	pass	2	
+BrepFoundationIndicesLaws.Law_InteriorSampleRoundTrip	pass	2	
+BrepFoundationIndicesLaws.Law_InteriorSlotIsSampleMinusOne	pass	3	
+BrepFoundationIndicesLaws.Law_InteriorSlotIsSlotOrNone	pass	1	
+BrepFoundationIndicesLaws.Law_InteriorSlotRoundTrip	pass	2	
+BrepFoundationIndicesLaws.Law_QuadCornersDistinct	pass	1	
+BrepFoundationIndicesLaws.Law_RemapIntegerFormRoundTrip	pass	3	
+BrepFoundationIndicesLaws.Law_RemapIsInjectiveOnKept	pass	17	
+BrepFoundationIndicesLaws.Law_RemovalDropsOnlyTheRemovedRow	pass	7	
+BrepFoundationIndicesLaws.Law_TableNameOrdinalRoundTrip	pass	2	
+BrepFoundationIndicesLaws.Law_TriangleAndQuadCornersNeverCollide	pass	2	
+BrepFoundationIndicesLaws.Law_TriangleCornersDistinct	pass	1	
+BrepFoundationLaws.Law_AngleParameterFloorIgnoresScale	pass	3	
+BrepFoundationLaws.Law_AngleTolerancePositive	fail	1	t = AngleTolerance(Angle(-3))
+BrepFoundationLaws.Law_CheckBoundIsNonNegative	fail	0	c = Check(LawName("ksqi"), false, 1, -0.30265934313771403, Provenance.KernelBody(BodyIndex(2)))
+BrepFoundationLaws.Law_ClosedPeriodIsRangeLength	fail	3	d = CurveDomain(NumberInterval(0, 1.2202885240410861), Periodicity.Closed(9.59153670798593))
+BrepFoundationLaws.Law_CoincidenceComposesWithSummedTolerance	pass	1	
+BrepFoundationLaws.Law_CoincidentIsReflexive	pass	1	
+BrepFoundationLaws.Law_CoincidentIsSymmetric	pass	1	
+BrepFoundationLaws.Law_DomainContainsItsSamples	pass	3	
+BrepFoundationLaws.Law_EmptyIsLeftIdentityOfMerge	pass	1	
+BrepFoundationLaws.Law_EmptyIsRightIdentityOfMerge	pass	1	
+BrepFoundationLaws.Law_FailedCheckHasDiagnostic	fail	1	r = Report([Check(LawName("hg"), false, -9.234834788010845, 0, Provenance.KernelSurface(SurfaceIndex(8))), Check(LawName(""), false, 8.443594471758043, 5.548315157903506, Provenance.KernelLoop(BrepLoopIndex(0))), Check(LawName("y"), false, 5.326119668467957, -4.428772448761748, Provenance.KernelEdge(BrepEdgeIndex(2)))], [Diagnostic(Severity.Error, "bsq", "kmabd", Provenance.Nowhere, -7.58484375550...
+BrepFoundationLaws.Law_HoldsExactlyWhenWithinBound	fail	1	c = Check(LawName(""), true, 3.0773760625521547, -6.922567718160604, Provenance.KernelEdge(BrepEdgeIndex(6)))
+BrepFoundationLaws.Law_IntegerTotalAddsOverConcatenation	pass	1	
+BrepFoundationLaws.Law_IsCleanExactlyWhenNoError	pass	1	
+BrepFoundationLaws.Law_IsNoneExactlyWhenNegative	pass	26	
+BrepFoundationLaws.Law_IsOnFaceHasDimensionTwo	pass	2	
+BrepFoundationLaws.Law_LengthParameterFloorScalesWithModel	pass	2	
+BrepFoundationLaws.Law_LengthTolerancePositive	fail	1	t = LengthTolerance(0)
+BrepFoundationLaws.Law_LengthToleranceResolvable	fail	0	t = LengthTolerance(-0.5), extent = 4.126352264604696
+BrepFoundationLaws.Law_LocatedKeepsFindings	pass	7	
+BrepFoundationLaws.Law_LocatedKeepsVerdict	pass	2	
+BrepFoundationLaws.Law_MergeIsAssociative	pass	9	
+BrepFoundationLaws.Law_MergeIsCleanExactlyWhenBothClean	pass	1	
+BrepFoundationLaws.Law_NearestUnwrappedIsSameParameter	pass	1	
+BrepFoundationLaws.Law_NearestUnwrappedWithinHalfPeriodOfReference	pass	1	
+BrepFoundationLaws.Law_OppositeSideIsInvolution	pass	0	
+BrepFoundationLaws.Law_ParameterToleranceAtMovesWithinLength	pass	1	
+BrepFoundationLaws.Law_ParameterToleranceAtNeverBelowFloor	pass	4	
+BrepFoundationLaws.Law_ParameterTolerancePositive	fail	1	t = ParameterTolerance(-1.7997016998937827)
+BrepFoundationLaws.Law_PeriodicRepresentativeAboveInPeriod	pass	1	
+BrepFoundationLaws.Law_SameDirectionIsReflexive	pass	2	
+BrepFoundationLaws.Law_SamplesEndAtRangeEnd	pass	0	
+BrepFoundationLaws.Law_SamplesHaveRequestedCount	pass	1	
+BrepFoundationLaws.Law_SamplesStartAtRangeStart	pass	0	
+BrepFoundationLaws.Law_SamplesStrictlyIncreasing	pass	0	
+BrepFoundationLaws.Law_ShortestDifferenceAtMostHalfPeriod	pass	0	
+BrepFoundationLaws.Law_UnboundedDomainIsNotSampled	pass	1	
+BrepFoundationLaws.Law_UnmeasuredCheckFails	pass	2	
+BrepFoundationLaws.Law_WorseOfHoldsExactlyWhenBothHold	pass	0	
+BrepFoundationLaws.Law_WorseOfIsAssociative	pass	4	
+BrepFoundationLaws.Law_WorseOfKeepsTheGreaterExceedance	pass	2	
+BrepFoundationLaws.Law_WrapIgnoresWholePeriods	pass	1	
+BrepFoundationLaws.Law_WrapIsIdempotent	pass	1	
+BrepFoundationLaws.Law_WrapLandsInPeriod	pass	1	
+BrepFoundationLaws.Law_WrapOnClosedDomainStaysInRange	fail	7	d = CurveDomain(NumberInterval(-0.5, 0.25), Periodicity.Closed(3)), t = 1
+BrepFoundationLaws.Law_WrapStaysInClass	pass	2	
+BrepFoundationParametersLaws.Law_DirectedRangeReversedTwiceIsIdentity	pass	2	
+BrepFoundationParametersLaws.Law_IsoLinePointIsOnLine	pass	1	
+BrepFoundationParametersLaws.Law_NearestUnwrappedIsWithinHalfTurn	pass	2	
+BrepFoundationParametersLaws.Law_NormalizedParameterRoundTrips	pass	3	
+BrepFoundationParametersLaws.Law_PeriodicRangeContainsEnd	pass	1	
+BrepFoundationParametersLaws.Law_PeriodicRangeContainsStart	pass	1	
+BrepFoundationParametersLaws.Law_PeriodicRangeLengthIsWithinPeriod	pass	1	
+BrepFoundationParametersLaws.Law_RangeOfIsOrdered	pass	0	
+BrepFoundationParametersLaws.Law_RangeOfIsSymmetric	pass	0	
+BrepFoundationParametersLaws.Law_RangeOfKeepsEnds	pass	3	
+BrepFoundationParametersLaws.Law_ReversedRangeCoversSameParameters	pass	0	
+BrepFoundationParametersLaws.Law_WrapIsInOneTurn	pass	6	
+BrepFoundationParametersLaws.Law_WrapThenUnwrapNearReferenceIsIdentity	pass	2	
+BrepFoundationPointsLaws.Law_ChartBoxOfContainsBothPoints	pass	2	
+BrepFoundationPointsLaws.Law_ChartRoundTrips	pass	3	
+BrepFoundationPointsLaws.Law_CornerIsInDomainBox	pass	2	
+BrepFoundationPointsLaws.Law_MirrorNegatesChartX	pass	1	
+BrepFoundationPointsLaws.Law_NextCornerCyclesInFour	pass	1	
+BrepFoundationPointsLaws.Law_PlacedIsMoved	pass	13	
+BrepFoundationPointsLaws.Law_UnitSquareRoundTrips	pass	6	
+BrepFoundationPointsLaws.Law_UvBoxOfContainsBothPoints	pass	3	
+BrepFoundationPointsLaws.Law_UvDeltaRoundTrips	pass	1	
+BrepFoundationQuantitiesLaws.Law_AreaScalesBySquare	pass	4	
+BrepFoundationQuantitiesLaws.Law_FactorTimesInverseIsOne	pass	0	
+BrepFoundationQuantitiesLaws.Law_FractionOfIsInUnitInterval	pass	0	
+BrepFoundationQuantitiesLaws.Law_FractionOfKeepsUnitValues	pass	0	
+BrepFoundationQuantitiesLaws.Law_LengthIsNeverWithinAngleBound	pass	0	
+BrepFoundationQuantitiesLaws.Law_MeasureIsWithinItself	pass	0	
+BrepFoundationQuantitiesLaws.Law_ResolutionIsPositive	pass	0	
+BrepFoundationQuantitiesLaws.Law_ScaledThenUnscaledIsIdentity	pass	0	
+BrepFoundationQuantitiesLaws.Law_SquaredDistanceIsNonNegative	pass	1	
+BrepFoundationQuantitiesLaws.Law_SquaredThenSqrtIsMagnitude	pass	1	
+BrepFoundationQuantitiesLaws.Law_ToMeasureKeepsLengthKind	pass	0	
+BrepFoundationQuantitiesLaws.Law_UnitRoundTrips	pass	3	
+BrepFoundationQuantitiesLaws.Law_VolumeScalesByCube	pass	1	
+BrepFoundationSignsLaws.Law_ComposeIsAssociative	pass	1	
+BrepFoundationSignsLaws.Law_ParityOfSumIsComposed	pass	2	
+BrepFoundationSignsLaws.Law_ParitySenseComposes	pass	3	
+BrepFoundationSignsLaws.Law_SameIsLeftIdentity	pass	0	
+BrepFoundationSignsLaws.Law_SameIsRightIdentity	pass	0	
+BrepFoundationSignsLaws.Law_SenseReversedTwiceIsIdentity	pass	0	
+BrepFoundationSignsLaws.Law_SignIsAntisymmetric	pass	2	
+BrepFoundationSignsLaws.Law_SignOfProductIsProduct	pass	1	
+BrepFoundationSignsLaws.Law_SignWithinToleranceIsZero	pass	0	
+BrepFoundationSignsLaws.Law_ToSenseOfEdgeOrientation	pass	1	
+BrepFoundationSignsLaws.Law_ToSignOfComposeIsProduct	pass	3	
+BrepFoundationSignsLaws.Law_WindingReversedTwiceIsIdentity	pass	1	
+BrepFoundationWorkLaws.Law_CountedValueKeepsItsCount	pass	1	
+BrepFoundationWorkLaws.Law_SlopeAllowanceGrowsWithSize	pass	0	
+BrepFoundationWorkLaws.Law_TimesScalesEveryCount	pass	2	
+BrepFoundationWorkLaws.Law_WorkIsWithinSlope	error	2579	c = WorkClaim("NeedsRefinementCached: evaluations, normals and projections per tested triangle", WorkBudget(8, 0, 0, 0), [32, 128], <lambda>/1)  took 2.58s, over the 2s budget (stopped in case 7)
+BrepGeometryClosureMarksLaws.Law_ClosureMarkDecisionsAreSorted	pass	17	
+BrepGeometryClosureMarksLaws.Law_ClosureMarksAreSorted(BrepModel)	pass	31	
+BrepGeometryClosureMarksLaws.Law_ClosureMarksAreSorted(GeometrySet)	pass	3	
+BrepGeometryClosureMarksLaws.Law_ClosureMarksAreSorted(RawDecodedModel)	pass	12	
+BrepGeometryClosureMarksLaws.Law_MarkLookupIsLogarithmic	pass	2	
+BrepGeometryClosureMarksLaws.Law_MarkedCatalogFindsMarks	pass	0	
+BrepGeometryClosureMarksLaws.Law_MarksAreSortedSeesOrder	pass	0	
+BrepGeometryDecidedLaws.Law_ClosestParameterResultRoundTrips	pass	3	
+BrepGeometryDecidedLaws.Law_ClosureDecisionRoundTrips	pass	2	
+BrepGeometryDecidedLaws.Law_ProjectionRoundTrips	pass	1	
+BrepGeometryDecidedLaws.Law_SurfaceNormalRoundTrips	pass	2	
+BrepGeometryJetsLaws.Law_ArcSagittaIsAttained	pass	6	
+BrepGeometryJetsLaws.Law_ArcSagittaIsNonNegative	pass	0	
+BrepGeometryJetsLaws.Law_CircleSpeedIsRadius	pass	1	
+BrepGeometryJetsLaws.Law_CurvatureWithinBound	pass	7	
+BrepGeometryJetsLaws.Law_CurveJetD1IsDerivative	pass	6	
+BrepGeometryJetsLaws.Law_CurveJetD2IsSecondDerivative	pass	3	
+BrepGeometryJetsLaws.Law_CurveJetPointIsEval	pass	5	
+BrepGeometryJetsLaws.Law_CylinderGaussianIsZero	pass	3	
+BrepGeometryJetsLaws.Law_GaussianIsProductOfPrincipal	pass	8	
+BrepGeometryJetsLaws.Law_JetPartialUIsPartialU	pass	6	
+BrepGeometryJetsLaws.Law_JetPartialVIsPartialV	pass	4	
+BrepGeometryJetsLaws.Law_JetPointIsEval	pass	13	
+BrepGeometryJetsLaws.Law_JetSecondPartialUUMatchesDifference	pass	11	
+BrepGeometryJetsLaws.Law_JetSecondPartialUVMatchesDifference	pass	8	
+BrepGeometryJetsLaws.Law_JetSecondPartialVVMatchesDifference	pass	9	
+BrepGeometryJetsLaws.Law_NormalCurvatureWithinPrincipal	pass	5	
+BrepGeometryJetsLaws.Law_PrincipalDirectionsAreOrthogonal	pass	4	
+BrepGeometryJetsLaws.Law_SpeedIsNonNegative	pass	2	
+BrepGeometryJetsLaws.Law_SphereGaussianIsInverseSquareRadius	pass	21	
+BrepGeometryJetsLaws.Law_SphereMeanIsInverseRadius	pass	4	
+BrepGeometryKindsLaws.Law_ConeHasApex	pass	0	
+BrepGeometryKindsLaws.Law_ConicKindIsInhabited	pass	0	
+BrepGeometryKindsLaws.Law_CylinderHasNoDegeneracy	pass	0	
+BrepGeometryKindsLaws.Law_DegeneracyAgreesWithDegenerateSides	pass	7	
+BrepGeometryKindsLaws.Law_DerivedCurveKindIsInhabited	pass	2	
+BrepGeometryKindsLaws.Law_DerivedSurfaceKindIsInhabited	pass	0	
+BrepGeometryKindsLaws.Law_LineKindIsInhabited	pass	0	
+BrepGeometryKindsLaws.Law_PlaneKindIsInhabited	pass	0	
+BrepGeometryKindsLaws.Law_PolePointIsSideImage	pass	5	
+BrepGeometryKindsLaws.Law_PoleSegmentHasCount	pass	1	
+BrepGeometryKindsLaws.Law_PoleSegmentLiesOnSide	pass	2	
+BrepGeometryKindsLaws.Law_PolylineKindIsInhabited	pass	0	
+BrepGeometryKindsLaws.Law_QuadricKindIsInhabited	pass	0	
+BrepGeometryKindsLaws.Law_SeamIsAtRangeStart	pass	7	
+BrepGeometryKindsLaws.Law_SeamsAgreeWithHasSeam	pass	7	
+BrepGeometryKindsLaws.Law_SphereHasTwoCollapsedSides	pass	0	
+BrepGeometryKindsLaws.Law_SplineCurveKindIsInhabited	pass	0	
+BrepGeometryKindsLaws.Law_SplineSurfaceKindIsInhabited	pass	0	
+BrepGeometryKindsLaws.Law_SweptKindIsInhabited	pass	1	
+BrepGeometryKindsLaws.Law_ToroidalKindIsInhabited	pass	1	
+BrepGeometryLaws.Law_AreaElementMatchesCrossProduct	pass	0	
+BrepGeometryLaws.Law_AreaElementPositiveAwayFromCollapse	pass	0	
+BrepGeometryLaws.Law_BSplineCurve2DDegreePositive	fail	0	d = BSplineCurve2DData(SplineBasis(0, KnotVector([7.731818695427766, -3.543921221766584, 7.09023075042769])), [UvCoordinate(-3, -0.18903504600237753)], [-4.567877228636238, -2, -2.0884498171920187])
+BrepGeometryLaws.Law_BSplineCurve2DDomainIsKnotSpan	pass	0	
+BrepGeometryLaws.Law_BSplineCurve2DDomainNonEmpty	fail	0	d = BSplineCurve2DData(SplineBasis(2, KnotVector([-6.290746143223133, -0.5])), [], [-1.1176403011743155, 1.254678690458963, 2.366209399125637, 9.21992148236368])
+BrepGeometryLaws.Law_BSplineCurve2DKnotCount	fail	0	d = BSplineCurve2DData(SplineBasis(-1, KnotVector([-3, -2.240123111866472])), [UvCoordinate(0.026958691900112797, -9.826571065851754)], [-9.484932245446803, -3, 1, -1.9681239463240487])
+BrepGeometryLaws.Law_BSplineCurve2DKnotMultiplicityBounded	pass	0	
+BrepGeometryLaws.Law_BSplineCurve2DKnotsNonDecreasing	fail	0	d = BSplineCurve2DData(SplineBasis(1, KnotVector([4.316780536583057, -5.286748844798072, -3.5128729573976596, 1.176163000602351])), [UvCoordinate(7.858588098482503, -3), UvCoordinate(1, -6.659556867861914), UvCoordinate(3, 3.8997995266224255), UvCoordinate(-2.3972207551809124, -4.43260892966418)], [0])
+BrepGeometryLaws.Law_BSplineCurve2DMatchesBasisSum	pass	0	
+BrepGeometryLaws.Law_BSplineCurve2DWeightCount	fail	0	d = BSplineCurve2DData(SplineBasis(6, KnotVector([])), [UvCoordinate(2.233210416619297, 4.262753694440589), UvCoordinate(7.491069965758857, -2), UvCoordinate(-6.24731048766864, 0)], [3.874747638532307, -5.847308931801146])
+BrepGeometryLaws.Law_BSplineCurve2DWeightsPositive	fail	0	d = BSplineCurve2DData(SplineBasis(8, KnotVector([-1.574836341466213, -8.288980758883515, 8.253350247746962, 2])), [UvCoordinate(-0.5, -3.8699617673968723), UvCoordinate(-2.994865790472769, -0.6760073689166486), UvCoordinate(6.420819664569951, -8.297912561473396)], [-0.5, 1.9588964860694915])
+BrepGeometryLaws.Law_BSplineCurveDegreePositive	fail	1	d = BSplineCurveData(SplineBasis(-7, KnotVector([2, -8.080622757822566])), [Point3D(-1, -3.4274161576421083, 6.163929894642873)], [-4.70012443824677, -1.7663407101139157, 2, 3.9814180852758785])
+BrepGeometryLaws.Law_BSplineCurveDomainIsKnotSpan	pass	0	
+BrepGeometryLaws.Law_BSplineCurveDomainNonEmpty	fail	0	d = BSplineCurveData(SplineBasis(-5, KnotVector([3.078847561533957, -5.241118769739344])), [Point3D(4.777912569594529, 0, 9.575339145760676)], [5.652764782147839])
+BrepGeometryLaws.Law_BSplineCurveKnotCount	fail	0	d = BSplineCurveData(SplineBasis(-7, KnotVector([-4.170136607331287, 1, 0.5])), [Point3D(2.316701343430532, -3, 7.173341166774435), Point3D(-0.7919444287158299, -0.5113795728010029, -5.156027476841596), Point3D(0.5, 4.651858031121947, 2.741800524639803), Point3D(5.9946880191539815, 0, 4.286758692137319)], [0.09378657214985431, 9.22946697996439, -8.698233067383168, 3.7614090618497737])
+BrepGeometryLaws.Law_BSplineCurveKnotMultiplicityBounded	pass	0	
+BrepGeometryLaws.Law_BSplineCurveKnotsNonDecreasing	fail	0	d = BSplineCurveData(SplineBasis(-2, KnotVector([-1, -1.442884063088746, -2.5562714285013595])), [Point3D(-5.132118545068483, 1, 0.7120902234279036)], [])
+BrepGeometryLaws.Law_BSplineCurveMatchesBasisSum	pass	0	
+BrepGeometryLaws.Law_BSplineCurveWeightCount	fail	0	d = BSplineCurveData(SplineBasis(-6, KnotVector([1.938089799107095])), [Point3D(-0.3214013624570349, 0.07287315562035701, -5.689935393487073), Point3D(-0.612888154859137, -1, -6.484475711586175)], [-3, -4.112612984195637, -5.97315210661532, -7.452115610918084])
+BrepGeometryLaws.Law_BSplineCurveWeightsPositive	fail	0	d = BSplineCurveData(SplineBasis(6, KnotVector([2, -2.4557098990565676, -2.1899913680693093])), [Point3D(0.2021592251035198, 0, 2), Point3D(-2.376051448460692, 1, -9.589565312298744), Point3D(-3.1554147755519555, -3, -5.836137736139883)], [-2.243223652356874])
+BrepGeometryLaws.Law_BSplineSurfaceDegreePositive	skipped	0	no values for d: BSplineSurfaceData: type variable T, and no Witness_* returns BSplineSurfaceData
+BrepGeometryLaws.Law_BSplineSurfaceDomainIsKnotSpan	pass	0	
+BrepGeometryLaws.Law_BSplineSurfaceDomainNonEmpty	skipped	0	no values for d: BSplineSurfaceData: type variable T, and no Witness_* returns BSplineSurfaceData
+BrepGeometryLaws.Law_BSplineSurfaceKnotCount	skipped	0	no values for d: BSplineSurfaceData: type variable T, and no Witness_* returns BSplineSurfaceData
+BrepGeometryLaws.Law_BSplineSurfaceKnotMultiplicityBounded	skipped	0	no values for d: BSplineSurfaceData: type variable T, and no Witness_* returns BSplineSurfaceData
+BrepGeometryLaws.Law_BSplineSurfaceKnotsNonDecreasing	skipped	0	no values for d: BSplineSurfaceData: type variable T, and no Witness_* returns BSplineSurfaceData
+BrepGeometryLaws.Law_BSplineSurfaceMatchesBasisSum	pass	0	
+BrepGeometryLaws.Law_BSplineSurfaceNetConsistent	skipped	0	no values for d: BSplineSurfaceData: type variable T, and no Witness_* returns BSplineSurfaceData
+BrepGeometryLaws.Law_BSplineSurfaceWeightGridMatchesNet	skipped	0	no values for d: BSplineSurfaceData: type variable T, and no Witness_* returns BSplineSurfaceData
+BrepGeometryLaws.Law_BSplineSurfaceWeightsPositive	skipped	0	no values for d: BSplineSurfaceData: type variable T, and no Witness_* returns BSplineSurfaceData
+BrepGeometryLaws.Law_ClosestParameterIsCanonical	pass	0	
+BrepGeometryLaws.Law_ClosestParameterIsStationary	pass	0	
+BrepGeometryLaws.Law_ClosestParameterNoWorseThanSample	pass	0	
+BrepGeometryLaws.Law_ClosestParameterRecoversPoint	pass	0	
+BrepGeometryLaws.Law_ClosureMarkInRange	pass	0	
+BrepGeometryLaws.Law_ClosureMarkNamesBoundedAperiodic	pass	0	
+BrepGeometryLaws.Law_CollapsedLineIsOnePoint	pass	1	
+BrepGeometryLaws.Law_CompositeSegmentsBounded	pass	0	
+BrepGeometryLaws.Law_CompositeSegmentsChain	pass	1	
+BrepGeometryLaws.Law_ConeAreaElement	pass	0	
+BrepGeometryLaws.Law_Curve2DDerivativeMatchesCentralDifference	pass	0	
+BrepGeometryLaws.Law_Curve2DHasEvaluableShape	pass	0	
+BrepGeometryLaws.Law_Curve2DPlacementOrthonormal	pass	0	
+BrepGeometryLaws.Law_Curve2DReferencesAcyclic	pass	0	
+BrepGeometryLaws.Law_Curve2DReferencesInRange	pass	0	
+BrepGeometryLaws.Law_Curve2DRepeatsWithPeriod	pass	1	
+BrepGeometryLaws.Law_Curve2DSecondDerivativeMatchesCentralDifference	pass	0	
+BrepGeometryLaws.Law_CurveHasEvaluableShape	pass	0	
+BrepGeometryLaws.Law_CurvePlacementOrthonormal	fail	1	g = GeometrySet([BrepCurve.Line(Point3D(0, 0, 0), Vector3D(1, 2, 0)), BrepCurve.Circle(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 2), BrepCurve.Ellipse(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 3, 1), BrepCurve.Hyperbola(Frame3D(Point3D(0,...
+BrepGeometryLaws.Law_CurveReferencesAcyclic	pass	0	
+BrepGeometryLaws.Law_CurveReferencesInRange	pass	0	
+BrepGeometryLaws.Law_CurveRepeatsWithPeriod	pass	6	
+BrepGeometryLaws.Law_DerivativeMatchesCentralDifference	pass	0	
+BrepGeometryLaws.Law_ExtrusionProfileTransverse	pass	5	
+BrepGeometryLaws.Law_NormalIsUnit	pass	1	
+BrepGeometryLaws.Law_NormalOrthogonalToPartial	pass	1	
+BrepGeometryLaws.Law_NormalSenseMatchesParameterization	pass	1	
+BrepGeometryLaws.Law_OffsetReferenceNotTangent	pass	1	
+BrepGeometryLaws.Law_PartialMatchesCentralDifference	pass	0	
+BrepGeometryLaws.Law_PcurveDerivativeMatchesCentralDifference	pass	0	
+BrepGeometryLaws.Law_PcurveReferencesInRange	pass	0	
+BrepGeometryLaws.Law_PcurveSecondDerivativeMatchesCentralDifference	pass	0	
+BrepGeometryLaws.Law_PcurveWithinSurfaceDomain	pass	1	
+BrepGeometryLaws.Law_PeriodicCurveIsClosed	pass	1	
+BrepGeometryLaws.Law_PeriodicCurveSpansOnePeriod	pass	3	
+BrepGeometryLaws.Law_PeriodicSurfaceSpansOnePeriod	pass	2	
+BrepGeometryLaws.Law_ProjectIsCanonical	pass	0	
+BrepGeometryLaws.Law_ProjectIsStationary	pass	0	
+BrepGeometryLaws.Law_ProjectNearRecoversFromNearbySeed	pass	0	
+BrepGeometryLaws.Law_ProjectNearRecoversParameter	pass	0	
+BrepGeometryLaws.Law_ProjectRecoversParameter	pass	0	
+BrepGeometryLaws.Law_ProjectRecoversPoint	pass	0	
+BrepGeometryLaws.Law_RectangularTrimmedInsideBasis	pass	0	
+BrepGeometryLaws.Law_RectangularTrimmedRangeIsForward	pass	1	
+BrepGeometryLaws.Law_ScaledCurvePointIsScaled	pass	1	
+BrepGeometryLaws.Law_ScaledPcurvePointIsScaled	pass	1	
+BrepGeometryLaws.Law_ScaledSurfacePointIsScaled	pass	1	
+BrepGeometryLaws.Law_SecondDerivativeMatchesCentralDifference	pass	0	
+BrepGeometryLaws.Law_SphereAreaElement	pass	0	
+BrepGeometryLaws.Law_SurfaceCurveLiesOnPcurve	pass	0	
+BrepGeometryLaws.Law_SurfaceCurveLiesOnSupport	pass	0	
+BrepGeometryLaws.Law_SurfaceCurvePcurveSameSense	pass	0	
+BrepGeometryLaws.Law_SurfaceHasEvaluableShape	pass	0	
+BrepGeometryLaws.Law_SurfacePlacementOrthonormal	fail	0	g = GeometrySet([BrepCurve.Line(Point3D(0, 0, 0), Vector3D(1, 2, 0)), BrepCurve.Circle(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 2), BrepCurve.Ellipse(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 3, 1), BrepCurve.Hyperbola(Frame3D(Point3D(0,...
+BrepGeometryLaws.Law_SurfaceReferencesAcyclic	pass	0	
+BrepGeometryLaws.Law_SurfaceReferencesInRange	pass	0	
+BrepGeometryLaws.Law_SurfaceRepeatsWithPeriod	pass	1	
+BrepGeometryLaws.Law_TangentialPartialVanishesOnDegenerateSide	pass	1	
+BrepGeometryLaws.Law_TorusAreaElement	pass	0	
+BrepGeometryLaws.Law_TrimmedRangeInsideBasis	pass	0	
+BrepGeometryLaws.Law_TrimmedRangeIsForward	pass	0	
+BrepGeometryLaws.Law_TrimmedStartsAtSensedEnd	pass	0	
+BrepGeometryProofsLaws.Law_OrthonormalFrameIffWithinTolerance	pass	4	
+BrepGeometryProofsLaws.Law_OrthonormalFrameRecordsHandedness	pass	4	
+BrepGeometryProofsLaws.Law_RigidFrameIsOrthonormal	pass	2	
+BrepGeometrySpansLaws.Law_ControlPolygonHasDegreePlusOnePoints	pass	7	
+BrepGeometrySpansLaws.Law_HullSagittaIsBound	pass	3	
+BrepGeometrySpansLaws.Law_PlacementHandednessIsFrames	pass	1	
+BrepGeometrySpansLaws.Law_SpanLiesWithinHullBound	pass	5	
+BrepGeometrySpansLaws.Law_SpansAreContiguous	pass	1	
+BrepGeometrySpansLaws.Law_SpansAreNonEmpty	pass	3	
+BrepGeometrySpansLaws.Law_SpansCoverDomain	pass	1	
+BrepGeometrySpansLaws.Law_SpansExist	pass	0	
+BrepGeometryViewsLaws.Law_HoldsBackOnlyBeyondABoundedEnd	pass	1	
+BrepGeometryViewsLaws.Law_ProjectDecidedOfSurfacePointIsOnSurface	pass	13	
+BrepGeometryViewsLaws.Law_ProjectDecidedOutsideArenaFails	pass	1	
+BrepOraclesOnceLaws.Law_BSplineTopAreaInBracket	error	2000	bump = 0.5232328877426831  took 2.00s, over the 2s budget (stopped in case 19)
+BrepOraclesOnceLaws.Law_DivergenceEqualsTorusVolume	pass	103	
+BrepOraclesOnceLaws.Law_GreenAreaPairBuildsTwoBoundaries	pass	95	
+BrepOraclesOnceLaws.Law_GreenDiskAreaWithinArcResidual	pass	47	
+BrepOraclesOnceLaws.Law_GreenEqualsBoxFaceArea	pass	1	
+BrepOraclesOnceLaws.Law_GreenEqualsConePatchArea	pass	105	
+BrepOraclesOnceLaws.Law_GreenEqualsCylinderPatchArea	pass	109	
+BrepOraclesOnceLaws.Law_GreenEqualsCylinderSectorPatchArea	pass	26	
+BrepOraclesOnceLaws.Law_GreenEqualsSphereArea	pass	113	
+BrepOraclesOnceLaws.Law_GreenEqualsSphereAreaByPoleLoops	pass	7	
+BrepOraclesOnceLaws.Law_GreenEqualsTorusArea	pass	70	
+BrepOraclesOnceLaws.Law_PlanarFaceAreaMatchesGreen	pass	130	
+BrepOraclesOnceLaws.Law_WitnessDivergenceVolumeMatchesFacts	pass	835	
+BrepOraclesOnceLaws.Law_WitnessGreenAreaMatchesFacts	pass	148	
+BrepRepairLaws.Law_DiagnoseNeverOffersAnEmptyChoice	pass	1	
+BrepRepairLaws.Law_DiagnoseUnfixableOnlyForNamedCases	pass	3	
+BrepRepairLaws.Law_LocalRepairTouchesAtMostTwoFaces	pass	1	
+BrepRepairLaws.Law_NotOrientableIsUnfixable	pass	0	
+BrepRepairLaws.Law_PlanFixesStructureBeforeGeometry	pass	21	
+BrepRepairLaws.Law_PlanHasAStepPerFixableDefect	pass	17	
+BrepRepairLaws.Law_RaisedToleranceGrows	pass	0	
+BrepRepairLaws.Law_ReverseFaceDoesNotProject	pass	0	
+BrepRepairLaws.Law_SeamOnClosedShellIsUnfixable	pass	0	
+BrepRepairLaws.Law_SeamOnOpenShellIsFixable	pass	0	
+BrepRepairLaws.Law_StepRepairRoundTrips	pass	4	
+BrepRepairLaws.Law_StrictPolicyRefusesTopologyChange	pass	2	
+BrepRepairPerfLaws.Law_CoedgeFamilySizes	pass	1	
+BrepRepairPerfLaws.Law_ComparisonsSeeDifferences	pass	46	
+BrepRepairPerfLaws.Law_DiagnoseIndexedAgrees	pass	22	
+BrepRepairPerfLaws.Law_FacesAtVertexByCoedgesAgrees	pass	9	
+BrepRepairPerfLaws.Law_FacesOnCurveByCoedgesAgrees	pass	8	
+BrepRepairPerfLaws.Law_FallbackScansAreCounted	pass	0	
+BrepRepairPerfLaws.Law_PlanOfIndexedAgrees	pass	105	
+BrepRepairPerfLaws.Law_PlanOfIndexedScansOnlyToBuildIndex	pass	2	
+BrepRepairPerfLaws.Law_RepairIndexAgrees	pass	14	
+BrepTopologyIndicesLaws.Law_RowInRangeAgreesWithTable	pass	1	
+BrepTopologyLaws.Law_AtLeastOneBound	pass	0	
+BrepTopologyLaws.Law_AtMostOneOuterBound	pass	1	
+BrepTopologyLaws.Law_CoincidentEndsAreOneVertex	pass	1	
+BrepTopologyLaws.Law_CurveAgreesWithPcurve	pass	1	
+BrepTopologyLaws.Law_DeclaredClosedIsClosed	pass	12	
+BrepTopologyLaws.Law_DegenerateEdgeHasCoincidentVertices	pass	1	
+BrepTopologyLaws.Law_DegenerateEdgeStaysAtStart	pass	0	
+BrepTopologyLaws.Law_EdgeDomainEndsAtVertices	pass	29	
+BrepTopologyLaws.Law_EdgeDomainIsForward	pass	2	
+BrepTopologyLaws.Law_EdgeHasPositiveExtent	pass	0	
+BrepTopologyLaws.Law_EdgeLiesOnAdjacentSurfaces	pass	1	
+BrepTopologyLaws.Law_EdgeReversalKeepsCoedgeSense	pass	2	
+BrepTopologyLaws.Law_EdgeUsesHaveOppositeOrientation	pass	0	
+BrepTopologyLaws.Law_EulerPoincareEvenAndBounded	pass	13	
+BrepTopologyLaws.Law_EveryEdgeUsedTwiceInClosedShell	pass	3	
+BrepTopologyLaws.Law_FaceBoundsShareNoVertex	pass	2	
+BrepTopologyLaws.Law_IndicesInRange	pass	1	
+BrepTopologyLaws.Law_LoopWindingMatchesSameSense	pass	15	
+BrepTopologyLaws.Law_LoopsChainEndToStart	pass	3	
+BrepTopologyLaws.Law_ModelSizeWithinExtent	pass	6	
+BrepTopologyLaws.Law_NoRedundantVertexLoop	pass	0	
+BrepTopologyLaws.Law_OpenShellEdgesUsedAtMostTwice	pass	0	
+BrepTopologyLaws.Law_OpenShellEulerEvenAndBounded	pass	0	
+BrepTopologyLaws.Law_OpenShellVertexLinkIsCycleOrPath	pass	1	
+BrepTopologyLaws.Law_ParameterizationSignIsConstantOnFace	pass	2	
+BrepTopologyLaws.Law_PcurveAgreesWithCurve	pass	1	
+BrepTopologyLaws.Law_PcurveRunsWithCurve	pass	0	
+BrepTopologyLaws.Law_PcurveSurfaceIsAFaceSurface	pass	0	
+BrepTopologyLaws.Law_PolyLoopEdgesPairUp	pass	15	
+BrepTopologyLaws.Law_PolyLoopHasThreePoints	pass	0	
+BrepTopologyLaws.Law_ReversingEveryFaceKeepsCoherence	pass	0	
+BrepTopologyLaws.Law_ScalingScalesExtent	pass	10	
+BrepTopologyLaws.Law_SeamUsesRunOpposite	pass	2	
+BrepTopologyLaws.Law_ShellIsConnected	pass	9	
+BrepTopologyLaws.Law_ShellIsOrientable	pass	16	
+BrepTopologyLaws.Law_SolidShellsAreDeclaredClosed	pass	1	
+BrepTopologyLaws.Law_VertexCoincidesWithCurveEnd	pass	4	
+BrepTopologyLaws.Law_VertexLinkIsOneCycle	pass	1	
+BrepTopologyLaws.Law_VertexLoopVertexIsIsolated	pass	2	
+BrepWitnessesLaws.Law_BoxHasStatedCounts	pass	37	
+BrepWitnessesLaws.Law_BoxValidatesClean	pass	860	
+BrepWitnessesLaws.Law_BoxWithBottomPcurveValidatesClean	pass	326	
+BrepWitnessesLaws.Law_CylinderBandEulerIsTwo	pass	74	
+BrepWitnessesLaws.Law_CylinderBandHasStatedCounts	pass	78	
+BrepWitnessesLaws.Law_CylinderBandIsStructurallyClean	pass	442	
+BrepWitnessesLaws.Law_CylinderBandValidatesClean	pass	142	
+BrepWitnessesLaws.Law_CylinderHasStatedCounts	pass	90	
+BrepWitnessesLaws.Law_CylinderValidatesClean	pass	1829	
+BrepWitnessesLaws.Law_FlippedFaceBreaksWinding	pass	0	
+BrepWitnessesLaws.Law_FlippedFaceFailsExactlyOneLaw	pass	11	
+BrepWitnessesLaws.Law_PcurveAtCurveSpeedSharesParameter	pass	8	
+BrepWitnessesLaws.Law_PcurveAtDoubleSpeedSharesNoParameter	pass	1	
+BrepWitnessesLaws.Law_PolyLoopSheetHasOneBoundaryCycle	pass	1	
+BrepWitnessesLaws.Law_PolyLoopSheetPassesOpenShellEuler	pass	1	
+BrepWitnessesLaws.Law_RedundantPoleLoopVertexIsNotIsolated	pass	7	
+BrepWitnessesLaws.Law_RedundantPoleLoopsAreRedundant	pass	5	
+BrepWitnessesLaws.Law_RedundantPoleLoopsFailExactlyTwoLaws	pass	111	
+BrepWitnessesLaws.Law_RedundantPoleLoopsReduceToSphere	pass	6	
+BrepWitnessesLaws.Law_SharedCornerBreaksEuler	pass	0	
+BrepWitnessesLaws.Law_SharedCornerBreaksVertexLink	pass	0	
+BrepWitnessesLaws.Law_SharedCornerFailsExactlyTwoLaws	pass	4	
+BrepWitnessesLaws.Law_TighterChordalNeverIncreasesSagitta	pass	56	
+BrepWitnessesLaws.Law_UnitBoxIsBoxOfOnes	pass	1	
+BrepWitnessesLaws.Law_WitnessEulerIsTwoMinusTwiceGenus	pass	3	
+BrepWitnessesLaws.Law_WitnessHasStatedCounts	pass	10	
+BrepWitnessesLaws.Law_WitnessHasStatedFaceCount	pass	1	
+BrepWitnessesLaws.Law_WitnessHasStatedShellCount	pass	3	
+BrepWitnessesLaws.Law_WitnessIsOracleClean	error	2123	k = 2  took 2.12s, over the 2s budget (stopped in case 4)
+BrepWitnessesLaws.Law_WitnessIsStructurallyClean	pass	352	
+BrepWitnessesLaws.Law_WitnessOracleEulerMatchesLayerTwo	pass	7	
+BrepWitnessesLaws.Law_WitnessStatedCountsImplyStatedGenus	pass	2	
+BrepWitnessesLaws.Law_WitnessValidatesClean	pass	543	
+BsplineEvaluationLaws.Law_BumpPatchMatchesPolynomial	pass	26	
+BsplineEvaluationLaws.Law_ClampedCurveInterpolatesEnds	pass	2	
+BsplineEvaluationLaws.Law_Curve2DDerivativesMatchDifferences	pass	20	
+BsplineEvaluationLaws.Law_Curve2DPointMatchesDefinition	pass	7	
+BsplineEvaluationLaws.Law_CurveDerivativesMatchDifferences	pass	17	
+BsplineEvaluationLaws.Law_CurvePointMatchesDefinition	pass	26	
+BsplineEvaluationLaws.Law_CylinderPatchIsRound	pass	14	
+BsplineEvaluationLaws.Law_QuarterCircleIsRound	pass	3	
+BsplineEvaluationLaws.Law_SurfacePartialsMatchDifferences	pass	37	
+BsplineEvaluationLaws.Law_SurfacePointMatchesDefinition	pass	22	
+BsplineEvaluationLaws.Law_SurfaceSecondPartialsMatchDifferences	pass	69	
+BsplineInverseLaws.Law_BumpProjectRecoversParameter	pass	129	
+BsplineInverseLaws.Law_ClosedCurveJoinIsRangeStart	pass	6	
+BsplineInverseLaws.Law_ClosestParameterIsCanonical	pass	54	
+BsplineInverseLaws.Law_ClosestParameterRecoversPoint	pass	74	
+BsplineInverseLaws.Law_PcurveClosestParameterRecoversPoint	pass	19	
+BsplineInverseLaws.Law_ProjectNearRecoversParameter	pass	23	
+BsplineInverseLaws.Law_ProjectPicksNearestOfSeveralMinima	pass	2	
+BsplineLocalEvaluationLaws.Law_BSplineLocalDerivative2DAgrees	pass	5	
+BsplineLocalEvaluationLaws.Law_BSplineLocalDerivativeAgrees	pass	19	
+BsplineLocalEvaluationLaws.Law_BSplineLocalDerivativeAgreesOnFamily	pass	9	
+BsplineLocalEvaluationLaws.Law_LocalDerivativeReadsDegreePlusOne	pass	6	
+BsplineOraclesLaws.Law_AreaQuadratureOnFlatPatch	pass	57	
+BsplineOraclesLaws.Law_BumpCurvatures	pass	215	
+BsplineOraclesLaws.Law_BumpTopAreaInBracket	error	2000	k = 1  took 2.00s, over the 2s budget (stopped in case 3)
+BsplineOraclesLaws.Law_QuarterCircleLength	pass	3	
+BsplinePipelineLaws.Law_OneRoundResolvesCrossingFace	error	2010	_ = Integer  took 2.01s, over the 2s budget (stopped in case 1)
+BsplinePipelineLaws.Law_TighterChordalStaysWithinLooserBound	error	2002	k = -1, c = 10  took 2.00s, over the 2s budget (stopped in case 12)
+BsplinePipelineLoopRunLaws.Law_BumpSolidLoopLaws	pass	39	
+BsplinePipelineLoopRunLaws.Law_BumpSolidMeshAgainstModelLaws	pass	125	
+BsplinePipelineLoopRunLaws.Law_BumpSolidMeshesClosedWithinAreaBound	error	2997	took 3.00s, over the 2s budget over 1 cases
+BsplinePipelineLoopRunLaws.Law_BumpSolidNeedsNoRound	pass	11	
+BsplinePipelineLoopRunLaws.Law_BumpSolidValidatesStructurally	pass	151	
+BsplinePipelineLoopRunLaws.Law_BumpSolidWatertightLaws	pass	7	
+BsplinePipelineLoopRunLaws.Law_CrossingLoopAsksLoopSelfIntersects	pass	1835	
+BsplinePipelineLoopRunLaws.Law_NoRoundsLeaveCrossingFaceUnresolved	pass	16	
+BsplinePipelineLoopRunLaws.Law_StateLaws	pass	2	
+BsplineSagittaLaws.Law_SagittaBoundsArc	pass	89	
+BsplineSagittaLaws.Law_SagittaClosedForms	pass	1	
+BsplineSagittaLaws.Law_SagittaIsAttained	fail	95	k = 12, a = -9.387846216274355, b = -3
+BsplineSidesLaws.Law_CoincidentSidesAgree	pass	3	
+BsplineSidesLaws.Law_CollapsedSideIsOnePoint	pass	4	
+BsplineSidesLaws.Law_SideTestsKnownAnswers	pass	7	
+ChartCutLaws.Law_ChartOfBody2Agrees	pass	116	
+ChartCutLaws.Law_ChartOfBody2AgreesOnWitnesses	pass	253	
+ChartCutLaws.Law_CircleCutsTakeTheirSteps	pass	192	
+ChartCutLaws.Law_CutSegmentCountFastAgreesOnCurvedFaces	pass	697	
+ChartCutLaws.Law_CutSegmentCountFastAgreesOnCylinder	pass	457	
+ChartCutLaws.Law_CutSegmentCountFastStopsEveryWay	pass	2	
+ChartCutLaws.Law_MeanSpeedBothEvaluates126	pass	4	
+ChartCutLaws.Law_MeanSpeedBothSkipsPoles	pass	2	
+ChartCutLaws.Law_QuadSidesInFindsFourSides	pass	1	
+ComponentChecksGivenLaws.Law_FailingComponentChecksNameTheirCell	pass	2	
+ComponentChecksGivenLaws.Law_RootIsLowestLinearAgrees	pass	10	
+ComponentChecksGivenLaws.Law_RootIsLowestLinearAgreesOnAnyTable	pass	16	
+DiscretizationDecidedLaws.Law_SplitDecisionRoundTrips	pass	4	
+EdgeDiscretizingLaws.Law_ArcCriteriaCountMeetsChordal	pass	3	
+EdgeDiscretizingLaws.Law_CertifiedSagittaWithinChordal	pass	0	
+EdgeDiscretizingLaws.Law_ClosedEdgeHasMinSegments	pass	1	
+EdgeDiscretizingLaws.Law_DegenerateEdgeHasOneSegment	pass	5	
+EdgeDiscretizingLaws.Law_DiscretizationsCoverEdges	pass	5	
+EdgeDiscretizingLaws.Law_DomainEndPointIsVertex	pass	1	
+EdgeDiscretizingLaws.Law_DomainStartPointIsVertex	pass	1	
+EdgeDiscretizingLaws.Law_EdgeReversalLeavesDiscretization	pass	1	
+EdgeDiscretizingLaws.Law_EmptyOrAtLeastTwoParameters	pass	6	
+EdgeDiscretizingLaws.Law_HighestParameterIsDomainEnd	pass	1	
+EdgeDiscretizingLaws.Law_ImageChordWithinChordal	pass	1	
+EdgeDiscretizingLaws.Law_ImageHasOnePointPerPoint	pass	2	
+EdgeDiscretizingLaws.Law_ImagePointReevaluates	pass	2	
+EdgeDiscretizingLaws.Law_ImageStepsAreUnwrapped	pass	1	
+EdgeDiscretizingLaws.Law_LowestParameterIsDomainStart	pass	2	
+EdgeDiscretizingLaws.Law_OppositeUsesSeeReversedPoints	pass	4	
+EdgeDiscretizingLaws.Law_ParameterCountEqualsPointCount	pass	4	
+EdgeDiscretizingLaws.Law_ParametersStrictlyMonotone	pass	2	
+EdgeDiscretizingLaws.Law_PointsLieOnCurve	pass	2	
+EdgeDiscretizingLaws.Law_RefineKeepsUnrequestedEdges	pass	8	
+EdgeDiscretizingLaws.Law_RefineMeetsRequestedSegments	pass	2	
+EdgeDiscretizingLaws.Law_RefineNeverCoarsens	pass	5	
+EdgeDiscretizingLaws.Law_ReversedIsInvolution	pass	6	
+EdgeDiscretizingLaws.Law_ReversedReversesParameters	pass	0	
+EdgeDiscretizingLaws.Law_ReversedReversesPoints	pass	0	
+EdgeDiscretizingLaws.Law_SagittaWithinChordal	pass	1	
+EdgeDiscretizingLaws.Law_SegmentFloorMet	fail	13	m = BrepModel(GeometrySet([BrepCurve.BSpline(BSplineCurveData(SplineBasis(2, KnotVector([0, 0, 0, 1, 1, 1])), [Point3D(0.1, 0.5, 0), Point3D(0.5, 0.7, 0), Point3D(0.9, 0.5, 0)], [1, 1, 1])), BrepCurve.BSpline(BSplineCurveData(SplineBasis(6, KnotVector([0, 0, 0, 0, 0, 0, 0, 0.375, 0.375, 0.375, 0.375, 0.375, 0.375, 1, 1, 1, 1, 1, 1, 1])), [Point3D(0.1, 0.5, 0), Point3D(0.15, 0.449, 0), Point3D(0.2,...
+EdgeDiscretizingLaws.Law_SegmentWithinMaxLength	pass	0	
+EdgeDiscretizingLaws.Law_ShortSegmentIsForced	pass	1	
+EdgeDiscretizingLaws.Law_TangentDeviationWithinHalfAngular	pass	0	
+EdgeDiscretizingLaws.Law_TighterChordalNeverFewerPoints	pass	1	
+EdgeDiscretizingLaws.Law_TurningAngleWithinAngular	pass	1	
+EdgeDiscretizingRequestsLaws.Law_ChordsOfAreConsecutive	pass	7	
+EdgeDiscretizingRequestsLaws.Law_DeltaNamesEveryRequestedEdge	pass	6	
+EdgeDiscretizingRequestsLaws.Law_MergeRequestsInventsNothing	pass	7	
+EdgeDiscretizingRequestsLaws.Law_MergeRequestsIsIdempotent	pass	36	
+EdgeDiscretizingRequestsLaws.Law_MergeRequestsIsOnePerEdge	pass	4	
+EdgeDiscretizingRequestsLaws.Law_MergeRequestsKeepsStrongest	pass	9	
+EdgeDiscretizingRequestsLaws.Law_SegmentsForCoversLength	pass	0	
+EdgeDiscretizingRequestsLaws.Law_SegmentsForIsAtLeastOne	pass	0	
+EdgeDiscretizingRequestsLaws.Law_VerdictAcrossKindsFails	pass	0	
+EdgeDiscretizingRequestsLaws.Law_VerdictHoldsIffWithin	pass	0	
+EdgeDiscretizingWitnessLaws.Law_DiscretizationsIndexedByEdge	pass	0	
+EdgeDiscretizingWitnessLaws.Law_DiscretizedWitnessIsDiscretizedEntries	pass	64	
+EdgeDiscretizingWitnessLaws.Law_DiscretizedWitnessIsRefinable	pass	16	
+EdgeDiscretizingWitnessLaws.Law_ParametersStrictlyIncreasing	pass	2	
+EdgeDiscretizingWitnessLaws.Law_RefineNeverCoarsensOnWitnesses	pass	205	
+EdgeDiscretizingWitnessLaws.Law_SeedsAreSampled	pass	4	
+EdgeDiscretizingWitnessLaws.Law_UndiscretizedExactlyWhenUnusable	pass	2	
+EdgeDiscretizingWorkLaws.Law_RaisedToCountCountedAgrees	pass	20	
+EdgeDiscretizingWorkLaws.Law_RaisedToCountCountsItsRaises	pass	1	
+EdgeGuardsLaws.Law_CanDiscretizeIsTheInRangeGuard	pass	1	
+EdgeGuardsLaws.Law_DiscretizeAllScansTheModelOnce	pass	5	
+EdgeRangedLaws.Law_EdgeDomainOncePerEdge	pass	5	
+EdgeRefineIndexedLaws.Law_RaisedToCountHeapAgrees	pass	63	
+EdgeRefineIndexedLaws.Law_RaisedToCountHeapAgreesOnModels	pass	11	
+EdgeRefineIndexedLaws.Law_RaisedToCountHeapMovesWithinLog	pass	31	
+EdgeRefineIndexedLaws.Law_RefineIndexedScansOnce	pass	6	
+EdgeRefineIndexedLaws.Law_SegmentMeetsCriteriaFromAgrees	pass	12	
+EdgeTablesLaws.Law_EdgeTablesAgree	pass	6	
+EdgeTablesLaws.Law_EdgeTablesAgreeOnOddModels	pass	6	
+EdgeTablesLaws.Law_TablesWitnessSizes	pass	1	
+FaceMeshingChartsLaws.Law_CopiesAreTheEnds	pass	3	
+FaceMeshingChartsLaws.Law_DelaunayCertificateIsConsistent	pass	1	
+FaceMeshingChartsLaws.Law_ElementInChartAreaHasItsOrientation	pass	8	
+FaceMeshingChartsLaws.Law_ExactOrientationIsLibrarySign	pass	1	
+FaceMeshingChartsLaws.Law_LiftTableJoinsNothingElse	pass	16	
+FaceMeshingChartsLaws.Law_LiftTableJoinsSeamPairsAndPoles	pass	34	
+FaceMeshingChartsLaws.Law_LoopConstraintsAreSides	pass	4	
+FaceMeshingChartsLaws.Law_NeighbourTableIsInvolution	pass	26	
+FaceMeshingChartsLaws.Law_NeighbourTableSeesClosure	pass	1	
+FaceMeshingChartsLaws.Law_OrientationIsAntisymmetric	pass	1	
+FaceMeshingChartsLaws.Law_OrientationOfAgreesWithLibrarySign	pass	2	
+FaceMeshingChartsLaws.Law_OtherCopyIsInvolution	pass	0	
+FaceMeshingChartsLaws.Law_OtherDiagonalIsNotASide	pass	0	
+FaceMeshingChartsLaws.Law_QuadGridSidesRoundTrip	pass	40	
+FaceMeshingChartsLaws.Law_WorseBoundsBoth	pass	3	
+FaceMeshingDecidedLaws.Law_FaceMeshOutcomeBlockedMapsToBlocked	pass	1	
+FaceMeshingDecidedLaws.Law_FaceMeshResultKeepsDiagnostics	pass	0	
+FaceMeshingDecidedLaws.Law_FlipAttemptRoundTrips	pass	0	
+FaceMeshingDecidedLaws.Law_FlipRejectionRoundTrips	pass	1	
+FaceMeshingDecidedLaws.Law_InsertionAttemptRoundTrips	pass	0	
+FaceMeshingDecidedLaws.Law_InsertionRejectionRoundTrips	pass	1	
+FaceMeshingDomainOnceLaws.Law_UnwrapBuildsTheDomainOncePerFace	pass	6	
+FaceMeshingGridChordalLaws.Law_V1Faces_BumpTopHasInteriorPoint	pass	36	
+FaceMeshingGridChordalLaws.Law_V1Faces_FourSidedMeshWithinChordal	pass	1014	
+FaceMeshingGridChordalLaws.Law_V1Faces_GridRefusedWhereCurvedBothWays	pass	1933	
+FaceMeshingLaws.Law_BlockingRequestMeansEmptyMesh	pass	1	
+FaceMeshingLaws.Law_BoundarySegmentIsElementSide	pass	14	
+FaceMeshingLaws.Law_CollapsedQuadsBecomeTriangles	pass	14	
+FaceMeshingLaws.Law_DroppedElementsArePoleCollapsed	pass	4	
+FaceMeshingLaws.Law_ElementAreasSumToRegionArea	pass	3	
+FaceMeshingLaws.Law_ElementDeviationWithinSurfaceChordal	pass	13	
+FaceMeshingLaws.Law_ElementFacesFaceNormal	pass	18	
+FaceMeshingLaws.Law_ElementLiftsFacingFaceNormal	pass	1	
+FaceMeshingLaws.Law_ElementPositiveInChart	pass	1	
+FaceMeshingLaws.Law_ElementSpansBelowHalfPeriod	pass	1	
+FaceMeshingLaws.Law_EmptyMeshIsExplained	pass	3	
+FaceMeshingLaws.Law_EveryPointIsACorner	pass	1	
+FaceMeshingLaws.Law_HoleInsideOuter	pass	1	
+FaceMeshingLaws.Law_InteriorSideIsShared	pass	11	
+FaceMeshingLaws.Law_LiftKeepsPoints	pass	1	
+FaceMeshingLaws.Law_LocalVertexFibresAreIdentifications	pass	25	
+FaceMeshingLaws.Law_LocalVertexInRange	pass	3	
+FaceMeshingLaws.Law_LocalVertexSurjective	pass	6	
+FaceMeshingLaws.Law_LoopPointLiftsToSharedPoint	pass	16	
+FaceMeshingLaws.Law_LoopToUvCountMatchesDiscretization	pass	4	
+FaceMeshingLaws.Law_MeshFaceReadsOnlyFaceEdges	pass	5	
+FaceMeshingLaws.Law_MeshedFaceHasSimpleRegion	pass	1	
+FaceMeshingLaws.Law_NoQuadsUnlessPreferred	pass	1	
+FaceMeshingLaws.Law_PcurveAgreesWithProjection	pass	4	
+FaceMeshingLaws.Law_PointNormalIsFaceNormal	pass	2	
+FaceMeshingLaws.Law_ProvenanceMatchesSource	pass	2	
+FaceMeshingLaws.Law_RegionLoopClosesInPlane	pass	2	
+FaceMeshingLaws.Law_RegionSegmentsSeparated	pass	1	
+FaceMeshingLaws.Law_RequestHasDiagnostic	pass	1	
+FaceMeshingLaws.Law_RequestsNameFaceEdges	pass	1	
+FaceMeshingLaws.Law_SeamCutCopiesRunOpposite	pass	2	
+FaceMeshingLaws.Law_SeamUsesOnOppositeCopies	pass	1	
+FaceMeshingLaws.Law_SharedPositionIsCopied	pass	2	
+FaceMeshingLaws.Law_SurfaceWithinSurfaceChordalOfElement	pass	2	
+FaceMeshingLaws.Law_TriangulationAddsOnlyInteriorPoints	pass	2	
+FaceMeshingLaws.Law_TriangulationCornersInRange	pass	2	
+FaceMeshingLaws.Law_TriangulationKeepsBoundary	pass	10	
+FaceMeshingLaws.Law_UnwrapKeepsSources	pass	0	
+FaceMeshingLaws.Law_UnwrapMovesByWholePeriods	pass	2	
+FaceMeshingLaws.Law_UnwrappedStepBelowHalfPeriod	pass	13	
+FaceMeshingLaws.Law_UvHoleWindingNegative	pass	1	
+FaceMeshingLaws.Law_UvRegionWindingPositive	pass	5	
+FaceMeshingLiftIndexedLaws.Law_LiftCaseReachesItsBranches	error	7240	took 7.24s, over the 2s budget over 17 cases
+FaceMeshingLiftIndexedLaws.Law_SourceKeyMatchesIdentification	pass	8	
+FaceQualityLaws.Law_AnglePassBuiltAgrees	pass	262	
+FaceQualityLaws.Law_BelowAngleCountsItsLifts	pass	15	
+FaceQualityLaws.Law_CdtNoFlippableEdge	pass	15	
+FaceQualityLaws.Law_ElementNormalAgreesWithSurface	pass	1	
+FaceQualityLaws.Law_MinAngleBetterOnCylinders	pass	52	
+FaceQualityLaws.Law_QuadConvex	pass	1	
+FaceQualityLaws.Law_QuadPlanarWithinSurfaceChordal	pass	1	
+FaceQualityLaws.Law_QualityRequestsOnBoxes	pass	14	
+FaceQualityLaws.Law_RefinedNoFlippableEdge	pass	70	
+FaceQualityLaws.Law_StripPassAgrees	pass	45	
+FaceQualityLaws.Law_SurfaceEdgeNormalTurnWithinSurfaceAngular	pass	2	
+FaceQualityLaws.Law_V1Gate_PoleElementNormalAgreesWithSurface	fail	129	w = PoleWitness("Torus", BrepModel(GeometrySet([BrepCurve.Circle(Frame3D(Point3D(2, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 0, 1)), Direction3D(Vector3D(0, -1, 0))), 0.5), BrepCurve.Circle(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 2.5)], [], [], [BrepSurface.Torus(Frame3D(Point3D(0, 0, 0), Direc...
+FaceQualityLaws.Law_V1Gate_PoleQuadConvex	pass	0	
+FaceQualityLaws.Law_V1Gate_PoleQuadPlanarWithinSurfaceChordal	pass	0	
+FaceQualityLaws.Law_V1Gate_PoleSurfaceEdgeNormalTurnWithinSurfaceAngular	fail	33	w = PoleWitness("Sphere", BrepModel(GeometrySet([BrepCurve.Circle(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 0, 1)), Direction3D(Vector3D(0, -1, 0))), 1)], [], [], [BrepSurface.Sphere(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 1)], []), [BrepVertex(Point3D(0, 0, -1)), BrepVertex(P...
+FaceQualityValidationLaws.Law_FaceElementNormalCheckAgrees	pass	3	
+FaceQualityValidationLaws.Law_NormalTurnCheckAgrees	pass	3	
+FaceQualityValidationLaws.Law_QuadPlanarCheckAgrees	pass	7	
+FacetedLaws.Law_CoincidenceRootsByGridAgrees	pass	36	
+FacetedLaws.Law_FacetedAgrees	pass	104	
+FacetedLaws.Law_FacetedAgreesOnWitnesses	pass	2	
+FacetedLaws.Law_FacetedCasesAreFaceted	pass	5	
+FacetedLaws.Law_FacetedSheetSizes	pass	88	
+FacetedLaws.Law_V1Edges_PolygonRootsAreGridRoots	pass	126	
+FacetedLaws.Law_V1Edges_RankedKeysOnLargePolygon	error	2008	took 2.01s, over the 2s budget over 1 cases
+GeometryLawsOnceLaws.Law_ClosestParameterIsMinimal	pass	144	
+GeometryLawsOnceLaws.Law_PcurveClosestParameterIsBounded(GeometrySet, PcurveIndex, Number, Tolerances)	pass	1	
+GeometryLawsOnceLaws.Law_PcurveClosestParameterIsBounded(Integer, Number)	pass	17	
+GeometryLawsOnceLaws.Law_ProjectIsMinimal	pass	112	
+GeometryLawsOnceLaws.Law_ProjectNoWorseThanSample	pass	2	
+GeometryLawsOnceLaws.Law_ProjectRecoversPoint	pass	45	
+GeometryLawsOnceLaws.Law_SurfaceCurvePcurveLiesOnCurve	pass	2	
+InsertionBuiltLaws.Law_SurfacePassBuiltAgrees	pass	81	
+InsertionBuiltLaws.Law_TrialAgreesWithTryInsertion	pass	196	
+InsideOnGridLaws.Law_InsideOnGridAgrees	error	2000	w = TriangulatedWitness("BlockWithThroughHole face 2", 2, BrepModel(GeometrySet([BrepCurve.Line(Point3D(0, 0, 0), Vector3D(3, 0, 0)), BrepCurve.Line(Point3D(3, 0, 0), Vector3D(0, 3, 0)), BrepCurve.Line(Point3D(3, 3, 0), Vector3D(-3, 0, 0)), BrepCurve.Line(Point3D(0, 3, 0), Vector3D(0, -3, 0)), BrepCurve.Line(Point3D(0, 0, 1), Vector3D(3, 0, 0)), BrepCurve.Line(Point3D(3, 0, 1), Vector3D(0, 3, 0)),...
+InsideOnGridLaws.Law_InsideOnGridAgreesBeyondTheGrid	pass	9	
+InsideOnGridLaws.Law_InsideOnGridAgreesOnStars	error	2004	k = 3  took 2.00s, over the 2s budget (stopped in case 5)
+InsideOnGridLaws.Law_InsideOnGridAgreesOnWideSegments	error	2003	_ = Integer  took 2.00s, over the 2s budget (stopped in case 1)
+MaskWitnessLaws.Law_IsCompleteShellMeshGivenAgrees	pass	1	
+MaskWitnessLaws.Law_MaskWitnessIsComplete	pass	1087	
+MaskWitnessLaws.Law_ShellMeshEulerByCountsAgrees	pass	1	
+ModelMeshAssemblyIndexedLaws.Law_AssemblyWitnessCanAssemble	pass	6	
+ModelMeshAssemblyIndexedLaws.Law_CitedEdgesAgree	pass	9	
+ModelMeshAssemblyIndexedLaws.Law_FaceInteriorRanksAgree	pass	3	
+ModelMeshAssemblyIndexedLaws.Law_GlobalVerticesOfAgree	pass	3	
+ModelMeshAssemblyIndexedLaws.Law_NumberMeshVerticesWorkIsItsReads	pass	1	
+ModelMeshAssemblyLaws.Law_AssembledCornerIsGlobalVertexOfFaceMeshCorner	pass	9	
+ModelMeshAssemblyLaws.Law_AssembledCornerNormalIsCopied	pass	9	
+ModelMeshAssemblyLaws.Law_AssembledCornerUvIsCopied	pass	12	
+ModelMeshAssemblyLaws.Law_AssembledElementRemembersItsFace	pass	16	
+ModelMeshAssemblyLaws.Law_AssembledModelVertexIsModelPoint	pass	15	
+ModelMeshAssemblyLaws.Law_AssembledPositionIsFaceMeshPosition	pass	12	
+ModelMeshAssemblyLaws.Law_AssembledSharedBoundaryCornersCoincide	pass	8	
+ModelMeshAssemblyLaws.Law_AssemblyKeepsEveryQuad	pass	5	
+ModelMeshAssemblyLaws.Law_AssemblyKeepsEveryTriangle	pass	5	
+ModelMeshAssemblyLaws.Law_AssemblyKeepsTheNumbering	pass	13	
+ModelMeshAssemblyLaws.Law_FaceMeshModelVertexIsModelPoint	pass	1	
+ModelMeshAssemblyLaws.Law_FaceMeshesAgreeOnSharedSites	pass	4	
+ModelMeshAssemblyOnceLaws.Law_AreaIsSumOfFaceMeshAreas	pass	6	
+ModelMeshAssemblyOnceLaws.Law_AssembledCornerIsGlobalVertexOfFaceMeshCorner	pass	6	
+ModelMeshAssemblyOnceLaws.Law_AssembledCornerNormalIsCopied	pass	3	
+ModelMeshAssemblyOnceLaws.Law_AssembledCornerUvIsCopied	pass	4	
+ModelMeshAssemblyOnceLaws.Law_AssembledElementRemembersItsFace	pass	3	
+ModelMeshAssemblyOnceLaws.Law_AssembledModelVertexIsModelPoint	pass	0	
+ModelMeshAssemblyOnceLaws.Law_AssembledPositionIsFaceMeshPosition	pass	1	
+ModelMeshAssemblyOnceLaws.Law_AssembledSharedBoundaryCornersCoincide	pass	815	
+ModelMeshAssemblyOnceLaws.Law_AssembledWitnessesAreAccepted	pass	10	
+ModelMeshAssemblyOnceLaws.Law_AssemblyKeepsEveryQuad	pass	0	
+ModelMeshAssemblyOnceLaws.Law_AssemblyKeepsEveryTriangle	pass	0	
+ModelMeshAssemblyOnceLaws.Law_AssemblyKeepsTheNumbering	pass	1	
+ModelMeshAssemblyOnceLaws.Law_SplitFollowsTheTriangulation	pass	6	
+ModelMeshAssemblyOnceLaws.Law_SplitHasAtLeastAsManyVertices	pass	5	
+ModelMeshAssemblyOnceLaws.Law_SplitHasOneNormalPerVertex	pass	2	
+ModelMeshAssemblyOnceLaws.Law_SplitHasOneSourcePerVertex	pass	1	
+ModelMeshAssemblyOnceLaws.Law_SplitHasOneUvPerVertex	pass	3	
+ModelMeshAssemblyOnceLaws.Law_SplitSplitsEachQuadInTwo	pass	2	
+ModelMeshAssemblyOnceLaws.Law_SplitVertexCarriesItsCornerNormal	pass	2	
+ModelMeshAssemblyOnceLaws.Law_SplitVertexCarriesItsCornerUv	pass	2	
+ModelMeshAssemblyOnceLaws.Law_SplitVertexKeepsItsSourcePosition	pass	2	
+ModelMeshAssemblyOnceLaws.Law_SplitVerticesDiffer	pass	3	
+ModelMeshCoincidentGriddedLaws.Law_CoincidentVertexPairsGriddedAgrees	pass	17	
+ModelMeshCoincidentGriddedLaws.Law_CoincidentVertexPairsGriddedAgreesFarOut	pass	28	
+ModelMeshCoincidentGriddedLaws.Law_CoincidentVertexPairsGriddedAgreesOnPlantedCloud	pass	747	
+ModelMeshCoincidentGriddedLaws.Law_CoincidentVertexPairsGriddedAgreesOnWitnesses	error	5617	took 5.62s, over the 2s budget over 3 cases
+ModelMeshCoincidentGriddedLaws.Law_PieceCountByUnionFindAgrees	pass	12	
+ModelMeshCoincidentGriddedLaws.Law_PieceCountByUnionFindAgreesOnCycles	pass	39	
+ModelMeshCoincidentGriddedLaws.Law_PieceCountByUnionFindAgreesOnMesh	pass	20	
+ModelMeshCoincidentGriddedLaws.Law_PieceCountByUnionFindAgreesOnWitnesses	pass	61	
+ModelMeshConversionsLaws.Law_PolygonMeshHasOneFacePerElement	pass	7	
+ModelMeshConversionsLaws.Law_PolygonMeshKeepsArea	pass	2	
+ModelMeshConversionsLaws.Law_PolygonMeshKeepsPositions	pass	1	
+ModelMeshConversionsLaws.Law_QuadMeshIsOkExactlyWithoutTriangles	pass	0	
+ModelMeshConversionsLaws.Law_QuadMeshKeepsAreaWhenOk	pass	0	
+ModelMeshConversionsLaws.Law_QuadMeshKeepsPositions	pass	0	
+ModelMeshConversionsLaws.Law_TriangleMeshKeepsArea	pass	3	
+ModelMeshConversionsLaws.Law_TriangleMeshKeepsPositions	pass	2	
+ModelMeshConversionsLaws.Law_TriangleMeshSplitsEachQuadInTwo	pass	1	
+ModelMeshConversionsLaws.Law_TriangulatedCornerNamesTheTriangleCorner	pass	1	
+ModelMeshElementsLaws.Law_CornerCountIsThreeTPlusFourQ	pass	3	
+ModelMeshElementsLaws.Law_CornerUvAtAgreesWithMesh	pass	1	
+ModelMeshElementsLaws.Law_CornersOfAgreesWithElementCorners	pass	4	
+ModelMeshElementsLaws.Law_CornersOfHasItsKindsCount	pass	1	
+ModelMeshElementsLaws.Law_ElementProvenanceNamesElementFace	pass	11	
+ModelMeshElementsLaws.Law_ProvenanceIndexListsElementCorners	pass	8	
+ModelMeshElementsLaws.Law_ProvenanceIndexListsNothingElse	pass	1	
+ModelMeshElementsLaws.Law_ResolveElementAgreesWithAccessors	pass	2	
+ModelMeshElementsLaws.Law_SliceElementsAreOnItsFaces	pass	10	
+ModelMeshElementsLaws.Law_SliceOfAllFacesIsWholeMesh	pass	2	
+ModelMeshIncidenceLaws.Law_IncidenceOffsetsAreARunningTotal	pass	5	
+ModelMeshIncidenceLaws.Law_IncidenceRowIsTheScan	pass	5	
+ModelMeshIncidenceLaws.Law_IncidenceRowIsTheScanOnAnyMesh	pass	1	
+ModelMeshIncidenceLaws.Law_IsPinchedVertexIndexedAgrees	pass	16	
+ModelMeshIncidenceLaws.Law_IsPinchedVertexIndexedAgreesOnAnyMesh	pass	4	
+ModelMeshIncidenceLaws.Law_PinchedPairIsPinchedAtItsSharedVertex	pass	1	
+ModelMeshMeasuresLaws.Law_AngleDefectSumIsTwoPiTimesEuler	pass	22	
+ModelMeshMeasuresLaws.Law_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects	pass	23	
+ModelMeshMeasuresLaws.Law_AreaIsSumOfFaceMeshAreas	pass	8	
+ModelMeshMeasuresLaws.Law_CoincidentPairIsReported	pass	4	
+ModelMeshMeasuresLaws.Law_OutwardTetrahedronHasPositiveVolume	pass	0	
+ModelMeshMeasuresLaws.Law_QuadAngleDefectIsNotNegative	pass	0	
+ModelMeshMeasuresLaws.Law_ReportedPairIsCoincident	pass	8	
+ModelMeshMeasuresLaws.Law_ReversalNegatesSignedVolume	pass	3	
+ModelMeshMeasuresLaws.Law_TriangleAngleSumIsPi	pass	1	
+ModelMeshMeasuresLaws.Law_VectorAreaVanishes	pass	24	
+ModelMeshNumberingLaws.Law_IndexOfSiteInvertsSiteAt	pass	0	
+ModelMeshNumberingLaws.Law_IndexOfSiteIsInRange	pass	3	
+ModelMeshNumberingLaws.Law_ModelVertexKeepsItsIndex	pass	0	
+ModelMeshNumberingLaws.Law_NumberingCountsCitedEdgeInteriors	pass	4	
+ModelMeshNumberingLaws.Law_SiteAtInvertsIndexOfSite	pass	6	
+ModelMeshQualityLaws.Law_AspectRatioIsAtLeastOne	pass	0	
+ModelMeshQualityLaws.Law_DartQuadIsNotConvex	pass	0	
+ModelMeshQualityLaws.Law_EquilateralTriangleHasUnitAspectRatio	pass	0	
+ModelMeshQualityLaws.Law_EquilateralTriangleHasUnitRadiusRatio	pass	0	
+ModelMeshQualityLaws.Law_RadiusRatioIsAtLeastOne	pass	2	
+ModelMeshQualityLaws.Law_TriangleAspectRatioMeetsThreshold	pass	2	
+ModelMeshQualityLaws.Law_UnitSquareHasUnitScaledJacobian	pass	0	
+ModelMeshQualityLaws.Law_UnitSquareHasZeroSkew	pass	0	
+ModelMeshSitesLaws.Law_FirstSampleIsStartVertex	pass	1	
+ModelMeshSitesLaws.Law_InteriorSampleIsEdgeInteriorSite	pass	0	
+ModelMeshSitesLaws.Law_LastSampleIsEndVertex	pass	0	
+ModelMeshTopologyLaws.Law_ClosedComponentEulerIsTwoMinusTwiceGenus	pass	1	
+ModelMeshTopologyLaws.Law_ClosedMeansEveryEdgeHasTwoSides	pass	2	
+ModelMeshTopologyLaws.Law_ClosedMeshHasNoPinchedVertex	pass	9	
+ModelMeshTopologyLaws.Law_ClosedOrientedSurfaceHasGenus	pass	24	
+ModelMeshTopologyLaws.Law_ComponentCountIsRootCount	pass	6	
+ModelMeshTopologyLaws.Law_ComponentEulerCharacteristicsAddUp	pass	3	
+ModelMeshTopologyLaws.Law_ComponentParentIsInItsComponent	pass	3	
+ModelMeshTopologyLaws.Law_ComponentParentIsOneShallower	pass	2	
+ModelMeshTopologyLaws.Law_ComponentParentSharesAVertex	pass	3	
+ModelMeshTopologyLaws.Law_ComponentRootHasDepthZero	pass	2	
+ModelMeshTopologyLaws.Law_ComponentRootIsItsLowestElement	pass	5	
+ModelMeshTopologyLaws.Law_ComponentsAreNumberedByRoot	pass	6	
+ModelMeshTopologyLaws.Law_EdgeTableCountMatchesItsSides	pass	6	
+ModelMeshTopologyLaws.Law_EdgeTableCountsEveryProperSide	pass	13	
+ModelMeshTopologyLaws.Law_EdgeTableDirectionSumMatchesItsSides	pass	6	
+ModelMeshTopologyLaws.Law_EdgeTableListsEveryProperSide	pass	0	
+ModelMeshTopologyLaws.Law_EdgeTableOfIsWellFormed	pass	6	
+ModelMeshTopologyLaws.Law_ElementCornersShareItsComponent	pass	10	
+ModelMeshTopologyLaws.Law_EulerIsTwoMinusTwiceGenusMinusBoundaryCycles	pass	0	
+ModelMeshTopologyLaws.Law_ManifoldMeansNoEdgeHasMoreThanTwoSides	pass	0	
+ModelMeshTopologyLaws.Law_OrientedExactlyWhenNoEdgeIsMisoriented	pass	1	
+ModelMeshTopologyLaws.Law_OrientedSurfaceWithBoundaryHasGenus	pass	15	
+ModelMeshTopologyLaws.Law_ReversalNegatesEveryDirectionSum	pass	13	
+ModelMeshesLaws.Law_MeshWitnessIsWellFormed	pass	0	
+ModelMeshesLaws.Law_RestrictionKeepsEachCorner	pass	4	
+ModelMeshesLaws.Law_RestrictionKeepsEachElementFace	pass	2	
+ModelMeshesLaws.Law_RestrictionKeepsTheElementsOfTheFaces	pass	14	
+ModelMeshesLaws.Law_RestrictionToEveryFaceKeepsTheEulerCharacteristic	pass	2	
+ModelMeshesLaws.Law_ReversalMovesCornerUvWithCorner	pass	0	
+ModelMeshesLaws.Law_ReversalPermutesCorners	pass	0	
+NeighboursCarriedLaws.Law_CarriedTableIsNeighbourSlots	pass	547	
+Part21ReadingLaws.Law_ChildrenPrecedeParent	pass	3	
+Part21ReadingLaws.Law_HeaderNamesASchema	pass	0	
+Part21ReadingLaws.Law_InstanceIdsAscending	pass	1	
+Part21ReadingLaws.Law_InstanceIdsPositive	pass	40	
+Part21ReadingLaws.Law_InstanceIdsUnique	pass	1	
+Part21ReadingLaws.Law_InstancePositionIsExact	obligation	0	host obligation: InstancePosition(Part21File, StepInstanceId) (in Law_InstancePositionIsExact)
+Part21ReadingLaws.Law_ParseFindingsPointAtTheirSubject	obligation	0	host obligation: ParseStep(String) (in Law_ParseFindingsPointAtTheirSubject)
+Part21ReadingLaws.Law_ParseOkIffNoError	obligation	0	host obligation: ParseStep(String) (in Law_ParseOkIffNoError)
+Part21ReadingLaws.Law_ParsePrintParseIsIdentity	obligation	2	host obligation: ParseStep(String) (in Law_ParsePrintParseIsIdentity)
+Part21ReadingLaws.Law_RecordIndicesInRange	pass	1	
+Part21ReadingLaws.Law_ReferencesResolve	pass	2	
+PipelineGuardsLaws.Law_FaceOutcomesScanArenaOnce	pass	3	
+PolesLaws.Law_ConeFaceChecksHold	error	2000	_ = BrepModel  took 2.00s, over the 2s budget (stopped in case 1)
+PolesLaws.Law_ConeRegionIsWellFormed	pass	1	
+PolesLaws.Law_HemispheresRegionsAreWellFormed	pass	16	
+PolesLaws.Law_LimitNormalAtConeApexIsRulingNormal	pass	1	
+PolesLaws.Law_LimitNormalAtSpherePoles	pass	4	
+PolesLaws.Law_LimitNormalIsNormalWhereRegular	pass	20	
+PolesLaws.Law_SphereByPoleLoopsFaceChecksHold	error	2000	_ = BrepModel  took 2.00s, over the 2s budget (stopped in case 1)
+PolesLaws.Law_SphereByPoleLoopsRegionIsWellFormed	pass	6	
+PolesLaws.Law_SphereFaceChecksHold	error	2016	_ = BrepModel  took 2.02s, over the 2s budget (stopped in case 1)
+PolesLaws.Law_SphereRegionIsWellFormed	pass	4	
+PolesLaws.Law_TorusAtVertexFaceChecksHold	error	2000	_ = BrepModel  took 2.00s, over the 2s budget (stopped in case 1)
+PolesLaws.Law_TorusAtVertexRegionIsWellFormed	pass	97	
+PolesLaws.Law_TorusFaceChecksHold	pass	184	
+PolesLaws.Law_TorusRegionIsWellFormed	pass	2	
+PolesWitnessLaws.Law_PoleGaussBonnet	pass	1245	
+PolesWitnessLaws.Law_PoleMeshIsSound	error	2000	w = PoleWitness("SphereByPoleLoops", BrepModel(GeometrySet([], [], [], [BrepSurface.Sphere(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 1)], []), [BrepVertex(Point3D(0, 0, 1)), BrepVertex(Point3D(0, 0, -1))], [], [BrepLoop.VertexLoop(BrepVertexIndex(0)), BrepLoop.VertexLoop(BrepVertexIndex(1))], [BrepFace(SurfaceIndex(0)...
+PolishCachedLaws.Law_BSplineSurfaceFirstJetAgrees	pass	14	
+PolishCachedLaws.Law_FirstJetAgrees	pass	40	
+PolishCachedLaws.Law_PolishEvaluationsAreTwoPlusHalvings	pass	230	
+PolishCachedLaws.Law_PolishHalvingsAreReached	pass	18	
+PolishCachedLaws.Law_PolishWitnessRunsToItsLimit	pass	15	
+PolishCachedLaws.Law_StepsFromJetAgree	pass	43	
+PolishCachedLaws.Law_SurfaceFirstJetReadsLocalNetOnce	pass	9	
+ProjectAlongLaws.Law_ClosestParametersAlongAgrees	pass	777	
+ProjectAlongLaws.Law_ClosestParametersAlongIsNearlyMinimal	pass	814	
+ProjectAlongLaws.Law_ProjectAlongAgrees	pass	492	
+ProjectAlongLaws.Law_ProjectAlongIsNearlyMinimal	pass	736	
+ProjectAlongLaws.Law_ProjectAlongSearchesOncePerEdge	pass	10	
+RefinementAttainableLaws.Law_AttainableMeshesClosed	pass	1247	
+RefinementAttainableLaws.Law_AttainableRefinementAgrees	pass	464	
+RefinementAttainableLaws.Law_AttainableRefinementNoLarger	pass	1	
+RefinementAttainableLaws.Law_CappedPathIsMeshFace	error	57078	took 57.08s, over the 2s budget over 6 cases
+RefinementAttainableLaws.Law_CappedRefinementLeavesFewerFlags	pass	353	
+RefinementAttainableLaws.Law_CappedWitnessesShowTheDefect	pass	273	
+RefinementAttainableLaws.Law_SideNormalsTurnAttainable	pass	61	
+RefinementAttainableLaws.Law_SideNormalsTurnAttainableAgrees	pass	53	
+RefinementTestCachedLaws.Law_NeedsRefinementCachedAgrees	pass	1813	
+ShellOrientationLaws.Law_FoldParityAgreesOnRawWitnesses	pass	2	
+ShellOrientationLaws.Law_FoldParityMarksFoldedFaces	pass	2	
+ShellOrientationLaws.Law_OrientationFlipsAreFound	pass	1	
+ShellOrientationLaws.Law_ShellComponentCountAgreesOnPolyLoops	pass	8	
+ShellTablesLaws.Law_ShellTablesAgree	pass	43	
+ShellTablesLaws.Law_ShellTablesAgreeOnOddModels	pass	5	
+ShellTablesLaws.Law_ShellTablesWitnessSizes	pass	0	
+ShellTablesLaws.Law_VertexLoopsAreMarked	pass	2	
+SparseGridsLaws.Law_SparseChecksAgree	pass	40	
+SparseGridsLaws.Law_SparseChecksAgreeOnOddModels	pass	24	
+SparseGridsLaws.Law_UncitedCellsHold	pass	39	
+StepDecidedLaws.Law_DecodedModelMapsByFacesAndErrors	pass	6	
+StepDecodingLaws.Law_DegreeFactorIsSnapped	pass	0	
+StepDecodingLaws.Law_EntityNamesAreTheTablesNames	pass	65	
+StepDecodingLaws.Law_LookupEntityFindsEveryLongName	pass	151	
+StepDecodingLaws.Law_LookupEntityFindsEveryShortName	pass	25	
+StepDecodingLaws.Law_LookupOwnAttributeFindsEveryDeclaredName	pass	4	
+StepDecodingLaws.Law_MisspelledEntityIsUnknown	pass	0	
+StepDecodingLaws.Law_PlacementStepsReachTheRoot	pass	5	
+StepDecodingLaws.Law_PlacementStepsStopOnACycle	pass	4	
+StepDecodingLaws.Law_RadianFactorIsNotSnapped	pass	0	
+StepDecodingLaws.Law_ScaledUnitIsNotSnapped	pass	0	
+StepDecodingLaws.Law_UnitFactorIsScaleToMetres	pass	0	
+StepDecodingLaws.Law_UnitFactorRoundTrips	pass	2	
+StepLoopChainingLaws.Law_V1Edges_ChainingKeepsChainedLoops	pass	5	
+StepLoopChainingLaws.Law_V1Edges_ChainingKeepsUnchainableLoop	pass	0	
+StepLoopChainingLaws.Law_V1Edges_ChainingRestoresOneFlip	pass	3	
+StepLoopChainingLaws.Law_V1Edges_ChainingRestoresPentagon	pass	7	
+StepLoopChainingLaws.Law_V1Edges_LoopsChainedReportsReversals	pass	2	
+StepLoopChainingLaws.Law_V1Edges_PrepareChainsFlippedCube	pass	9	
+StepLoopChainingLaws.Law_V1Edges_RepairFlipsArcCoedgeWhenAnotherLoopChains	pass	1	
+StepLoopChainingLaws.Law_V1Edges_RepairKeepsWitnesses	pass	5	
+StepLoopChainingLaws.Law_V1Edges_RepairReversesSwappedArcs	pass	4	
+StepRawWitnessesLaws.Law_RawTwoCubesPreparesToTwoBodies	pass	19	
+StepRawWitnessesLaws.Law_RawUnitCubePreparesToUnitBox	pass	77	
+StepReadingLaws.Law_AngleUnitIsReported	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_AngleUnitIsReported)
+StepReadingLaws.Law_BodyCountMatchesInstances	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_BodyCountMatchesInstances)
+StepReadingLaws.Law_CirclePeriodIsTwoPi	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_CirclePeriodIsTwoPi)
+StepReadingLaws.Law_ClosureDecisionIsTheEnds	pass	1	
+StepReadingLaws.Law_ClosureDecisionReturnsForEveryKind	pass	5	
+StepReadingLaws.Law_ClosureMarksAreTheDecisions(Part21File)	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in Law_ClosureMarksAreTheDecisions)
+StepReadingLaws.Law_ClosureMarksAreTheDecisions(RawDecodedModel)	pass	5	
+StepReadingLaws.Law_CubeWitnessesPrepareAsStated	pass	2	
+StepReadingLaws.Law_CurveClosureDecidedByEnds(Part21File, Integer)	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in Law_CurveClosureDecidedByEnds)
+StepReadingLaws.Law_CurveClosureDecidedByEnds(RawDecodedModel, Integer)	pass	9	
+StepReadingLaws.Law_CurveCountMatchesInstances	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_CurveCountMatchesInstances)
+StepReadingLaws.Law_DecisionAgreesWithEvaluation	pass	2	
+StepReadingLaws.Law_DeclaredClosedCopied	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_DeclaredClosedCopied)
+StepReadingLaws.Law_DecodeFindingsPointAtTheirSubject	obligation	1	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_DecodeFindingsPointAtTheirSubject)
+StepReadingLaws.Law_DecodeIsTotal	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_DecodeIsTotal)
+StepReadingLaws.Law_DecodedMagnitudesAreTheModels	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in Law_DecodedMagnitudesAreTheModels)
+StepReadingLaws.Law_DecodedToleranceResolvable	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_DecodedToleranceResolvable)
+StepReadingLaws.Law_DecodedTolerancesWellFormed	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_DecodedTolerancesWellFormed)
+StepReadingLaws.Law_EdgeCountMatchesInstances	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_EdgeCountMatchesInstances)
+StepReadingLaws.Law_EdgeSenseCopied	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_EdgeSenseCopied)
+StepReadingLaws.Law_FaceCountMatchesInstances	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_FaceCountMatchesInstances)
+StepReadingLaws.Law_FoldFlipsExactlyRecorded(Part21File, Integer)	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in Law_FoldFlipsExactlyRecorded)
+StepReadingLaws.Law_FoldFlipsExactlyRecorded(RawDecodedModel, Integer)	pass	14	
+StepReadingLaws.Law_FoldPreservesInteriorSide(Part21File, Integer, Integer)	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in Law_FoldPreservesInteriorSide)
+StepReadingLaws.Law_FoldPreservesInteriorSide(RawDecodedModel, Integer, Integer)	pass	6	
+StepReadingLaws.Law_FoldRecordsNameFalseFlags	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_FoldRecordsNameFalseFlags)
+StepReadingLaws.Law_LeftHandedSurfacesAreFolded(Part21File, Integer)	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in Law_LeftHandedSurfacesAreFolded)
+StepReadingLaws.Law_LeftHandedSurfacesAreFolded(RawDecodedModel, Integer)	pass	10	
+StepReadingLaws.Law_LoopCountMatchesInstances	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_LoopCountMatchesInstances)
+StepReadingLaws.Law_MergedVerticesCoincide	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_MergedVerticesCoincide)
+StepReadingLaws.Law_MirrorFoldRecordedOnce(Part21File, Integer)	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in Law_MirrorFoldRecordedOnce)
+StepReadingLaws.Law_MirrorFoldRecordedOnce(RawDecodedModel, Integer)	pass	9	
+StepReadingLaws.Law_ModelUnitIsRootUnit	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_ModelUnitIsRootUnit)
+StepReadingLaws.Law_OuterFlagClearedWhenDoubled	obligation	1	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_OuterFlagClearedWhenDoubled)
+StepReadingLaws.Law_OuterFlagCopiedWhenSingle	obligation	1	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_OuterFlagCopiedWhenSingle)
+StepReadingLaws.Law_ParameterFloorsFollowLength	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_ParameterFloorsFollowLength)
+StepReadingLaws.Law_PcurveCountMatchesInstances	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_PcurveCountMatchesInstances)
+StepReadingLaws.Law_PcurvesComeFromPcurveInstances	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_PcurvesComeFromPcurveInstances)
+StepReadingLaws.Law_PreparationReturns	pass	3	
+StepReadingLaws.Law_PrepareIsIdempotent	pass	12	
+StepReadingLaws.Law_PrepareKeepsPointSet	pass	22	
+StepReadingLaws.Law_ProvenanceCoversModel	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_ProvenanceCoversModel)
+StepReadingLaws.Law_ProvenanceLookupInvertsSources	obligation	2	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_ProvenanceLookupInvertsSources)
+StepReadingLaws.Law_ProvenanceSourcesDistinct	obligation	1	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_ProvenanceSourcesDistinct)
+StepReadingLaws.Law_RawFaceFlagsAreTheFiles	obligation	1	host obligation: DecodeRaw(Part21File, DecodePolicy) (in Law_RawFaceFlagsAreTheFiles)
+StepReadingLaws.Law_RawHasNoClosedPeriodicity	pass	1	
+StepReadingLaws.Law_RawHasNoClosures	pass	0	
+StepReadingLaws.Law_RawTolerancesUnset	pass	0	
+StepReadingLaws.Law_ReachedInstancesAreAccountedFor	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_ReachedInstancesAreAccountedFor)
+StepReadingLaws.Law_RepairedSourcesAreUnmapped	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_RepairedSourcesAreUnmapped)
+StepReadingLaws.Law_RepairsAreDiagnosed	obligation	1	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_RepairsAreDiagnosed)
+StepReadingLaws.Law_ShellCountMatchesInstances	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_ShellCountMatchesInstances)
+StepReadingLaws.Law_SourceKindMatchesTable	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_SourceKindMatchesTable)
+StepReadingLaws.Law_SurfaceClosureDecidedBySides(Part21File, Integer, SurfaceParameter)	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in Law_SurfaceClosureDecidedBySides)
+StepReadingLaws.Law_SurfaceClosureDecidedBySides(RawDecodedModel, Integer, SurfaceParameter)	pass	19	
+StepReadingLaws.Law_SurfaceCountMatchesInstances	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_SurfaceCountMatchesInstances)
+StepReadingLaws.Law_ToleranceCoversStatedUncertainties	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_ToleranceCoversStatedUncertainties)
+StepReadingLaws.Law_UncertaintyDefaultExactlyWhenAbsent	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_UncertaintyDefaultExactlyWhenAbsent)
+StepReadingLaws.Law_UndecidedEdgesAreKeptAndDiagnosed	pass	12	
+StepReadingLaws.Law_UndecidedOnlyWhenReachingSpline	pass	1	
+StepReadingLaws.Law_UnitsFactorsAgree	pass	2	
+StepReadingLaws.Law_VertexCountMatchesInstances	obligation	0	host obligation: DecodeRaw(Part21File, DecodePolicy) (in DecodeBrepWith < DecodeBrep < Law_VertexCountMatchesInstances)
+StepSchemaModelLaws.Law_AggregateBoundsHold	obligation	1	host obligation: FlatRecord(Array, String) (in ExpectedSlots < Law_AggregateBoundsHold)
+StepSchemaModelLaws.Law_AttributeCountMatchesSchema	obligation	5	host obligation: FlatRecord(Array, String) (in ExpectedSlots < Law_AttributeCountMatchesSchema)
+StepSchemaModelLaws.Law_AttributeKindsMatchSchema	obligation	3	host obligation: FlatRecord(Array, String) (in ExpectedSlots < Law_AttributeKindsMatchSchema)
+StepSchemaModelLaws.Law_ComplexPartsInStandardOrder	pass	0	
+StepSchemaModelLaws.Law_DefinedTypeRulesHold	obligation	2	host obligation: FlatRecord(Array, String) (in ExpectedSlots < Law_DefinedTypeRulesHold)
+StepSchemaModelLaws.Law_SchemaDerivesAreInherited	obligation	25	host obligation: FlatRecord(Array, String) (in Any < Law_SchemaDerivesAreInherited)
+StepSchemaModelLaws.Law_SchemaNamesUnique	pass	25	
+StepSchemaModelLaws.Law_SchemaShortNameIsNoOtherLongName	pass	32	
+StepSchemaModelLaws.Law_SchemaShortNamesUnique	pass	49	
+StepSchemaModelLaws.Law_SchemaSupertypesPrecede	pass	23	
+StepToMeshDecidedLaws.Law_MeshOutcomeCleanMapsToSucceeded	pass	58	
+StepToMeshLaws.Law_DecodeErrorMeansNotOk	obligation	0	host obligation: ParseStep(String) (in MeshStepTextTraced < Law_DecodeErrorMeansNotOk)
+StepToMeshLaws.Law_EveryStepTextDiagnosticIsLocated	obligation	0	host obligation: ParseStep(String) (in MeshStepTextTraced < MeshStepText < Law_EveryStepTextDiagnosticIsLocated)
+StepToMeshLaws.Law_MeshStepTextIsDeterministic	obligation	1	host obligation: ParseStep(String) (in MeshStepTextTraced < MeshStepText < Law_MeshStepTextIsDeterministic)
+StepToMeshLaws.Law_NoFacesMeansNoMesh	obligation	8	host obligation: ParseStep(String) (in MeshStepTextTraced < Law_NoFacesMeansNoMesh)
+StepToMeshLaws.Law_NoFacesMeansNotOk	obligation	1	host obligation: ParseStep(String) (in MeshStepTextTraced < Law_NoFacesMeansNotOk)
+StepToMeshLaws.Law_OutcomeIsOfItsFace	pass	2	
+StepToMeshLaws.Law_ParseErrorMeansNotOk	obligation	0	host obligation: ParseStep(String) (in Law_ParseErrorMeansNotOk)
+StepToMeshLaws.Law_PendingRequestIsInSomeOutcome	pass	0	
+StepToMeshLaws.Law_PowerOfTwoScalingKeepsConnectivity	error	5630	m = BrepModel(GeometrySet([BrepCurve.Line(Point3D(0, 0, 0), Vector3D(2, 0, 0)), BrepCurve.Line(Point3D(2, 0, 0), Vector3D(0, 2, 0)), BrepCurve.Line(Point3D(2, 2, 0), Vector3D(-2, 0, 0)), BrepCurve.Line(Point3D(0, 2, 0), Vector3D(0, -2, 0)), BrepCurve.Line(Point3D(0, 0, 2), Vector3D(2, 0, 0)), BrepCurve.Line(Point3D(2, 0, 2), Vector3D(0, 2, 0)), BrepCurve.Line(Point3D(2, 2, 2), Vector3D(-2, 0, 0)),...
+StepToMeshLaws.Law_PowerOfTwoScalingScalesPositions	error	2000	m = BrepModel(GeometrySet([BrepCurve.BSpline(BSplineCurveData(SplineBasis(2, KnotVector([0, 0, 0, 1, 1, 1])), [Point3D(0.1, 0.5, 0), Point3D(0.5, 0.7, 0), Point3D(0.9, 0.5, 0)], [1, 1, 1])), BrepCurve.BSpline(BSplineCurveData(SplineBasis(6, KnotVector([0, 0, 0, 0, 0, 0, 0, 0.375, 0.375, 0.375, 0.375, 0.375, 0.375, 1, 1, 1, 1, 1, 1, 1])), [Point3D(0.1, 0.5, 0), Point3D(0.15, 0.449, 0), Point3D(0.2,...
+StepToMeshLaws.Law_RigidMotionMovesPositions	pass	5	
+StepToMeshLaws.Law_StepTextOkExactlyWhenClean	obligation	0	host obligation: ParseStep(String) (in MeshStepTextTraced < MeshStepText < Law_StepTextOkExactlyWhenClean)
+StepToMeshLaws.Law_TighterChordalStaysWithinLooserBound	pass	1	
+StepToMeshLaws.Law_ValidationIsIdempotent	pass	1484	
+StepToMeshLoopRunLaws.Law_AngleDefectMatchesBrepEuler	pass	0	
+StepToMeshLoopRunLaws.Law_ClosedWhenEveryShellClosedAndNoFaceEmpty	pass	4	
+StepToMeshLoopRunLaws.Law_CornerNormalIsFaceNormal	pass	1	
+StepToMeshLoopRunLaws.Law_CornerProvenanceIsOnItsElementFace	pass	0	
+StepToMeshLoopRunLaws.Law_EdgeReversalPreservesMesh	pass	811	
+StepToMeshLoopRunLaws.Law_ElementFaceIsModelFace	pass	0	
+StepToMeshLoopRunLaws.Law_EmptyDiscretizationExactlyWhenEdgeUnusable	pass	1	
+StepToMeshLoopRunLaws.Law_EmptyFaceIsDiagnosed	pass	2	
+StepToMeshLoopRunLaws.Law_FailedFaceLeavesOthersUnchanged	pass	0	
+StepToMeshLoopRunLaws.Law_FinalDiscretizationsMeetFloors	pass	4	
+StepToMeshLoopRunLaws.Law_LoopEndsTerminal	pass	0	
+StepToMeshLoopRunLaws.Law_MeasureIsNeverNegative	pass	0	
+StepToMeshLoopRunLaws.Law_MeshClosedExactlyWhenShellClosed	pass	0	
+StepToMeshLoopRunLaws.Law_MeshEulerEqualsBrepEuler	pass	0	
+StepToMeshLoopRunLaws.Law_MeshModelIsDeterministic	pass	110	
+StepToMeshLoopRunLaws.Law_MeshedAssemblyValidatesStructurally	pass	232	
+StepToMeshLoopRunLaws.Law_MeshedMeshIsWellFormed	pass	0	
+StepToMeshLoopRunLaws.Law_MeshedMeshValidatesStructurally	pass	1	
+StepToMeshLoopRunLaws.Law_OnlyFacesOfChangedEdgesAreRemeshed	pass	14	
+StepToMeshLoopRunLaws.Law_OrientedWhenEveryShellClosedAndNoFaceEmpty	pass	1	
+StepToMeshLoopRunLaws.Law_OutcomesAreCurrent	pass	18	
+StepToMeshLoopRunLaws.Law_OuterShellVolumePositive	pass	0	
+StepToMeshLoopRunLaws.Law_PendingRequestsAreRefinable	pass	0	
+StepToMeshLoopRunLaws.Law_PlantedEmptyFaceIsDiagnosed	pass	0	
+StepToMeshLoopRunLaws.Law_ProvenanceNamesModelCell	pass	0	
+StepToMeshLoopRunLaws.Law_RefinementNeverCoarsens	pass	14	
+StepToMeshLoopRunLaws.Law_RoundsWithinLimit	pass	0	
+StepToMeshLoopRunLaws.Law_ShellReversalNegatesVolume	pass	88	
+StepToMeshLoopRunLaws.Law_SolidShellMeshesShareNoVertex	pass	0	
+StepToMeshLoopRunLaws.Law_StepDecreasesMeasure	pass	15	
+StepToMeshLoopRunLaws.Law_VertexReevaluatesFromProvenance	pass	0	
+StepToMeshLoopRunLaws.Law_VoidShellVolumeNegative	pass	0	
+StepToMeshMeshedWitnessesLaws.Law_BlockWithHoleMeshIsOneTorus	pass	2	
+StepToMeshMeshedWitnessesLaws.Law_HollowBoxMeshIsTwoSpheres	pass	2	
+StepToMeshMeshedWitnessesLaws.Law_HollowBoxMeshVolumeIsDifference	pass	1	
+StepToMeshMeshedWitnessesLaws.Law_HollowBoxOuterMeshVolumePositive	pass	0	
+StepToMeshMeshedWitnessesLaws.Law_HollowBoxVoidMeshVolumeNegative	pass	1	
+StepToMeshMeshedWitnessesLaws.Law_PlantedBadFaceErrorsStayInTheSheet	pass	1	
+StepToMeshMeshedWitnessesLaws.Law_PlantedBadFaceFailsSilently	pass	204	
+StepToMeshMeshedWitnessesLaws.Law_PlantedBadFaceHasTwoErrors	pass	1	
+StepToMeshMeshedWitnessesLaws.Law_PlantedBadFaceIsDiagnosed	pass	0	
+StepToMeshMeshedWitnessesLaws.Law_PlantedBadFaceLeavesOthersUnchanged	pass	2	
+StepToMeshMeshedWitnessesLaws.Law_PlantedUnvalidatedMeshIsMeshModels	pass	0	
+StepToMeshMeshedWitnessesLaws.Law_UnitBoxMeshesAsStated	pass	2	
+StepToMeshMeshedWitnessesLaws.Law_UnvalidatedMeshIsMeshModels	pass	4	
+StepToMeshMeshedWitnessesLaws.Law_WitnessEdgeReversalPreservesMesh	pass	959	
+StepToMeshMeshedWitnessesLaws.Law_WitnessMeshCrossChecksClean	pass	37	
+StepToMeshMeshedWitnessesLaws.Law_WitnessMeshValidatesClean	pass	0	
+StepToMeshMeshedWitnessesLaws.Law_WitnessMeshesOk	pass	0	
+StepToMeshMeshedWitnessesLaws.Law_WitnessPowerOfTwoScalingKeepsConnectivity	error	2005	w = MeshedWitness("HollowBox", BrepModel(GeometrySet([BrepCurve.Line(Point3D(0, 0, 0), Vector3D(2, 0, 0)), BrepCurve.Line(Point3D(2, 0, 0), Vector3D(0, 2, 0)), BrepCurve.Line(Point3D(2, 2, 0), Vector3D(-2, 0, 0)), BrepCurve.Line(Point3D(0, 2, 0), Vector3D(0, -2, 0)), BrepCurve.Line(Point3D(0, 0, 2), Vector3D(2, 0, 0)), BrepCurve.Line(Point3D(2, 0, 2), Vector3D(0, 2, 0)), BrepCurve.Line(Point3D(2, ...
+StepToMeshMeshedWitnessesLaws.Law_WitnessPowerOfTwoScalingScalesPositions	pass	167	
+StepToMeshMeshedWitnessesLaws.Law_WitnessRigidMotionMovesPositions	pass	2	
+StepToMeshMeshedWitnessesLaws.Law_WitnessShellReversalNegatesVolume	pass	103	
+StepToMeshOutcomeMeshedLaws.Law_EveryDiagnosticIsLocated	pass	1	
+StepToMeshOutcomeMeshedLaws.Law_OkExactlyWhenClean	pass	0	
+StepToMeshOutcomeMeshedLaws.Law_UndiscretizableEdgeIsDiagnosed	pass	3	
+StepToMeshProofsBSplinesLaws.Law_ClampedBSplineIffFixtureClamped	pass	1	
+StepToMeshProofsBSplinesLaws.Law_ClampedBSplineInterpolatesEnds	pass	9	
+StepToMeshProofsBSplinesLaws.Law_ClampedSplineClosureIsItsEndControlPoints	pass	2	
+StepToMeshProofsBSplinesLaws.Law_ClampedSplineEndsAreTheEvaluatedEnds	pass	1	
+StepToMeshProofsBSplinesLaws.Law_WellFormedBSplineIffWellShaped	pass	2	
+StepToMeshProofsBSplinesLaws.Law_WellFormedBSplineKeepsRecord	pass	1	
+StepToMeshProofsDiscretizationWitnessLaws.Law_CanonicalDiscretizationIffCanonical	pass	24	
+StepToMeshProofsDiscretizationWitnessLaws.Law_CanonicalDiscretizationKeepsPolyline	pass	1	
+StepToMeshProofsDiscretizationWitnessLaws.Law_CompleteDiscretizationIffAllDiscretized	pass	7	
+StepToMeshProofsDiscretizationWitnessLaws.Law_CompleteDiscretizationKeepsTable	pass	1	
+StepToMeshProofsDiscretizationWitnessLaws.Law_DirectedAlongReversesOnlyWhenOpposite	pass	4	
+StepToMeshProofsDiscretizationWitnessLaws.Law_DiscretizedEntryIsCanonicalReversedIsNot	pass	2	
+StepToMeshProofsDiscretizationWitnessLaws.Law_MeetsCriteriaProofIffMeetsCriteria	pass	120	
+StepToMeshProofsDiscretizationWitnessLaws.Law_MeetsCriteriaProofRecordsWorst	pass	24	
+StepToMeshProofsDiscretizationWitnessLaws.Law_PartialDiscretizationIffSomeFailed	pass	8	
+StepToMeshProofsDiscretizationWitnessLaws.Law_PartialDiscretizationListsFailures	pass	3	
+StepToMeshProofsMeshLaws.Law_ConvexQuadIffConvex	pass	7	
+StepToMeshProofsMeshLaws.Law_ConvexQuadRecordsQuad	pass	3	
+StepToMeshProofsMeshLaws.Law_PlanarQuadIffWarpWithinChordal	pass	5	
+StepToMeshProofsMeshLaws.Law_PlanarQuadRecordsWarp	pass	3	
+StepToMeshProofsMeshLaws.Law_UnitSquareQuadIsPlanar	pass	0	
+StepToMeshProofsMeshWitnessLaws.Law_CheckedMeshIffMeshChecks	pass	5	
+StepToMeshProofsMeshWitnessLaws.Law_CheckedMeshRecordsCounts	pass	5	
+StepToMeshProofsMeshWitnessLaws.Law_ClosedWitnessMeshesAreChecked	pass	3	
+StepToMeshProofsMeshWitnessLaws.Law_FullyMeshedModelIffEveryFaceMeshed	pass	6	
+StepToMeshProofsMeshWitnessLaws.Law_FullyMeshedModelKeepsOutcomes	pass	0	
+StepToMeshProofsMeshWitnessLaws.Law_MeshedFaceSetIffFacesMeshed	pass	1	
+StepToMeshProofsMeshWitnessLaws.Law_MeshedFaceSetPairsFaces	pass	1	
+StepToMeshProofsMeshWitnessLaws.Law_QualityGradedMeshIffMeasurable	pass	4	
+StepToMeshProofsMeshWitnessLaws.Law_QualityGradedMeshRecordsQualities	pass	2	
+StepToMeshProofsMeshWitnessLaws.Law_WatertightMeshIffClosed	pass	1	
+StepToMeshProofsMeshWitnessLaws.Law_WatertightMeshKeepsMesh	pass	2	
+StepToMeshTraceLaws.Law_IncrementalCoversEveryFace	pass	6	
+StepToMeshTraceLaws.Law_ReusedFacesTouchNoChangedEdge	pass	11	
+StepToMeshTraceLaws.Law_TraceRoundsAreMonotone	pass	4	
+StepToMeshTraceLaws.Law_TraceWithEarlierRoundIsNotMonotone	pass	0	
+StepWhereRulesLaws.Law_Practice_Axis2Placement3D_Orthogonal	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldIsUnset < Law_Practice_Axis2Placement3D_Orthogonal)
+StepWhereRulesLaws.Law_Where_AdvancedBrepShapeRepresentation_WR1	pass	17	
+StepWhereRulesLaws.Law_Where_AdvancedBrepShapeRepresentation_WR2	pass	10	
+StepWhereRulesLaws.Law_Where_AdvancedBrepShapeRepresentation_WR3	pass	7	
+StepWhereRulesLaws.Law_Where_AdvancedBrepShapeRepresentation_WR4	pass	8	
+StepWhereRulesLaws.Law_Where_AdvancedBrepShapeRepresentation_WR5	pass	8	
+StepWhereRulesLaws.Law_Where_AdvancedBrepShapeRepresentation_WR6	pass	10	
+StepWhereRulesLaws.Law_Where_AdvancedFace_WR1	pass	22	
+StepWhereRulesLaws.Law_Where_AdvancedFace_WR10	obligation	1	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReference < Law_Where_AdvancedFace_WR10)
+StepWhereRulesLaws.Law_Where_AdvancedFace_WR2	pass	8	
+StepWhereRulesLaws.Law_Where_AdvancedFace_WR3	pass	9	
+StepWhereRulesLaws.Law_Where_AdvancedFace_WR4	pass	7	
+StepWhereRulesLaws.Law_Where_AdvancedFace_WR5	pass	9	
+StepWhereRulesLaws.Law_Where_AdvancedFace_WR6	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReference < Law_Where_AdvancedFace_WR6)
+StepWhereRulesLaws.Law_Where_AdvancedFace_WR7	pass	7	
+StepWhereRulesLaws.Law_Where_AdvancedFace_WR8	pass	9	
+StepWhereRulesLaws.Law_Where_AdvancedFace_WR9	pass	12	
+StepWhereRulesLaws.Law_Where_Axis1Placement_WR1	pass	11	
+StepWhereRulesLaws.Law_Where_Axis2Placement2D_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_Axis2Placement3D_WR1	pass	10	
+StepWhereRulesLaws.Law_Where_Axis2Placement3D_WR2	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldIsUnset < Law_Where_Axis2Placement3D_WR2)
+StepWhereRulesLaws.Law_Where_Axis2Placement3D_WR3	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldIsUnset < Law_Where_Axis2Placement3D_WR3)
+StepWhereRulesLaws.Law_Where_Axis2Placement3D_WR4	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldIsUnset < Law_Where_Axis2Placement3D_WR4)
+StepWhereRulesLaws.Law_Where_BSplineCurveWithKnots_WR1_DegreePositive	pass	15	
+StepWhereRulesLaws.Law_Where_BSplineCurveWithKnots_WR1_EndMultiplicities	pass	8	
+StepWhereRulesLaws.Law_Where_BSplineCurveWithKnots_WR1_EnoughControlPoints	pass	12	
+StepWhereRulesLaws.Law_Where_BSplineCurveWithKnots_WR1_InteriorMultiplicities	pass	8	
+StepWhereRulesLaws.Law_Where_BSplineCurveWithKnots_WR1_KnotsIncrease	pass	7	
+StepWhereRulesLaws.Law_Where_BSplineCurveWithKnots_WR1_MultiplicitySum	pass	8	
+StepWhereRulesLaws.Law_Where_BSplineCurveWithKnots_WR1_TwoKnots	pass	7	
+StepWhereRulesLaws.Law_Where_BSplineCurveWithKnots_WR2	pass	7	
+StepWhereRulesLaws.Law_Where_BSplineCurve_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_BSplineSurfaceWithKnots_WR1	pass	10	
+StepWhereRulesLaws.Law_Where_BSplineSurfaceWithKnots_WR2	pass	8	
+StepWhereRulesLaws.Law_Where_BSplineSurfaceWithKnots_WR3	pass	10	
+StepWhereRulesLaws.Law_Where_BSplineSurfaceWithKnots_WR4	pass	7	
+StepWhereRulesLaws.Law_Where_BSplineSurface_WR1	pass	15	
+StepWhereRulesLaws.Law_Where_CartesianTransformationOperator3D_WR1	pass	10	
+StepWhereRulesLaws.Law_Where_CartesianTransformationOperator_WR1	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldIsUnset < Law_Where_CartesianTransformationOperator_WR1)
+StepWhereRulesLaws.Law_Where_CompositeCurveSegment_WR1	pass	8	
+StepWhereRulesLaws.Law_Where_CompositeCurve_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_ConicalSurface_WR1	pass	10	
+StepWhereRulesLaws.Law_Where_ConversionBasedUnit_WR1	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in Law_Where_ConversionBasedUnit_WR1)
+StepWhereRulesLaws.Law_Where_DefinitionalRepresentation_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_DegenerateToroidalSurface_WR1	pass	11	
+StepWhereRulesLaws.Law_Where_Direction_WR1	obligation	2	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReals < Law_Where_Direction_WR1)
+StepWhereRulesLaws.Law_Where_EdgeLoop_WR1	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReferences < PathEdges < Law_Where_EdgeLoop_WR1)
+StepWhereRulesLaws.Law_Where_FaceSurface_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_Face_WR1	obligation	1	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReferences < FaceBounds < FaceLoops < Law_Where_Face_WR1)
+StepWhereRulesLaws.Law_Where_Face_WR2	pass	9	
+StepWhereRulesLaws.Law_Where_FacetedBrepShapeRepresentation_WR1	pass	10	
+StepWhereRulesLaws.Law_Where_FacetedBrepShapeRepresentation_WR3	pass	7	
+StepWhereRulesLaws.Law_Where_FacetedBrepShapeRepresentation_WR4	pass	8	
+StepWhereRulesLaws.Law_Where_FacetedBrepShapeRepresentation_WR5	pass	7	
+StepWhereRulesLaws.Law_Where_FacetedBrepShapeRepresentation_WR6	pass	8	
+StepWhereRulesLaws.Law_Where_IntersectionCurve_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_IntersectionCurve_WR2	obligation	1	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldItems < Law_Where_IntersectionCurve_WR2)
+StepWhereRulesLaws.Law_Where_LengthMeasureWithUnit_WR1	pass	8	
+StepWhereRulesLaws.Law_Where_LengthUnit_WR1	pass	12	
+StepWhereRulesLaws.Law_Where_Line_WR1	pass	8	
+StepWhereRulesLaws.Law_Where_ManifoldSurfaceShapeRepresentation_WR1	pass	8	
+StepWhereRulesLaws.Law_Where_ManifoldSurfaceShapeRepresentation_WR10	pass	8	
+StepWhereRulesLaws.Law_Where_ManifoldSurfaceShapeRepresentation_WR11	pass	7	
+StepWhereRulesLaws.Law_Where_ManifoldSurfaceShapeRepresentation_WR12To14	pass	8	
+StepWhereRulesLaws.Law_Where_ManifoldSurfaceShapeRepresentation_WR2	pass	8	
+StepWhereRulesLaws.Law_Where_ManifoldSurfaceShapeRepresentation_WR4	pass	8	
+StepWhereRulesLaws.Law_Where_ManifoldSurfaceShapeRepresentation_WR5	pass	7	
+StepWhereRulesLaws.Law_Where_ManifoldSurfaceShapeRepresentation_WR6	pass	8	
+StepWhereRulesLaws.Law_Where_ManifoldSurfaceShapeRepresentation_WR7	pass	8	
+StepWhereRulesLaws.Law_Where_ManifoldSurfaceShapeRepresentation_WR8	pass	9	
+StepWhereRulesLaws.Law_Where_ManifoldSurfaceShapeRepresentation_WR9	pass	7	
+StepWhereRulesLaws.Law_Where_MappedItem_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_OffsetCurve3D_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_OrientedClosedShell_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_OrientedEdge_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_OrientedFace_WR1	pass	8	
+StepWhereRulesLaws.Law_Where_OrientedOpenShell_WR1	pass	8	
+StepWhereRulesLaws.Law_Where_Parabola_WR1	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReal < Law_Where_Parabola_WR1)
+StepWhereRulesLaws.Law_Where_Path_WR1	obligation	1	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReferences < PathEdges < Law_Where_Path_WR1)
+StepWhereRulesLaws.Law_Where_Pcurve_WR1	pass	10	
+StepWhereRulesLaws.Law_Where_Pcurve_WR2	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReference < Law_Where_Pcurve_WR2)
+StepWhereRulesLaws.Law_Where_Pcurve_WR3	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReference < Law_Where_Pcurve_WR3)
+StepWhereRulesLaws.Law_Where_PlaneAngleMeasureWithUnit_WR1	pass	10	
+StepWhereRulesLaws.Law_Where_PlaneAngleUnit_WR1	pass	8	
+StepWhereRulesLaws.Law_Where_RationalBSplineCurve_WR1	pass	8	
+StepWhereRulesLaws.Law_Where_RationalBSplineCurve_WR2	pass	8	
+StepWhereRulesLaws.Law_Where_RationalBSplineSurface_WR1	obligation	1	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldItems < Law_Where_RationalBSplineSurface_WR1)
+StepWhereRulesLaws.Law_Where_RationalBSplineSurface_WR2	pass	8	
+StepWhereRulesLaws.Law_Where_RectangularTrimmedSurface_WR1	pass	10	
+StepWhereRulesLaws.Law_Where_RectangularTrimmedSurface_WR2	pass	9	
+StepWhereRulesLaws.Law_Where_RectangularTrimmedSurface_WR3	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReference < Law_Where_RectangularTrimmedSurface_WR3)
+StepWhereRulesLaws.Law_Where_RectangularTrimmedSurface_WR4	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReference < Law_Where_RectangularTrimmedSurface_WR4)
+StepWhereRulesLaws.Law_Where_ReparametrisedCompositeCurveSegment_WR1	pass	10	
+StepWhereRulesLaws.Law_Where_RepresentationMap_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_RepresentationRelationshipWithTransformation_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_RepresentationRelationshipWithTransformation_WR2	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldReference < Law_Where_RepresentationRelationshipWithTransformation_WR2)
+StepWhereRulesLaws.Law_Where_SeamCurve_WR1	pass	10	
+StepWhereRulesLaws.Law_Where_SeamCurve_WR2	obligation	1	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldItems < Law_Where_SeamCurve_WR2)
+StepWhereRulesLaws.Law_Where_SeamCurve_WR3	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldItems < Law_Where_SeamCurve_WR3)
+StepWhereRulesLaws.Law_Where_SeamCurve_WR4	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldItems < Law_Where_SeamCurve_WR4)
+StepWhereRulesLaws.Law_Where_ShapeRepresentationRelationship_WR1	pass	10	
+StepWhereRulesLaws.Law_Where_ShellBasedSurfaceModel_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_SurfaceCurve_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_SurfaceCurve_WR2	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldItems < Law_Where_SurfaceCurve_WR2)
+StepWhereRulesLaws.Law_Where_SurfaceCurve_WR3	obligation	0	host obligation: SlotOf(Part21File, Integer, String, String) (in FieldItems < Law_Where_SurfaceCurve_WR3)
+StepWhereRulesLaws.Law_Where_SurfaceCurve_WR4	pass	8	
+StepWhereRulesLaws.Law_Where_TrimmedCurve_WR1	pass	9	
+StepWhereRulesLaws.Law_Where_TrimmedCurve_WR2	pass	15	
+StepWhereRulesLaws.Law_Where_UncertaintyMeasureWithUnit_WR1	pass	11	
+StepWhereRulesLaws.Law_Where_Vector_WR1	pass	9	
+StepWitnessesLaws.Law_WitnessFilesSatisfyInvariants	obligation	93	host obligation: InstancePosition(Part21File, StepInstanceId) (in Law_ReferencesResolve < Map < UnresolvedReferenceCount < Law_WitnessFilesSatisfyInvariants)
+SurfaceCurveDomainLaws.Law_V1Edges_AbsurdRangeRefused	pass	0	
+SurfaceCurveDomainLaws.Law_V1Edges_SurfaceCurveDomainRepeats	pass	1	
+SurfaceCurveDomainLaws.Law_V1Edges_SurfaceCurveEdgeHasArcRange	pass	8	
+SurfaceCurveDomainLaws.Law_V1Edges_WitnessEdgeRangesTractable	pass	6	
+TermLaws.Law_BoundedAgreesOnConsistentModels	pass	118	
+TermLaws.Law_BoundedDiscretizeReturnsOnOffSurfaceEdge	pass	14	
+TermLaws.Law_BoundedDiscretizeWithinSegmentBound	pass	71	
+TermLaws.Law_BoundedRefineReturnsOnOffSurfaceEdge	pass	3	
+TermLaws.Law_DiscretizeReturnsOnOffSurfaceEdge	pass	26	
+TermLaws.Law_OffSurfaceCubeMeshReports	pass	533	
+TermLaws.Law_OffSurfaceEdgeIsDiagnosed	pass	14	
+TermLaws.Law_RaiseSearchEndsAtCap	error	2000	k = 2  took 2.00s, over the 2s budget (stopped in case 4)
+TermLaws.Law_RefineEdgeReturnsOnOffSurfaceEdge	pass	9	
+ToolingDiffsLaws.Law_ConnectivityDiffIsSameExactlyWhenSameConnectivity	pass	10	
+ToolingDiffsLaws.Law_DiscretizationDiffIsSameExactlyWhenSameDiscretization	pass	6	
+ToolingDiffsLaws.Law_DistinctWitnessesDiffer	pass	17	
+ToolingDiffsLaws.Law_FaceMeshDiffIsSameExactlyWhenSameFaceMesh	pass	36	
+ToolingDiffsLaws.Law_FaceMeshOutcomeDiffIsSameExactlyWhenSameFaceMeshOutcome	pass	20	
+ToolingDiffsLaws.Law_FileDiffIsSameExactlyWhenIsSameFile	pass	159	
+ToolingDiffsLaws.Law_MeshDiffIsSameExactlyWhenSameModelMesh	pass	12	
+ToolingDiffsLaws.Law_ModelDiffIsSameExactlyWhenSameModel	pass	149	
+ToolingDiffsLaws.Law_ReportDiffIsSameExactlyWhenIdentical	pass	7	
+ToolingDiffsLaws.Law_WiderToleranceFindsNoMoreMeshDifferences	pass	11	
+ToolingDiffsLaws.Law_WitnessIsSameAsItself	pass	1	
+ToolingDiffsLaws.Law_WitnessModelDiffIsSameExactlyWhenSameModel	pass	40	
+ToolingGeneratorsLaws.Law_JitterStaysWithinLengthTolerance	pass	4	
+ToolingGeneratorsLaws.Law_MotionKeepsTopologyRows	pass	16	
+ToolingGeneratorsLaws.Law_PerturbationKeepsRawCounts	pass	8	
+ToolingGeneratorsLaws.Law_PerturbationKeepsTableSizes	pass	16	
+ToolingGeneratorsLaws.Law_PerturbedShellVolumeFollowsFactor	pass	172	
+ToolingGeneratorsLaws.Law_ReversalIsAnInvolution	pass	5	
+ToolingGeneratorsLaws.Law_SampleHasStatedCounts	pass	12	
+ToolingGeneratorsLaws.Law_UnitDrawIsInUnitInterval	pass	1	
+ToolingLawRunnerLaws.Law_CheckedWitnessIsSeparateRuns	pass	395	
+ToolingLawRunnerLaws.Law_HollowBoxVerdictsHold	pass	4	
+ToolingLawRunnerLaws.Law_PipelineWitnessRunsMeshOncePerWitness	pass	44	
+ToolingLawRunnerLaws.Law_PlantedBadFaceRunsHold	pass	1	
+ToolingLawRunnerLaws.Law_StatesOfIsEveryRound	pass	130	
+ToolingLawRunnerLaws.Law_UnitBoxRunsAreTheOldRuns	pass	44	
+ToolingLawRunnerLaws.Law_WitnessNamesAreModelWitnessNames	pass	2	
+ToolingReportsLaws.Law_BenchmarkMeetsItself	pass	1	
+ToolingReportsLaws.Law_SameModelHasNoDifference	pass	4	
+ToolingReportsLaws.Law_ShouldFailIsNotMetByPass	pass	0	
+ToolingReportsLaws.Law_ShouldPassIsMetOnlyByPass	pass	1	
+ToolingReportsLaws.Law_VerdictDeltaChangesOnlyWhenVerdictsDiffer	pass	4	
+TopologyLawsOnceLaws.Law_EdgeReversalKeepsEdgeDomain	pass	10	
+TopologyLawsOnceLaws.Law_RigidMotionKeepsCoedgeSense	pass	37	
+TriangulatedWitnessLaws.Law_BoxFacesStayTwoTriangles	pass	1	
+TriangulatedWitnessLaws.Law_CdtAreaIsRegionArea	pass	8	
+TriangulatedWitnessLaws.Law_CdtIsConforming	pass	48	
+TriangulatedWitnessLaws.Law_CdtKeepsBoundary	pass	3	
+TriangulatedWitnessLaws.Law_CdtKeepsEverySegment	pass	93	
+TriangulatedWitnessLaws.Law_CdtPositiveOrientation	pass	2	
+TriangulatedWitnessLaws.Law_EveryPointIsACornerOnSamples	pass	392	
+TriangulatedWitnessLaws.Law_LiftKeepsPointsOnSamples	pass	3	
+TriangulatedWitnessLaws.Law_LocalVertexInRangeOnSamples	pass	1	
+TriangulatedWitnessLaws.Law_LocalVertexSurjectiveOnSamples	pass	9	
+TriangulatedWitnessLaws.Law_OutcomeLiftsRefined	pass	9	
+TriangulatedWitnessLaws.Law_ProvenanceMatchesSourceOnSamples	pass	5	
+TriangulatedWitnessLaws.Law_RefineMeetsContract	pass	706	
+TriangulatedWitnessLaws.Law_RefinedIsFaceTriangulation	pass	5	
+TriangulatedWitnessLaws.Law_RequestsNameFaceEdgesOnSamples	pass	0	
+TriangulatedWitnessLaws.Law_TriangulatedWitnessesCoverTheSamples	pass	12	
+TriangulatedWitnessLaws.Law_TriangulationCornersInRangeOnSamples	pass	2	
+TriangulatedWitnessLaws.Law_UpdatedNeighboursAreTheTable	pass	11	
+TriangulationCdtIndexedLaws.Law_StarCasesRetestSlots	pass	0	
+TriangulationCdtIndexedLaws.Law_TriangulateRegionCdtIndexedAgrees	pass	38	
+TriangulationCdtIndexedLaws.Law_TriangulateRegionCdtIndexedAgreesOnJagged	pass	1197	
+TriangulationCdtIndexedLaws.Law_TriangulateRegionCdtIndexedAgreesOnStars	error	2004	k = 10  took 2.00s, over the 2s budget (stopped in case 12)
+TriangulationCdtIndexedLaws.Law_TriangulateRegionCdtIndexedAgreesWhenWoken	pass	4	
+TriangulationLaws.Law_FlipNeverUndone	pass	4	
+TriangulationLaws.Law_InCircleOfAgreesWithInCircle	pass	8	
+TriangulationLaws.Law_InCircleWitnesses	pass	0	
+UnwrapIndexedLaws.Law_CoarseRequestsByEdgeAsks	pass	3	
+UnwrapIndexedLaws.Law_UnwrapIndexedFindsTwins	pass	28	
+UvRegionCollisionLaws.Law_CollidingSegmentsAgrees	error	2002	n = 11  took 2.00s, over the 2s budget (stopped in case 13)
+UvRegionCollisionLaws.Law_CollidingSegmentsAgreesOnCatalog	pass	30	
+UvRegionCollisionLaws.Law_CollidingSegmentsAgreesOnModel	pass	1467	
+UvRegionCollisionLaws.Law_CollidingSegmentsVisitsFewerPairs	pass	1	
+V1GateLaws.Law_V1Gate_EveryFaceMeshed	pass	52	
+V1GateLaws.Law_V1Gate_QuadSplitsOriented	pass	7	
+V1GateLaws.Law_V1Gate_QuadSplitsWithinChordal	pass	48	
+V1GateLaws.Law_V1Gate_QuadsAreReached	pass	0	
+V1GateLaws.Law_V1Gate_TrianglesOriented	pass	6	
+V1GateLaws.Law_V1Gate_TrianglesWithinChordal	pass	80	
+V1PlaneLaws.Law_V1Gate_FineDisksAreBoundaryOnly	pass	747	
+V1PlaneLaws.Law_V1Gate_PlaneFacesAreBoundaryOnly	pass	1	
+V1PoleChecksLaws.Law_V1Gate_PoleElementDeviationWithinSurfaceChordal	error	2000	w = PoleWitness("SphereByPoleLoopsFine", BrepModel(GeometrySet([], [], [], [BrepSurface.Sphere(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 1)], []), [BrepVertex(Point3D(0, 0, 1)), BrepVertex(Point3D(0, 0, -1))], [], [BrepLoop.VertexLoop(BrepVertexIndex(0)), BrepLoop.VertexLoop(BrepVertexIndex(1))], [BrepFace(SurfaceInde...
+V1PoleChecksLaws.Law_V1Gate_PoleElementFacesFaceNormal	pass	1976	
+V1PoleChecksLaws.Law_V1Gate_PoleElementPositiveInChart	pass	323	
+V1PoleChecksLaws.Law_V1Gate_PoleElementSpansBelowHalfPeriod	pass	680	
+V1PoleChecksLaws.Law_V1Gate_PoleLocalVertexFibresAreIdentifications	error	2000	w = PoleWitness("Cone", BrepModel(GeometrySet([BrepCurve.Circle(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 1), BrepCurve.Line(Point3D(1, 0, 0), Vector3D(-1, 0, -1))], [], [], [BrepSurface.Cone(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 1, A...
+V1PoleChecksLaws.Law_V1Gate_PoleLocalVertexInRange	error	12257	took 12.26s, over the 2s budget over 8 cases
+V1PoleChecksLaws.Law_V1Gate_PoleLocalVertexSurjective	pass	490	
+V1PoleChecksLaws.Law_V1Gate_PolePointNormalIsFaceNormal	pass	179	
+V1PoleChecksLaws.Law_V1Gate_PoleProvenanceMatchesSource	pass	42	
+V1PoleChecksLaws.Law_V1Gate_PoleSharedPositionIsCopied	pass	52	
+V1PoleChecksLaws.Law_V1Gate_PoleSurfaceWithinSurfaceChordalOfElement	error	2000	w = PoleWitness("SphereByPoleLoops", BrepModel(GeometrySet([], [], [], [BrepSurface.Sphere(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 1)], []), [BrepVertex(Point3D(0, 0, 1)), BrepVertex(Point3D(0, 0, -1))], [], [BrepLoop.VertexLoop(BrepVertexIndex(0)), BrepLoop.VertexLoop(BrepVertexIndex(1))], [BrepFace(SurfaceIndex(0)...
+V1PoleChecksLaws.Law_V1Gate_PoleTriangulationCornersInRange	pass	177	
