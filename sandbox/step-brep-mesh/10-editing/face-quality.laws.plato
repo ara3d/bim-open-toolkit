@@ -94,14 +94,6 @@ library FaceQualityLaws
     Law_RefinedNoFlippableEdge(w: TriangulatedWitness): Boolean
         => w.Region.FlippableEdgeCount(w.Refined, w.Chart) == 0;
 
-    // Law_MinAngleNoWorseThanLibrary: the refinement's smallest lifted angle is no smaller than
-    // RefinedTriangulation's, within 1e-5 rad; one fresh RefinedTriangulation per face.
-    Law_MinAngleNoWorseThanLibrary(w: TriangulatedWitness): Boolean
-    {
-        var library = w.Model.RefinedTriangulation(w.Face, w.Region, w.Chart, TriCriteria(0));
-        return w.Model.SmallestLiftedAngle(w.Face, w.Refined) >= w.Model.SmallestLiftedAngle(w.Face, library) - 1e-5;
-    }
-
     // Law_MinAngleBetterOnCylinders: on every face of the cylinder (sample 1) and the quarter
     // sector (4), the smallest lifted angle is larger than the library's before the merge, 4.99
     // and 8.50 degrees. The original compared the least over the faces, which is the same claim.

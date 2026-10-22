@@ -399,7 +399,7 @@ refinement targets.
 | `Law_RefineMeetsContract` | triangulation-witness.laws | gate: coverage and orientation (every postcondition of `RefineToSurface`; none is an angle) |
 | `Law_RefinedNoFlippableEdge` | triangulation-witness.laws | **quality**: angles (the Delaunay property) |
 | `Law_RefinedInteriorMeetsMinAngle` | triangulation-witness.laws | **quality**: angles; **deleted** (TKT-416) |
-| `Law_MinAngleNoWorseThanLibrary` | triangulation-witness.laws | **quality**: angles |
+| `Law_MinAngleNoWorseThanLibrary` | triangulation-witness.laws | **quality**: angles; deleted at V1G-4's merge (the library's refinement is chordal-only, so it compared with a refinement that has no angle pass) |
 | `Law_MinAngleBetterOnCylinders` | triangulation-witness.laws | **quality**: angles |
 | `Law_BoxFacesStayTwoTriangles` | triangulation-witness.laws | gate: the plane path (a plane face is its boundary's triangulation, no refinement) |
 | `Law_QualityRequestsOnBoxes` | triangulation-witness.laws | **quality**: refinement targets |

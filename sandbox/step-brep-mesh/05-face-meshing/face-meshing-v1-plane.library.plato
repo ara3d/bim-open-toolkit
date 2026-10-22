@@ -1,5 +1,6 @@
 //==
-// # Version 1: plane faces are not refined (TKT-349, TKT-418)
+// # Version 1 refinement: none on plane faces, the chordal bound alone on curved faces
+// # (TKT-349, TKT-418, TKT-399)
 //
 // The version 1 mesh contract (sandbox/step-brep-mesh/README.md) triangulates a plane face from
 // its boundary and holes with no refinement. On a plane the surface pass never asks for a point
@@ -8,6 +9,12 @@
 // constrained triangulation already meets every postcondition of RefineToSurface on a plane: it
 // keeps the boundary, adds no point, and every element is positive in the chart, which on a plane
 // (an affine lift) is the same as facing the face normal.
+//
+// On a curved face version 1 refines against the chordal bound alone (supervisor's decision,
+// 2026-10-22, from the contract): no angle pass, and the surface test with SurfaceAngular at 180
+// degrees, so the side-normal turn asks for nothing and the chordal deviation and the fold test
+// remain. The angle pass and the angular test are quality, the improvement pass's. Near a cone's
+// apex they drove points onto the seam until the triangles there degenerated (TKT-399).
 //
 // Sections, in order:
 //  - Refinement
@@ -23,10 +30,49 @@ library V1Plane
         => m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord;
 
     // RefineToSurface under the version 1 contract: on a plane face, triangulation t as given (the
-    // region's constrained triangulation); on any other face, the refinement by insertion against
-    // the surface and the angle bound.
+    // region's constrained triangulation); on any other face, refinement against the chordal
+    // bound alone.
     RefineToSurfaceV1(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
-        => m.IsPlaneFace(f) ? t : m.RefineToSurfaceByInsertion(f, r, chart, t, c);
+        => m.IsPlaneFace(f) ? t : m.RefineToSurfaceChordal(f, r, chart, t, c);
+
+    // Criteria c with the angular surface criterion switched off: SurfaceAngular at 180 degrees,
+    // which no normal turn exceeds.
+    WithoutSurfaceAngular(c: FaceMeshingCriteria): FaceMeshingCriteria
+        => FaceMeshingCriteria(c.Discretization, c.SurfaceChordal, 180.0.Degrees, c.PreferQuads);
+
+    // One round of RefinementRoundCarried without its angle pass: the surface test on the
+    // triangles not known to pass, the surface pass, and the marks carried; Current and Mid are
+    // both the surface pass's result, and the angle marks are carried unchanged.
+    RefinementRoundChordal(m: BrepModel, f: BrepFaceIndex, r: UvRegion, x: BoundaryIndex, chart: FaceChart, least: Number, c: FaceMeshingCriteria, s: CarriedRefinement): CarriedRefinement
+    {
+        var none = [0].Take(0);
+        var now = s.Current.Positioned.Triangulation;
+        var surface = m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least);
+        var mid = m.SurfacePassCarried(f, x, chart, least, s.Current, surface);
+        var midT = mid.Positioned.Triangulation;
+        return CarriedRefinement(mid, mid,
+            KnownGood(now, surface, midT),
+            now.Triangles.CarriedMarks(s.Refused, none, midT.Triangles),
+            now.Triangles.CarriedMarks(s.Good, none, midT.Triangles),
+            midT.Points.Count > now.Points.Count,
+            s.Rounds + 1);
+    }
+
+    // Triangulation t of region r of face f refined against the chordal bound alone: chordal
+    // rounds (RefinementRoundChordal) under c without SurfaceAngular, up to forty while a round adds
+    // a point, as RefineToSurfaceByInsertionCarried stops.
+    RefineToSurfaceChordal(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
+    {
+        var x = r.BoundaryIndexOf(m.RegionTolerance(f, chart));
+        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
+        var chordal = c.WithoutSurfaceAngular;
+        var s = m.CarriedRefinementOf(f, t);
+        while (s.Rounds < 40 && s.Changed)
+        {
+            s = m.RefinementRoundChordal(f, r, x, chart, least, chordal, s);
+        }
+        return s.Current.Positioned.Triangulation;
+    }
 
     //==
     // # Claims
@@ -50,9 +96,8 @@ library V1Plane
             : true;
 
     // The triangulation MeshFace lifts for witness w's face under the sample criteria (no quads):
-    // under RefineToSurfaceV1, the constrained triangulation on a plane face and the refined one on
-    // any other. The witness's Refined stays the insertion refinement's result on every face, so
-    // the refinement laws keep testing it.
+    // RefineToSurfaceV1 of its constrained triangulation. The witness's Refined stays the insertion
+    // refinement's result, so the refinement agreement laws keep testing that refinement.
     MeshedTriangulationOf(w: TriangulatedWitness): UvTriangulation
-        => w.Model.IsPlaneFace(w.Face) ? w.Cdt : w.Refined;
+        => w.Model.RefineToSurfaceV1(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0));
 }

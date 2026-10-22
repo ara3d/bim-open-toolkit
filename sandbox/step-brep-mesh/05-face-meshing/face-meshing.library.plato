@@ -188,8 +188,8 @@ library FaceMeshing
     }
 
     // Refinement under the version 1 contract (RefineToSurfaceV1): none on a plane face;
-    // elsewhere against the surface and the smallest-angle bound, by insertion and flips
-    // (RefineToSurfaceByInsertion, triangulation-fast.library.plato).
+    // elsewhere against the chordal bound alone, by insertion and flips with no angle pass and
+    // no angular surface test (RefineToSurfaceChordal, face-meshing-v1-plane.library.plato).
     // Boundary points are never added, moved or removed, and every element stays
     // positive in the chart.
     RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation

@@ -7,10 +7,10 @@
 // TriangulationLaws' six sample models, built once per sweep (42 faces, every one triangulable).
 // Each law reads the witness's region, chart, triangulations and outcome and states the original
 // claim on them; none calls RegionOf, TriangulateRegionCdt, RefineToSurfaceByInsertion or
-// MeshFace except Law_RefinedIsFaceTriangulation and Law_MinAngleNoWorseThanLibrary,
-// whose claims compare the witness with one fresh build. A law about some samples only (the
-// boxes, the cylinder and sector) is vacuous on the others' faces. The original laws over an
-// Integer quantified over the faces of the sample it drew; the witnesses list every face of
+// MeshFace except Law_RefinedIsFaceTriangulation, whose claim compares the witness with one
+// fresh build. A law about some samples only (the boxes, the cylinder and sector) is vacuous
+// on the others' faces. The original laws over an Integer quantified over the faces of the
+// sample it drew; the witnesses list every face of
 // every sample, so each law here states the conjunction of the original's cases. At merge each
 // Law_<X> replaces Law_<X> (TRACK.md).
 //

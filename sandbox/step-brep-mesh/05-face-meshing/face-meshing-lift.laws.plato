@@ -100,8 +100,8 @@ library FaceMeshingLiftIndexedLaws
         => LiftCaseAt("ConeQuads", 4, 1, [LiftBranch.IdentifiedPoints]);
     Witness_UnitBoxRefinedLift(_: LiftCase): LiftCase
         => LiftCaseAt("UnitBoxRefined", 0, 2, LiftBranch.NoBranches);
-    Witness_CylinderRefinedLift(_: LiftCase): LiftCase
-        => LiftCaseAt("CylinderRefined", 1, 2, [LiftBranch.InteriorPoints, LiftBranch.IdentifiedPoints]);
+    Witness_SphereRefinedLift(_: LiftCase): LiftCase
+        => LiftCaseAt("SphereRefined", 2, 2, [LiftBranch.InteriorPoints, LiftBranch.IdentifiedPoints]);
     Witness_HemispheresLift(_: LiftCase): LiftCase
         => LiftCaseOf("Hemispheres", BrepModel.Witness_Hemispheres(1.0), 0,
             [LiftBranch.PoleSegments, LiftBranch.IdentifiedPoints, LiftBranch.DroppedTriangles]);
@@ -167,7 +167,7 @@ library FaceMeshingLiftIndexedLaws
         };
 
     // Every case reaches the branches it lists; together the cases list every branch
-    // (SphereByPoleLoops seam cuts, Hemispheres pole segments, CylinderRefined interior points,
+    // (SphereByPoleLoops seam cuts, Hemispheres pole segments, SphereRefined interior points,
     // HemispheresQuads collapsed quads, Sphere dropped triangles), so Law_LiftIndexedAgrees
     // compares every branch of the lift.
     Law_LiftCaseReachesItsBranches(w: LiftCase): Boolean

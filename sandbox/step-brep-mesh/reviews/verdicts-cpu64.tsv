@@ -730,7 +730,6 @@ FaceQualityLaws.Law_BelowAngleCountsItsLifts	pass
 FaceQualityLaws.Law_CdtNoFlippableEdge	pass	
 FaceQualityLaws.Law_ElementNormalAgreesWithSurface	pass	
 FaceQualityLaws.Law_MinAngleBetterOnCylinders	pass	
-FaceQualityLaws.Law_MinAngleNoWorseThanLibrary	pass	
 FaceQualityLaws.Law_QuadConvex	pass	
 FaceQualityLaws.Law_QuadPlanarWithinSurfaceChordal	pass	
 FaceQualityLaws.Law_QualityRequestsOnBoxes	pass	
