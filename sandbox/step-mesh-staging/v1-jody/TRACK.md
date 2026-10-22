@@ -1,7 +1,7 @@
 # v1-jody: small closed B-spline loops of the M2-JODY-W377 files discretized and meshed
 
 Ticket: TKT-431, TKT-453, TKT-414, TKT-467, TKT-470
-Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, J5 in 3cc7edb4, J6 in ca659dbc, J7 in a39a1ad4 | ready: J8
+Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, J5 in 3cc7edb4, J6 in ca659dbc, J7 in a39a1ad4 | ready: J8 | decision: J9
 
 ## Chunks
 
@@ -10,6 +10,7 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, 
 | J1 | TKT-431 | The 24 one-edge plane loops of the two M2-JODY-W377 files discretized: a B-spline written unclamped in periodic form is decided closed from its record | 2 h |
 | J2 | TKT-453 | A closed span whose ends coincide fails the segment test, so small closed loops are not meshed as triangles | 1 h |
 | J4 | (supervisor's performance finding) | The other `Count.Range.Take(0)` empties replaced by one layer-0 helper, `Integer.NoIndices` (J4.patch) | 1 h |
+| J9 | (supervisor, from v1-faces' P2) | A triangle that still folds after refinement with a side on a boundary segment asks for that edge to be refined (RefinementReason.FoldAgainstBoundary), and the host's loop answers it | 2 h |
 | J8 | (supervisor's follow-up to J6, J7) | One open-closed-shell diagnostic instead of two, and no unguarded read after && in J6's and J7's merged files | 1 h |
 | J6 | TKT-467 | Sew vertices and edges within each declared-closed shell, and report every declared-closed shell left open (supervisor's option A) | 2 h |
 | J7 | TKT-470 | Remove zero-thickness double sheets (two coincident plane faces of opposite sense bounding the same edges, which no other face cites), report the ones kept | 2 h |
@@ -64,6 +65,10 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, 
   - (2) law_lint's three unguarded reads: `Law_V1Jody_SheetInBoxRemoved` (`Shells[0]`, `removed[0]`, `removed[1]`) and `Law_V1Jody_OpenBoxReported` (`open[0]`) read each behind a conditional on its count; `ShellSheetPairs`' reads move into `IsSheetPairAt`, which returns false before any read when q + 1 is not a position (the reads were in range by construction, but the lint cannot see that). law_lint on a copy of the library with the patch applied finds none in those files (12 findings left, all in other tracks' files).
   - Laws on that copy (`--library`): the blocks of `pipeline-shell-sewing.laws.plato`, `pipeline-double-sheets.laws.plato` and `step.laws.plato`: 29 pass, 0 fail, 42 obligations (the laws over a Part21File, as before).
 
+- J9, see the commit, about 3 h against 2 h. Staged as `J9.patch` (13 hunks; `git apply --check` passes on toolkit 8b7a3fee), built on v1-faces' uncommitted P2 draft (`v1-faces/fold-requests.library.plato`). `RefinementReason` gains `FoldAgainstBoundary` (beside where v1-edges' `SplitAt`, E5c, will go: it is not staged yet). Layer 5's `FoldRequestsOf` (new file `face-meshing-fold-requests.library.plato`) asks, for every drawn triangle of the final triangulation that folds when lifted and has a side on a model edge's discretization longer than twice the effective minimum length, for that edge to have twice its segments; `MeshedOutcomeIn` adds those requests to the advisory ones. The request keeps the face's mesh (`IsBlocking` false); the host's loop answers it: (new) `IsAnsweredByHost` (blocking, or the fold), which layer 8's `BlockingRequests`, and so `BlockingStateOf` and `BlockingOnly`, now keeps. `ReasonName`, `IsBlocking` and `RequestDiagnostic` (FACE-FOLD-AGAINST-BOUNDARY, a warning) gain the arm; VOCABULARY.md lists the case and records the change; `Law_V1Proof_StepAnsweringBlockingLeavesOnlyBlocking` reads `IsAnsweredByHost`. The length test stops the doubling once a fold's boundary side cannot usefully be split. No host change: the host's loop already calls `BlockingOnly`.
+  - Laws, on a copy of the library with the patch applied (`plato_laws --library`): `Law_V1Jody_C211Strip45FoldResolved` (c211 face 45, extracted: its first pass has a flipped triangle and asks for a finer edge, the request stays pending in the host's loop, the final mesh has no flipped triangle and nothing pending) and `Law_V1Jody_NoFoldRequestOnWitnesses` pass, as do the host-options laws but one: `Law_V1Proof_WitnessOptionsMeshLikeTheHost` fails, as it does without the patch (its comment says it fails until a merge changes `WitnessOptions`).
+  - Corpus, C# regenerated from 8b7a3fee without and with J9 (0 degraded bodies each), harness `all ... 300 --path host --parallel` (bim-open-data 7d017e3), all 88 files done in both: 86 identical in every edge's segment count, every face's outcome and the digest. POS/ANN-MB2 goes from 1 flipped element (contract broken) to 0 (contract holds), closed and oriented in both (edge 3327 from 8 to 16 segments). c211_case_with_odin_v1 goes from 5 flipped elements to 0 (contract holds), but faces 92 (a B-spline strip that folded) and 93 (a cylinder beside it) lose their meshes: once edges 288, 289 and 290 have 4 times their segments, the short segments near the vertex where the strip's two sides meet come closer than the parameter tolerance, and the faces end with FACE-LOOP-NOT-SIMPLE, as faces 81, 84 and 88 already do (v1-faces' cause 5, the tangent cusp; v1-edges' E5d is to resolve it). Boundary edges beside unmeshed faces 69 to 101; c211 takes 80 s instead of 37 s. Decision asked of the supervisor: land J9 now (2 more unmeshed faces on c211 until E5d), or after E5d.
+
 ## Merge instructions
 
 J1 (TKT-431):
@@ -97,6 +102,9 @@ J6 and J7 (TKT-467, TKT-470):
 
 J8:
 - `git apply sandbox/step-mesh-staging/v1-jody/J8.patch` (03-step/step-diagnostics.types.plato and .library.plato, 03-step/step-double-sheets.library.plato, 08-pipeline/pipeline-double-sheets.laws.plato, 08-pipeline/pipeline-shell-sewing.laws.plato), then delete J8.patch. Regenerate: the C# loses `ClosedShellHasFreeEdges`.
+
+J9:
+- `git apply sandbox/step-mesh-staging/v1-jody/J9.patch`, then delete J9.patch; regenerate. v1-edges' E5c adds `SplitAt` beside `FoldAgainstBoundary` in the same matches (`ReasonName`, `IsBlocking`, `IsAnsweredByHost`, `RequestDiagnostic`).
 
 ## Contract requests
 
@@ -134,6 +142,8 @@ J8:
 | J6 and J7: staging and laws | 90 | 12 law runs, 2 bisections of a circular-expression error |
 | J6 and J7: regenerations, builds and corpus runs | 120 | 5 regenerations, 6 builds, 4 whole-corpus runs, 1 diagnostics census |
 | J8: search for the old code, patch, laws and lint on a patched copy | 25 | 2 law runs, 2 lint runs, 1 probe |
+| J9: draft review, patch, witness extraction, laws on a patched copy | 60 | 3 law runs, 1 extraction |
+| J9: regenerations, builds, c211 and two whole-corpus runs, probe of faces 92 and 93 | 90 | 2 regenerations, 3 builds, 176 file runs |
 
 ## Lessons
 

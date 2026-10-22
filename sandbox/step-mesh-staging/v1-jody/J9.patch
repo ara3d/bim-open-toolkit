@@ -1,0 +1,665 @@
+diff --git a/sandbox/step-brep-mesh/04-discretization/discretization-requests.library.plato b/sandbox/step-brep-mesh/04-discretization/discretization-requests.library.plato
+index 6b827f1..44ddb64 100644
+--- a/sandbox/step-brep-mesh/04-discretization/discretization-requests.library.plato
++++ b/sandbox/step-brep-mesh/04-discretization/discretization-requests.library.plato
+@@ -70,6 +70,7 @@ library EdgeDiscretizingRequests
+             NoInteriorPointMeetsChordal(c) => "NoInteriorPointMeetsChordal";
+             PoleAdjacency => "PoleAdjacency";
+             NeighbourDensity => "NeighbourDensity";
++            FoldAgainstBoundary => "FoldAgainstBoundary";
+         };
+ 
+     // The stronger union of two requests on one edge: the smaller Chordal with its Reason (a on a
+diff --git a/sandbox/step-brep-mesh/04-discretization/discretization.types.plato b/sandbox/step-brep-mesh/04-discretization/discretization.types.plato
+index a93c76b..3e1c726 100644
+--- a/sandbox/step-brep-mesh/04-discretization/discretization.types.plato
++++ b/sandbox/step-brep-mesh/04-discretization/discretization.types.plato
+@@ -100,7 +100,8 @@ type RefinementReason
+     | QuadCountMismatch
+     | NoInteriorPointMeetsChordal(Segment: Chord)
+     | PoleAdjacency
+-    | NeighbourDensity;
++    | NeighbourDensity
++    | FoldAgainstBoundary;
+ 
+ // A request from face meshing for a finer polyline on one edge. `Chordal` is the chordal bound to
+ // refine to (the current one when the request is about counts only); `Segments` is the least
+diff --git a/sandbox/step-brep-mesh/05-face-meshing/face-meshing-domain-once.library.plato b/sandbox/step-brep-mesh/05-face-meshing/face-meshing-domain-once.library.plato
+index ab92be5..26929c9 100644
+--- a/sandbox/step-brep-mesh/05-face-meshing/face-meshing-domain-once.library.plato
++++ b/sandbox/step-brep-mesh/05-face-meshing/face-meshing-domain-once.library.plato
+@@ -145,7 +145,7 @@ library FaceMeshingDomainOnce
+     {
+         var grid = m.FaceQuadGridIn(f, d, r, tol, c);
+         var t = m.GridOrTrianglesIn(f, r, chart, tol, grid, c);
+-        var advisory = m.CoarseSegmentRequests(f, d, r, c).Concatenate(m.QuadCountRequests(d, grid, c));
++        var advisory = m.CoarseSegmentRequests(f, d, r, c).Concatenate(m.QuadCountRequests(d, grid, c)).Concatenate(m.FoldRequestsOf(f, d, t, c));
+         return FaceMeshOutcome(m.Lift(f, d, t), advisory,
+             advisory.Map(q => q.RequestDiagnostic).Concatenate(m.ReversalDiagnostics(f, raw)));
+     }
+diff --git a/sandbox/step-brep-mesh/05-face-meshing/face-meshing-fold-requests.library.plato b/sandbox/step-brep-mesh/05-face-meshing/face-meshing-fold-requests.library.plato
+new file mode 100644
+index 0000000..5ce1b6a
+--- /dev/null
++++ b/sandbox/step-brep-mesh/05-face-meshing/face-meshing-fold-requests.library.plato
+@@ -0,0 +1,55 @@
++//==
++// # A fold against a boundary segment asks for a finer edge (v1-jody J9, after v1-faces' P2 draft)
++//
++// Refinement splits a folded triangle by inserting points inside the face, but a boundary segment
++// is locked, and an inserted point must stay the effective minimum length from the corners it
++// joins. On a strip narrower than the edge's segments are long, that leaves folds: on
++// SHO/c211_case_with_odin_v1.step's B-spline strips (about 0.2 mm wide, boundary segments about
++// 5 mm long under a 1 mm chordal bound) 21 long thin triangles lie across a stretch that bends by
++// more than the strip is wide, and wind against the face normal although every corner lies on the
++// surface. Only a finer edge helps. FoldRequestsOf asks, for every drawn triangle that folds when
++// lifted (LiftsFacingFaceNormal false) and has a side on a model edge's discretization longer
++// than twice the effective minimum length, for that edge to be split into twice as many segments
++// (RefinementReason.FoldAgainstBoundary). The request keeps the face's mesh (IsBlocking false), so
++// a fold the rounds cannot resolve is kept rather than lost; the host's loop answers it
++// (IsAnsweredByHost), each round halving the boundary segments a fold sits on until the fold goes,
++// the segments reach twice the minimum length, or the round limit is reached.
++//
++// Sections, in order:
++//  - Requests
++
++library FaceMeshingFoldRequests
++{
++    //==
++    // # Requests
++
++    // Whether side j of triangle k of face f's triangulation t (corners j and j + 1) is a
++    // segment of edge e's discretization longer than twice the effective minimum length: a side
++    // a finer edge would split.
++    IsSplittableBoundarySide(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, t: UvTriangulation, k: Integer, j: Integer, e: BrepEdgeIndex, least: Number): Boolean
++    {
++        var a = t.Triangles[k].Corner(j);
++        var b = t.Triangles[k].Corner(j + 1);
++        return m.IsDiscretizationSegment(d, e, t.Sources[a], t.Sources[b])
++            ? m.Geometry.Eval(m.SurfaceOf(f), t.Points[a]).Distance(m.Geometry.Eval(m.SurfaceOf(f), t.Points[b])) > 2.0 * least
++            : false;
++    }
++
++    // The FoldAgainstBoundary requests of triangulation t of face f, its edges discretized as d:
++    // one per model edge with a splittable segment (IsSplittableBoundarySide) that is a side of a
++    // drawn triangle (not collapsed at a pole) folding when lifted, asking for twice the edge's
++    // segments at the criteria's chordal.
++    FoldRequestsOf(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, t: UvTriangulation, c: FaceMeshingCriteria): Array<EdgeRefinementRequest>
++    {
++        var edges = m.FaceEdges(f);
++        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
++        var folded = t.Triangles.Count.Range.FlatMap(k =>
++            t.IsCollapsedElement(ElementIndex(k)) ? Integer.NoIndices
++            : (m.LiftsFacingFaceNormal(f, t, ElementIndex(k)) ? Integer.NoIndices : [k]));
++        var hit = folded.FlatMap(k => 3.Range.FlatMap(j => edges.FlatMap(e =>
++            m.IsSplittableBoundarySide(f, d, t, k, j, e, least) ? [e] : edges.Take(0))));
++        return edges.FlatMap(e => hit.Any(h => h == e)
++            ? [EdgeRefinementRequest(e, RefinementReason.FoldAgainstBoundary, c.Discretization.Chordal, 2 * (d.ByEdge[e.Value].Points.Count - 1).Max(1))]
++            : EdgeRefinementRequest.NoRequests);
++    }
++}
+diff --git a/sandbox/step-brep-mesh/05-face-meshing/face-meshing.library.plato b/sandbox/step-brep-mesh/05-face-meshing/face-meshing.library.plato
+index b3720f2..fb87bb6 100644
+--- a/sandbox/step-brep-mesh/05-face-meshing/face-meshing.library.plato
++++ b/sandbox/step-brep-mesh/05-face-meshing/face-meshing.library.plato
+@@ -754,6 +754,21 @@ library FaceMeshing
+             NoInteriorPointMeetsChordal(c) => false;
+             PoleAdjacency => false;
+             NeighbourDensity => false;
++            FoldAgainstBoundary => false;
++        };
++
++    // True when the host's refinement loop answers a request (layer 8's BlockingRequests keeps it
++    // pending): a blocking one, or a fold against a boundary segment, which keeps its face's mesh
++    // but needs a finer edge that only the loop can give (fold-requests.library.plato).
++    IsAnsweredByHost(reason: RefinementReason): Boolean
++        => match (reason) {
++            LoopSelfIntersects => true;
++            TooCoarseInParameterSpace => false;
++            QuadCountMismatch => false;
++            NoInteriorPointMeetsChordal(c) => false;
++            PoleAdjacency => false;
++            NeighbourDensity => false;
++            FoldAgainstBoundary => true;
+         };
+ 
+     // True when d and d2 hold the same discretization for every edge face f cites (layer 04's
+@@ -814,6 +829,9 @@ library FaceMeshing
+             NeighbourDensity => Diagnostic(Severity.Info, "FACE-EDGE-NEIGHBOUR-DENSITY",
+                 "A neighbouring edge is denser than this one; the edge is asked to refine to match.",
+                 Provenance.KernelEdge(q.Edge), q.Chordal);
++            FoldAgainstBoundary => Diagnostic(Severity.Warning, "FACE-FOLD-AGAINST-BOUNDARY",
++                "A triangle of a face folds against a boundary segment of this edge, and refinement inside the face cannot split that segment; the face is meshed and the edge is asked for twice as many segments.",
++                Provenance.KernelEdge(q.Edge), q.Chordal);
+         };
+ 
+     // A diagnostic located at face f.
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-corpus-witness-c211-45.library.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-corpus-witness-c211-45.library.plato
+new file mode 100644
+index 0000000..f1d9ee7
+--- /dev/null
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-corpus-witness-c211-45.library.plato
+@@ -0,0 +1,368 @@
++// Extracted by step-corpus-harness extract (TKT-439) on 2026-10-22 from u-blox SHO/c211_case_with_odin_v1.step,
++// faces 45 of the prepared model with a ring of 0: 1 faces, 5 edges.
++// Witness face k is source face [45][k]. Meshed the host's way at chordal 1.0000000474974513:
++//   face 45 (witness face 0): cdt, 29 triangles, 0 quads in the file, cdt, 29 triangles, 0 quads in the witness, the same mesh
++// One open shell in a shell-set body holds the faces; tolerances and unit are the source model's.
++library CorpusWitnessC211Strip45
++{
++    Witness_C211Strip45(_: BrepModel): BrepModel
++        => BrepModel(GeometrySet([
++                    BrepCurve.Ellipse(Frame3D(Point3D(1.21879659902805, 11.286721722605, 114.666563981939), Direction3D(Vector3D(0.18512103698750298, -0.9827157277995868, 6.87572386926619e-11)), Direction3D(Vector3D(0.9827157277995868, 0.18512103698750298, 5.426425531728113e-10)), Direction3D(Vector3D(-5.45991782903428e-10, -3.28857322935479e-11, 1.0))), 11.6061917012887, 9.97802392754283),
++                    BrepCurve.BSpline(BSplineCurveData(SplineBasis(3, KnotVector([
++                                        8.30919919702923,
++                                        8.30919919702923,
++                                        8.30919919702923,
++                                        8.30919919702923,
++                                        8.35386256481593,
++                                        8.35386256481593,
++                                        8.35386256481593,
++                                        8.42242134804011,
++                                        8.42242134804011,
++                                        8.42242134804011,
++                                        8.49097132898812,
++                                        8.49097132898812,
++                                        8.49097132898812,
++                                        8.55951642746507,
++                                        8.55951642746507,
++                                        8.55951642746507,
++                                        8.62807007403681,
++                                        8.62807007403681,
++                                        8.62807007403681,
++                                        8.69662429739293,
++                                        8.69662429739293,
++                                        8.69662429739293,
++                                        8.76519722896055,
++                                        8.76519722896055,
++                                        8.76519722896055,
++                                        8.83369842952629,
++                                        8.83369842952629,
++                                        8.83369842952629,
++                                        8.90227080786198,
++                                        8.90227080786198,
++                                        8.90227080786198,
++                                        8.9708298480047,
++                                        8.9708298480047,
++                                        8.9708298480047,
++                                        9.0393794738975,
++                                        9.0393794738975,
++                                        9.0393794738975,
++                                        9.10793052900071,
++                                        9.10793052900071,
++                                        9.10793052900071,
++                                        9.17647827840105,
++                                        9.17647827840105,
++                                        9.17647827840105,
++                                        9.24503826048995,
++                                        9.24503826048995,
++                                        9.24503826048995,
++                                        9.31353429423665,
++                                        9.31353429423665,
++                                        9.31353429423665,
++                                        9.3827225986049,
++                                        9.3827225986049,
++                                        9.3827225986049,
++                                        9.45190293054368,
++                                        9.45190293054368,
++                                        9.45190293054368,
++                                        9.52107741919466,
++                                        9.52107741919466,
++                                        9.52107741919466,
++                                        9.59025417467235,
++                                        9.59025417467235,
++                                        9.59025417467235,
++                                        9.65942724625109,
++                                        9.65942724625109,
++                                        9.65942724625109,
++                                        9.72860696056741,
++                                        9.72860696056741,
++                                        9.72860696056741,
++                                        9.78925025294026,
++                                        9.78925025294026,
++                                        9.78925025294026,
++                                        9.78925025294026])), [
++                                Point3D(11.2419999864395, 9.99965015234738, 114.666563987369),
++                                Point3D(11.2419947798664, 9.80254213421889, 114.660877270762),
++                                Point3D(11.2375880593468, 9.60544266275203, 114.655190554155),
++                                Point3D(11.2287843533363, 9.40853709295596, 114.649503837548),
++                                Point3D(11.2152705633592, 9.10628477871598, 114.640774662154),
++                                Point3D(11.1913919777058, 8.80445937481296, 114.632045486759),
++                                Point3D(11.1571994285533, 8.50378238571775, 114.623316311365),
++                                Point3D(11.1230112693892, 8.20314400060248, 114.614588256712),
++                                Point3D(11.0785118203917, 7.90365399565682, 114.605860202058),
++                                Point3D(11.0238037444804, 7.6060283852923, 114.597132147405),
++                                Point3D(10.9690995651508, 7.3084239733061, 114.588404714407),
++                                Point3D(10.9041882584286, 7.01268394783816, 114.579677281409),
++                                Point3D(10.8292237813819, 6.71951507419443, 114.570949848411),
++                                Point3D(10.7542499556952, 6.42630964016381, 114.562221327036),
++                                Point3D(10.6692205160047, 6.13567625295912, 114.553492805661),
++                                Point3D(10.5743399905008, 5.84830900739079, 114.544764284287),
++                                Point3D(10.4794586667081, 5.56093934402342, 114.536035689473),
++                                Point3D(10.3747261759803, 5.27683612479061, 114.52730709466),
++                                Point3D(10.260396446864, 4.99667676711196, 114.518578499846),
++                                Point3D(10.1460355175582, 4.71644095490926, 114.50984752303),
++                                Point3D(10.022072212872, 4.44015139819989, 114.501116546213),
++                                Point3D(9.88880869509034, 4.16846569684377, 114.492385569396),
++                                Point3D(9.7556845781689, 3.89706419345194, 114.483663725654),
++                                Point3D(9.61327982520926, 3.63025714484418, 114.474941881912),
++                                Point3D(9.46194181443206, 3.36867626580786, 114.46622003817),
++                                Point3D(9.31044655236543, 3.10682358505892, 114.457489131792),
++                                Point3D(9.14994922084752, 2.85012112525737, 114.448758225415),
++                                Point3D(8.9808255136221, 2.59918681701857, 114.440027319038),
++                                Point3D(8.81173470309205, 2.34830131866948, 114.431298110932),
++                                Point3D(8.63402101304047, 2.10318194854273, 114.422568902826),
++                                Point3D(8.44810370839975, 1.8644180460138, 114.41383969472),
++                                Point3D(8.26221193317086, 1.62568692957765, 114.405111685274),
++                                Point3D(8.0681189533481, 1.39330974437697, 114.396383675827),
++                                Point3D(7.86628541032539, 1.16784414023979, 114.387655666381),
++                                Point3D(7.6644476592184, 0.94237383530685, 114.378927474962),
++                                Point3D(7.45486919432205, 0.72381559651599, 114.370199283543),
++                                Point3D(7.23804977011056, 0.512692612374392, 114.361471092124),
++                                Point3D(7.02124080147257, 0.301579809109751, 114.3527433216),
++                                Point3D(6.79719175944548, 0.097901725683286, 114.344015551076),
++                                Point3D(6.56643870627151, -0.0978558616401406, 114.335287780552),
++                                Point3D(6.33564447406161, -0.293648382883664, 114.326558452513),
++                                Point3D(6.09814403795354, -0.481517412374406, 114.317829124475),
++                                Point3D(5.8545072333184, -0.661016898764244, 114.309099796437),
++                                Point3D(5.61109767742634, -0.840348959576786, 114.300378610555),
++                                Point3D(5.36156341261026, -1.01132693930821, 114.291657424672),
++                                Point3D(5.1065029588581, -1.17354827112935, 114.28293623879),
++                                Point3D(4.84886467907435, -1.33740912944665, 114.274126910274),
++                                Point3D(4.58553628161043, -1.49236838584647, 114.265317581759),
++                                Point3D(4.31715012152813, -1.63804879203769, 114.256508253243),
++                                Point3D(4.04879488704448, -1.78371241176805, 114.247699939809),
++                                Point3D(3.77538327490088, -1.92009919689504, 114.238891626375),
++                                Point3D(3.49757274617548, -2.04687757512749, 114.230083312941),
++                                Point3D(3.2197856826002, -2.17364524507725, 114.221275743497),
++                                Point3D(2.93760067332782, -2.29080602494457, 114.212468174053),
++                                Point3D(2.65169697965302, -2.39807568448317, 114.20366060461),
++                                Point3D(2.36578391700215, -2.50534885921551, 114.194852746544),
++                                Point3D(2.07615216099361, -2.60273017530965, 114.186044888479),
++                                Point3D(1.78349953894227, -2.68998411187233, 114.177237030414),
++                                Point3D(1.4908625016445, -2.77723340186431, 114.168429641398),
++                                Point3D(1.19520516104895, -2.8543563192747, 114.159622252381),
++                                Point3D(0.897240160007792, -2.92116732423086, 114.150814863365),
++                                Point3D(0.599246545182902, -2.98798474509372, 114.142006628569),
++                                Point3D(0.298945072113337, -3.04448821803208, 114.133198393773),
++                                Point3D(-0.00294013004560201, -3.09054305514665, 114.124390158977),
++                                Point3D(-0.267574246541826, -3.1309149615635, 114.116668815179),
++                                Point3D(-0.533425086081019, -3.16325849577724, 114.108947471382),
++                                Point3D(-0.799999991337373, -3.18751552068966, 114.101226127585)], [
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0])),
++                    BrepCurve.BSpline(BSplineCurveData(SplineBasis(3, KnotVector([
++                                        -2.64494117982121,
++                                        -2.64494117982121,
++                                        -2.64494117982121,
++                                        -2.64494117982121,
++                                        -2.30457652577011,
++                                        -2.30457652577011,
++                                        -1.95349998542465,
++                                        -1.95349998542465,
++                                        -1.85443003485529,
++                                        -1.85443003485529,
++                                        -1.32316387429514,
++                                        -1.32316387429514,
++                                        -0.796098324250247,
++                                        -0.796098324250247,
++                                        -0.696858420095957,
++                                        -0.696858420095957,
++                                        -0.35407051956743,
++                                        -0.35407051956743,
++                                        0.0,
++                                        0.0,
++                                        0.0,
++                                        0.0])), [
++                                Point3D(10.3218597211742, 15.7283883028108, 114.632835016861),
++                                Point3D(10.8129390511636, 14.7053476849417, 114.592837994748),
++                                Point3D(11.1739218130617, 13.6259929445279, 114.551582209322),
++                                Point3D(11.6259685281941, 11.3653498626219, 114.470983295428),
++                                Point3D(11.7057524667178, 10.1925566005608, 114.431979588729),
++                                Point3D(11.6161558620753, 8.69661108268923, 114.379920997739),
++                                Point3D(11.5845409547543, 8.3682261726893, 114.368394295562),
++                                Point3D(11.3079013004411, 6.28803445438128, 114.29523410849),
++                                Point3D(10.736527911391, 4.60016223270332, 114.238247132488),
++                                Point3D(8.99138072041605, 1.54118557662304, 114.118355180252),
++                                Point3D(7.84122327027452, 0.200685777308931, 114.057451756665),
++                                Point3D(6.20861818169323, -1.09491323020868, 113.988538516652),
++                                Point3D(5.94264169275717, -1.29082112001636, 113.977645003365),
++                                Point3D(4.72776466581747, -2.12017396532401, 113.928737216151),
++                                Point3D(3.70859290852236, -2.64489409871109, 113.889542865174),
++                                Point3D(1.528571440185, -3.44357287718533, 113.812782460239),
++                                Point3D(0.374192444444457, -3.70527204529879, 113.775743553891),
++                                Point3D(-0.799999991059305, -3.81808827893264, 113.737021066619)], [
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0,
++                                1.0])),
++                    BrepCurve.Line(Point3D(10.2708457843716, 15.6989353926656, 114.666563978075), Vector3D(7.515438996434741, 4.3390407276697, -4.9689940887962)),
++                    BrepCurve.Line(Point3D(-0.799999991059305, -3.81808827893266, 113.737021066619), Vector3D(-3.263917381848149e-07, 8.659407392063436, 5.0014661468690385))], [], [], [BrepSurface.BSpline(BSplineSurfaceData(SplineBasis(3, KnotVector([
++                                        0.0342707440025119,
++                                        0.0342707440025119,
++                                        0.0342707440025119,
++                                        0.0342707440025119,
++                                        0.0645489018358475,
++                                        0.0645489018358475,
++                                        0.0645489018358475,
++                                        0.0645489018358475])), SplineBasis(3, KnotVector([
++                                        21.5559760782049,
++                                        21.5559760782049,
++                                        21.5559760782049,
++                                        21.5559760782049,
++                                        22.0358119429153,
++                                        22.5156478076256,
++                                        22.995483672336,
++                                        23.4753195370464,
++                                        23.4753195370464,
++                                        23.4753195370464,
++                                        23.4753195370464])), Array2D([
++                                    Point3D(10.5773660707826, 15.847172287732, 114.470156264137),
++                                    Point3D(10.3871442636614, 15.7587388523072, 114.591268895469),
++                                    Point3D(10.1969224565404, 15.6703054168823, 114.712381526803),
++                                    Point3D(10.0067006494192, 15.5818719814575, 114.833494158136),
++                                    Point3D(11.5125937377242, 13.8354818448511, 114.409061664343),
++                                    Point3D(11.3082274192843, 13.7774734911951, 114.530174295676),
++                                    Point3D(11.1038611008443, 13.7194651375392, 114.65128692701),
++                                    Point3D(10.8994947824045, 13.6614567838832, 114.772399558343),
++                                    Point3D(12.395955836431, 9.3568628962559, 114.286872464757),
++                                    Point3D(12.1782294286295, 9.36658978894713, 114.40798509609),
++                                    Point3D(11.9605030208281, 9.37631668163836, 114.529097727424),
++                                    Point3D(11.7427766130266, 9.38604357432959, 114.650210358757),
++                                    Point3D(10.4779375588687, 2.78087040061005, 114.103588665378),
++                                    Point3D(10.289219522179, 2.89005350441954, 114.224701296711),
++                                    Point3D(10.1005014854893, 2.99923660822903, 114.345813928044),
++                                    Point3D(9.91178344879961, 3.10841971203852, 114.466926559377),
++                                    Point3D(5.73306501592862, -2.15964131044851, 113.920304865998),
++                                    Point3D(5.61610908141168, -1.9757372308939, 114.041417497331),
++                                    Point3D(5.49915314689476, -1.79183315133929, 114.162530128665),
++                                    Point3D(5.38219721237782, -1.60792907178467, 114.283642759998),
++                                    Point3D(1.41013811158578, -3.62615393018847, 113.798115666412),
++                                    Point3D(1.35856271561596, -3.42007011292688, 113.919228297745),
++                                    Point3D(1.30698731964614, -3.21398629566529, 114.040340929079),
++                                    Point3D(1.25541192367632, -3.00790247840371, 114.161453560412),
++                                    Point3D(-0.799999991059304, -3.81808827893266, 113.737021066619),
++                                    Point3D(-0.818148955675572, -3.60910162029432, 113.858133697952),
++                                    Point3D(-0.836297920291841, -3.40011496165599, 113.979246329286),
++                                    Point3D(-0.854446884908109, -3.19112830301766, 114.100358960618)], 4, 7), Array2D([
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0,
++                                    1.0], 4, 7)))], []), [
++                BrepVertex(Point3D(10.2708457713916, 15.6989353885185, 114.666563986503)),
++                BrepVertex(Point3D(10.321859721174, 15.7283883028108, 114.632835016861)),
++                BrepVertex(Point3D(11.2419999864395, 9.99965015234739, 114.666563987369)),
++                BrepVertex(Point3D(-0.799999999074549, -3.18751538782109, 114.101225547056)),
++                BrepVertex(Point3D(-0.799999991059306, -3.81808827893266, 113.737021066619))], [
++                BrepEdge(BrepVertexIndex(0), BrepVertexIndex(1), CurveIndex(3), true),
++                BrepEdge(BrepVertexIndex(2), BrepVertexIndex(0), CurveIndex(0), true),
++                BrepEdge(BrepVertexIndex(2), BrepVertexIndex(3), CurveIndex(1), true),
++                BrepEdge(BrepVertexIndex(1), BrepVertexIndex(4), CurveIndex(2), true),
++                BrepEdge(BrepVertexIndex(4), BrepVertexIndex(3), CurveIndex(4), true)], [BrepLoop.EdgeLoop([
++                        Coedge(BrepEdgeIndex(4), EdgeOrientation.Reversed),
++                        Coedge(BrepEdgeIndex(3), EdgeOrientation.Reversed),
++                        Coedge(BrepEdgeIndex(0), EdgeOrientation.Reversed),
++                        Coedge(BrepEdgeIndex(1), EdgeOrientation.Reversed),
++                        Coedge(BrepEdgeIndex(2), EdgeOrientation.Forward)])], [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, true)])], [BrepShell([BrepFaceIndex(0)], false)], [BrepBody.ShellSet([ShellIndex(0)])], Tolerances(LengthTolerance(0.01), AngleTolerance(Angle(1e-09)), ParameterTolerance(0.01), ParameterTolerance(2.112319181647101e-06)), LengthUnit.Millimetre);
++}
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-fold-requests.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-fold-requests.laws.plato
+new file mode 100644
+index 0000000..aebaea6
+--- /dev/null
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-fold-requests.laws.plato
+@@ -0,0 +1,75 @@
++//==
++// # A fold against a boundary segment asks for a finer edge: laws (v1-jody J9)
++//
++// The witness is SHO/c211_case_with_odin_v1.step's face 45 (pipeline-corpus-witness-c211-45,
++// extracted with `step-corpus-harness extract c211_case_with_odin_v1.step 45 <out> --name
++// C211Strip45`): a B-spline strip about 0.2 mm wide whose first mesh, under the host's 1 mm
++// chordal bound, holds a long thin triangle wound against the face normal. Its first outcome asks
++// for a finer edge (FoldAgainstBoundary), the host's loop keeps the request pending and answers it,
++// and the final mesh has no flipped triangle. On the ten positive witnesses no face asks it.
++//
++// Sections, in order:
++//  - Counting
++//  - Laws
++
++library FoldRequestLaws
++{
++    //==
++    // # Counting
++
++    // Whether triangle x of face mesh fm winds against its corners' normals: its lifted vector
++    // area points away from the sum of the normals stored at its corners.
++    IsFlippedTriangle(fm: FaceMesh, x: TriangleFace): Boolean
++    {
++        var a = fm.Positions[fm.LocalVertex[x.A.Value].Value];
++        var b = fm.Positions[fm.LocalVertex[x.B.Value].Value];
++        var c = fm.Positions[fm.LocalVertex[x.C.Value].Value];
++        var n = fm.Normals[x.A.Value].Vector + fm.Normals[x.B.Value].Vector + fm.Normals[x.C.Value].Vector;
++        return (b - a).Cross(c - a).Dot(n) < 0.0;
++    }
++
++    // How many triangles of face mesh fm are flipped.
++    FlippedTriangleCount(fm: FaceMesh): Integer
++        => fm.Triangles.Reduce(0, (k, x) => fm.IsFlippedTriangle(x) ? k + 1 : k);
++
++    // Whether any request asks for a finer edge against a fold.
++    AsksFoldRefinement(rs: Array<EdgeRefinementRequest>): Boolean
++        => rs.Any(q => q.Reason.ReasonName == "FoldAgainstBoundary");
++
++    //==
++    // # Laws
++
++    // c211's strip 45 under the host's options: the first pass has a flipped triangle and asks
++    // for a finer edge against it; the request stays pending in the host's loop; the final state
++    // of that loop has no flipped triangle and nothing pending.
++    Law_V1Jody_C211Strip45FoldResolved(_: Integer): Boolean
++    {
++        var m = BrepModel.Witness_C211Strip45;
++        var o = HostMeshingOptions(1.0);
++        var chosen = m.AllFaces;
++        var first = m.InitialState(o, chosen);
++        var s0 = BlockingStateOf(first.Discretizations, first.Outcomes, chosen);
++        var last = m.FinalStateAnsweringBlocking(o, chosen, s0);
++        return first.Outcomes[0].Mesh.FlippedTriangleCount > 0
++            && first.Outcomes[0].Requests.AsksFoldRefinement
++            && s0.Pending.AsksFoldRefinement
++            && last.Outcomes[0].Mesh.FlippedTriangleCount == 0
++            && last.Pending.Count == 0;
++    }
++
++    Measure_V1Jody_C211Strip45FoldResolved(_: Integer): Number
++    {
++        var m = BrepModel.Witness_C211Strip45;
++        var o = HostMeshingOptions(1.0);
++        var chosen = m.AllFaces;
++        var first = m.InitialState(o, chosen);
++        return m.FinalStateAnsweringBlocking(o, chosen, BlockingStateOf(first.Discretizations, first.Outcomes, chosen))
++            .Outcomes[0].Mesh.FlippedTriangleCount.ToNumber;
++    }
++
++    // No face of the ten positive witnesses, meshed by the host's options at 0.05, asks for a finer
++    // edge against a fold.
++    Law_V1Jody_NoFoldRequestOnWitnesses(_: Integer): Boolean
++        => 10.Range.All(k => BrepModel.WitnessAt(k).InitialState(HostMeshingOptions(0.05), BrepModel.WitnessAt(k).AllFaces)
++            .Outcomes.All(x => x.Requests.AsksFoldRefinement.Not));
++}
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-host-options.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-host-options.laws.plato
+index f42fc96..ee093a5 100644
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-host-options.laws.plato
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-host-options.laws.plato
+@@ -44,8 +44,9 @@ library PipelineHostOptionsLaws
+             && !q.Face.PreferQuads && q.Face.Discretization == o.Face.Discretization && q.Level == o.Level;
+     }
+ 
+-    // The host's step on the cylinder: only blocking requests stay pending, every round, and the
+-    // loop ends within the round limit.
++    // The host's step on the cylinder: only the requests the host answers (blocking, or a fold
++    // against a boundary segment) stay pending, every round, and the loop ends within the round
++    // limit.
+     Law_V1Proof_StepAnsweringBlockingLeavesOnlyBlocking(_: Integer): Boolean
+     {
+         var m = BrepModel.Witness_Cylinder;
+@@ -54,8 +55,8 @@ library PipelineHostOptionsLaws
+         var first = m.InitialState(o, chosen);
+         var s0 = BlockingStateOf(first.Discretizations, first.Outcomes, chosen);
+         var f = m.FinalStateAnsweringBlocking(o, chosen, s0);
+-        return s0.Pending.All(q => q.Reason.IsBlocking)
+-            && f.Pending.All(q => q.Reason.IsBlocking)
++        return s0.Pending.All(q => q.Reason.IsAnsweredByHost)
++            && f.Pending.All(q => q.Reason.IsAnsweredByHost)
+             && f.Round <= o.MaxRefinementRounds;
+     }
+ 
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-host-options.library.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-host-options.library.plato
+index 43b50c8..2388be0 100644
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-host-options.library.plato
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-host-options.library.plato
+@@ -35,9 +35,11 @@ library PipelineHostOptions
+     //==
+     // # The host's step
+ 
+-    // The requests among rs that keep a face from meshing (RefinementReason.IsBlocking).
++    // The requests among rs the host's loop answers (RefinementReason.IsAnsweredByHost): those
++    // that keep a face from meshing, and folds against a boundary segment, which keep the face's
++    // mesh but need a finer edge.
+     BlockingRequests(rs: Array<EdgeRefinementRequest>): Array<EdgeRefinementRequest>
+-        => rs.FlatMap(q => q.Reason.IsBlocking ? [q] : EdgeRefinementRequest.NoRequests);
++        => rs.FlatMap(q => q.Reason.IsAnsweredByHost ? [q] : EdgeRefinementRequest.NoRequests);
+ 
+     // The state before refinement for discretizations d and face outcomes made by the caller (the
+     // host meshes its first pass on every core): round 0, no floors, the blocking requests of every
+diff --git a/sandbox/step-brep-mesh/VOCABULARY.md b/sandbox/step-brep-mesh/VOCABULARY.md
+index 4c60462..b42f788 100644
+--- a/sandbox/step-brep-mesh/VOCABULARY.md
++++ b/sandbox/step-brep-mesh/VOCABULARY.md
+@@ -415,8 +415,10 @@ layer's own and may change inside the layer.
+ - `EdgeImage { Face: BrepFaceIndex; Pcurve: PcurveIndex }`, `ImagePoints(m, d, image)`: the one
+   parameter-space image function face meshing uses.
+ - `RefinementReason = LoopSelfIntersects | TooCoarseInParameterSpace | QuadCountMismatch |
+-  NoInteriorPointMeetsChordal(Segment: Chord) | PoleAdjacency | NeighbourDensity` (the last three
+-  not produced yet).
++  NoInteriorPointMeetsChordal(Segment: Chord) | PoleAdjacency | NeighbourDensity |
++  FoldAgainstBoundary` (PoleAdjacency and NeighbourDensity not produced yet); layer 5's
++  `IsAnsweredByHost(reason)` names the requests the host's loop answers (layer 8's
++  `BlockingRequests`).
+ - `EdgeRefinementRequest { Edge: BrepEdgeIndex; Reason: RefinementReason; Chordal: Number; Segments: Integer }`.
+ - `Discretize(m, e, c, floors)`, `DiscretizeAll(m, c, floors)` (total: `Undiscretized` for a
+   rejected edge), `Refine(m, d, requests, c)` (only the requested edges change),
+@@ -1026,3 +1028,11 @@ the name review. One line per change; the layer READMEs' "Changes to the contrac
+   `SameConnectivity`, `RigidlyMoved`, `ScaledPoint`, `ScaledBy(m)`, `SameFaceMesh`,
+   `SameFaceMeshOutcome`, `Law_RequestsNameEdgesOfTheirFace` deleted for their owners' (fix wave);
+   `WithEveryFaceReversed` and the criteria `ScaledBy`s deleted or moved down (name review).
++- 2026-10-22, 4, 5 and 8, `RefinementReason` gains `FoldAgainstBoundary`: a triangle that still
++  folds after refinement with a side on a boundary segment asks for that edge to be split into
++  twice its segments (layer 5's `FoldRequestsOf`, `face-meshing-fold-requests.library.plato`;
++  diagnostic FACE-FOLD-AGAINST-BOUNDARY). It keeps the face's mesh (`IsBlocking` false), and the
++  host's loop answers it: (new) `IsAnsweredByHost(reason)` is `IsBlocking` or the fold, and layer
++  8's `BlockingRequests`, which `BlockingStateOf` and `BlockingOnly` read, keeps the requests it
++  accepts. `ReasonName`, `IsBlocking` and `RequestDiagnostic` gain the arm (v1-jody J9, after
++  v1-faces' P2; v1-edges' `SplitAt` (E5c) goes beside it).
