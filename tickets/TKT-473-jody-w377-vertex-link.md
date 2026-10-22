@@ -40,3 +40,7 @@ SHO/M2-JODY-W377-00C_PCIE-UART.step 470 <out.plato>` reproduces the face (24 qua
 J6 sews duplicate edges between one vertex pair with agreeing curves, which may already cover this seam (two edges on
 identical line curves). If it does, J6 takes face 470 as an extra case, with the extract command above as its witness.
 If it does not, this ticket is deferred past version 1: an open shell meets the version 1 contract either way.
+
+## Log
+
+- 2026-10-22, session 260aa3fa (track v1-jody): J6 (TKT-467, staged in v1-jody, 29c65617) does not sew this seam, so by the ruling above this ticket is deferred past version 1. J6 sews only shells the file declares closed (option A: an open shell's boundary is the file's statement), and face 470 is alone in an open shell. The edge rule itself would cover the case: edges 2376 and 2378 are each cited once, join one vertex pair, and lie on identical line curves, so `ShellEdgeMerges` would merge them, reversing the coedge that runs the other way, into one seam edge the face cites twice. If the seam is wanted later, the smallest extension is to apply that edge rule, in any shell, to two once-cited edges of one face (a face's own seam), leaving the closed-shell restriction for everything else.
