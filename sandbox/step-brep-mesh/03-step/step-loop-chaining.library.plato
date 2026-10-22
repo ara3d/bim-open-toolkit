@@ -118,8 +118,8 @@ library StepLoopChaining
         var before = a.CoedgesOf;
         var after = b.CoedgesOf;
         return before.Count == after.Count
-            ? before.Count.Range.FlatMap(i => before[i].IsForward == after[i].IsForward ? before.Count.Range.Take(0) : [i])
-            : before.Count.Range.Take(0);
+            ? before.Count.Range.FlatMap(i => before[i].IsForward == after[i].IsForward ? Integer.NoIndices : [i])
+            : Integer.NoIndices;
     }
 
     // Whether edge e's curve runs back to its start (a circle, an ellipse), so that reversing the

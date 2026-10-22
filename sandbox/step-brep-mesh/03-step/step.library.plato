@@ -162,9 +162,9 @@ library StepReading
             j = j + 1;
         }
         var joinedByClosedEdge = closedJoin.Freeze();
-        var merged = n.Range.FlatMap(k => roots[k] == k ? n.Range.Take(0) : [k]);
-        var drops = m.Edges.Count.Range.FlatMap(k => dropped[k] ? [k] : m.Edges.Count.Range.Take(0));
-        var unsettled = m.Edges.Count.Range.FlatMap(k => undecided[k] ? [k] : m.Edges.Count.Range.Take(0));
+        var merged = n.Range.FlatMap(k => roots[k] == k ? Integer.NoIndices : [k]);
+        var drops = m.Edges.Count.Range.FlatMap(k => dropped[k] ? [k] : Integer.NoIndices);
+        var unsettled = m.Edges.Count.Range.FlatMap(k => undecided[k] ? [k] : Integer.NoIndices);
         var mergeRepairs = merged.Map(k => RepairRecord(raw.Sources.Vertices[k], StepRepair.MergedInto(BrepVertexIndex(vertexAt[roots[k]]), BrepVertexIndex(k))));
         var dropRepairs = drops.Map(k => RepairRecord(raw.Sources.Edges[k], StepRepair.DroppedZeroLengthEdge(BrepEdgeIndex(k))));
         var mergeFindings = merged.Map(k => Diagnose(
