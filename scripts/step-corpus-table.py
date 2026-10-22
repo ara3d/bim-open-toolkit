@@ -25,7 +25,7 @@ COLUMNS = [
     ('Edge not discretized', lambda f: f['path'] == 'undiscretized'),
     ('Stubbed', lambda f: f['exception'] == 'NotImplementedException'),
     ('Threw', lambda f: f['exception'] != ''),
-    ('Not simple', lambda f: f['path'] == 'not-simple'),
+    ('Not simple', lambda f: 'not-simple' in f['path']),
     ('Other unmeshed', lambda f: True),
 ]
 BEGIN, END = '<!-- step-corpus-table:begin -->', '<!-- step-corpus-table:end -->'
@@ -129,7 +129,7 @@ def per_file(files, previous):
                    previous_closed=o.get('closed', ''), previous_boundary_edges=o.get('boundary_edges', ''),
                    previous_closed_shells_closed=o.get('closed_shells_closed', ''), previous_boundary_gap=o.get('boundary_gap', ''))
         if s:
-            why = Counter({'undiscretized': 'edge not discretized', 'not-simple': 'not simple'}.get(f['path'], 'remeshed empty')
+            why = Counter(('edge not discretized' if f['path'] == 'undiscretized' else 'not simple' if 'not-simple' in f['path'] else f['path'] if f['path'] not in ('refined', 'threw') else 'remeshed empty')
                           for f in r['faces'] if not meshed(f))
             d, ck, con = s.get('Digest') or {}, s.get('Check') or {}, s.get('Contract') or ''
             row.update(total_ms=round(s['TotalMs']), faces=s['Faces'], faces_meshed=sum(meshed(f) for f in r['faces']),
