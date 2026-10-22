@@ -20,7 +20,7 @@ Fence: `sandbox/step-brep-mesh/tools/**`, `sandbox/step-brep-mesh/09-tooling/**`
 | R5 | TKT-440 | a lint for guards that do not guard and staged comparisons | 1 h | about 15 min |
 | R6 | TKT-434 | the shipped program type-checked before every law run; compile errors read (class J) | 1 h | about 40 min |
 | R4 | TKT-439 | a failing corpus face extracted as a Plato witness | 2 h | about 1.5 h |
-| R7 | TKT-441 | layer 7's checks on every corpus file's raw and prepared models | 2 h | about 1.5 h, corpus run going |
+| R7 | TKT-441 | layer 7's checks on every corpus file's raw and prepared models | 2 h | about 2 h, plus the 80-minute corpus run |
 | R2A | TKT-465 | cause A: a closed direction evaluated at unwrapped parameters (JODY-W5/W6 faces 322, 444, 584) | 2 h | about 2 h |
 | R2B | TKT-465 | cause B: a surface curve's pcurve image off its surface (NINA-B222 face 678) | 2 h | about 40 min: J5 fixes it, witness and law staged |
 
