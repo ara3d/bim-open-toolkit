@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1, F3, F3b, F2 | dropped: F4a | ready: F4b (merge after V1G-13)
+Status: merged: F1, F3, F3b, F2 | dropped: F4a | merged: F4b in aac39758
 
 ## Chunks
 

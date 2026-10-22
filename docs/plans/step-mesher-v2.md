@@ -111,6 +111,7 @@ Owners are the sessions named in the wave 1 table, or `new`. Fence: `S/<folder>`
 | F3, F3b | Three-edge sphere, cone and cylinder faces that threw while their region was built; a whole pole segment takes at least three steps | TKT-411 | v1-faces | `L/05-face-meshing` | the two lune laws and `Law_V1Faces_SphereByPoleLoopsMeshes` pass | 2 h + 0.5 h | |
 | F2 | No insertion leaves a degenerate triangle (the bump solid's element 1541); F1's keep-half law | TKT-401 | v1-faces | `L/05-face-meshing` | `Law_V1Faces_BumpTopHasNoDegenerateElement` and `Law_V1Faces_GridKeptWhereCurvedAtMostOneWay` pass | 2 h | F3 |
 | T1 | `ElementShape` and `QuadSplits`; the grid keep rule decided on every triangle a renderer may draw (the contract's rule), replacing F1's | TKT-435 | v1-types | `L/05-face-meshing`, `L/08-pipeline` | the five T1 laws, F1's three grid laws and the keep-half law pass | 1 h | F1 |
+| F4b | Folded elements on needle cones and single-winding cylinders; the edge-on triangle V1G-13 leaves on LENA-R8's polar lunes | TKT-421 | v1-faces | `L/05-face-meshing` | both edge-on laws pass; the layer 5, poles and gate laws unchanged | 2 h | V1G-13 |
 | E3 | Implicit edge use keys that cannot collide at any 32-bit poly point count | TKT-400 | v1-edges | `L/02-topology`, `L/08-pipeline` | the large-polygon law (33,000 points) and the grid-root law pass | 1 h | |
 
 Not in the table, on purpose: TKT-337 waits on TKT-345 (Plato parse errors name a line, a Plato chunk of about 1.5 hours for the plato-law-runs session when it is free); TKT-300 (typed STEP entities) is a question, not planned work.
@@ -186,6 +187,7 @@ Wave 1 in total: 8 merges, 0 types added, 402 to 556 passing laws, one sweep of 
 | V1G-12 (TKT-430, a side through its circle's vertex) | 1 h | not recorded; 0.2 h merge (0.07 h of it a full compiled sweep) | 1410 compiled (60 s budget): 1279 pass, the 2 band laws among them, no verdict worse but the known load case | 0 | 0 | none new |
 | V1G-13 (TKT-428, partial, pole over-refinement) | 2 h | 1.4 h build; 0.2 h merge (0.04 h of it a full compiled sweep) | 1410 compiled (60 s budget): 1280 pass, no verdict worse | 0 | 0 | The full sweep's law time fell from about 350 s to 246 s summed: a refinement fix shows first as sweep time |
 | J1 (TKT-431, wrapped B-spline closure) | 1 h | not recorded; 0.3 h merge (0.05 h of it the staged laws on HEAD, a full compiled sweep) | 1414 compiled (60 s budget): 1285 pass, the 4 J1 laws among them, no verdict worse | 0 | 0 | Running every staged law of a track on HEAD once, before its first merge, gives each chunk's before-verdicts and the run-once check of laws that will compare a function with itself, in 42 s |
+| F4b (TKT-421, edge-on triangles) | 2 h | about 2 h build; 0.2 h merge (0.04 h of it a full compiled sweep) | 1416 compiled (60 s budget): 1287 pass, the 2 F4b laws among them, no verdict changed | 0 | 1 (`FlatMarksCase`, a law witness) | A pair of chunks that must ship together (V1G-13 regresses LENA-R8 alone) should be said so before either merges; here J1 merged between them before the instruction came |
 
 ### Rule changes
 
