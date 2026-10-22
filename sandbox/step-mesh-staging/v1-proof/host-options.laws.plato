@@ -66,6 +66,30 @@ library V1ProofHostOptionsLaws
             && f.Round <= o.MaxRefinementRounds;
     }
 
+    // Step from its parts is Step: on the cylinder with every edge asked for half its bound and
+    // twice its segments, the two give the same round, discretizations, face meshes and pending
+    // requests.
+    Law_V1Proof_StepByPartsIsStep(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_Cylinder;
+        var o = HostMeshingOptions(0.1);
+        var chosen = m.AllFaces;
+        var first = m.InitialState(o, chosen);
+        var requests = first.Discretizations.ByEdge.FlatMap(x => x.IsDiscretized
+            ? [EdgeRefinementRequest(x.Edge, RefinementReason.TooCoarseInParameterSpace, 0.5 * o.Face.Discretization.Chordal, 2 * x.SegmentCount)]
+            : EdgeRefinementRequest.NoRequests);
+        var s = PipelineState(0, first.Discretizations, first.Floors, first.Outcomes, requests);
+        var viaStep = m.Step(o, chosen, s);
+        var viaParts = m.StepByParts(o, chosen, s);
+        return viaStep.Round == viaParts.Round
+            && viaStep.Discretizations.ByEdge.Count == viaParts.Discretizations.ByEdge.Count
+            && viaStep.Discretizations.ByEdge.Count.Range.All(i => viaStep.Discretizations.ByEdge[i].SameDiscretization(viaParts.Discretizations.ByEdge[i]))
+            && viaStep.Outcomes.Count == viaParts.Outcomes.Count
+            && viaStep.Outcomes.Count.Range.All(k => viaStep.Outcomes[k].Mesh == viaParts.Outcomes[k].Mesh)
+            && viaStep.Pending.Count == viaParts.Pending.Count
+            && requests.Count > 0;
+    }
+
     // TKT-436 criterion 2: the witness laws mesh as the host does, the witness options differing
     // from the host's only in the chordal bound and the validation level. Fails until the merge
     // gives WitnessOptions the body HostMeshingOptions(0.01).WithLevel(ConformanceLevel.Oracle)
