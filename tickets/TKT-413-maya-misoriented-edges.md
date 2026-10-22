@@ -1,13 +1,15 @@
 ---
 id: TKT-413
 title: STEP mesher: the assembled meshes of SHO/M2-MAYA-W271.step and the three MAYA-W26x_REVC files have 2 to 4 non-manifold and 4 misoriented edges, the only such edges in the corpus
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 53a578f9
+session: 53a578f9-98e0-45c4-bc66-a8c1cacb3bae
 fence: [sandbox/step-brep-mesh/05-face-meshing/**, sandbox/step-brep-mesh/06-mesh/**]
 workflow: [W3]
 related: [TKT-313, TKT-405]
 created: 2026-10-21
+claimed: 2026-10-21
 kind: defect
 ---
 

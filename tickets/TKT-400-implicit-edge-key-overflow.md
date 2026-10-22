@@ -1,13 +1,15 @@
 ---
 id: TKT-400
 title: STEP mesher: implicit edge use keys overflow 32-bit Integer above about 32,768 poly points per shell
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 53a578f9
+session: 53a578f9-98e0-45c4-bc66-a8c1cacb3bae
 fence: [sandbox/step-brep-mesh/02-topology/topology-faceted.*, sandbox/step-brep-mesh/08-pipeline/pipeline-faceted.laws.plato]
 workflow: [kept]
 related: [TKT-377]
 created: 2026-10-21
+claimed: 2026-10-22
 kind: defect
 ---
 

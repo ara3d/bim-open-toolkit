@@ -1,0 +1,104 @@
+//==
+// # Implicit edges keyed by rank: laws (track v1-edges, chunk E3, TKT-400)
+//
+// The rank keys give the packed keys' counts on every faceted case, where the packed keys do not
+// overflow, and the closed-form counts of a face bounded by one poly loop of 33,000 points, past
+// the 32,768 where the packed keys overflow a 32-bit Integer (the gpu32 profile; cpu64's Integer
+// is 64-bit). The pairwise references (CoincidenceRootsPairwise and IsDefectiveImplicitEdge's
+// scan of every use) are quadratic, 1.1e9 steps at 33,000 points, so the large polygon is
+// checked against the counts its shape implies instead.
+//
+// Sections, in order:
+//  - Agreement with the packed keys
+//  - The large polygon
+
+library V1EdgesFacetedRanksLaws
+{
+    //==
+    // # Agreement with the packed keys
+
+    // Two key arrays of one length that split into the same runs (u / 2) with the same direction
+    // bits (u % 2): the same edges and uses up to the names of the keys.
+    SameKeyPattern(a: Array<Integer>, b: Array<Integer>): Boolean
+        => a.Count == b.Count
+            ? a.Count.Range.All(i => a[i] % 2 == b[i] % 2
+                && (i + 1 < a.Count ? (a[i] / 2 == a[i + 1] / 2) == (b[i] / 2 == b[i + 1] / 2) : true))
+            : false;
+
+    // On shell s of m, the rank keys and the packed keys agree: the same uses in use order and
+    // sorted up to key names, the same edge count, free-edge count, defects, boundary cycles and
+    // Euler-plus-cycles value, and the kept classes of each free edge are the packed key's.
+    // Precondition: m.IsEveryIndexInRange.
+    RankedAgreesOnShell(m: BrepModel, s: ShellIndex): Boolean
+    {
+        var poly = m.ShellPolyBounds(s);
+        var packed = m.ShellPolyEdgesOf(s);
+        var ranked = m.ShellImplicitEdgesOf(s);
+        var n = packed.PointRoots.Count;
+        var rankedFree = ranked.PolyEdges.ImplicitFreeEdgeKeysSorted;
+        var packedFree = packed.ImplicitFreeEdgeKeysSorted;
+        var closed = m.Shells[s].DeclaredClosed;
+        return SameIntegers(ranked.PointRoots, packed.PointRoots)
+            && SameKeyPattern(m.ImplicitEdgeUsesRanked(poly, packed.PointRoots), m.ImplicitEdgeUses(poly, packed.PointRoots))
+            && SameKeyPattern(ranked.SortedUses, packed.SortedUses)
+            && ranked.EdgeLow.Count == packed.ImplicitEdgeCountSorted
+            && ranked.PolyEdges.ImplicitEdgeCountSorted == packed.ImplicitEdgeCountSorted
+            && rankedFree.Count == packedFree.Count
+            && rankedFree.Count.Range.All(i => ranked.EdgeLow[rankedFree[i]] == packedFree[i] / n
+                && ranked.EdgeHigh[rankedFree[i]] == packedFree[i] % n)
+            && ranked.PolyEdges.PolyEdgeUseDefectsSorted(closed) == packed.PolyEdgeUseDefectsSorted(closed)
+            && ranked.ImplicitBoundaryCycleCountRanked == packed.ImplicitBoundaryCycleCountSorted
+            && m.ShellEulerPlusBoundaryCyclesRanked(s) == m.ShellEulerPlusBoundaryCycles(s);
+    }
+
+    // On every faceted case and every shell, the rank keys agree with the packed keys.
+    Law_V1Edges_RankedKeysAgree(_: Integer): Boolean
+        => 0.FacetedCaseCount.Range.All(k =>
+            BrepModel.FacetedCase(k).IsEveryIndexInRange
+                ? BrepModel.FacetedCase(k).Shells.Count.Range.All(s => BrepModel.FacetedCase(k).RankedAgreesOnShell(ShellIndex(s)))
+                : true);
+
+    //==
+    // # The large polygon
+
+    // The open one-face model whose bound is the poly loop of n points (cos 2 pi k / n,
+    // sin 2 pi k / n, 0).
+    LargePolygon(_: BrepModel, n: Integer): BrepModel
+        => BrepModel.FacetedModel([BrepLoop.PolyLoop(n.MapRange(k =>
+            Point3D((6.283185307179586 * k.ToNumber / n.ToNumber).Cos, (6.283185307179586 * k.ToNumber / n.ToNumber).Sin, 0.0)))],
+            false, -1);
+
+    // On LargePolygon(n), each point its own class: n implicit edges, all free, one boundary
+    // cycle, no defect; chi = V - E + 2F - L = n - n + 2 - 1 = 1, so chi + B = 2; the largest
+    // rank key below twice the use count. The classes 0 to n - 1 are given because the
+    // coincidence grid's sort of the points alone exceeds the 2 s law budget at the n that
+    // matters; the grid gives them on a smaller polygon (Law_V1Edges_PolygonRootsAreGridRoots).
+    RankedPolygonCountsHold(n: Integer): Boolean
+    {
+        var polygon = BrepModel.LargePolygon(n);
+        var p = polygon.ImplicitEdgesWithRoots(polygon.ShellPolyBounds(ShellIndex(0)), n.Range);
+        var edges = p.PolyEdges.ImplicitEdgeCountSorted;
+        var free = p.PolyEdges.ImplicitFreeEdgeKeysSorted;
+        var cycles = p.BoundaryCyclesOfFreeEdges(free);
+        return edges == n
+            && p.EdgeLow.Count == n
+            && p.SortedUses[p.SortedUses.Count - 1] < 2 * p.SortedUses.Count
+            && free.Count == n
+            && cycles == 1
+            && p.PolyEdges.PolyEdgeUseDefectsSorted(false) == 0
+            && n - edges + 2 - 1 + cycles == 2;
+    }
+
+    // The counts hold on a polygon of 33,000 poly points, past the 32,768 where the packed key
+    // (a * N + b) * 2 + 1 overflows a 32-bit Integer.
+    Law_V1Edges_RankedKeysOnLargePolygon(_: Integer): Boolean
+        => 33000.RankedPolygonCountsHold;
+
+    // On a polygon of 500 points the coincidence grid makes every point its own class, the
+    // classes RankedPolygonCountsHold assumes.
+    Law_V1Edges_PolygonRootsAreGridRoots(_: Integer): Boolean
+    {
+        var polygon = BrepModel.LargePolygon(500);
+        return SameIntegers(polygon.CoincidenceRootsByGrid(polygon.ShellPolyPoints(ShellIndex(0))), 500.Range);
+    }
+}
