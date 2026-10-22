@@ -4,6 +4,7 @@
     python -I sandbox/step-brep-mesh/tools/plato_laws.py none        # type check only
     python -I sandbox/step-brep-mesh/tools/plato_laws.py "Law_X" --staging sandbox/step-mesh-staging/poles
     python -I sandbox/step-brep-mesh/tools/plato_laws.py "Law_X" --budget 20 --timeout 7200   # a long sweep
+    python -I sandbox/step-brep-mesh/tools/plato_laws.py "Block" --rerun-budget 120 --coverage cov.tsv
 
 A session reads its MCP tool list when it starts, so agents that were running before the server
 on 127.0.0.1:8768 gained plato_laws (Plato 38f2031a, studio b7598e75) cannot call it as a tool.
@@ -11,8 +12,18 @@ This script speaks the server's HTTP transport directly: initialize, then one to
 server keeps its compilation between calls, so a run after a one-body edit takes about 5 s
 instead of the 25 s a cold `plato run` compile takes (0.7 s with no edit, 12 s for the first
 call after the server starts; 2026-10-18). Prints type errors, one line per law and a summary;
-exits 1 on a type error or a law that fails or errors, 2 when the server's answer is not
-understood.
+exits 1 on a type error or a law that fails, errors or is skipped, 2 when the server's answer is
+not understood.
+
+A skipped law is a failure unless --allow-skipped: the runner skips a law when it has no values
+for one of its parameter types, so the law checked nothing (TKT-434; 14 laws of
+verdicts-cpu64.tsv, among them the eight B-spline surface validity laws, while the corpus holds
+15,580 B-spline faces). A budget error says the law was slow on a loaded machine, not whether it
+holds: with --rerun-budget S each budget error is run again alone with a budget of S seconds and
+the settled verdict replaces it (TKT-401 and TKT-399 were failures recorded as budget errors for
+days). --coverage FILE writes one row per law: its verdict, the cases run, how the cases were made
+(exhaustive, sampled, or one case for an input-free law), and the detail, so a law that passes on
+one case or on 25 generated values can be told from one that passes on every witness.
 
 The server does not always match a bare law name, so the script rewrites each bare `Law_X`, and
 `Law_X(signature)` for an overload, as `Block.Law_X` for every block of the compiled folders that
@@ -25,7 +36,6 @@ import json
 import os
 import re
 import sys
-import time
 import urllib.request
 
 URL = "http://127.0.0.1:8768/mcp"
@@ -44,6 +54,11 @@ TIMEOUT = 1800
 
 BLOCK = re.compile(r"^\s*(?:library|laws)\s+(\w+)")
 LAW = re.compile(r"^\s+(Law_\w+)\s*\([^()]*\)\s*:")
+# One result line of the server: LawResult.ToString() in Plato's LawRunner.cs.
+RESULT = re.compile(r"^(pass|fail|error|obligation|skipped)\s+(\S+)\s*(.*)$")
+CASES = re.compile(r"\((\d+) cases(, exhaustive)?\)")
+BUDGET = re.compile(r"over the [\d.]+s budget|still running after|time budget exceeded")
+VERDICTS = ("pass", "fail", "error", "obligation", "skipped")
 
 
 def windows_path(path):
@@ -100,6 +115,67 @@ def post(body, session=None):
     return payload, session
 
 
+def call(arguments):
+    """One plato_laws call on a fresh session: the server's data object, or None after printing an answer
+    that is not understood."""
+    _, session = post({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+        "protocolVersion": "2025-03-26", "capabilities": {},
+        "clientInfo": {"name": "plato_laws.py", "version": "1"}}})
+    post({"jsonrpc": "2.0", "method": "notifications/initialized"}, session)
+    result, _ = post({"jsonrpc": "2.0", "id": 2, "method": "tools/call",
+                      "params": {"name": "plato_laws", "arguments": arguments}}, session)
+    if result is None or "error" in result:
+        print(json.dumps(result, indent=1))
+        return None
+    text = "\n".join(part.get("text", "") for part in result["result"].get("content", []))
+    try:
+        data = json.loads(text).get("data", {})
+    except ValueError:
+        print(text)
+        return None
+    data["isError"] = result["result"].get("isError")
+    return data
+
+
+def run(arguments):
+    """call, asked once more when it matched no law (TKT-427: the server can answer 0 laws once right
+    after an edit)."""
+    data = call(arguments)
+    if data is not None and arguments["filter"] != "none" and data.get("laws", 0) == 0:
+        data = call(arguments)
+    return data
+
+
+def parse_result(line):
+    """(verdict, law, detail) of one result line, or (None, None, line) for a line of another kind."""
+    match = RESULT.match(line)
+    return (match.group(1), match.group(2), match.group(3).strip()) if match else (None, None, line)
+
+
+def is_budget_error(result):
+    return result[0] == "error" and bool(BUDGET.search(result[2]))
+
+
+def settled(result, arguments, budget):
+    """A budget error run again alone with a larger budget, so its verdict is the law's, not the load's."""
+    verdict, law, detail = result
+    data = run(dict(arguments, filter=law, budget=budget))
+    again = next((r for r in map(parse_result, (data or {}).get("results", [])) if r[1] == law), None)
+    if again is None:
+        return verdict, law, f"{detail}  [rerun alone at {budget:g}s gave no verdict]"
+    return again[0], law, f"{again[2]}  [settled alone at {budget:g}s; first run: {detail}]"
+
+
+def coverage_row(verdict, law, detail):
+    """Law, verdict, cases, how the cases were made, detail: one row of the --coverage table."""
+    cases = CASES.search(detail)
+    if verdict == "pass" and cases:
+        count = int(cases.group(1))
+        mode = "exhaustive" if cases.group(2) else ("one case" if count == 1 else "sampled")
+        return [law, verdict, str(count), mode, ""]
+    return [law, verdict, "", "-", detail]
+
+
 def main():
     global TIMEOUT
     parser = argparse.ArgumentParser()
@@ -116,56 +192,69 @@ def main():
                              "copy of a committed state, to tell a regression from a slower day")
     parser.add_argument("--budget", type=float,
                         help="seconds one law may take before it is reported as an error (server default otherwise)")
+    parser.add_argument("--allow-skipped", action="store_true",
+                        help="do not count a skipped law (no values for a parameter type) as a failure")
+    parser.add_argument("--rerun-budget", type=float, metavar="SECONDS",
+                        help="run each budget error again alone with this budget and report the settled verdict")
+    parser.add_argument("--coverage", metavar="FILE",
+                        help="write a tab-separated table: law, verdict, cases, how the cases were made, detail")
     parser.add_argument("--timeout", type=float, default=TIMEOUT,
                         help=f"seconds to wait for the server's answer; default {TIMEOUT}. The server keeps "
                              "running a request the client gave up on, so a full sweep needs a longer wait")
     args = parser.parse_args()
     TIMEOUT = args.timeout
-    for key in ("library", "report", "baseline"):
+    for key in ("library", "report", "baseline", "coverage"):
         if getattr(args, key):
             setattr(args, key, windows_path(getattr(args, key)))
     args.staging = [windows_path(s) for s in args.staging]
 
-    _, session = post({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
-        "protocolVersion": "2025-03-26", "capabilities": {},
-        "clientInfo": {"name": "plato_laws.py", "version": "1"}}})
-    post({"jsonrpc": "2.0", "method": "notifications/initialized"}, session)
-
     library = LIBRARY[:-1] + [os.path.abspath(args.library).replace("\\", "/")] if args.library else LIBRARY
-    arguments = {"filter": qualified(args.filter, library + [os.path.abspath(s) for s in args.staging])
-                 if args.filter != "none" else args.filter, "profile": args.profile}
+    folders = library + [os.path.abspath(s) for s in args.staging]
+    arguments = {"filter": qualified(args.filter, folders) if args.filter != "none" else args.filter,
+                 "profile": args.profile}
     if args.staging or args.library:
-        arguments["folders"] = ",".join(library + [os.path.abspath(s) for s in args.staging])
+        arguments["folders"] = ",".join(folders)
     for key in ("types", "report", "baseline", "budget"):
         if getattr(args, key) is not None:
             arguments[key] = getattr(args, key)
-    result, _ = post({"jsonrpc": "2.0", "id": 2, "method": "tools/call",
-                      "params": {"name": "plato_laws", "arguments": arguments}}, session)
-    if result is None or "error" in result:
-        print(json.dumps(result, indent=1))
-        return 2
-    text = "\n".join(part.get("text", "") for part in result["result"].get("content", []))
-    try:
-        data = json.loads(text).get("data", {})
-    except ValueError:
-        print(text)
+    data = run(arguments)
+    if data is None:
         return 2
     for error in data.get("typeErrors", []):
         print(error if isinstance(error, str) else json.dumps(error))
-    for line in data.get("results", []):
-        print(line)
+    results = [parse_result(line) for line in data.get("results", [])]
+    if args.rerun_budget:
+        results = [settled(r, arguments, args.rerun_budget) if is_budget_error(r) else r for r in results]
+    for verdict, law, detail in results:
+        print(f"{verdict:<10} {law}  {detail}" if verdict else detail)
     timings = data.get("timings", {})
     print(f"{data.get('laws', 0)} laws: {json.dumps(data.get('counts', {}))}; "
           f"{data.get('typeErrorCount', 0)} type errors; recompiled {timings.get('recompiled')}, "
           f"compile {timings.get('compileMs')} ms, laws {timings.get('lawsMs')} ms")
-    counts = data.get("counts", {})
+    laws = [r for r in results if r[0]]
+    tally = {v: sum(r[0] == v for r in laws) for v in VERDICTS}
+    rows = [coverage_row(*r) for r in laws]
+    modes = {m: sum(row[3] == m for row in rows) for m in ("exhaustive", "sampled", "one case")}
+    print(f"verdicts{' after reruns' if args.rerun_budget else ''}: {json.dumps(tally)}, "
+          f"{sum(map(is_budget_error, laws))} of the errors over budget; passes by cases: {json.dumps(modes)}")
+    if args.coverage:
+        with open(args.coverage, "w", encoding="utf-8", newline="\n") as f:
+            f.write("law\tverdict\tcases\tmode\tdetail\n")
+            f.writelines("\t".join(row) + "\n" for row in rows)
     if args.filter != "none" and data.get("laws", 0) == 0:
         # The server answers "0 laws, 0 type errors" when a file fails to parse (TKT-337), so an
         # empty run is never a pass: check the parse with the pinned CLI.
         print("no laws matched: a misspelled filter, or a file that does not parse. "
               "Run the pinned CLI with the same --filter to see a parse error.")
         return 2
-    failed = result["result"].get("isError") or data.get("typeErrorCount", 0) > 0 \
+    skipped = tally["skipped"] > 0 and not args.allow_skipped
+    if skipped:
+        print(f"{tally['skipped']} skipped law(s) checked nothing: a failure (--allow-skipped to accept)")
+    # The server's own counts decide too, unless reruns settled its errors, so a result line this script
+    # does not parse can never turn a failing run into a pass.
+    counts = {} if args.rerun_budget else data.get("counts", {})
+    failed = data.get("isError") or data.get("typeErrorCount", 0) > 0 \
+        or tally["fail"] > 0 or tally["error"] > 0 or skipped \
         or counts.get("fail", 0) > 0 or counts.get("error", 0) > 0
     return 1 if failed else 0
 
