@@ -112,29 +112,6 @@ library V1TypesElements
     //==
     // # The grid decision
 
-    // Whether triangle tri of grid g on region r of face f is within `bound` of the surface at
-    // refinement's samples (TriangleNeedsRefinement): the surface point at its parameter
-    // centroid and at the parameter midpoint of each side that is not a boundary segment against
-    // the flat triangle, and its corner mean and those sides' chord midpoints against the
-    // surface. A split's diagonal is never a boundary segment, so it is always sampled. Each
-    // test runs only when the ones before it passed.
-    GridTriangleWithinChordal(m: BrepModel, f: BrepFaceIndex, r: UvRegion, g: UvTriangulation, tri: TriangleFace, bound: Number): Boolean
-    {
-        var s = m.SurfaceOf(f);
-        var cs = tri.Vertices;
-        var uvs = cs.Map(v => g.Points[v]);
-        var ps = uvs.Map(uv => m.Geometry.Eval(s, uv));
-        var mean = uvs.Map(uv => uv.ToPoint2D).AverageOfPoints;
-        var inner = 3.Range.FlatMap(j => r.IsConstrained(cs[j].Value, cs[(j + 1) % 3].Value) ? [j].Take(0) : [j]);
-        return UnsignedDistanceToTriangle(m.Geometry.Eval(s, UvCoordinate(mean.X, mean.Y)), ps[0], ps[1], ps[2]) > bound
-            ? false
-            : (inner.Any(j => UnsignedDistanceToTriangle(m.Geometry.Eval(s, uvs[j].UvMidpoint(uvs[(j + 1) % 3])), ps[0], ps[1], ps[2]) > bound)
-                ? false
-                : (m.SurfaceDistance(f, ps.AverageOfPoints) > bound
-                    ? false
-                    : inner.All(j => m.SurfaceDistance(f, ps[j].HalfwayPoint(ps[(j + 1) % 3])) <= bound)));
-    }
-
     // Whether the lifted triangle tri of grid g winds counter-clockwise about face f's normal at
     // its parameter centroid (LiftsFacingFaceNormal's exact sign, on one triangle).
     GridTriangleFacesFaceNormal(m: BrepModel, f: BrepFaceIndex, g: UvTriangulation, tri: TriangleFace): Boolean
@@ -147,18 +124,11 @@ library V1TypesElements
     }
 
     // Whether element k of grid g is kept: it collapses at a pole (Lift drops or reduces it), or
-    // every triangle it may be drawn as faces the face normal and is within `bound`. An element
-    // out of range is not kept.
+    // every triangle it may be drawn as faces the face normal and it is within `bound` under the
+    // one chordal measure the gate also uses (GridElementKeptV1, face-meshing-v1-keep.library.plato;
+    // TKT-455). An element out of range is not kept.
     GridElementKept(m: BrepModel, f: BrepFaceIndex, r: UvRegion, g: UvTriangulation, k: ElementIndex, bound: Number): Boolean
-    {
-        var shape = g.ShapeOf(k);
-        return shape.IsElementShape.Not
-            ? false
-            : (g.IsCollapsedElement(k)
-                ? true
-                : shape.RenderTriangles.All(tri =>
-                    m.GridTriangleFacesFaceNormal(f, g, tri) ? m.GridTriangleWithinChordal(f, r, g, tri, bound) : false));
-    }
+        => m.GridElementKeptV1(f, r, g, k, bound);
 
     // The chordal decision on grid g of region r of face f: the first element not kept, or the
     // grid with its bound (SurfaceChordal widened by the length tolerance, as
