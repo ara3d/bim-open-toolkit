@@ -802,6 +802,6 @@ and five sample fractions, holds on nine of the ten positive witnesses (7,813 ev
 The negative witnesses fail exactly their named laws: `Witness_SphereWithRedundantPoleLoops(1)`
 `Law_NoRedundantVertexLoop` at face 0 and `Law_VertexLoopVertexIsIsolated` at vertices 0 and 1;
 `Witness_BoxWithFlippedFace` `Law_LoopWindingMatchesSameSense` at face 0;
-`Witness_TwoBoxesSharingCorner` `Law_EulerPoincareEvenAndBounded` at shell 0 and
-`Law_VertexLinkIsOneCycle` at vertex 6.
+`Witness_TwoBoxesSharingCorner` `Law_VertexLinkIsOneCycle` at vertex 6 (since 2026-10-22 it is
+outside `Law_EulerPoincareEvenAndBounded`'s premise, which asks for a manifold shell).
 

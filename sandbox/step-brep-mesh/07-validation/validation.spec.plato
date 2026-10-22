@@ -386,13 +386,13 @@ spec Witness_BoxWithPolyLoopSheet(_: BrepModel): BrepModel
 }
 
 // Two unit boxes touching at a corner in one shell: fails exactly
-// Law_EulerPoincareEvenAndBounded and Law_VertexLinkIsOneCycle.
+// Law_VertexLinkIsOneCycle, and is outside Law_EulerPoincareEvenAndBounded's premise.
 spec Witness_TwoBoxesSharingCorner(_: BrepModel): BrepModel
 {
     ensures result.RawCounts(ShellIndex(0)) == ShellCounts(15, 24, 12, 12);
-    ensures Law_SharedCornerBreaksEuler(result);
+    ensures Law_SharedCornerIsOutsideEuler(result);
     ensures Law_SharedCornerBreaksVertexLink(result);
-    ensures Law_SharedCornerFailsExactlyTwoLaws(result);
+    ensures Law_SharedCornerFailsExactlyOneLaw(result);
     measure result.Faces.Count;
 }
 

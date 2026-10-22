@@ -171,17 +171,21 @@ library BrepWitnessesLaws
     Law_FlippedFaceFailsExactlyOneLaw(_: BrepModel): Boolean
         => BrepModel.Witness_BoxWithFlippedFace.TopologyReport(SamplePlan.CheckPlan, CheckFamily.StructureChecks).Diagnostics.Count == 1;
 
-    // Two boxes sharing a corner fail Law_EulerPoincareEvenAndBounded.
-    Law_SharedCornerBreaksEuler(_: BrepModel): Boolean
-        => BrepModel.Witness_TwoBoxesSharingCorner.Check_EulerPoincareEvenAndBounded.Holds.Not;
+    // Two boxes sharing a corner are outside Law_EulerPoincareEvenAndBounded's premise (shell 0
+    // pinches at vertex 6, so it is no manifold surface and V - E + F = 3 says nothing), and the
+    // law's check holds on them: the pinch is the vertex link's to report (supervisor,
+    // 2026-10-22, after E4a exposed the mismatch).
+    Law_SharedCornerIsOutsideEuler(_: BrepModel): Boolean
+        => BrepModel.Witness_TwoBoxesSharingCorner.Premise_EulerPoincareEvenAndBounded(ShellIndex(0)).Not
+            && BrepModel.Witness_TwoBoxesSharingCorner.Check_EulerPoincareEvenAndBounded.Holds;
 
     // Two boxes sharing a corner fail Law_VertexLinkIsOneCycle.
     Law_SharedCornerBreaksVertexLink(_: BrepModel): Boolean
         => BrepModel.Witness_TwoBoxesSharingCorner.Check_VertexLinkIsOneCycle.Holds.Not;
 
     // Two boxes sharing a corner fail no other structural law.
-    Law_SharedCornerFailsExactlyTwoLaws(_: BrepModel): Boolean
-        => BrepModel.Witness_TwoBoxesSharingCorner.TopologyReport(SamplePlan.CheckPlan, CheckFamily.StructureChecks).Diagnostics.Count == 2;
+    Law_SharedCornerFailsExactlyOneLaw(_: BrepModel): Boolean
+        => BrepModel.Witness_TwoBoxesSharingCorner.TopologyReport(SamplePlan.CheckPlan, CheckFamily.StructureChecks).Diagnostics.Count == 1;
 
     //==
     // # A faceted sheet and a surface curve

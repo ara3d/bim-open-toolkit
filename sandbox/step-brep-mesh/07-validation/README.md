@@ -214,7 +214,7 @@ Negative witnesses, each failing exactly the named laws of layer 2 (research/VAL
 |---|---|---|
 | `Witness_SphereWithRedundantPoleLoops(r)` | 2, 1, 1, 3 (chi raw 0, reduced 2) | `Law_NoRedundantVertexLoop` (Warning), `Law_VertexLoopVertexIsIsolated` |
 | `Witness_BoxWithFlippedFace` | 8, 12, 6, 6 | `Law_LoopWindingMatchesSameSense` at face 0 |
-| `Witness_TwoBoxesSharingCorner` | 15, 24, 12, 12 (chi 3) | `Law_EulerPoincareEvenAndBounded`, `Law_VertexLinkIsOneCycle` at vertex 6 |
+| `Witness_TwoBoxesSharingCorner` | 15, 24, 12, 12 (chi 3) | `Law_VertexLinkIsOneCycle` at vertex 6; outside `Law_EulerPoincareEvenAndBounded`'s premise (no manifold surface) |
 
 A planted bad face for layer 8's failure-isolation law:
 

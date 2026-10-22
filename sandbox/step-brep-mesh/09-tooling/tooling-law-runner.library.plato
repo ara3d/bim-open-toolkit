@@ -209,9 +209,9 @@ library ToolingLawRunner
              OverSamples("Law_RedundantPoleLoopsReduceToSphere", "SphereFamily", i => Law_RedundantPoleLoopsReduceToSphere(RadiusDraw(i))),
              Once("Law_FlippedFaceBreaksWinding", "BoxWithFlippedFace", BrepModel.Law_FlippedFaceBreaksWinding),
              Once("Law_FlippedFaceFailsExactlyOneLaw", "BoxWithFlippedFace", BrepModel.Law_FlippedFaceFailsExactlyOneLaw),
-             Once("Law_SharedCornerBreaksEuler", "TwoBoxesSharingCorner", BrepModel.Law_SharedCornerBreaksEuler),
+             Once("Law_SharedCornerIsOutsideEuler", "TwoBoxesSharingCorner", BrepModel.Law_SharedCornerIsOutsideEuler),
              Once("Law_SharedCornerBreaksVertexLink", "TwoBoxesSharingCorner", BrepModel.Law_SharedCornerBreaksVertexLink),
-             Once("Law_SharedCornerFailsExactlyTwoLaws", "TwoBoxesSharingCorner", BrepModel.Law_SharedCornerFailsExactlyTwoLaws),
+             Once("Law_SharedCornerFailsExactlyOneLaw", "TwoBoxesSharingCorner", BrepModel.Law_SharedCornerFailsExactlyOneLaw),
              NotRun("Law_TighterChordalNeverIncreasesSagitta", "needs a pair of drawn chordal bounds per witness; no generator for criteria yet")]]);
 
     // Box side lengths of sample i of the default box family (seed 0).
