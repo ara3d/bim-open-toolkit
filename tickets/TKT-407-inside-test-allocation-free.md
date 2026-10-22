@@ -4,7 +4,7 @@ title: STEP mesher refinement: allocation-free inside test (IsStrictlyInsideOnGr
 status: open
 depends_on: []
 owner:
-fence: [sandbox/step-mesh-staging/perf-inside-test/**]
+fence: [sandbox/step-mesh-staging/perf-inside/**]
 workflow: [W3]
 related: [TKT-323, TKT-385, TKT-355]
 created: 2026-10-21
@@ -12,7 +12,7 @@ created: 2026-10-21
 
 ## Acceptance criteria
 
-- [ ] A staged IsStrictlyInsideOnGridBody2 (or renamed replacement) gives the same verdict as IsStrictlyInsideOnGrid on every witness face and every generated point, as a law passing under cpu64 on the interpreter and the pinned compiled CLI
+- [x] A staged IsStrictlyInsideOnGridBody2 (or renamed replacement) gives the same verdict as IsStrictlyInsideOnGrid on every witness face and every generated point, as a law passing under cpu64 on the interpreter and the pinned compiled CLI
 - [ ] An operation-count law over WorkClaim shows no array allocation per query (no ItemsNear materialisation), and run A's harness on ODIN-W160 shows refinement's clear-of-boundary bucket down from 313 ms with identical meshes
 - [ ] Merged by the supervisor by wiring, ledger row in docs/plans/step-mesher-complexity.md
 

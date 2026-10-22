@@ -1,0 +1,219 @@
+//==
+// # Strictly inside, on the grid, without allocation (complexity sweep, TKT-407, idea 31)
+//
+// Layer 05-face-meshing. UvBoundaryIndex's IsStrictlyInsideOnGrid materialised ItemsNear(u, u),
+// an array of the nine cells' items and Everywhere, per query, measured the gap to every one of
+// them whether or not the point was inside, and collected the crossed loops in a list: on
+// ODIN-W160 the gap test alone was 313 ms, 23% of refinement, and allocated 1 GB. Here the same
+// verdict is reached by reading the grid's Starts and Items in place: the parity first, one scan
+// of uv's row per two distinct loops crossed, keeping only the two smallest loops above the last
+// one settled and their crossing counts (LoopCrossings), then the gap only for a point the parity
+// puts inside, stopping at the first segment within one unit. The predicates are the original's
+// on the same numbers (CrossesRayAt, DistanceToSegment in tolerance units), asked of the same
+// segments, so the Boolean is the original's.
+//
+// Sections, in order:
+//  - The parity by loop
+//  - The gap
+//  - The inside test
+
+library UvBoundaryIndexInside
+{
+    //==
+    // # The parity by loop
+
+    // Tally t after one more crossing of a segment of loop l, keeping the two smallest loops
+    // above after: a loop at or below after leaves t as it is; any other adds one to
+    // AllCrossings, and then one of t's two loops adds one to its count, a smaller loop than
+    // t's first moves the first to second, a loop between t's two replaces the second, and a
+    // larger one changes nothing else.
+    WithCrossing(t: LoopCrossings, l: Integer, after: Integer): LoopCrossings
+        => l <= after
+            ? t
+            : (l == t.Loop
+                ? LoopCrossings(l, t.Crossings + 1, t.NextLoop, t.NextCrossings, t.AllCrossings + 1)
+                : (l == t.NextLoop
+                    ? LoopCrossings(t.Loop, t.Crossings, l, t.NextCrossings + 1, t.AllCrossings + 1)
+                    : ((t.Loop < 0 || l < t.Loop)
+                        ? LoopCrossings(l, 1, t.Loop, t.Crossings, t.AllCrossings + 1)
+                        : ((t.NextLoop < 0 || l < t.NextLoop)
+                            ? LoopCrossings(t.Loop, t.Crossings, l, 1, t.AllCrossings + 1)
+                            : LoopCrossings(t.Loop, t.Crossings, t.NextLoop, t.NextCrossings, t.AllCrossings + 1)))));
+
+    // Whether loop l crossed n times keeps a point inside: the outer loop (loop 0) an odd number
+    // of times, a hole an even number; no loop (-1) with no crossings holds.
+    ParityHolds(l: Integer, n: Integer): Boolean
+        => n % 2 == (l == 0 ? 1 : 0);
+
+    // One scan of the ray from p towards +X, as IsStrictlyInsideOnGrid counts it: the segments
+    // listed in grid row row from column from onward, each at the first of those cells it is
+    // listed in, then Everywhere. Returns the two smallest loops above after whose segments the
+    // ray crosses and their numbers of crossings. Work: the segments read, as Insertions.
+    NextCrossedLoopCounted(x: BoundaryIndex, p: Point2D, row: Integer, from: Integer, after: Integer): Counted<LoopCrossings>
+    {
+        var g = x.Grid;
+        var tally = LoopCrossings(-1, 0, -1, 0, 0);
+        var read = 0;
+        var c = from;
+        while (c < g.Columns)
+        {
+            var cell = row * g.Columns + c;
+            var i = g.Starts[cell];
+            while (i < g.Starts[cell + 1])
+            {
+                var s = g.Items[i];
+                if (x.FirstColumn[s].Max(from) == c ? x.CrossesRayAt(s, p) : false)
+                {
+                    tally = tally.WithCrossing(x.SegmentLoop[s], after);
+                }
+                read = read + 1;
+                i = i + 1;
+            }
+            c = c + 1;
+        }
+        var w = 0;
+        while (w < g.Everywhere.Count)
+        {
+            if (x.CrossesRayAt(g.Everywhere[w], p))
+            {
+                tally = tally.WithCrossing(x.SegmentLoop[g.Everywhere[w]], after);
+            }
+            read = read + 1;
+            w = w + 1;
+        }
+        return Counted(tally, Insertions(read));
+    }
+
+    // IsStrictlyInsideOnGrid's parity for the ray from p in grid row row from column from: the
+    // outer loop (loop 0) crossed an odd number of times and every other loop an even number.
+    // The crossed loops are settled in increasing order, two per scan, stopping at the first
+    // that fails or when the scan saw no third loop: a point whose ray crosses the outer loop
+    // and at most one hole takes one scan, as the original's single scan.
+    // Work: the scans' segment reads.
+    CrossingParityOnGridCounted(x: BoundaryIndex, p: Point2D, row: Integer, from: Integer): Counted<Boolean>
+    {
+        var work = Insertions(0);
+        var inside = true;
+        var settled = false;
+        var after = -1;
+        while (settled.Not)
+        {
+            var scan = x.NextCrossedLoopCounted(p, row, from, after);
+            var t = scan.Value;
+            work = work.Add(scan.Work);
+            if (after < 0 ? t.Loop != 0 : false)
+            {
+                inside = false;
+                settled = true;
+            }
+            else
+            {
+                if (t.Loop < 0)
+                {
+                    settled = true;
+                }
+                else
+                {
+                    if (ParityHolds(t.Loop, t.Crossings) && ParityHolds(t.NextLoop, t.NextCrossings))
+                    {
+                        settled = t.AllCrossings == t.Crossings + t.NextCrossings;
+                        after = t.NextLoop;
+                    }
+                    else
+                    {
+                        inside = false;
+                        settled = true;
+                    }
+                }
+            }
+        }
+        return Counted(inside, work);
+    }
+
+    //==
+    // # The gap
+
+    // Whether segment s is farther than one unit from u, a point in tolerance units:
+    // IsStrictlyInsideOnGrid's gap predicate.
+    SegmentIsClearOf(x: BoundaryIndex, s: Integer, u: Point2D): Boolean
+        => DistanceToSegment(x.Units[s], x.Units[x.SegmentEnd[s]], u) > 1.0;
+
+    // Whether every segment ItemsNear(u, u) lists is farther than one unit from u: the cells
+    // that meet u's cell grown by one cell on every side, in ItemsInCells' order, then
+    // Everywhere; every segment when u is not finite. Read in place, stopping at the first
+    // segment within one unit. Work: the segments measured, as Insertions.
+    IsClearOnGridCounted(x: BoundaryIndex, u: Point2D): Counted<Boolean>
+    {
+        var g = x.Grid;
+        var clear = true;
+        var measured = 0;
+        if (IsFiniteBox(u, u))
+        {
+            var c0 = GridCellClamped(u.X, g.Origin.X, g.Side, g.Columns, -1);
+            var c1 = GridCellClamped(u.X, g.Origin.X, g.Side, g.Columns, 1);
+            var r0 = GridCellClamped(u.Y, g.Origin.Y, g.Side, g.Rows, -1);
+            var r1 = GridCellClamped(u.Y, g.Origin.Y, g.Side, g.Rows, 1);
+            var width = c1 - c0 + 1;
+            var cells = (r1 - r0 + 1) * width;
+            var k = 0;
+            while (clear ? k < cells : false)
+            {
+                var cell = (r0 + k / width) * g.Columns + c0 + k % width;
+                var i = g.Starts[cell];
+                while (clear ? i < g.Starts[cell + 1] : false)
+                {
+                    clear = x.SegmentIsClearOf(g.Items[i], u);
+                    measured = measured + 1;
+                    i = i + 1;
+                }
+                k = k + 1;
+            }
+            var w = 0;
+            while (clear ? w < g.Everywhere.Count : false)
+            {
+                clear = x.SegmentIsClearOf(g.Everywhere[w], u);
+                measured = measured + 1;
+                w = w + 1;
+            }
+        }
+        else
+        {
+            var s = 0;
+            while (clear ? s < g.ItemCount : false)
+            {
+                clear = x.SegmentIsClearOf(s, u);
+                measured = measured + 1;
+                s = s + 1;
+            }
+        }
+        return Counted(clear, Insertions(measured));
+    }
+
+    //==
+    // # The inside test
+
+    // IsStrictlyInsideOnGrid's verdict with no array allocated: the parity by loop, then, only
+    // for a point it puts inside, the gap. Work: the segments read by the parity's scans and
+    // measured by the gap, as Insertions; no element is copied.
+    IsStrictlyInsideOnGridCounted(x: BoundaryIndex, uv: UvCoordinate): Counted<Boolean>
+    {
+        var g = x.Grid;
+        var u = uv.InToleranceUnits(x.Tolerance);
+        var row = GridCellClamped(u.Y, g.Origin.Y, g.Side, g.Rows, 0);
+        var from = GridCellClamped(u.X, g.Origin.X, g.Side, g.Columns, -1);
+        var parity = x.CrossingParityOnGridCounted(uv.ToPoint2D, row, from);
+        var inside = parity.Value;
+        var work = parity.Work;
+        if (inside)
+        {
+            var gap = x.IsClearOnGridCounted(u);
+            inside = gap.Value;
+            work = work.Add(gap.Work);
+        }
+        return Counted(inside, work);
+    }
+
+    // IsStrictlyInsideOnGrid without allocation: the body the library's function takes at merge.
+    IsStrictlyInsideOnGridInPlace(x: BoundaryIndex, uv: UvCoordinate): Boolean
+        => x.IsStrictlyInsideOnGridCounted(uv).Value;
+}

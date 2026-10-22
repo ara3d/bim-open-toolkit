@@ -1,0 +1,21 @@
+//==
+// # The inside test without allocation: a scan's crossing tally (complexity sweep, TKT-407)
+//
+// Layer 05-face-meshing. The value one pass of IsStrictlyInsideOnGridCounted's ray scan
+// (inside-on-grid.library.plato) returns: the two loops it settled on and how often the ray
+// crossed each, so the per-loop parity needs no list of crossed loops.
+
+// Of the loops whose segments the ray from a point crosses in one scan, the two smallest loop
+// numbers above a threshold and the number of crossings of each: Loop, the smallest (-1 when
+// none is crossed), with Crossings; NextLoop, the second smallest (-1 when fewer than two are
+// crossed), with NextCrossings; and AllCrossings, the crossings of every loop above the
+// threshold, so a scan tells whether a third loop was crossed. Counts are 0 for a loop of -1.
+// Removes: the list of crossed loops IsStrictlyInsideOnGrid builds per query.
+type LoopCrossings
+{
+    Loop: Integer;
+    Crossings: Integer;
+    NextLoop: Integer;
+    NextCrossings: Integer;
+    AllCrossings: Integer;
+}

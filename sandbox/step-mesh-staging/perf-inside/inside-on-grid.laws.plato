@@ -1,0 +1,124 @@
+//==
+// # Strictly inside, on the grid, without allocation: laws (complexity sweep, TKT-407)
+//
+// IsStrictlyInsideOnGridInPlace (inside-on-grid.library.plato) against the function it replaces,
+// UvBoundaryIndex's IsStrictlyInsideOnGrid: the same Boolean at every probe, exactly, on every
+// triangulated witness (each face of the triangulation laws' six sample models, built once per
+// sweep), on the star, jagged and thirteen-hole plane regions, on a square whose long side is in
+// the grid's Everywhere list, and at points whose tolerance units overflow (every segment is a
+// candidate). Every case is under a usable index, the only one IsStrictlyInsideIndexed sends to
+// the grid. The count witness shows the segments read per query staying flat while the boundary
+// grows eightfold; Law_WorkIsWithinSlope (layer 00) reads it.
+//
+// Sections, in order:
+//  - Agreement
+//  - Count witness
+
+library InsideOnGridLaws
+{
+    //==
+    // # Agreement
+
+    // At every point of uvs, the in-place test on index x gives IsStrictlyInsideOnGrid's Boolean.
+    InPlaceAgreesAt(x: BoundaryIndex, uvs: Array<UvCoordinate>): Boolean
+        => uvs.All(uv => x.IsStrictlyInsideOnGridInPlace(uv) == x.IsStrictlyInsideOnGrid(uv));
+
+    // On every triangulated witness, under the face's region tolerance: at the constrained and
+    // the refined triangulation's points, triangle centroids and side midpoints, and at the
+    // points moved off every boundary point and segment midpoint by up to 1.5 tolerance units to
+    // either side (BoundaryIndexLaws' InsideProbes and NearBoundary).
+    Law_Perf_InsideOnGridAgrees(w: TriangulatedWitness): Boolean
+    {
+        var tol = w.Model.RegionTolerance(w.Face, w.Chart);
+        var x = w.Region.BoundaryIndexOf(tol);
+        return x.Usable
+            && x.InPlaceAgreesAt(w.Region.InsideProbes(tol, w.Refined))
+            && x.InPlaceAgreesAt(w.Region.InsideProbes(tol, w.Cdt));
+    }
+
+    // On star case k % 5 (one to three holes, a point hole for odd k) and jagged case k % 4
+    // under PlaneTolerance, at an 11 x 11 lattice over the region's box and beyond it and at the
+    // points near the boundary; and on the thirteen-hole region at a 21 x 21 lattice, where a
+    // ray crosses several holes and the parity settles each in turn.
+    Law_Perf_InsideOnGridAgreesOnStars(k: Integer): Boolean
+    {
+        var tol = PlaneTolerance(0);
+        var star = StarCase(k % 5);
+        var jagged = JaggedCase(k % 4);
+        return star.BoundaryIndexOf(tol).InPlaceAgreesAt(Lattice(11, -2.3, 2.3).Concatenate(star.NearBoundary(tol)))
+            && jagged.BoundaryIndexOf(tol).InPlaceAgreesAt(Lattice(11, -2.3, 2.3).Concatenate(jagged.NearBoundary(tol)))
+            && HolesRegion(13).BoundaryIndexOf(tol).InPlaceAgreesAt(Lattice(21, -2.3, 2.3));
+    }
+
+    // A square of side 4 whose bottom side is one segment and whose other three sides have m
+    // segments each. Under PlaneTolerance the bottom side covers more cells than
+    // ChartGridWideCells for m of 96, so the grid lists it in Everywhere.
+    LongSideRegion(m: Integer): UvRegion
+    {
+        var step = 4.0 / m.ToNumber;
+        var right = m.MapRange(i => UvCoordinate(4.0, step * (i + 1).ToNumber));
+        var top = m.MapRange(i => UvCoordinate(4.0 - step * (i + 1).ToNumber, 4.0));
+        var left = (m - 1).MapRange(i => UvCoordinate(0.0, 4.0 - step * (i + 1).ToNumber));
+        var points = [UvCoordinate(0.0, 0.0), UvCoordinate(4.0, 0.0)].Concatenate(right).Concatenate(top).Concatenate(left);
+        return UvRegion(UvLoop(points, points.Map(p => UvPointSource.Interior)),
+            [UvLoop([UvCoordinate(0.0, 0.0)], [UvPointSource.Interior])].Take(0));
+    }
+
+    // On the square with a long side of LongSideRegion(96), the long side in Everywhere: at a
+    // 15 x 15 lattice over and beyond it and at the points near its boundary.
+    Law_Perf_InsideOnGridAgreesOnWideSegments(_: Integer): Boolean
+    {
+        var tol = PlaneTolerance(0);
+        var square = LongSideRegion(96);
+        var x = square.BoundaryIndexOf(tol);
+        return x.Grid.Everywhere.Count > 0
+            && x.InPlaceAgreesAt(Lattice(15, -0.3, 4.3).Concatenate(square.NearBoundary(tol)));
+    }
+
+    // On star case k % 3 under PlaneTolerance, at points of finite parameters whose tolerance
+    // units overflow, so ItemsNear lists every segment: far along each axis both ways.
+    Law_Perf_InsideOnGridAgreesBeyondTheGrid(k: Integer): Boolean
+    {
+        var far = Number.MaxValue * 0.5;
+        return StarCase(k % 3).BoundaryIndexOf(PlaneTolerance(0)).InPlaceAgreesAt([
+            UvCoordinate(far, 0.3), UvCoordinate(0.0 - far, 0.3), UvCoordinate(0.3, far),
+            UvCoordinate(0.3, 0.0 - far), UvCoordinate(far, far)]);
+    }
+
+    //==
+    // # Count witness
+
+    // A circle of radius 2 with n - n / 4 points and a circular hole of radius 0.8 with n / 4
+    // points at its centre: n boundary points on smooth curves, so a grid cell along them lists
+    // about as many segments as the curve's length over the cell's side.
+    CircleWithHole(n: Integer): UvRegion
+        => UvRegion(StarLoop(n - n / 4, 0.0, 0.0, 2.0, 2.0, 1, 0.0), [StarLoop(n / 4, 0.0, 0.0, 0.8, 0.8, -1, 0.0)]);
+
+    // The segments read (Insertions) by the ceiling of sqrt(n) in-place queries on
+    // CircleWithHole(n) under PlaneTolerance: query i at pseudo-random parameters in [-2.3, 2.3]
+    // squared, so inside the circle, inside the hole, and outside it all.
+    InsideOnGridWork(n: Integer): WorkBudget
+    {
+        var x = CircleWithHole(n).BoundaryIndexOf(PlaneTolerance(0));
+        var queries = n.ToNumber.Sqrt.Ceiling.ToInteger;
+        var work = Insertions(0);
+        var i = 0;
+        while (i < queries)
+        {
+            work = work.Add(x.IsStrictlyInsideOnGridCounted(UvCoordinate(-2.3 + 4.6 * JitterAt(i, 1), -2.3 + 4.6 * JitterAt(i, 2))).Work);
+            i = i + 1;
+        }
+        return work;
+    }
+
+    // IsStrictlyInsideOnGridCounted reads about sqrt(B) segments per query on a boundary of B
+    // points: at most 4 sqrt(n) per query, so sqrt(n) queries read at most 4 n, at 64
+    // and 1024 boundary points. Insertions counts the segments read by the parity's row scans
+    // and measured by the gap test; no element is copied (IsStrictlyInsideOnGrid copied the
+    // nine cells' items and Everywhere into a new array per query). A cell along a curved
+    // boundary lists about sqrt(B) segments, since the grid has about sqrt(B) columns, so the
+    // gap test's nine cells and the row scan both read O(sqrt(B)); a scan of every segment, as
+    // IsStrictlyInside's, would read B per query and fail at 1024.
+    Witness_InsideOnGridWork(_: WorkClaim): WorkClaim
+        => WorkClaim("IsStrictlyInsideOnGrid in place: segments read per query over sqrt(B)", Insertions(4), [64, 1024], n => InsideOnGridWork(n));
+}
