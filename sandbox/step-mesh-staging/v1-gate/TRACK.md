@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5 | ready: V1G-6, V1G-7, V1G-8 | V1G-9: diagnosed, no library change (TKT-455, the measure)
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5 | ready: V1G-6, V1G-7, V1G-8, V1G-10 (its harness half in bim-open-data 66f0da1) | V1G-9: diagnosed, no library change
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -17,6 +17,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-7 | TKT-399 | ValidateFaceMesh under 2 s on a built curved mesh: the two quadratic identification checks in n log n | 2 h |
 | V1G-8 | TKT-429 | a torus band bounded by two full circles meshed on the half of the tube its loops bound | 2 h |
 | V1G-9 | TKT-455 | moon_buggy's B-spline faces 41 and 117 reported at 3.8 times the chordal bound | 2 h |
+| V1G-10 | TKT-455 | the contract check and the gate claim measure a quad's split as a whole, and mesh to surface by projection | 2 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -66,6 +67,8 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
   - moon_buggy_asm.stp through the harness, on scratch regenerations of the same library with and without the edit (regen-step-brep.ps1 into a scratch copy of bim-open-data at 3f1ad1b, Plato c8c83c8b; harness built with -p:DepsRoot pointing at the toolkit's deps): without, 162 of 162 faces meshed, closed, not oriented, 180 misoriented edges; with, closed and oriented, 0 boundary, 0 non-manifold, 0 misoriented. Faces 33, 65 and 127 lie 176 to 193 mm from an axis fitted to their own points (the outer half, 177.8 to 190.5 mm, within the fitted axis's error; before, 165 to 178 mm). The harness's contract check gives the same five failing faces with and without the edit (cones 26, 76, 132 with flipped elements; B-spline faces 41, 117 over the chordal bound), so none comes from this chunk.
   - Not run: the corpus rerun (TKT-429's third box; it needs the merged regeneration).
 - V1G-9 (TKT-455), this commit, about 0.8 h. No staged code: the meshes are within the bound and the excess is in the measure. Faces 41 and 117 of moon_buggy_asm.stp take the quad grid (13 planar strip quads, about 80 by 1016 mm) under both F1's keep rule and T1's. A probe against a scratch regeneration of HEAD dc2ccca4 with V1G-4 (chordal 1.0, bound 1.00001) gives, per quad: F1's samples at most 0.96; the harness's contract samples (each triangle of both splits, seven barycentric points, the surface over the triangle's own parameter triangle measured to that triangle) up to 3.80, 2.35 and 1.62 on quads 0 to 2, all from one sample, the parameter midpoint of the split's diagonal, which lies 3.80 from one triangle of the split and 0.77 from the other. Geometrically, on a 21 x 21 sample: every point of every split triangle is within 0.954 of the surface (projection), and every surface point over a quad is within 0.956 of the quad. The B-spline's parametrization is not uniform across the strip, so a parameter point of one triangle lands in 3D inside its neighbour; the per-triangle parametric measure then overstates the chordal error. Refinement does not stop early here: the grid is kept and correct. The fix belongs to the harness's ContractCheck (and to this track's merged gate claim, which uses the same per-triangle form): TKT-455.
+- V1G-10 (TKT-455), about 1.2 h. Harness half: bim-open-data 66f0da1 (`tools/step-corpus-harness/ContractCheck.cs`, pushed): a quad's surface samples go against each diagonal split as a whole (the nearer of its two triangles, the worse split counting), and every drawn triangle's barycentric samples are projected onto the surface. Old and new harness built against the same library (bim-open-data e646e28): moon_buggy_asm.stp over-chordal faces 16 to 14, only 41 and 117 leaving, every other failing face at the same deviation; the bump solid at 0.3, whose grid that library keeps outside the bound (TKT-415), fails with both at 0.075 against 0.01; the unit box and the cylinder hold. Plato half, this commit: library `V1GateSplits` (v1-splits.library.plato): `SplitDistance`, `SplitGapAt`, `SplitWithin`, `QuadSplitsWithinV1` (mesh to surface per triangle by projection, surface to mesh per split as a whole), `QuadSplitsWithinPerTriangle` (the old claim, kept by name for the comparison law), `Witness_SkewedPatchSolid(skew)` (a flat Bezier top whose middle control column sits at x = skew, so x runs unevenly with u) and `ForcedQuadMesh` (a face as one quad on its four boundary points, no keep rule). Laws (`V1GateSplitsLaws`), 2: `Law_V1Gate_SkewedQuadIsWithinAsASplit` (the skewed top's quad passes as a split and fails per triangle: the diagonal's parameter midpoint lands 0.14 off the diagonal) and `Law_V1Gate_BumpQuadFailsAsASplit` (the bump top forced to one quad fails both). Compiled, budget 120 s, on a copy of HEAD 15430645 with and without the wiring: `V1GateSplitsLaws` and `V1GateLaws`, 8 laws, 8 pass both ways.
+  - Finding for v1-types: T1's keep rule (`GridTriangleWithinChordal`) measures a split triangle's diagonal midpoint against that triangle alone, the per-triangle form; once T1 merges it refuses grids such as moon_buggy's faces 41 and 117 (and the skewed patch's top), which then take refinement. Not wrong for the contract, only more elements; measuring the split as a whole there too would keep them.
 
 ## Gate and quality: every law of layer 5
 
@@ -406,6 +409,10 @@ V1G-8 (TKT-429):
 - In `JoinedByCut` (05-face-meshing/uv-regions.library.plato): `var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);` => `var end = m.BandEndCopy(f, a, i, b, j);`, and the function's comment says the cut ends at "the copy of b's point nearest it on the face's side (BandEndCopy)".
 - Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
 
+V1G-10 (TKT-455):
+- `QuadSplitsWithin` (08-pipeline/pipeline-v1-gate.library.plato) => `m.QuadSplitsWithinV1(d, fm, q, bound)`; its comment says each split is measured as a whole.
+- Move `v1-splits.library.plato` to `08-pipeline/pipeline-v1-gate-splits.library.plato` (library `V1GateSplits`; `Witness_SkewedPatchSolid` may go beside `Witness_BSplinePatchSolid` in 07-validation/validation-witnesses.library.plato instead) and `v1-splits.laws.plato` to `08-pipeline/pipeline-v1-gate-splits.laws.plato`.
+
 V1G-5 (triage):
 - Delete the five `PolesLaws` face-check laws (`Law_SphereFaceChecksHold`, `Law_SphereByPoleLoopsFaceChecksHold`, `Law_TorusFaceChecksHold`, `Law_ConeFaceChecksHold`, `Law_TorusAtVertexFaceChecksHold`, 07-validation/poles.laws.plato) and `FaceCheckFailures` if nothing else calls it, when `V1PoleChecksLaws` merges: the per-check laws state the same checks, gate and quality apart.
 - No other move: none of the other 116 is a quality law.
@@ -465,6 +472,8 @@ V1G-5 (triage):
 | V1G-8: two scratch regenerations and harness builds | 2 and 2.5 min, background | 2 (regeneration 1.5 min each) |
 | V1G-8: moon_buggy gallery runs and the axis distances | 6 min | 5 |
 | V1G-9: face table, measure comparison, probe of face 41 (three versions), ticket | 45 min | 4 builds, 4 runs |
+| V1G-10: harness change, old and new harness builds, moon_buggy and witness runs | 25 min | 2 builds, 8 runs |
+| V1G-10: Plato claim, witnesses, laws, two compiled runs | 30 min | 2 (89 s and 43 s) |
 
 ## Lessons
 - The compile cache follows the folder path: a fresh scratch folder cost 6.8 minutes, the same folder rerun about 1 minute. Keep one scratch folder per check.

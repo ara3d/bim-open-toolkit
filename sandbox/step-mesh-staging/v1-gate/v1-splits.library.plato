@@ -1,0 +1,105 @@
+//==
+// # Version 1 gate: a quad's split measured as a whole (TKT-455)
+//
+// The gate's chordal claim on a quad (QuadSplitsWithin, 08-pipeline/pipeline-v1-gate) measured
+// each triangle of a split against the surface over that triangle's own parameter triangle. On a
+// long element over a non-uniformly parametrized surface, a parameter sample of one triangle lands
+// in 3D beside it, on the other triangle of the split (moon_buggy_asm.stp's B-spline faces 41 and
+// 117: 3.8 times the bound per triangle, within 0.96 of it as a split), so the claim failed meshes
+// that meet the contract. QuadSplitsWithinV1 keeps the mesh-to-surface direction per triangle
+// (CornerTriangleDeviation, by projection) and measures the surface-to-mesh direction of each split
+// as a whole: every surface sample of either triangle against the nearer of the two. Both splits
+// must pass. The harness's contract check measures the same way since bim-open-data 66f0da1.
+//
+// Sections, in order:
+//  - Splits
+//  - Witnesses
+
+library V1GateSplits
+{
+    //==
+    // # Splits
+
+    // The distance from p to the nearer of the triangles on the point lists of split.
+    SplitDistance(fm: FaceMesh, split: Array<Array<VertexIndex>>, p: Point3D): Number
+        => split.Reduce(Number.MaxValue, (best, cs) =>
+            best.Min(UnsignedDistanceToTriangle(p, fm.PositionOf(cs[0]), fm.PositionOf(cs[1]), fm.PositionOf(cs[2]))));
+
+    // How far the surface strays from split, from the samples of its triangle cs: the surface point
+    // at cs's parameter centroid and at the parameter midpoint of each of its surface edges (the
+    // split's diagonal among them), each to the nearer triangle of the split.
+    SplitGapAt(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, split: Array<Array<VertexIndex>>, cs: Array<VertexIndex>): Number
+    {
+        var s = m.SurfaceOf(fm.Face);
+        return cs.Count.Range.Reduce(
+            fm.SplitDistance(split, m.Geometry.Eval(s, fm.CornerUvCentroid(cs))),
+            (worst, j) => m.IsSurfaceEdge(d, fm, cs[j], cs.AtModulo(j + 1))
+                ? worst.Max(fm.SplitDistance(split, m.Geometry.Eval(s, fm.UvPoints[cs[j]].UvMidpoint(fm.UvPoints[cs.AtModulo(j + 1)]))))
+                : worst);
+    }
+
+    // True when split (the two triangles of one diagonal of a quad) is within `bound` of the
+    // surface both ways: each triangle to the surface by projection, and the surface over both
+    // triangles to the split.
+    SplitWithin(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, split: Array<Array<VertexIndex>>, bound: Number): Boolean
+        => split.All(cs => m.CornerTriangleDeviation(d, fm, cs) <= bound && m.SplitGapAt(d, fm, split, cs) <= bound);
+
+    // QuadSplitsWithin with each split measured as a whole: both of quad q's diagonal splits
+    // within `bound`. A quad with a point not lifted is not measured.
+    QuadSplitsWithinV1(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, q: Integer, bound: Number): Boolean
+    {
+        var t = fm.QuadSplitTriangles(q);
+        return fm.CornersLifted(fm.Quads[q].Vertices)
+            ? m.SplitWithin(d, fm, [t[0], t[1]], bound) && m.SplitWithin(d, fm, [t[2], t[3]], bound)
+            : true;
+    }
+
+    // The per-triangle claim this chunk replaces, QuadSplitsWithin's body before it: each triangle of
+    // both splits within `bound` against the surface over its own parameter triangle. Kept for the
+    // law that shows where the two differ.
+    QuadSplitsWithinPerTriangle(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, q: Integer, bound: Number): Boolean
+        => fm.CornersLifted(fm.Quads[q].Vertices)
+            ? fm.QuadSplitTriangles(q).All(cs => m.CornerTriangleWithin(d, fm, cs, bound))
+            : true;
+
+    //==
+    // # Witnesses
+
+    // The unit box with a flat top on a biquadratic Bezier patch whose middle control column sits
+    // at x = skew instead of 1/2 (Witness_BSplinePatchSolid with bump 0 and that one change): the
+    // top is the unit square at height 1, exactly, but x runs unevenly with u, so the parameter
+    // midpoint of the top quad's diagonal, (1/2, 1/2), lies at (skew / 2 + 1/4, 1/2, 1), off the
+    // diagonal in 3D. Precondition: 0 < skew < 1.
+    Witness_SkewedPatchSolid(_: BrepModel, skew: Number): BrepModel
+        => BrepModel(
+            GeometrySet(
+                BoxCurves(BoxCorners(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0)),
+                [],
+                [],
+                BoxPlanes(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Take(1)
+                    .Concatenate([BrepSurface.BSpline(BSplineSurfaceData(
+                        SplineBasis(2, KnotVector([0.0, 0.0, 0.0, 1.0, 1.0, 1.0])),
+                        SplineBasis(2, KnotVector([0.0, 0.0, 0.0, 1.0, 1.0, 1.0])),
+                        MakeArray2D(3, 3, (i, j) => Point3D(i == 1 ? skew : i.ToNumber * 0.5, j.ToNumber * 0.5, 1.0)),
+                        MakeArray2D(3, 3, (i, j) => 1.0)))])
+                    .Concatenate(BoxPlanes(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Skip(2)), []),
+            BoxCorners(Point3D(0.0, 0.0, 0.0), 1.0, 1.0, 1.0).Map(p => BrepVertex(p)),
+            BoxEdges(8.Range, 0),
+            6.MapRange(k => BoxLoop(12.Range, k)),
+            6.MapRange(k => SingleLoopFace(k, k, true)),
+            [ClosedShellOf(6.Range)],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    // Face f of model m meshed as one quad on its four boundary points, with no keep rule: the
+    // grid a face would get if every grid were kept. Precondition: f's region has four boundary
+    // points.
+    ForcedQuadMesh(m: BrepModel, f: BrepFaceIndex, c: FaceMeshingCriteria): FaceMesh
+    {
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        var r = m.RegionOf(f, d, c);
+        return m.Lift(f, d, UvTriangulation(r.BoundaryPoints, r.BoundarySources, [TriangleFace(VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0),
+            [QuadFace(VertexIndex(0), VertexIndex(1), VertexIndex(2), VertexIndex(3))]));
+    }
+}

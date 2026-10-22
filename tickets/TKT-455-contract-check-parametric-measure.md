@@ -1,13 +1,15 @@
 ---
 id: TKT-455
 title: STEP mesher: the harness's contract check reports moon_buggy's B-spline faces 41 and 117 at 3.8 times the chordal bound, but their meshes are within it; the measure compares each triangle with the surface over its own parameter triangle
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 5135435e
+session: 5135435e-eb61-4194-b168-7b93c64dd2fe
 fence: [deps/bim-open-data/tools/step-corpus-harness/**, sandbox/step-brep-mesh/08-pipeline/pipeline-v1-gate.library.plato]
 workflow: [W3]
 related: [TKT-415, TKT-435, TKT-418]
 created: 2026-10-22
+claimed: 2026-10-22
 kind: defect
 ---
 

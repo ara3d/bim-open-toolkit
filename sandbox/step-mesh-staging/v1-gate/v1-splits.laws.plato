@@ -1,0 +1,41 @@
+//==
+// # Version 1 gate: a quad's split measured as a whole, laws (TKT-455)
+//
+// QuadSplitsWithinV1 against the per-triangle claim it replaces (QuadSplitsWithinPerTriangle): it passes a
+// quad that lies exactly on its surface although the surface's parametrization is uneven, which
+// the per-triangle claim fails, and it still fails a quad that really lies off the surface (the
+// bump solid's top forced to one quad).
+//
+// Sections, in order:
+//  - Splits
+
+library V1GateSplitsLaws
+{
+    //==
+    // # Splits
+
+    // True when face 1 (the top) of model m, forced to one quad at chordal 0.01, is within the bound
+    // as both splits (QuadSplitsWithinV1) and, as the per-triangle claim measures it
+    // (QuadSplitsWithinPerTriangle), within it exactly when perTriangle.
+    TopQuadVerdicts(m: BrepModel, split: Boolean, perTriangle: Boolean): Boolean
+    {
+        var c = V1GateOptions(0.01).Face;
+        var fm = m.ForcedQuadMesh(BrepFaceIndex(1), c);
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        var bound = c.SurfaceChordal + m.Tolerances.Length.Value;
+        return fm.Quads.Count == 1
+            && m.QuadSplitsWithinV1(d, fm, 0, bound) == split
+            && m.QuadSplitsWithinPerTriangle(d, fm, 0, bound) == perTriangle;
+    }
+
+    // The skewed patch's top quad lies exactly on the flat patch, so it is within the bound as both
+    // splits; the per-triangle claim reports it off the surface, because the parameter midpoint of
+    // the diagonal lands 0.14 off the diagonal in 3D, on the other triangle.
+    Law_V1Gate_SkewedQuadIsWithinAsASplit(_: Integer): Boolean
+        => BrepModel.Witness_SkewedPatchSolid(0.9).TopQuadVerdicts(true, false);
+
+    // The bump solid's top (bump 0.3) forced to one quad is off the surface by 0.3 at its middle,
+    // far past the bound of 0.01: both the split claim and the per-triangle claim fail it.
+    Law_V1Gate_BumpQuadFailsAsASplit(_: Integer): Boolean
+        => BrepModel.Witness_BSplinePatchSolid(0.3).TopQuadVerdicts(false, false);
+}
