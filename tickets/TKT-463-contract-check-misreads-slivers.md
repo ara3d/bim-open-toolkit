@@ -3,7 +3,7 @@ id: TKT-463
 title: The contract check misreports sliver elements as flipped or over the chordal bound
 status: open
 depends_on: []
-owner:
+owner: v1-proof
 fence: [deps/bim-open-data/tools/step-corpus-harness/ContractCheck.cs]
 workflow: [W5]
 related: [TKT-455, TKT-323]
@@ -18,3 +18,5 @@ kind: defect
 - [ ] RCB-F9T face 874 reports degenerate, not over chordal, and NEO, PAM and NORA-B100 report no flipped plane element
 
 ContractCheck counts an element degenerate only when its cross product is exactly 0. A sliver with relative area 1e-16 then reads as flipped when the sign of its normal is rounding noise (every flipped plane element on NEO, PAM, NORA-B100/B101/B106), and as over chordal because Ericson's point-to-triangle distance is unstable on it: RCB-F9T face 874 reports 8.53 against a bound of 1.00 for a sample lying on the sliver itself, and the SARA planes 0.11 to 0.16. The mesher defect behind the slivers is the planar CDT ticket filed with this one.
+
+Owner: v1-proof fixes the contract check's classification (supervisor, 2026-10-22).
