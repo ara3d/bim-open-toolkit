@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1), V1G-11 in 8a30a057, V1G-12 in c82a14a7, V1G-13 in f0fd91a3 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1), V1G-11 in 8a30a057, V1G-12 in c82a14a7, V1G-13 in f0fd91a3 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change | ready: V1G-15 (TKT-460)
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -21,6 +21,8 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-11 | TKT-455 | one chordal measure for an element and its splits, used by the grid keep rule and the gate claim | 2 h |
 | V1G-12 | TKT-430 | a two-circle cylinder whose circle vertices are not on one generator gets its quad grid | 1 h |
 | V1G-13 | TKT-428 | spheres and cones over-refined at their poles | 2 h |
+| V1G-14 | TKT-460, TKT-461 | bisect the regressions of bim-open-data 66577fc | 2 h |
+| V1G-15 | TKT-460 | ODIN-W160 and W161's fillet flaps | 2 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -82,6 +84,25 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
   - Scratch regenerations of V1G-12's wired copy without and with the edit (Plato c8c83c8b), harness at bim-open-data HEAD: moon_buggy_asm.stp's 14 sphere faces 3,352 to 3,698 triangles each without, 2,928 each with, 60 to 210 ms per face; the cones 26, 76 and 132 about 704 triangles each; the whole file's contract check goes from 3 faces with flipped elements (the cones) to holding on all 162 faces (0 over-chordal, 0 flipped). `witness:Sphere:254` at chordal 1: 3,074 to 2,926 triangles, the cap within 10 degrees of the south pole 128 to 92.
   - Laws, compiled, budget 120 s, the same two copies: `PolesWitnessLaws`, `V1PoleChecksLaws`, `FaceMeshingLiftIndexedLaws`, `RefinementAttainableLaws`, `TriangulatedWitnessLaws`, `NeighboursCarriedLaws`, `V1GateLaws`: 49 laws, 49 pass on both, no verdict changed.
   - Not met: TKT-428's "under 2,000 triangles" per sphere (2,928). The remaining density is not the pole segment: a 60 degree pole step in place of the 15 degree one (tried on a scratch copy) gave 3,042, more. The mesh stays near uniform in the sphere's (u, v) chart, about 150 to 190 triangles per 10 degree band at every latitude, so the bands near the poles, a tenth of the area, are about 5 times denser than the equator. Reaching the bound's own count (about 1,000 to 1,500 for edges up to 45 mm on a 254 mm radius) needs refinement or triangulation in a chart whose u scale follows the latitude, a larger change. The ticket's law (pole-cap count bounded by the band's) is not written for the same reason. Filed as TKT-458 (idea, after version 1, supervisor's call); TKT-428 stays open on its count boxes.
+- V1G-14 (TKT-460, TKT-461), about 1.5 h. Bisection by scratch regenerations at toolkit commits, host and harness held at bim-open-data 66577fc (43dd439b reproduces both digests exactly): ODIN-W160 (and ODIN-W161, same counts) broken from 568541ff, the merge of V1G-4; ANN-MB2's four not-simple faces from edb4ae49, the merge of F3 and F3b (v1-faces). M2_JODY-W5 and W6 CARD (108 and 216) and ELLA-W1 (2 and 4) are broken already at e646e28, before every merge in range. Tickets TKT-460 (mine) and TKT-461 (v1-faces).
+- V1G-15 (TKT-460), about 2.5 h. Cause: four 0.2 mm quarter-cylinder fillets (faces 3364, 3398, 3414, 3431) meet at mitred corners and share their end arcs; under chordal-only refinement each was its 8 boundary points as 6 triangles, the end arcs fanned into flaps lying in the arc's plane (all three corners on the arc's edge), and the two faces sharing an arc covered the same planar patch. Marking the flaps alone changes nothing (their insertions are refused, against the boundary); marking the triangles across their inner sides too halves the defect (4 and 8); an angle pass on the flaps adds nothing. Fix, library `V1EdgeFlaps` (v1-flaps.library.plato): `IsOneEdgeFlap` (a drawn triangle whose three corners lie on one model edge, its samples and its own end vertices), `WithOneEdgeFlapsMarked` (flaps and the triangles across their inner sides marked for the chordal round), and `FlapsFlippedOut` (after the rounds, each remaining flap's inner side flipped with the triangle across it when both new triangles are positive in the chart and neither is a flap). Delaunay never makes that flip, but the contract asks for coverage, not Delaunay triangles; plane faces are not refined, so their fans over a curve stay.
+  - Scratch regenerations of 43dd439b without and with the two edits, harness at bim-open-data 66577fc:
+
+| File | 43dd439b | with V1G-15 |
+|---|---|---|
+| ODIN-W160 | non-manifold 8, misoriented 16 | 0, 0, closed and oriented, contract holds |
+| ODIN-W161 | 8, 16 | 0, 0, closed and oriented, contract holds |
+| M2_JODY-W5 and W6 CARD | 108, 216, flipped 3 | unchanged (other cause, before e646e28) |
+| ELLA-W1 | boundary 608, 2, 4 | unchanged (other cause) |
+| ANN-MB2 (guard) | boundary 12, flipped 1 | unchanged |
+| moon_buggy (guard) | clean | unchanged |
+| LENA-R8 (guard) | boundary 2,026 | unchanged |
+| MAYA-W160 (guard) | clean | unchanged |
+| NINA-B400 (guard) | clean | unchanged |
+| RCB-F9T (guard) | boundary 416, 1 over-chordal | unchanged |
+
+  - Laws, compiled, budget 120 s, the same two library copies: `FaceMeshingLaws`, `TriangulatedWitnessLaws`, `PolesWitnessLaws`, `V1PoleChecksLaws`, `FaceMeshingLiftIndexedLaws`, `RefinementAttainableLaws`, `V1GateLaws`, `V1PlaneLaws`, `V1GateSplitsLaws`, `V1KeepLaws`, `V1AxleLaws`, `V1BandLaws`, `FaceMeshingEdgeOnMarksLaws`, `FaceMeshingGridChordalLaws`: 106 laws, 106 pass on both.
+  - Not done: TKT-460's first box, a law over a witness cut from the fillet (a mitred quarter-cylinder pair at 0.2 mm is a model to build by hand); the evidence is the harness's on ODIN-W160 and W161.
 
 ## Gate and quality: every law of layer 5
 
@@ -421,6 +442,11 @@ V1G-7 (TKT-399, second criterion):
 V1G-8 (TKT-429):
 - In `JoinedByCut` (05-face-meshing/uv-regions.library.plato): `var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);` => `var end = m.BandEndCopy(f, a, i, b, j);`, and the function's comment says the cut ends at "the copy of b's point nearest it on the face's side (BandEndCopy)".
 - Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
+
+V1G-15 (TKT-460), on 05-face-meshing/face-meshing-v1-plane.library.plato as merged with V1G-13 and F4b:
+- In `RefinementRoundChordal`: `var surface = m.WithEdgeOnMarked(...);` => `var surface = m.WithOneEdgeFlapsMarked(s.Current, m.WithEdgeOnMarked(...));` (the existing expression, wrapped).
+- In `RefineToSurfaceChordal`: `return s.Current.Positioned.Triangulation;` => `return m.FlapsFlippedOut(r, chart, s.Current.Positioned.Triangulation);`.
+- Move `v1-flaps.library.plato` to `05-face-meshing/face-meshing-v1-flaps.library.plato` (library `V1EdgeFlaps`).
 
 V1G-13 (TKT-428):
 - In `RefinementRoundChordal` (05-face-meshing/face-meshing-v1-plane.library.plato, merged with V1G-4): `var surface = m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least);` => `var surface = s.Current.Positioned.Triangulation.WithoutCollapsedMarks(m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least));`.

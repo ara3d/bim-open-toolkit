@@ -1,0 +1,162 @@
+//==
+// # Version 1: a triangle spanned by one model edge is refined (TKT-460)
+//
+// A curved face's constrained triangulation can fan a boundary curve's own points into triangles
+// whose three corners all lie on that one model edge: they span the region between the curve and
+// its chord, which lies in the curve's own plane, not on the face. On SHO/ODIN-W160 and W161's
+// quarter-cylinder fillets (radius about 0.2 mm, faces 3364, 3398, 3414, 3431) such flaps fill the
+// plane of an end arc that two mitred faces share, so both faces cover one patch: 8 non-manifold
+// and 16 misoriented edges per file under chordal-only refinement (V1G-4), which never split them
+// because the whole fillet is within the 1 mm bound. Before V1G-4 the 15 degree element-normal test
+// split them. WithOneEdgeFlapsMarked marks every drawn triangle whose three corners lie on one
+// model edge (its samples and its own end vertices) and the triangles beside them, so the chordal
+// round splits where the flaps are and the angular bound stays out of version 1. A plane face is
+// not refined, so its fans over a curve (a disk's triangulation) stay, which is right: there the
+// curve's plane is the face.
+//
+// Sections, in order:
+//  - Sources on an edge
+//  - Flaps
+//  - Flipping flaps out
+
+library V1EdgeFlaps
+{
+    //==
+    // # Sources on an edge
+
+    // The index of the edge source s samples, or -1 when s is no edge sample.
+    SampledEdgeOf(s: UvPointSource): Integer
+        => match (s) {
+            FromVertex(v) => -1;
+            FromEdge(e, k) => e.Value;
+            SeamCut(side, k) => -1;
+            Pole(side, k) => -1;
+            Interior => -1;
+        };
+
+    // The index of the vertex source s is, or -1 when s is no model vertex.
+    VertexIndexOf(s: UvPointSource): Integer
+        => match (s) {
+            FromVertex(v) => v.Value;
+            FromEdge(e, k) => -1;
+            SeamCut(side, k) => -1;
+            Pole(side, k) => -1;
+            Interior => -1;
+        };
+
+    // Whether source s lies on edge e of model m: a sample of e, or one of e's two end vertices.
+    IsOnModelEdge(m: BrepModel, s: UvPointSource, e: Integer): Boolean
+        => s.SampledEdgeOf == e
+            ? true
+            : (s.VertexIndexOf >= 0
+                ? (m.Edges[e].Start.Value == s.VertexIndexOf || m.Edges[e].End.Value == s.VertexIndexOf)
+                : false);
+
+    //==
+    // # Flaps
+
+    // Whether triangle k of t is drawn (not collapsed at a pole) and its three corners lie on one
+    // model edge: the edge of the first corner that is an edge sample, every corner on it. A
+    // triangle with no sampled corner (three model vertices) is none.
+    IsOneEdgeFlap(m: BrepModel, t: UvTriangulation, k: Integer): Boolean
+    {
+        var cs = t.Triangles[k].Vertices;
+        var edges = cs.Map(v => t.Sources[v].SampledEdgeOf).FlatMap(e => e >= 0 ? [e] : [e].Take(0));
+        return t.IsCollapsedElement(ElementIndex(k))
+            ? false
+            : (edges.Count == 0 ? false : cs.All(v => m.IsOnModelEdge(t.Sources[v], edges[0])));
+    }
+
+    // Refinement marks with every one-edge flap of t marked, and every triangle with a flap across
+    // one of its sides (Neighbours: the triangle across slot 3 k + j, -1 at a boundary segment). A
+    // flap lies against the boundary, so a point inserted in it is refused as too close; the
+    // triangle beside it lies inside the face, its split is kept, and the flips that follow
+    // remove the flap. A mark already set stays set.
+    WithOneEdgeFlapsMarked(m: BrepModel, t: PositionedTriangulationWithNeighbours, marks: Array<Boolean>): Array<Boolean>
+    {
+        var u = t.Positioned.Triangulation;
+        var flaps = u.Triangles.Count.MapRange(k => m.IsOneEdgeFlap(u, k));
+        return marks.Count.MapRange(k => marks[k]
+            ? true
+            : (flaps[k] ? true : 3.Range.Any(j => t.Neighbours[3 * k + j] >= 0 ? flaps[t.Neighbours[3 * k + j]] : false)));
+    }
+
+    // The indices of t's one-edge flaps, for the angle pass: a flap lies against the boundary, so
+    // the surface pass's insertion in it is refused, while an off-centre of its shortest side lies
+    // inside the face.
+    OneEdgeFlapIndices(m: BrepModel, t: UvTriangulation): Array<Integer>
+        => t.Triangles.Count.Range.FlatMap(k => m.IsOneEdgeFlap(t, k) ? [k] : [k].Take(0));
+
+    //==
+    // # Flipping flaps out
+
+    // The side of triangle tri that is not a boundary segment of region r, as its position j (from
+    // corner j to corner j + 1), when exactly one is; -1 otherwise.
+    InnerSideOf(r: UvRegion, tri: TriangleFace): Integer
+    {
+        var inner = 3.Range.FlatMap(j => r.IsConstrained(tri.Corner(j), tri.Corner(j + 1)) ? [j].Take(0) : [j]);
+        return inner.Count == 1 ? inner[0] : -1;
+    }
+
+    // The index of the triangle of t that holds the directed side from a to b, or -1.
+    TriangleHolding(t: UvTriangulation, a: Integer, b: Integer): Integer
+        => t.Triangles.Count.Range.Reduce(-1, (found, q) => found >= 0
+            ? found
+            : (3.Range.Any(j => t.Triangles[q].Corner(j) == a ? t.Triangles[q].Corner(j + 1) == b : false) ? q : -1));
+
+    // The two triangles flap k of t becomes when its inner side is flipped with the triangle across
+    // it: for flap (a, c, o) with inner side a c and neighbour (c, a, x), the triangles (a, x, o)
+    // and (x, c, o). None when the flap has no single inner side, no neighbour across it, a new
+    // triangle is not positive in the chart, or a new triangle is itself a one-edge flap.
+    FlapFlip(m: BrepModel, r: UvRegion, chart: FaceChart, t: UvTriangulation, k: Integer): Array<TriangleFace>
+    {
+        var none = [TriangleFace(VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0);
+        var tri = t.Triangles[k];
+        var j = r.InnerSideOf(tri);
+        var a = tri.Corner(j < 0 ? 0 : j);
+        var c = tri.Corner(j < 0 ? 1 : j + 1);
+        var o = tri.Corner(j < 0 ? 2 : j + 2);
+        var q = j < 0 ? -1 : t.TriangleHolding(c, a);
+        var x = q < 0 ? a : 3.Range.Reduce(a, (found, i) => (t.Triangles[q].Corner(i) != a && t.Triangles[q].Corner(i) != c) ? t.Triangles[q].Corner(i) : found);
+        var first = TriangleFace(VertexIndex(a), VertexIndex(x), VertexIndex(o));
+        var second = TriangleFace(VertexIndex(x), VertexIndex(c), VertexIndex(o));
+        var p = t.Points.Map(uv => chart.ChartPoint(uv));
+        var flipped = UvTriangulation(t.Points, t.Sources, [first, second], t.Quads);
+        return q < 0
+            ? none
+            : ((TwiceSignedArea(p[a], p[x], p[o]) > 0.0 && TwiceSignedArea(p[x], p[c], p[o]) > 0.0)
+                ? ((m.IsOneEdgeFlap(flipped, 0) || m.IsOneEdgeFlap(flipped, 1)) ? none : [first, second, TriangleFace(VertexIndex(q), VertexIndex(q), VertexIndex(q))])
+                : none);
+    }
+
+    // Triangulation t with its one-edge flaps flipped out, one at a time, until none can be: each
+    // flip replaces a flap and the triangle across its inner side by two triangles that reach into
+    // the face. Delaunay never makes these flips (a flap passes the in-circle test), but the contract
+    // asks for coverage, not Delaunay triangles. At most one pass per triangle.
+    FlapsFlippedOut(m: BrepModel, r: UvRegion, chart: FaceChart, t: UvTriangulation): UvTriangulation
+    {
+        var current = t;
+        var rounds = 0;
+        var changed = true;
+        while (changed && rounds < t.Triangles.Count)
+        {
+            var at = current.Triangles.Count.Range.Reduce(-1, (found, k) => found >= 0
+                ? found
+                : ((m.IsOneEdgeFlap(current, k) && m.FlapFlip(r, chart, current, k).Count == 3) ? k : -1));
+            if (at < 0)
+            {
+                changed = false;
+            }
+            else
+            {
+                var flip = m.FlapFlip(r, chart, current, at);
+                var q = flip[2].A.Value;
+                current = UvTriangulation(current.Points, current.Sources,
+                    current.Triangles.Count.Range.FlatMap(i => i == at ? [flip[0], flip[1]] : (i == q ? [flip[0]].Take(0) : [current.Triangles[i]])),
+                    current.Quads);
+            }
+            rounds = rounds + 1;
+        }
+        return current;
+    }
+}
