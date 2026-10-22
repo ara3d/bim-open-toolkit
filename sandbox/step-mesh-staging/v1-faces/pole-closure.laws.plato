@@ -62,7 +62,7 @@ library FaceMeshingPoleClosureLaws
     // Unwrapped and closed at its pole, a lune's loop does not wind round u once its pole is
     // expanded, and its region is the lune.
     Law_V1Faces_LuneClosesAtPole(k: PoleLune): Boolean
-        => k.IsLune.Not || k.LuneClosesAtPole;
+        => k.IsLune ? k.LuneClosesAtPole : true;
 
     // Law_V1Faces_LuneClosesAtPole on a lune.
     LuneClosesAtPole(k: PoleLune): Boolean
@@ -78,7 +78,7 @@ library FaceMeshingPoleClosureLaws
     // The library's unwrap alone gives the lune's region too. Fails or throws before TKT-411 on
     // the half and three-quarter turns, where the unwrapped loop winds.
     Law_V1Faces_LuneRegionFromUnwrap(k: PoleLune): Boolean
-        => k.IsLune.Not || k.LuneRegionFromUnwrap;
+        => k.IsLune ? k.LuneRegionFromUnwrap : true;
 
     // Law_V1Faces_LuneRegionFromUnwrap on a lune.
     LuneRegionFromUnwrap(k: PoleLune): Boolean

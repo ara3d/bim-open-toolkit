@@ -1,13 +1,15 @@
 ---
 id: TKT-401
 title: STEP mesher: the bump patch solid's top meshes with a degenerate element
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 0d8c417b
+session: 0d8c417b-f6aa-4828-ac07-a9d6f3b535c9
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [kept]
 related: [TKT-391, TKT-399]
 created: 2026-10-21
+claimed: 2026-10-22
 kind: defect
 ---
 

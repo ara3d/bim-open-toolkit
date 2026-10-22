@@ -1,0 +1,53 @@
+//==
+// # An inserted point leaves no degenerate triangle: laws (TKT-401)
+//
+// The bump solid's top meshed under the witness options (chordal 0.01, quads not preferred), the
+// case TKT-401 found through layer 8's Law_BumpSolidValidatesStructurally, here on the one face
+// so that the law needs no loop run.
+//
+// Sections, in order:
+//  - Cases
+//  - Thickness
+
+library FaceMeshingInsertionClearanceLaws
+{
+    //==
+    // # Cases
+
+    Witness_BumpTopHalf(_: BumpTop): BumpTop
+        => BumpTop(0.5);
+    Witness_BumpTopThreeTenths(_: BumpTop): BumpTop
+        => BumpTop(0.3);
+
+    // Whether w is one of the two witness bumps. The law runner also draws bumps at random, and
+    // each top takes minutes to refine in the law runner, so the others hold vacuously. Guards
+    // are conditionals, not ||: the operator evaluates its right side even when its left is true.
+    IsBump(w: BumpTop): Boolean
+        => w.Bump == 0.5 || w.Bump == 0.3;
+
+    // The top face's mesh under the witness options.
+    TopMesh(w: BumpTop): FaceMesh
+    {
+        var m = BrepModel.Witness_BSplinePatchSolid(w.Bump);
+        var c = MeshingOptions.WitnessOptions.Face;
+        return m.MeshFace(BrepFaceIndex(1), m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors), c).Mesh;
+    }
+
+    //==
+    // # Thickness
+
+    // Every element of the bump solid's top has its smallest altitude above the model's length
+    // tolerance: layer 6's ElementIsNotDegenerate on the face's own mesh. Fails before TKT-401 on
+    // bump 0.5 (15 such triangles in the compiled library, smallest altitude 3.6e-7).
+    Law_V1Faces_BumpTopHasNoDegenerateElement(w: BumpTop): Boolean
+        => w.IsBump ? w.TopIsThick(w.TopMesh) : true;
+
+    // Law_V1Faces_BumpTopHasNoDegenerateElement on the top's mesh fm.
+    TopIsThick(w: BumpTop, fm: FaceMesh): Boolean
+    {
+        var t = BrepModel.Witness_BSplinePatchSolid(w.Bump).Tolerances.Length.Value;
+        return fm.ElementCount.Range.All(k => fm.ElementPositions(ElementIndex(k)).Count != 3
+            || AltitudeUnlessCollapsed(fm.ElementPositions(ElementIndex(k))[0], fm.ElementPositions(ElementIndex(k))[1],
+                fm.ElementPositions(ElementIndex(k))[2], -1.0) > t);
+    }
+}

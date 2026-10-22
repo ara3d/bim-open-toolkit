@@ -1,0 +1,27 @@
+//==
+// # A whole pole segment takes at least three steps (TKT-411, F3 addendum)
+//
+// WholePoleSegment turns a vertex loop on a collapsed line into a period of pole points, sampled
+// every PoleStep (the surface angular bound) and left one step short of its end, so the loop
+// winds once. With version 1's chordal-only refinement (SurfaceAngular 180 degrees) a period
+// takes two steps, the loop's last point lies exactly half a period from its first, and the
+// winding rounds that tie to +1 one way and to 0 the other: Witness_SphereByPoleLoops(1.0) then
+// has one winding loop instead of a band pair, and before IsBandPairGuarded it threw (v1-gate's
+// finding). Three steps put the last point two thirds of a period on, so each pole loop winds
+// once, in opposite senses, as a closed edge takes at least three segments (DefaultCriteria).
+//
+// Sections, in order:
+//  - Samples
+
+library PolesSegmentsWhole
+{
+    //==
+    // # Samples
+
+    // PoleSegmentSamples with at least `least` equal steps.
+    PoleSegmentSamplesAtLeast(uv: UvCoordinate, which: SurfaceParameter, from: Number, to: Number, s: UvPointSource, c: FaceMeshingCriteria, least: Integer): Array<UvSample>
+    {
+        var n = (to - from).PoleStepCount(c).Max(least);
+        return (n + 1).MapRange(k => UvSample(uv.WithCoordinate(which, from + (to - from) * k.ToNumber / n.ToNumber), s));
+    }
+}

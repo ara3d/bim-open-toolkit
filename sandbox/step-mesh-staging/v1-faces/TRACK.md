@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1 in 1369e852 | ready: F3 | working: F2
+Status: merged: F1 in 1369e852 | ready: F3 (with its addendum F3b), F2 | next: F4
 
 ## Chunks
 
@@ -11,6 +11,7 @@ Status: merged: F1 in 1369e852 | ready: F3 | working: F2
 | F3 | TKT-411 | three-edge sphere, cone and cylinder faces that throw ArgumentOutOfRangeException while their region is built | 2 h |
 | F4 | TKT-421 | folded elements on needle cones and single-winding cylinder faces that F3 lets mesh | 2 h, after F2 |
 | F2 | TKT-401 | the bump solid's degenerate element at ElementIndex(1541) | 2 h |
+| F3b | TKT-411 | addendum to F3: a whole pole segment takes at least three steps (Witness_SphereByPoleLoops under chordal-only refinement) | 0.5 h |
 | F1b | TKT-415 follow-up | size a refused grid instead of dropping it: QuadCountMismatch floors from the measured deviation, so a doubly curved four-sided face (torus, sphere zone, B-spline) gets a finer grid in the next round instead of a full refinement | not started; supervisor's call |
 
 F3 runs before F2: it loses faces in 7 corpus files, and F2 is one element on a witness.
@@ -34,6 +35,14 @@ F3 runs before F2: it loses faces in 7 corpus files, and F2 is one element on a 
   - Not clean, filed as TKT-421 (F4): the needle cones (MAYA-W160 3337 and 3638, MAYA-W260_REVC 1411 and 1431: radius 6.1e-5, half-angle 4.1e-4 rad) and the single-winding cylinders (MAYA-W260_REVC 1577, 1588, 1606) now mesh but keep folded elements, so MAYA-W160 goes from 0 non-manifold and 0 misoriented edges to 6 and 12, MAYA-W260_REVC from 4 and 4 to 10 and 16. Before F3 those faces were holes with HOST-LIBRARY-THREW. The supervisor decides: merge F3 now (no throw, sphere lunes right, seven faces folded instead of missing) or together with F4.
   - Witness check for F1 on the same build: `gallery witness:BSplinePatchSolid:0.3 --chordal 0.01` gives 15 vertices, 16 triangles, 5 quads, digest `A05ACC8F74D84B8C` (before: the unit box's 6 quads, `AC03233177AEA985`), closed and oriented.
 
+- F2 (TKT-401), 4 h against 2 h (over: two rejected rules, each proved wrong on the corpus files, below): `insertion-clearance.library.plato` (`ThinBound`, `AltitudeUnlessCollapsed`, `ThinnestOf`, `CavityIsThick`, `ChangedAreThick`), law and cases in `insertion-clearance.laws.plato`, `BumpTop` in `insertion-clearance.types.plato`. Cause: the bump 0.5 top's four edges are one straight segment each, along which the surface normal tilts up to 26.6 degrees; the 15 degree normal bound can only be met by ever thinner triangles beside a segment refinement may not split, and the insertion test bounds a new point's distance to the corners it joins, never the thickness of the triangles it makes. The top took 2474 triangles, 15 of them with an altitude below the length tolerance (smallest 3.6e-7). Rule: an insertion is kept only when the thinnest triangle of its cavity (after flips) is at least ten length tolerances thick, or thicker than the thinnest triangle it replaces; a triangle with two corners on one point (collapsed at a pole, dropped by Lift) is not measured.
+  - Law `Law_V1Faces_BumpTopHasNoDegenerateElement` (the top under the witness options, every element's smallest altitude above the length tolerance): fails on the library without F2 (F1 and F3 wired), passes with F2, budget 600 s (each bump takes minutes to refine in the law runner, so the law runs the two witness bumps only).
+  - Regression, F1+F3 wired copy against F1+F3+F2, the 14 law classes of refinement, triangulation, face meshing and the staged v1-faces laws (109 laws): 108 pass with F2; the one failure, `Law_RefinedInteriorMeetsMinAngle` (cylinder face 0), fails on a clean archive of cd33c998 too (a quality law). Only change: `Law_LiftCaseReachesItsBranches` skipped (budget) before, passes after.
+  - Harness on a scratch regeneration of F1+F3+F2 (`--parallel`, chordal 0.01 for witnesses): bump 0.5 top 1724 elements, none below 1e-6 (smallest 1.2e-5), closed and oriented; bump 0.3 unchanged (16 triangles). CEL/LENA-R8.STEP 0 non-manifold, 0 misoriented (as with F3 alone); SHO/MAYA-W260_REVC.step 4 and 4 (its 2026-10-21 baseline: four plane faces, 1635, 1640, 1653, 1725, each using one edge three times, already there); SHO/MAYA-W160.step 4 and 8, all on its needle cones 3327, 3337, 3628, 3638 (F3 alone: 6 and 12; TKT-421, F4).
+- F3b (TKT-411 addendum), 0.5 h: `pole-whole.library.plato` (`PoleSegmentSamplesAtLeast`), law in `pole-witness.laws.plato`, `PoleLoopCase` in `pole-witness.types.plato`. v1-gate found `Witness_SphereByPoleLoops(1.0)` throws at chordal 0.05 and 0.01 with SurfaceAngular 180 degrees (version 1's chordal-only refinement). Each vertex loop becomes a whole pole segment sampled every SurfaceAngular, two steps a period at 180 degrees, so its last point lies exactly half a period on and the two loops round that tie to windings +1 and 0: no band pair. `Law_V1Faces_SphereByPoleLoopsMeshes`: error on the current library (ArgumentOutOfRangeException in IsBandPair, TKT-411's path); fail with F3 alone (no throw, a face left empty); pass with F3 and three steps at least (25 cases). `PolesLaws` on that copy: the region and limit-normal laws pass; the five face-check laws exceed the 120 s budget in the angle-pass refinement, as on the committed library (v1-gate's table: superseded by its per-check laws).
+- Keep half of F1, asked by the supervisor after the F1 merge: `grid-keep.laws.plato`, `Law_V1Faces_GridKeptWhereCurvedAtMostOneWay`: on the unit box, the flat B-spline patch solid, both cylinders and the cone, every four-sided face keeps its quad grid and the lifted grid is within the chordal bound. Passes on the merged library (8 cases, 1.4 s).
+- v1-types' 6d654cba (the grid keep rule on the contract's triangles, `GridUnlessFoldedOrCoarseV1Types`) replaces F1's `GridUnlessFoldedOrCoarse` and, by its commit, decides the same on the eight grid witnesses; it does not touch what F2 or F3 stage. It also covers v1-gate's request about the quad keep rule (both diagonal splits), so that request is v1-types' now.
+
 ## Merge instructions
 
 - `05-face-meshing/face-meshing.library.plato`, `QuadGridOnSides`: replace `m.GridUnlessFolded(f, m.QuadGrid(f, r, corners, c))` with `m.GridUnlessFoldedOrCoarse(f, r, m.QuadGrid(f, r, corners, c), c)` (the body of `QuadGridOnSidesWithin`; delete `QuadGridOnSidesWithin` after, and `GridUnlessFolded` once nothing calls it).
@@ -45,6 +54,19 @@ F3 runs before F2: it loses faces in 7 corpus files, and F2 is one element on a 
   - `05-face-meshing/uv-regions.library.plato`, `WithSeamCut`: `m.IsBandPair(f, loops, winding)` becomes `m.IsBandPairGuarded(f, loops, winding)`; or give `IsBandPair` the guarded body and delete `IsBandPairGuarded`.
   - `05-face-meshing/pole-segments.library.plato`, `ExpandedPoint`: `(leaving - arriving).Abs > m.PointToleranceAlong(f, uv, which)` becomes `(leaving - arriving).Abs > m.PoleGapTolerance(f, which)`; delete `ExpandedPointAtPole` (a copy kept for review), and `PointToleranceAlong` if nothing else calls it.
   - After the merge `Law_V1Faces_LuneRegionFromUnwrap` states the region half of `Law_V1Faces_LuneClosesAtPole`; keep one.
+
+- F2: move `insertion-clearance.*.plato` into `05-face-meshing`, then:
+  - `triangulation-built-indexed.library.plato`, `TryInsertionIndexed`, and `triangulation-built.library.plato`, `TryInsertionInto`: `var kept = good ? angles[0] > angles[1] : false;` becomes `var kept = good ? (angles[0] > angles[1] && m.CavityIsThick(cavity, points.Count, at, pos, tris)) : false;`.
+  - `triangulation-fast.library.plato`, `TryInsertion`: `return (good && angles[0] > angles[1]) ? inserted : tris;` becomes `return (good && angles[0] > angles[1]) ? (m.ChangedAreThick(f, pts.Concatenate([uv]), tris, inserted, tris.ChangedNear(nb, inserted, q)) ? inserted : tris) : tris;` (a conditional, not `&&`: `ChangedNear` throws when the point was refused and `q` is -1, and `&&` evaluates both sides).
+  - All three, so the agreement laws (`InsertionBuiltLaws`, `BoundaryIndexLaws`) keep comparing like with like.
+  - V1G-4's `RefinementRoundChordal` reuses the carried passes, so it gets the rule through `TryInsertionIndexed`.
+- F3b: move `pole-whole.library.plato` and `pole-witness.*.plato` into `05-face-meshing`; in `pole-segments.library.plato`, `WholePoleSegment`: `uv.PoleSegmentSamples(which, from, to, loops[k].Sources[0], c)` becomes `uv.PoleSegmentSamplesAtLeast(which, from, to, loops[k].Sources[0], c, 3)`. Merge with F3 or after it: without F3's `IsBandPairGuarded` the law throws.
+- Keep-half law: move `grid-keep.laws.plato` into `05-face-meshing`.
+
+## Considered and rejected
+
+- F2, ring-side clearance (scratch copy 79ccfb5, never committed): keep a point only when it is at least `least` from each boundary side of its ring. Bump 0.5 got worse, 4120 elements and 61 below 1e-6: the slivers are three interior points lined up beside the edge, with ordinary triangles between them and it, so no boundary side is in their ring.
+- F2, a thickness bound of `least` (the effective minimum length, scratch copy 519db69): bump 0.5 clean (634 elements), but CEL/LENA-R8.STEP lost points on 78 faces and went from 0 to 16 non-manifold and 32 misoriented edges: its polar lunes keep triangles with one corner on the expanded pole and two on one meridian, which have no area in space, and refinement may no longer split them. Ten tolerances alone left LENA the same; comparing with the replaced triangles fixed it.
 
 ## Contract requests
 
@@ -75,6 +97,10 @@ None.
 | F3: lune laws, pole tolerance, guard | 40 min | 8 law runs |
 | F3: regression, 32 classes before and after | 19 min | 2 law runs |
 | F3: scratch regeneration and harness on 3 corpus files | 30 min | 1 regeneration (63 s), 2 builds, 6 file runs |
+| F2: harness altitude probe, cause | 30 min | 3 builds, 4 witness runs |
+| F2: three rules, scratch regeneration each (63 s to 7 min under load) and harness | 2 h | 5 regenerations, 5 builds, 20 file runs |
+| F2: laws, agreement and bump law (the bump law takes 5 to 9 min a run) | 1 h | 8 law runs |
+| F3b and the keep-half law | 30 min | 4 law runs |
 
 ## Lessons
 
@@ -82,4 +108,5 @@ None.
 - A staged law that compares staged code with library code says nothing after the merge (as D1 noted); state the refusal half separately.
 - The law runner draws random values for a witness type's fields besides its Witness_ cases; a law over a record of numbers needs a validity guard.
 - Shell heredocs that contain an apostrophe fail in this session's Bash tool; write scripts with the Write tool.
+- `&&` and `||` evaluate both sides in this runtime: a guard written with them does not guard (the F3 IsBandPair throw, the F2 fast-path throw, and laws whose random cases ran the expensive side). Write guards as conditionals.
 - Generated C# marks every method `AggressiveInlining`, so an exception's stack names only the host's call, even in Debug; a probe that calls the steps one by one finds the failing step.

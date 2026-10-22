@@ -1,0 +1,74 @@
+//==
+// # An inserted point leaves no degenerate triangle (TKT-401)
+//
+// Refinement accepts a new point when its surface point is at least the effective minimum
+// length (`least`) from every corner it will join, and nothing bounds how thin the triangles it
+// makes are. On the bump solid of bump 0.5 (Witness_BSplinePatchSolid(0.5)) at chordal 0.01 the
+// top's four edges are one straight segment each, and along them the surface normal tilts up to
+// 26.6 degrees from the edge's ends to its middle; the 15 degree normal bound can then be met
+// only by ever thinner triangles beside a segment refinement may not split. The top took 2474
+// triangles, 15 of them with an altitude below the length tolerance (ElementIsNotDegenerate,
+// the Error TKT-401 reports; smallest 3.6e-7), most of them three interior points lined up
+// beside the edge, so no test of the boundary side alone sees them. A point is now kept only
+// when every triangle its insertion writes (the cavity after its flips) has its smallest
+// altitude at least ThinBound, or more than the triangles it replaces. The version 1 contract (README, "Version 1 mesh contract") does
+// not require the normal bound, so a triangle that stops short of it is a quality matter for
+// the later pass, while a degenerate one breaks the contract.
+//
+// Sections, in order:
+//  - Thickness
+
+library FaceMeshingInsertionClearance
+{
+    //==
+    // # Thickness
+
+    // The altitude below which a triangle an insertion writes is too thin: ten length
+    // tolerances, so that no insertion makes an element ElementIsNotDegenerate rejects (an
+    // altitude at most one tolerance) while refinement keeps the points the chordal bound needs.
+    // The effective minimum length was tried and refused too much: CEL/LENA-R8.STEP lost points
+    // on 78 faces, and its polar lunes kept triangles with no area in space.
+    ThinBound(m: BrepModel): Number
+        => 10.0 * m.Tolerances.Length.Value;
+
+    // The smallest altitude of the triangle (a, b, c) in space, twice its area over its longest
+    // side; Number.MaxValue when two corners are one point (a side within the length tolerance
+    // t), a triangle that collapses at a pole and that Lift drops.
+    AltitudeUnlessCollapsed(a: Point3D, b: Point3D, c: Point3D, t: Number): Number
+    {
+        var shortest = a.Distance(b).Min(b.Distance(c)).Min(c.Distance(a));
+        var longest = a.Distance(b).Max(b.Distance(c)).Max(c.Distance(a));
+        return shortest <= t ? Number.MaxValue : (b - a).Cross(c - a).Length / longest;
+    }
+
+    // The thinnest of triangles ts by AltitudeUnlessCollapsed, their corners' positions given by
+    // `at` for the new point (index pi) and pos for the others.
+    ThinnestOf(m: BrepModel, ts: Array<TriangleFace>, pi: Integer, at: Point3D, pos: List<Point3D>): Number
+        => ts.Reduce(Number.MaxValue, (least, t) => least.Min(AltitudeUnlessCollapsed(
+            t.A.Value == pi ? at : pos.At(t.A.Value),
+            t.B.Value == pi ? at : pos.At(t.B.Value),
+            t.C.Value == pi ? at : pos.At(t.C.Value), m.Tolerances.Length.Value)));
+
+    // Whether the triangles cavity c writes are thick enough: their thinnest reaches ThinBound,
+    // or is thicker than the thinnest of the triangles it replaces (the slots below tris.Count),
+    // so an insertion that splits a triangle with no area in space is kept, as the angle guard
+    // keeps one that improves the smallest angle.
+    CavityIsThick(m: BrepModel, c: TriangleWrites, pi: Integer, at: Point3D, pos: List<Point3D>, tris: List<TriangleFace>): Boolean
+    {
+        var after = m.ThinnestOf(c.Triangles, pi, at, pos);
+        var replaced = c.Slots.FlatMap(s => s < tris.Count ? [tris.At(s)] : [tris.At(0)].Take(0));
+        return after >= m.ThinBound || after > m.ThinnestOf(replaced, pi, at, pos);
+    }
+
+    // CavityIsThick for TriangulationFast's TryInsertion: the triangles of `after` at positions
+    // `changed` against those of `before` there, corners evaluated on face f's surface at pts (the
+    // new point's parameters last).
+    ChangedAreThick(m: BrepModel, f: BrepFaceIndex, pts: Array<UvCoordinate>, before: Array<TriangleFace>, after: Array<TriangleFace>, changed: Array<Integer>): Boolean
+    {
+        var pos = new List<Point3D>().AddRange(pts.Map(uv => m.Geometry.Eval(m.SurfaceOf(f), uv)));
+        var pi = pts.Count - 1;
+        var now = m.ThinnestOf(changed.Map(k => after[k]), pi, pos.At(pi), pos);
+        var was = m.ThinnestOf(changed.FlatMap(k => k < before.Count ? [before[k]] : [before[0]].Take(0)), pi, pos.At(pi), pos);
+        return now >= m.ThinBound || now > was;
+    }
+}

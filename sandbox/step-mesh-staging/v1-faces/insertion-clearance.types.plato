@@ -1,0 +1,9 @@
+//==
+// # An inserted point leaves no degenerate triangle: types (TKT-401)
+
+// The bump solid of bump Bump (Witness_BSplinePatchSolid), whose top is meshed under the
+// witness options.
+type BumpTop
+{
+    Bump: Number;
+}
