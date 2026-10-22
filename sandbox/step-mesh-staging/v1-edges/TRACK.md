@@ -67,6 +67,8 @@ Status: merged: E4a in 0165cccd, E4b in 6648515d, E5a in f4617462 | ready: E3, E
   - Shipped laws, 11 blocks with the seed wired: as on HEAD except `Law_AttainableRefinementNoLarger` (restated, see E4b); the V1G pinch laws pass on this seed, not on the fallback.
   - Corpus (88 files, scratch C# with E5a wired): no face's mesh changes against E4b's run. The weakly simple faces still stop at the simplicity test (E5b).
 
+- E5a' (TKT-468, supervisor 2026-10-22), see the commit, about 1 h. The two seeds folded into one: `CdtSeedByInsertion` and the parts only it used (`SeedCoincidentCorner`, `SeedIsSegment`, `SeedInside`, `SeedWithoutSlivers`) are gone; the seed's first sliver pass is `SeedWithoutSliversOf` over an empty piece table, the same flips as the unprotected pass it replaces, so the mesher's output does not change (no corpus run). The laws call `CdtSeedOverCopies`; `SeedFactsHold` asks for `SeedCompleteCount` triangles and serves both law files (`CopiesSeedFactsHold` gone); `Law_V1Edges_CopiesSeedAgreesOnSimpleRegions` lost its reference and goes; `Law_V1Edges_CopiesSeedOnCorpusWitnesses` became the witness laws' own check and goes. Six blocks (the three seed blocks, V1PinchLaws, TriangulationCdtIndexedLaws, BoundaryIndexLaws) on HEAD and on HEAD with the patch: 33 pass and 31 pass, the difference being the two removed laws.
+
 ## Merge instructions
 
 E3, recommended form (contract request below): `ShellImplicitEdges` replaces `ShellPolyEdges`.
@@ -110,6 +112,8 @@ E5a (TKT-468), after E4b:
 - In `TriangulateRegionCdtIndexedCounted` and the law helper `CdtWithIndexedFlips`, `r.CdtSeedOfRegion(points)` => `r.CdtSeedOfRegionOverCopies(points)`.
 - Then delete the fallback: `CdtSeedOfRegion` and `SeedCoincidentCorner` (E4b), and `Law_V1Edges_SeedFallsBackOnKeyhole`. `CdtSeedByInsertion` stays only as the reference `Law_V1Edges_CopiesSeedAgreesOnSimpleRegions` compares with; with it go `SeedInside` and the protected branch of `SeedWithoutSlivers`, whose versions over the piece table (`SeedInsideOf`, `SeedWithoutSliversOf`) replace them. Folding the two entry points into one, with the E4 laws pointed at `CdtSeedOverCopies`, removes that duplicate setup; recorded as debt here, not done, so the queued E4 merge stays as reviewed.
 - `CdtSeedIndexedCounted` and the ear clipper are then unused by the mesher.
+
+E5a' (TKT-468), on HEAD after the E4 and E5a merges: `git apply sandbox/step-mesh-staging/v1-edges/e5a-prime.patch` (checked with `git apply --check` on HEAD a661a43a). It edits five files: `05-face-meshing/triangulation-cdt-seed.library.plato`, `triangulation-cdt-seed-copies.library.plato`, `triangulation-cdt-seed.laws.plato`, `08-pipeline/pipeline-cdt-seed-copies.laws.plato`, `pipeline-cdt-seed-witnesses.laws.plato`; 259 lines out, 34 in. A patch, not staged copies, because the chunk only deletes and rewires merged code.
 
 ## Contract requests
 
