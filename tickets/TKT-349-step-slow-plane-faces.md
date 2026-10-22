@@ -24,3 +24,5 @@ Five files passed the 120 s limit in the face stage, and a sixth reached it afte
 Not covered: TKT-346 bounded the loops of layers 4 and 5 against non-termination, not against cost; TKT-343 replaced ear clipping with constrained Delaunay but tested witnesses with a few edges; TKT-335 names whole-arena checks per sample point, which may be the cause here and is to be ruled in or out by criterion 3. The faces to rerun first are #15368 in ODIN-W160 (finishes) and #10196 in ODIN-W260 (does not).
 
 Note 2026-10-21, owner's decision: in version 1 the angle-quality refinement pass does not run on planar faces (the boundary is locked, so no angle guarantee exists, MESHING-REQUIREMENTS finding 8). A fix here may take that route.
+
+Note 2026-10-21, later: the version 1 mesh contract (`sandbox/step-brep-mesh/README.md`) makes this definite: a plane face is triangulated from its boundary and holes with no refinement. This defect is fixed when plane faces take that path and the 80 to 212 edge faces mesh in well under a second.

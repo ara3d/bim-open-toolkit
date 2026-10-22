@@ -154,3 +154,5 @@ So two kinds of fix, both in the library, the plan's "shared expensive values" d
 - TriangulationLaws.Law_MinAngleNoWorseThanLibrary: 3908 ms compiled, pass interpreted (the interpreter's call memo answered the repeated meshing once)
 - TriangulationLaws.Law_RefineMeetsContract: 3188 ms compiled, pass interpreted (the interpreter's call memo answered the repeated meshing once)
 - TriangulationLaws.Law_RefinedNoFlippableEdge: 2495 ms compiled, pass interpreted (the interpreter's call memo answered the repeated meshing once)
+
+Note 2026-10-21: under the version 1 mesh contract (`sandbox/step-brep-mesh/README.md`), quality laws leave the version 1 gate (TKT-418). Re-rank this list after TKT-418; quality laws over budget are no longer version 1 defects.

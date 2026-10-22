@@ -94,6 +94,8 @@ diagnostic, never promised).
 
 ### 1.3 Quality constraints
 
+Not part of version 1 (owner, 2026-10-21): see "Version 1 mesh contract" in the [README](../README.md). The quad planarity and convexity rows below are replaced there by "both diagonal splits within the chordal tolerance and oriented".
+
 Ranges are Cubit's "acceptable" values [35], given only as a common reference. They are finite-element
 conventions, not requirements of any exchange format.
 

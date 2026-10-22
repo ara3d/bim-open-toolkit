@@ -131,6 +131,26 @@ README that owns it; this list exists so a reader can see the shape at once.
   counts and measures, and on public files with published properties. The research documents cite
   OpenCascade's reader and mesher only as information about how an existing importer behaves.
 
+## Version 1 mesh contract
+
+Owner, 2026-10-21. Version 1 produces quads and triangles that represent the surface correctly
+and can be improved later; element quality is a later pass. A face's mesh in version 1 must be:
+
+- **Closed and watertight.** Faces that share an edge use its one discretization, as above. A
+  later pass cannot repair a crack without going back to the B-rep, so this holds now.
+- **Oriented and covering.** Every face is covered, with no gap, overlap, or inverted element.
+- **Within the chordal tolerance.** Every element lies within the chordal bound of the true
+  surface. A quad counts as within it, and as oriented, only if both of its diagonal splits are, so
+  a renderer may split it either way; a quad need not be planar or convex beyond that.
+- **Traceable.** Every vertex keeps its provenance (`MeshVertexSite`, `OnFace(f, uv)` in
+  `06-mesh`), so an improvement pass can refine or remesh one face without rereading the file.
+
+Not required in version 1, and left to an improvement pass (`10-editing`, `11-repair`): minimum
+and maximum angle, aspect and radius ratio, the 15 degree side-normal test, sliver removal, and
+interior refinement of plane faces. Long, thin quads and triangles are acceptable. A plane face is
+triangulated from its boundary and holes with no refinement. Laws that state quality move out of
+the version 1 gate into the improvement pass; laws that state the four properties above stay in it.
+
 ## Relation to the Plato stdlib
 
 `stdlib/geometry/brep.*.plato` already holds a faceted B-rep v1 (`Brep3D` with `BrepEdgeUse`,
