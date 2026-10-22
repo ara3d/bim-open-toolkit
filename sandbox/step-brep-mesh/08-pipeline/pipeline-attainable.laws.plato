@@ -158,12 +158,30 @@ library RefinementAttainableLaws
     //==
     // # Capped models
 
-    // The attainable refinement adds no triangle the library's does not: on every face of every
-    // capped witness it has at most as many triangles, and the same where nothing is capped.
-    Law_AttainableRefinementNoLarger(w: CappedWitness): Boolean
-        => w.Model.Faces.Count.Range.All(f => w.Capped
-            ? w.Attainable[f].Triangles.Count <= w.Reference[f].Triangles.Count
-            : w.Attainable[f].Triangles.Count == w.Reference[f].Triangles.Count);
+    // Whether every element of face mesh fm of witness w is within SurfaceChordal of the
+    // surface, both ways, widened by the length tolerance.
+    CappedFaceWithinChordal(w: CappedWitness, fm: FaceMesh): Boolean
+    {
+        var bound = w.Criteria.SurfaceChordal + w.Model.Tolerances.Length.Value;
+        return fm.ElementCount.Range.All(k =>
+            w.Model.ElementCoverageGap(w.Discretizations, fm, ElementIndex(k)) <= bound
+                && w.Model.ElementChordalDeviation(w.Discretizations, fm, ElementIndex(k)) <= bound);
+    }
+
+    // From the same start triangulation, the library's refinement and the attainable one both
+    // meet the chordal bound on every face of every capped witness. Restated (supervisor,
+    // 2026-10-22, TKT-468) from Law_AttainableRefinementNoLarger, whose inequality held for one
+    // start only: with the constrained Delaunay seed the seamed sphere at chordal 3 refines to 224
+    // triangles by the library and 226 by the attainable refinement (238 and 222 before). The
+    // counts are the measure, not a claim.
+    Law_RefinementsMeetChordalFromOneStart(w: CappedWitness): Boolean
+        => w.Model.Faces.Count.Range.All(f =>
+            w.CappedFaceWithinChordal(w.Model.Lift(BrepFaceIndex(f), w.Discretizations, w.Reference[f]))
+                && w.CappedFaceWithinChordal(w.Model.Lift(BrepFaceIndex(f), w.Discretizations, w.Attainable[f])));
+
+    // The attainable refinement's triangles less the library's, over every face of w.
+    Measure_RefinementsMeetChordalFromOneStart(w: CappedWitness): Integer
+        => w.Model.Faces.Count.Range.Reduce(0, (n, f) => n + w.Attainable[f].Triangles.Count - w.Reference[f].Triangles.Count);
 
     // The model mesh assembled from the attainable refinement is closed and consistently
     // oriented, with the Euler characteristic of the library's: the change is per face and leaves
