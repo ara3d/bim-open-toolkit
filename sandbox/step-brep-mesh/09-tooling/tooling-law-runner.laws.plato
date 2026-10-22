@@ -125,14 +125,6 @@ library ToolingLawRunnerLaws
     //==
     // # Stage dumps
 
-    // The witness options validated at the Structural level, so a dump's outcome is cheap to
-    // build twice.
-    StructuralWitnessOptions(_: MeshingOptions): MeshingOptions
-    {
-        var o = MeshingOptions.WitnessOptions;
-        return MeshingOptions(o.Face, ConformanceLevel.Structural, o.MaxRefinementRounds, o.Decode, o.Quality);
-    }
-
     // The unit cylinder dumped by replaying the loop per round and in one pass.
     Witness_CylinderStageDumps(_: StageDumpPair): StageDumpPair
     {

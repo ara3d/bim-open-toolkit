@@ -26,10 +26,6 @@ library BsplinePipelineLaws
     BsplineMeshModel(k: Integer): BrepModel
         => k.FixtureIndex(2) == 0 ? BrepModel.Witness_BSplinePatchSolid(0.5) : BrepModel.Witness_BsplineCrescentSheet;
 
-    // The witness options with the given round limit.
-    WithRounds(o: MeshingOptions, rounds: Integer): MeshingOptions
-        => MeshingOptions(o.Face, o.Level, rounds, o.Decode, o.Quality);
-
     // True when some finding of the outcome has the code and is located at
     // face f.
     HasFinding(outcome: MeshOutcome, code: String, f: BrepFaceIndex): Boolean

@@ -27,12 +27,7 @@ library PolesLaws
     // (7d8dae2d), every whole-model law on a curved witness exceeds the runner's budget at any
     // chordal bound tried (TRACK.md, findings).
     PolesOptionsAt(chordal: Number, quads: Boolean): MeshingOptions
-    {
-        var o = DefaultMeshingOptions(chordal);
-        return MeshingOptions(
-            FaceMeshingCriteria(o.Face.Discretization, o.Face.SurfaceChordal, o.Face.SurfaceAngular, quads),
-            o.Level, o.MaxRefinementRounds, o.Decode, o.Quality);
-    }
+        => PolesOptionsAtHost(chordal, quads);
 
 
 

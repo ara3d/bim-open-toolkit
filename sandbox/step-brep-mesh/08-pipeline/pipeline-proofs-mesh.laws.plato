@@ -68,8 +68,7 @@ library StepToMeshProofsMeshLaws
 
     // Face-meshing criteria with surface chordal c, from the witness ones.
     CatalogQuadCriteria(c: Number): FaceMeshingCriteria
-        => FaceMeshingCriteria(MeshingOptions.WitnessOptions.Face.Discretization, c,
-            MeshingOptions.WitnessOptions.Face.SurfaceAngular, true);
+        => CatalogQuadCriteriaHost(c);
 
     //==
     // # Face outcomes

@@ -252,16 +252,10 @@ library StepToMesh
     // One refinement step: the pending requests answered by Refine, the floors
     // raised to their counts, the chosen faces that cite a changed edge meshed
     // again and every other outcome kept as it is, and the requests of the
-    // faces meshed in this step made pending. Round goes up by one.
+    // faces meshed in this step made pending. Round goes up by one. Defined by its parts
+    // (StepByParts, pipeline-host-options.library.plato), which the host calls one by one.
     Step(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>, s: PipelineState): PipelineState
-    {
-        var d = m.Refine(s.Discretizations, s.Pending, o.Face.Discretization);
-        var remeshed = m.FacesTouching(chosen, d.ChangedEdges(s.Discretizations));
-        var arenaOk = m.Geometry.IsEveryIndexInRange;
-        var outcomes = m.Faces.Count.MapRange(k =>
-            remeshed[k] ? m.FaceOutcomeInRange(BrepFaceIndex(k), d, o, chosen, arenaOk) : s.Outcomes[k]);
-        return PipelineState(s.Round + 1, d, m.RaisedFloors(s.Floors, s.Pending), outcomes, outcomes.RequestsOf(remeshed));
-    }
+        => m.StepByParts(o, chosen, s);
 
     // The state after k steps from InitialState, or the terminal state when
     // the loop stops sooner. A k of 0 or less gives the initial state.

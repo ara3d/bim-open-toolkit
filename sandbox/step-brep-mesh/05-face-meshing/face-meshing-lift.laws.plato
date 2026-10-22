@@ -27,10 +27,7 @@ library FaceMeshingLiftIndexedLaws
     // test (GridUnlessFoldedOrCoarse) keeps the grids of doubly curved faces, whose cells exceed
     // the witness bound: these cases test Lift on collapsed quads, not the bound.
     LiftCaseCriteria(quads: Boolean): FaceMeshingCriteria
-        => FaceMeshingCriteria(MeshingOptions.WitnessOptions.Face.Discretization,
-            quads ? 1.0 : MeshingOptions.WitnessOptions.Face.SurfaceChordal,
-            MeshingOptions.WitnessOptions.Face.SurfaceAngular,
-            quads);
+        => LiftCaseCriteriaHost(quads);
 
     // How a case triangulates its faces.
     //   0: the constrained triangulation of the region's boundary points, unrefined: every seam

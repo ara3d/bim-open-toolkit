@@ -1,15 +1,14 @@
 //==
-// # The host's meshing options and its refinement step (TKT-436, TKT-454, chunk P6)
+// # The host's meshing options and its refinement step (TKT-436, TKT-454)
 //
 // One definition of the options the host (StepPlatoMesher) meshes with, beside layer 8's
 // DefaultMeshingOptions: the defaults with quad grids preferred (owner decision of 2026-10-21,
 // TKT-405). The witness, gate, poles, grid, lift and catalog laws built the same options in five
-// places; each becomes a call of HostMeshingOptions and the With functions below (merge
-// instructions in TRACK.md). And the step the host's loop runs: layer 8's Step with only the
+// places; each is now a call of HostMeshingOptions and the With functions below. And the step the host's loop runs: layer 8's Step with only the
 // blocking requests left pending, since the host answers what keeps a face from meshing and leaves
 // advisory requests (a coarse segment, a quad count) unanswered.
 
-library V1ProofHostOptions
+library PipelineHostOptions
 {
     //==
     // # Options
@@ -29,9 +28,8 @@ library V1ProofHostOptions
     WithLevel(o: MeshingOptions, level: ConformanceLevel): MeshingOptions
         => MeshingOptions(o.Face, level, o.MaxRefinementRounds, o.Decode, o.Quality);
 
-    // The options with another round limit; every other field kept. Merge: moved into this
-    // library as WithRounds, BsplinePipelineLaws' copy (same body) deleted.
-    WithRoundLimit(o: MeshingOptions, rounds: Integer): MeshingOptions
+    // The options with another round limit; every other field kept.
+    WithRounds(o: MeshingOptions, rounds: Integer): MeshingOptions
         => MeshingOptions(o.Face, o.Level, rounds, o.Decode, o.Quality);
 
     //==
@@ -52,8 +50,8 @@ library V1ProofHostOptions
     //
     // Layer 8's Step split so a caller can mesh the faces between the parts on every core: the
     // host runs StepRefined, StepRemeshed, the per-face FaceOutcomeInRange on each remeshed face,
-    // then StepNext. Merge: Step's body becomes StepByParts', so Step is defined by these parts and
-    // the host and the laws run one definition (Law_V1Proof_StepByPartsIsStep).
+    // then StepNext. Step (pipeline.library.plato) calls StepByParts, so the host and the laws run
+    // one definition.
 
     // The pending requests of s answered: layer 4's Refine under the options' edge criteria.
     StepRefined(m: BrepModel, o: MeshingOptions, s: PipelineState): EdgeDiscretizations
@@ -101,7 +99,7 @@ library V1ProofHostOptions
     }
 
     //==
-    // # Replacements for the five copies (merge: each library function's body becomes the call)
+    // # The five copies' one definition (each copy's body is the call)
 
     // PolesLaws.PolesOptionsAt(chordal, quads).
     PolesOptionsAtHost(chordal: Number, quads: Boolean): MeshingOptions

@@ -336,7 +336,7 @@ library EdgeRefineIndexed
                 ? t.RefineEdgeIndexedIn(
                     m,
                     old,
-                    c.WithChordal(ix.RequestedChordalIn(old.Edge, c.Chordal)),
+                    c.WithRequestedChordal(ix.RequestedChordalIn(old.Edge, c.Chordal)),
                     ix.RequestedSegmentsIn(old.Edge))
                 : old));
         return Counted(refined, built.Work.Add(Insertions(d.ByEdge.Count)));

@@ -19,11 +19,8 @@ library FaceMeshingGridChordalLaws
     // # Cases
 
     // The default criteria at chordal 0.01 with quad grids preferred.
-    GridCaseCriteria(_: FaceMeshingCriteria): FaceMeshingCriteria
-    {
-        var o = DefaultMeshingOptions(0.01).Face;
-        return FaceMeshingCriteria(o.Discretization, o.SurfaceChordal, o.SurfaceAngular, true);
-    }
+    GridCaseCriteria(x: FaceMeshingCriteria): FaceMeshingCriteria
+        => GridCaseCriteriaHost(x);
 
     // Model m as a grid case, its edges discretized under the case criteria.
     GridCaseOf(name: String, m: BrepModel, bump: Number): GridCase

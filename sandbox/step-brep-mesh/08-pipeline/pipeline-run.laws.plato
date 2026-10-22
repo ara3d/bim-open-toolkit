@@ -76,10 +76,7 @@ library StepToMeshLoopRunLaws
     // The witness options validated at the Structural level only: the options of the
     // determinism law's two runs, since an Oracle validation takes seconds compiled per run.
     StructuralWitnessOptions(_: MeshingOptions): MeshingOptions
-    {
-        var o = MeshingOptions.WitnessOptions;
-        return MeshingOptions(o.Face, ConformanceLevel.Structural, o.MaxRefinementRounds, o.Decode, o.Quality);
-    }
+        => StructuralWitnessOptionsHost(MeshingOptions.WitnessOptions);
 
     //==
     // # Outcomes

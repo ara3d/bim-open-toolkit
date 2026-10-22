@@ -1,7 +1,7 @@
 //==
-// # Laws of the host's options and step (TKT-436, TKT-454, chunk P6)
+// # Laws of the host's options and step (TKT-436, TKT-454)
 
-library V1ProofHostOptionsLaws
+library PipelineHostOptionsLaws
 {
     // A chordal bound from a fixture: 1, 0.1, 0.01, 0.001.
     HostChordal(k: Integer): Number
@@ -25,26 +25,19 @@ library V1ProofHostOptionsLaws
             && h.MaxRefinementRounds == d.MaxRefinementRounds && h.Quality == d.Quality;
     }
 
-    // Each replacement gives what the copy it replaces gives, so the merge changes no law's cases.
+    // The gate's options are the host's: V1GateOptions gives what PolesOptionsAtHost gives with
+    // quads. (Staged, this law also compared each of the five copies with its replacement, which
+    // passed before the merge; since the merge each copy is the call, so those clauses compared a
+    // function with itself and were dropped.)
     Law_V1Proof_ReplacementsAgree(k: Integer): Boolean
-    {
-        var c = k.HostChordal;
-        var any = HostMeshingOptions(1.0).Face;
-        return SameOptions(PolesOptionsAtHost(c, true), PolesOptionsAt(c, true))
-            && SameOptions(PolesOptionsAtHost(c, false), PolesOptionsAt(c, false))
-            && GridCaseCriteriaHost(any) == GridCaseCriteria(any)
-            && CatalogQuadCriteriaHost(c) == CatalogQuadCriteria(c)
-            && LiftCaseCriteriaHost(true) == LiftCaseCriteria(true)
-            && LiftCaseCriteriaHost(false) == LiftCaseCriteria(false)
-            && SameOptions(V1GateOptions(c), PolesOptionsAtHost(c, true));
-    }
+        => SameOptions(V1GateOptions(k.HostChordal), PolesOptionsAtHost(k.HostChordal, true));
 
     // The With functions change their one field.
     Law_V1Proof_WithChangesOneField(k: Integer): Boolean
     {
         var o = HostMeshingOptions(k.HostChordal);
         var l = o.WithLevel(ConformanceLevel.Structural);
-        var r = o.WithRoundLimit(o.MaxRefinementRounds + 1);
+        var r = o.WithRounds(o.MaxRefinementRounds + 1);
         var q = o.WithQuads(false);
         return l.Level == ConformanceLevel.Structural && l.Face == o.Face && l.MaxRefinementRounds == o.MaxRefinementRounds
             && r.MaxRefinementRounds == o.MaxRefinementRounds + 1 && r.Face == o.Face && r.Level == o.Level
@@ -64,30 +57,6 @@ library V1ProofHostOptionsLaws
         return s0.Pending.All(q => q.Reason.IsBlocking)
             && f.Pending.All(q => q.Reason.IsBlocking)
             && f.Round <= o.MaxRefinementRounds;
-    }
-
-    // Step from its parts is Step: on the cylinder with every edge asked for half its bound and
-    // twice its segments, the two give the same round, discretizations, face meshes and pending
-    // requests.
-    Law_V1Proof_StepByPartsIsStep(_: Integer): Boolean
-    {
-        var m = BrepModel.Witness_Cylinder;
-        var o = HostMeshingOptions(0.1);
-        var chosen = m.AllFaces;
-        var first = m.InitialState(o, chosen);
-        var requests = first.Discretizations.ByEdge.FlatMap(x => x.IsDiscretized
-            ? [EdgeRefinementRequest(x.Edge, RefinementReason.TooCoarseInParameterSpace, 0.5 * o.Face.Discretization.Chordal, 2 * x.SegmentCount)]
-            : EdgeRefinementRequest.NoRequests);
-        var s = PipelineState(0, first.Discretizations, first.Floors, first.Outcomes, requests);
-        var viaStep = m.Step(o, chosen, s);
-        var viaParts = m.StepByParts(o, chosen, s);
-        return viaStep.Round == viaParts.Round
-            && viaStep.Discretizations.ByEdge.Count == viaParts.Discretizations.ByEdge.Count
-            && viaStep.Discretizations.ByEdge.Count.Range.All(i => viaStep.Discretizations.ByEdge[i].SameDiscretization(viaParts.Discretizations.ByEdge[i]))
-            && viaStep.Outcomes.Count == viaParts.Outcomes.Count
-            && viaStep.Outcomes.Count.Range.All(k => viaStep.Outcomes[k].Mesh == viaParts.Outcomes[k].Mesh)
-            && viaStep.Pending.Count == viaParts.Pending.Count
-            && requests.Count > 0;
     }
 
     // TKT-436 criterion 2: the witness laws mesh as the host does, the witness options differing
