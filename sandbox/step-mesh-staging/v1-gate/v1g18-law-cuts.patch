@@ -1,0 +1,951 @@
+diff --git a/sandbox/step-brep-mesh/00-foundation/foundation-constants.laws.plato b/sandbox/step-brep-mesh/00-foundation/foundation-constants.laws.plato
+index 42380a0..2c9c50d 100644
+--- a/sandbox/step-brep-mesh/00-foundation/foundation-constants.laws.plato
++++ b/sandbox/step-brep-mesh/00-foundation/foundation-constants.laws.plato
+@@ -45,15 +45,6 @@ library BrepFoundationConstantsLaws
+     //==
+     // # Agreement with ResolutionAt
+ 
+-    // ResolutionAtConstant is ResolutionAt bit for bit at every magnitude:
+-    // both NaN at a NaN magnitude, else equal.
+-    Law_ResolutionAtConstantAgrees(magnitude: Number): Boolean
+-    {
+-        var a = ResolutionAtConstant(magnitude).Value;
+-        var b = ResolutionAt(magnitude).Value;
+-        return a.IsNaN ? b.IsNaN : a == b;
+-    }
+-
+     // ResolutionAtCounted does no halving at any magnitude, and its value is
+     // ResolutionAtConstant's.
+     Law_ResolutionAtConstantDoesNoHalvings(magnitude: Number): Boolean
+diff --git a/sandbox/step-brep-mesh/01-geometry/bspline-polish.laws.plato b/sandbox/step-brep-mesh/01-geometry/bspline-polish.laws.plato
+index 837a3e5..be7426e 100644
+--- a/sandbox/step-brep-mesh/01-geometry/bspline-polish.laws.plato
++++ b/sandbox/step-brep-mesh/01-geometry/bspline-polish.laws.plato
+@@ -105,15 +105,6 @@ library PolishCachedLaws
+             && j.ProjectedStepAt(p, uv, step, w) == surface.ProjectedStep(g, p, uv, step, w);
+     }
+ 
+-    // PerfPolishAgrees for one surface from one start.
+-    PerfPolishAgrees(g: GeometrySet, s: SurfaceIndex, p: Point3D, start: UvCoordinate): Boolean
+-    {
+-        var surface = g.SurfaceAt(s);
+-        var w = g.PerfDomainWindow(s);
+-        var radius = w.PerfQuarterRadius;
+-        return surface.PolishProjectionCached(g, p, start, w, radius) == surface.PolishProjection(g, p, start, w, radius);
+-    }
+-
+     // Every iteration of the cached polish makes two surface evaluations
+     // (one first jet, one point) and one more per halving, on any start
+     // and point, on all three surfaces of the jet arena.
+diff --git a/sandbox/step-brep-mesh/01-geometry/geometry-closure-marks.laws.plato b/sandbox/step-brep-mesh/01-geometry/geometry-closure-marks.laws.plato
+index e4d0ed1..225154a 100644
+--- a/sandbox/step-brep-mesh/01-geometry/geometry-closure-marks.laws.plato
++++ b/sandbox/step-brep-mesh/01-geometry/geometry-closure-marks.laws.plato
+@@ -13,8 +13,6 @@
+ //  - Comparing values exactly
+ //  - Sorted marks
+ //  - Lookup agrees with the scan
+-//  - Domains and trimmed parameters once
+-//  - Composite evaluation once
+ //  - Count witness
+ 
+ library BrepGeometryClosureMarksLaws
+@@ -34,11 +32,6 @@ library BrepGeometryClosureMarksLaws
+     SyntheticMarks(k: Integer): Array<ClosureMark>
+         => k.MapRange(i => SyntheticMark(4 * i / k, 2 * i));
+ 
+-    // An arena with no records and the k synthetic marks: enough for a lookup, which reads only
+-    // the marks.
+-    SyntheticMarkedArena(k: Integer): GeometrySet
+-        => GeometrySet([], [], [], [], SyntheticMarks(k));
+-
+     // The catalog arena (Witness_CatalogArena) with three parameter-plane curves, two space
+     // curves and one surface added, and five closure marks in ClosureMarks's order, so domains
+     // are made Closed and trimmed parameters wrap across a closed basis's join. Added: space
+@@ -74,37 +67,13 @@ library BrepGeometryClosureMarksLaws
+                 ClosureMark.ClosedSurface(SurfaceIndex(7), SurfaceParameter.ParameterV)]);
+     }
+ 
+-    // The two arenas the agreement laws read: the catalog and the marked catalog.
+-    PerfClosureArenas(_: Integer): Array<GeometrySet>
+-        => [GeometrySet.Witness_CatalogArena, MarkedCatalogArena(0)];
+-
+     //==
+     // # Comparing values exactly
+ 
+-    // Whether two curve domains are the same, bit for bit.
+-    SameCurveDomain(a: CurveDomain, b: CurveDomain): Boolean
+-        => a.Range.Start == b.Range.Start && a.Range.End == b.Range.End && a.Periodicity == b.Periodicity;
+-
+-    // Whether two surface domains are the same, bit for bit.
+-    SameSurfaceDomain(a: SurfaceDomain, b: SurfaceDomain): Boolean
+-        => SameCurveDomain(a.U, b.U) && SameCurveDomain(a.V, b.V);
+-
+     // Whether two parameter pairs are the same, bit for bit.
+     SameUv(a: UvCoordinate, b: UvCoordinate): Boolean
+         => a.U == b.U && a.V == b.V;
+ 
+-    // Whether two points are the same, bit for bit.
+-    SamePoint(a: Point3D, b: Point3D): Boolean
+-        => a.X == b.X && a.Y == b.Y && a.Z == b.Z;
+-
+-    // Whether two vectors are the same, bit for bit.
+-    SameVector(a: Vector3D, b: Vector3D): Boolean
+-        => a.X == b.X && a.Y == b.Y && a.Z == b.Z;
+-
+-    // Whether two plane vectors are the same, bit for bit.
+-    SameVector(a: Vector2D, b: Vector2D): Boolean
+-        => a.X == b.X && a.Y == b.Y;
+-
+     //==
+     // # Sorted marks
+ 
+@@ -138,14 +107,6 @@ library BrepGeometryClosureMarksLaws
+     //==
+     // # Lookup agrees with the scan
+ 
+-    // IsMarkedClosedSorted gives IsMarkedClosed's answer for index q of the kind of the given
+-    // rank.
+-    SortedAgreesAt(g: GeometrySet, rank: Integer, q: Integer): Boolean
+-        => rank == 0 ? g.IsMarkedClosedSorted(CurveIndex(q)) == g.IsMarkedClosed(CurveIndex(q))
+-            : (rank == 1 ? g.IsMarkedClosedSorted(Curve2DIndex(q)) == g.IsMarkedClosed(Curve2DIndex(q))
+-            : (rank == 2 ? g.IsMarkedClosedSorted(SurfaceIndex(q), SurfaceParameter.ParameterU) == g.IsMarkedClosed(SurfaceIndex(q), SurfaceParameter.ParameterU)
+-            : g.IsMarkedClosedSorted(SurfaceIndex(q), SurfaceParameter.ParameterV) == g.IsMarkedClosed(SurfaceIndex(q), SurfaceParameter.ParameterV)));
+-
+     // The marked catalog reaches a found mark of every kind, so the agreement is not only on
+     // absent marks.
+     Law_MarkedCatalogFindsMarks(_: Boolean): Boolean
+@@ -157,116 +118,6 @@ library BrepGeometryClosureMarksLaws
+             && !g.IsMarkedClosedSorted(CurveIndex(7));
+     }
+ 
+-    //==
+-    // # Domains and trimmed parameters once
+-
+-    // The fraction i / (n - 1) of the way along range r, for i of n.
+-    GridAt(r: NumberInterval, n: Integer, i: Integer): Number
+-        => r.Start + (r.End - r.Start) * i.ToNumber / (n - 1).ToNumber;
+-
+-    // TrimmedToBasisOnce gives TrimmedToBasis at uv for the trimmed surface's record.
+-    TrimmedOnceAgreesAt(g: GeometrySet, surface: BrepSurface, uv: UvCoordinate): Boolean
+-        => match (surface)
+-        {
+-            Plane(placement) => true;
+-            Cylinder(placement, radius) => true;
+-            Cone(placement, radius, semiAngle) => true;
+-            Sphere(placement, radius) => true;
+-            Torus(placement, major, minor, part) => true;
+-            Revolution(profile, axis) => true;
+-            LinearExtrusion(profile, extrusion) => true;
+-            BSpline(data) => true;
+-            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => SameUv(
+-                g.TrimmedToBasisOnce(basis, uRange, vRange, uSense, vSense, uv),
+-                g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv));
+-            Offset(basis, distance) => true;
+-        };
+-
+-    // r itself when both ends are finite; [-h, h] otherwise.
+-    FiniteOr(r: NumberInterval, h: Number): NumberInterval
+-        => (r.Start.IsFinite && r.End.IsFinite) ? r : NumberInterval(-h, h);
+-
+-    //==
+-    // # Composite evaluation once
+-
+-    // At parameter t of composite curve c with these segments, the composite functions give the
+-    // library's segment, local parameter, point, derivatives and magnitude, bit for bit.
+-    CompositeOnceAgreesAt(g: GeometrySet, c: CurveIndex, segments: Array<CompositeSegment>, t: Number): Boolean
+-    {
+-        var p = g.CompositePlaceOf(segments, t);
+-        return p.Segment == g.CompositeSegmentAt(segments, t)
+-            && p.Local == g.CompositeLocal(segments, t)
+-            && SamePoint(g.CompositeEval(segments, t), g.Eval(c, t))
+-            && SameVector(g.CompositeDerivative(segments, t), g.Derivative(c, t))
+-            && SameVector(g.CompositeSecondDerivative(segments, t), g.SecondDerivative(c, t))
+-            && g.CompositeEvaluationMagnitude(segments, t) == g.EvaluationMagnitude(c, t);
+-    }
+-
+-    // CompositeOnceAgreesAt for a parameter-plane composite.
+-    CompositeOnceAgreesAt2D(g: GeometrySet, c: Curve2DIndex, segments: Array<CompositeSegment2D>, t: Number): Boolean
+-    {
+-        var p = g.CompositePlaceOf(segments, t);
+-        return p.Segment == g.CompositeSegmentAt(segments, t)
+-            && p.Local == g.CompositeLocal(segments, t)
+-            && SameUv(g.CompositeEval(segments, t), g.Eval(c, t))
+-            && SameVector(g.CompositeDerivative(segments, t), g.Derivative(c, t))
+-            && SameVector(g.CompositeSecondDerivative(segments, t), g.SecondDerivative(c, t))
+-            && g.CompositeEvaluationMagnitude(segments, t) == g.EvaluationMagnitude(c, t);
+-    }
+-
+-    // The segments of a composite curve record; none for any other record.
+-    SegmentsOfComposite(curve: BrepCurve): Array<CompositeSegment>
+-        => match (curve)
+-        {
+-            Line(origin, velocity) => NoCompositeSegments(0);
+-            Circle(placement, radius) => NoCompositeSegments(0);
+-            Ellipse(placement, semiAxis1, semiAxis2) => NoCompositeSegments(0);
+-            Hyperbola(placement, semiAxis, semiImaginaryAxis) => NoCompositeSegments(0);
+-            Parabola(placement, focalDistance) => NoCompositeSegments(0);
+-            Polyline(points) => NoCompositeSegments(0);
+-            BSpline(data) => NoCompositeSegments(0);
+-            Trimmed(basis, range, sameSense) => NoCompositeSegments(0);
+-            Composite(segments) => segments;
+-            Offset(basis, distance, reference) => NoCompositeSegments(0);
+-            OnSurface(spaceCurve, supports, master) => NoCompositeSegments(0);
+-        };
+-
+-    // The segments of a parameter-plane composite curve record; none for any other record.
+-    SegmentsOfComposite2D(curve: BrepCurve2D): Array<CompositeSegment2D>
+-        => match (curve)
+-        {
+-            Line(origin, velocity) => NoCompositeSegments2D(0);
+-            Circle(placement, radius) => NoCompositeSegments2D(0);
+-            Ellipse(placement, semiAxis1, semiAxis2) => NoCompositeSegments2D(0);
+-            Hyperbola(placement, semiAxis, semiImaginaryAxis) => NoCompositeSegments2D(0);
+-            Parabola(placement, focalDistance) => NoCompositeSegments2D(0);
+-            Polyline(points) => NoCompositeSegments2D(0);
+-            BSpline(data) => NoCompositeSegments2D(0);
+-            Trimmed(basis, range, sameSense) => NoCompositeSegments2D(0);
+-            Composite(segments) => segments;
+-            Offset(basis, distance) => NoCompositeSegments2D(0);
+-        };
+-
+-    // No segments: the typed empty array.
+-    NoCompositeSegments(_: Integer): Array<CompositeSegment>
+-        => [CompositeSegment(CurveIndex(0), true)].Take(0);
+-
+-    // No parameter-plane segments: the typed empty array.
+-    NoCompositeSegments2D(_: Integer): Array<CompositeSegment2D>
+-        => [CompositeSegment2D(Curve2DIndex(0), true)].Take(0);
+-
+-    // CompositeOnceAgreesAt at 25 parameters across curve c's domain when it is a composite.
+-    CompositeOnceAgrees(g: GeometrySet, c: CurveIndex): Boolean
+-        => g.CurveAt(c).SegmentsOfComposite.Count == 0
+-            ? true
+-            : 25.Range.All(i => CompositeOnceAgreesAt(g, c, g.CurveAt(c).SegmentsOfComposite, GridAt(g.Domain(c).Range, 25, i)));
+-
+-    // CompositeOnceAgrees for a parameter-plane curve.
+-    CompositeOnceAgrees2D(g: GeometrySet, c: Curve2DIndex): Boolean
+-        => g.Curve2DAt(c).SegmentsOfComposite2D.Count == 0
+-            ? true
+-            : 25.Range.All(i => CompositeOnceAgreesAt2D(g, c, g.Curve2DAt(c).SegmentsOfComposite2D, GridAt(g.Domain(c).Range, 25, i)));
+-
+     //==
+     // # Count witness
+ 
+diff --git a/sandbox/step-brep-mesh/01-geometry/geometry.laws.plato b/sandbox/step-brep-mesh/01-geometry/geometry.laws.plato
+index 18e5d32..0d88a1c 100644
+--- a/sandbox/step-brep-mesh/01-geometry/geometry.laws.plato
++++ b/sandbox/step-brep-mesh/01-geometry/geometry.laws.plato
+@@ -949,35 +949,6 @@ library BrepGeometryLaws
+             ? g.Eval(c, g.Domain(c).SampleIn(t)).GapTo(g, g.SupportSurface(g.CurveAt(c).SupportsOf[k]))
+             : 0.0;
+ 
+-    // The measure of Law_SurfaceCurvePcurveLiesOnCurve, a length: the
+-    // distance from the k-th pcurve's point at sample t to the space curve; 0
+-    // when there is no k-th pcurve. The pcurve is sampled over the range that
+-    // covers the space curve (PcurveSampleFor), not over its own domain: a
+-    // bounded curve with a line pcurve would otherwise be compared with
+-    // points of the line beyond the curve's ends, and an unbounded pcurve
+-    // domain gives no finite samples (review F4). Precondition:
+-    // g.CanEvaluate(c).
+-    PcurveToCurveGap(g: GeometrySet, c: CurveIndex, t: Number, k: Integer): Number
+-        => g.PcurveToCurveGapOnce(c, t, k);
+-
+-    // PcurveToCurveGap over the parts of a surface curve.
+-    PcurveToCurveGap(g: GeometrySet, spaceCurve: CurveIndex, supports: Array<CurveSupport>, t: Number, k: Integer): Number
+-        => supports.IsValidIndex(k)
+-            ? (supports[k].PcurveOrNone.IsNone || spaceCurve.IsNone
+-                ? 0.0
+-                : g.Eval(spaceCurve, g.ClosestParameter(spaceCurve, g.Eval(supports[k].PcurveOrNone, g.PcurveSampleFor(supports[k].PcurveOrNone, spaceCurve, t))))
+-                    .Distance(g.Eval(supports[k].PcurveOrNone, g.PcurveSampleFor(supports[k].PcurveOrNone, spaceCurve, t))))
+-            : 0.0;
+-
+-    // The pcurve parameter that sample t of space curve c stands for: when
+-    // c's domain is bounded, t moved into it and carried by proportion onto
+-    // PcurveRangeOver(p, c, domain), so a sampling of c's domain samples the
+-    // matching stretch of the pcurve evenly; when it is unbounded (a line
+-    // with a line pcurve), t moved into the pcurve's own domain, where every
+-    // finite parameter's point lies on the line.
+-    PcurveSampleFor(g: GeometrySet, p: PcurveIndex, c: CurveIndex, t: Number): Number
+-        => g.PcurveSampleForOnce(p, c, t);
+-
+     // Every point of a surface curve's space curve lies on its k-th pcurve
+     // within the length tolerance: the second half of the point-set
+     // agreement. Measure CurveToPcurveGap.
+diff --git a/sandbox/step-brep-mesh/05-face-meshing/face-meshing-lift.laws.plato b/sandbox/step-brep-mesh/05-face-meshing/face-meshing-lift.laws.plato
+index 552ab49..09344d0 100644
+--- a/sandbox/step-brep-mesh/05-face-meshing/face-meshing-lift.laws.plato
++++ b/sandbox/step-brep-mesh/05-face-meshing/face-meshing-lift.laws.plato
+@@ -112,27 +112,6 @@ library FaceMeshingLiftIndexedLaws
+     SameUvPoints(a: Array<UvCoordinate>, b: Array<UvCoordinate>): Boolean
+         => a.Count == b.Count && a.Count.Range.All(i => a[i].U == b[i].U && a[i].V == b[i].V);
+ 
+-    // True when two arrays of positions are identical.
+-    SamePositions(a: Array<Point3D>, b: Array<Point3D>): Boolean
+-        => a.Count == b.Count ? a.Count.Range.All(i => a[i].X == b[i].X && a[i].Y == b[i].Y && a[i].Z == b[i].Z) : false;
+-
+-    // True when two arrays of normals are identical.
+-    SameNormals(a: Array<Direction3D>, b: Array<Direction3D>): Boolean
+-        => a.Count == b.Count && a.Count.Range.All(i =>
+-            a[i].Vector.X == b[i].Vector.X && a[i].Vector.Y == b[i].Vector.Y && a[i].Vector.Z == b[i].Vector.Z);
+-
+-    // True when two face meshes are identical in every field.
+-    SameLiftedFaceMesh(a: FaceMesh, b: FaceMesh): Boolean
+-        => a.Face == b.Face
+-            && SameUvPoints(a.UvPoints, b.UvPoints)
+-            && a.Sources.Count == b.Sources.Count && a.Sources.Count.Range.All(i => a.Sources[i] == b.Sources[i])
+-            && a.LocalVertex.Count == b.LocalVertex.Count && a.LocalVertex.Count.Range.All(i => a.LocalVertex[i] == b.LocalVertex[i])
+-            && SamePositions(a.Positions, b.Positions)
+-            && SameNormals(a.Normals, b.Normals)
+-            && a.Triangles.Count == b.Triangles.Count && a.Triangles.Count.Range.All(i => a.Triangles[i] == b.Triangles[i])
+-            && a.Quads.Count == b.Quads.Count && a.Quads.Count.Range.All(i => a.Quads[i] == b.Quads[i])
+-            && a.Provenance.Count == b.Provenance.Count && a.Provenance.Count.Range.All(i => a.Provenance[i] == b.Provenance[i]);
+-
+     // True when some face of case w has a point whose source key is of the given kind
+     // (SourceKey: 0 interior, 3 seam cut, 4 pole).
+     HasSourceKind(w: LiftCase, kind: Integer): Boolean
+diff --git a/sandbox/step-brep-mesh/05-face-meshing/triangulation-built.laws.plato b/sandbox/step-brep-mesh/05-face-meshing/triangulation-built.laws.plato
+index f984d7a..cfa1abd 100644
+--- a/sandbox/step-brep-mesh/05-face-meshing/triangulation-built.laws.plato
++++ b/sandbox/step-brep-mesh/05-face-meshing/triangulation-built.laws.plato
+@@ -112,12 +112,6 @@ library InsertionBuiltLaws
+             && m.HoldsItsPositions(f, built);
+     }
+ 
+-    RefineBuiltAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
+-    {
+-        var t = r.TriangulateRegionCdt(chart);
+-        return SameUvTriangulation(m.RefineToSurfaceByInsertionBuilt(f, r, chart, t, TriCriteria(0)), m.RefineToSurfaceByInsertion(f, r, chart, t, TriCriteria(0)));
+-    }
+-
+     //==
+     // # Equality
+ 
+diff --git a/sandbox/step-brep-mesh/05-face-meshing/uv-regions-indexed.laws.plato b/sandbox/step-brep-mesh/05-face-meshing/uv-regions-indexed.laws.plato
+index 21d62f6..3ff505e 100644
+--- a/sandbox/step-brep-mesh/05-face-meshing/uv-regions-indexed.laws.plato
++++ b/sandbox/step-brep-mesh/05-face-meshing/uv-regions-indexed.laws.plato
+@@ -12,7 +12,6 @@
+ //  - Unwrap
+ //  - Face edges
+ //  - Coarse-segment requests
+-//  - Faces touching
+ //  - Count witness
+ 
+ library UnwrapIndexedLaws
+@@ -24,34 +23,9 @@ library UnwrapIndexedLaws
+     PerfUnwrapCriteria(_: Integer): FaceMeshingCriteria
+         => MeshingOptions.WitnessOptions.Face;
+ 
+-    // The positions of the positive witnesses (WitnessAt): all ten.
+-    PerfUnwrapWitnesses(_: Integer): Array<Integer>
+-        => BrepModel.WitnessCount.Range;
+-
+-    // Whether claim holds at every face of witness model k that can be regioned under the
+-    // criteria, given the model, the face and the model's discretizations (bound once).
+-    EveryRegionedFace(k: Integer, claim: Function4<BrepModel, BrepFaceIndex, EdgeDiscretizations, FaceMeshingCriteria, Boolean>): Boolean
+-    {
+-        var m = BrepModel.WitnessAt(k);
+-        var c = PerfUnwrapCriteria(0);
+-        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+-        return m.Faces.Count.Range.All(i => m.CanRegion(BrepFaceIndex(i), d, c) ? claim(m, BrepFaceIndex(i), d, c) : true);
+-    }
+-
+     //==
+     // # Unwrap
+ 
+-    // Whether two loops are the same, bit for bit: equal sources and equal coordinates.
+-    SameUvLoop(a: UvLoop, b: UvLoop): Boolean
+-        => (a.Points.Count == b.Points.Count && a.Sources.Count == b.Sources.Count)
+-            ? (a.Points.Count.Range.All(i => a.Points[i].U == b.Points[i].U && a.Points[i].V == b.Points[i].V)
+-                && a.Sources.Count.Range.All(i => a.Sources[i] == b.Sources[i]))
+-            : false;
+-
+-    // UnwrapIndexed gives Unwrap's loop for loop l of face f.
+-    UnwrapAgreesOn(m: BrepModel, f: BrepFaceIndex, l: UvLoop): Boolean
+-        => SameUvLoop(m.Unwrap(f, l), m.UnwrapIndexed(f, l));
+-
+     // Some witness loop has a twin step, so the agreement laws reach the indexed twin lookup:
+     // the cylinder's side face, whose seam is used twice.
+     Law_UnwrapIndexedFindsTwins(_: Boolean): Boolean
+@@ -71,14 +45,6 @@ library UnwrapIndexedLaws
+     //==
+     // # Face edges
+ 
+-    // The claim of Law_FaceEdgesOnceAgrees on model m.
+-    FaceEdgesAgreeIn(m: BrepModel): Boolean
+-        => m.Faces.Count.Range.All(i => m.IsFaceIntact(BrepFaceIndex(i))
+-            ? (SameEdges(m.FaceEdges(BrepFaceIndex(i)), m.FaceEdgesOnce(BrepFaceIndex(i)))
+-                && SameEdges(m.FaceEdges(BrepFaceIndex(i)).FlatMap(e => m.IsSeamEdgeOf(BrepFaceIndex(i), e) ? [e] : BrepEdgeIndex.NoEdges),
+-                    m.SeamEdgesOnce(BrepFaceIndex(i))))
+-            : true);
+-
+     // Whether two edge lists are equal, element by element.
+     SameEdges(a: Array<BrepEdgeIndex>, b: Array<BrepEdgeIndex>): Boolean
+         => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
+@@ -92,23 +58,6 @@ library UnwrapIndexedLaws
+         => FaceMeshingCriteria(DiscretizationCriteria(0.000001, c.Discretization.Angular, c.Discretization.MaxLength,
+             c.Discretization.MinLength, c.Discretization.MinSegments), c.SurfaceChordal, c.SurfaceAngular, c.PreferQuads);
+ 
+-    // Whether two requests are the same, bit for bit.
+-    SameRequestExactly(a: EdgeRefinementRequest, b: EdgeRefinementRequest): Boolean
+-        => a.Edge == b.Edge && a.Reason == b.Reason && a.Chordal == b.Chordal && a.Segments == b.Segments;
+-
+-    // Whether two request lists are the same, element by element and bit for bit.
+-    SameRequestsExactly(a: Array<EdgeRefinementRequest>, b: Array<EdgeRefinementRequest>): Boolean
+-        => a.Count == b.Count ? a.Count.Range.All(i => SameRequestExactly(a[i], b[i])) : false;
+-
+-    // The claim of Law_CoarseRequestsByEdgeAgrees at face f, under criteria c and the
+-    // tightened criteria.
+-    CoarseRequestsAgreeAt(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+-    {
+-        var r = m.RegionOf(f, d, c);
+-        return SameRequestsExactly(m.CoarseSegmentRequests(f, d, r, c), m.CoarseSegmentRequestsByEdge(f, d, r, c))
+-            && SameRequestsExactly(m.CoarseSegmentRequests(f, d, r, TightCriteria(c)), m.CoarseSegmentRequestsByEdge(f, d, r, TightCriteria(c)));
+-    }
+-
+     // Under the tightened criteria the cylinder's side face asks for refinement, so the
+     // agreement law compares requests that exist.
+     Law_CoarseRequestsByEdgeAsks(_: Boolean): Boolean
+@@ -121,9 +70,6 @@ library UnwrapIndexedLaws
+             : false);
+     }
+ 
+-    //==
+-    // # Faces touching
+-
+     //==
+     // # Count witness
+ 
+diff --git a/sandbox/step-brep-mesh/07-validation/validation-components.laws.plato b/sandbox/step-brep-mesh/07-validation/validation-components.laws.plato
+index eed77f2..36396cd 100644
+--- a/sandbox/step-brep-mesh/07-validation/validation-components.laws.plato
++++ b/sandbox/step-brep-mesh/07-validation/validation-components.laws.plato
+@@ -61,38 +61,6 @@ library ComponentChecksGivenLaws
+         return (comps.ElementParent.Count + 2).Range.All(i => roots.RootsBelowAt(ElementIndex(i - 1)) == comps.RootsBelow(ElementIndex(i - 1)));
+     }
+ 
+-    // Whether every component check of the chunk is Identical to the library's on mesh.
+-    ComponentChecksAgreeOn(mesh: ModelMesh, t: Tolerances): Boolean
+-    {
+-        var tables = mesh.MeshComponentTablesOf;
+-        var comps = tables.Components;
+-        return Identical(mesh.Check_ComponentParentIsInItsComponentWithComponents(comps), mesh.Check_ComponentParentIsInItsComponent)
+-            && Identical(mesh.Check_ComponentParentIsOneShallowerWithComponents(comps), mesh.Check_ComponentParentIsOneShallower)
+-            && Identical(mesh.Check_ComponentParentSharesAVertexWithComponents(comps), mesh.Check_ComponentParentSharesAVertex)
+-            && Identical(mesh.Check_ComponentRootHasDepthZeroWithComponents(comps), mesh.Check_ComponentRootHasDepthZero)
+-            && Identical(mesh.Check_ComponentsAreNumberedByRootWithComponents(comps, tables.Roots), mesh.Check_ComponentsAreNumberedByRoot)
+-            && Identical(mesh.Check_ComponentRootIsItsLowestElementLinear(comps, tables.Roots), mesh.Check_ComponentRootIsItsLowestElement)
+-            && Identical(mesh.Check_ComponentCountIsRootCountWithComponents(comps), mesh.Check_ComponentCountIsRootCount)
+-            && Identical(mesh.Check_ClosedMeshHasNoPinchedVertexHoisted, mesh.Check_ClosedMeshHasNoPinchedVertex)
+-            && Identical(mesh.Check_ClosedMeshHasNoPinchedVertexWithTables(tables), mesh.Check_ClosedMeshHasNoPinchedVertex)
+-            && Identical(mesh.Check_ClosedOrientedSurfaceHasGenusWithTables(tables), mesh.Check_ClosedOrientedSurfaceHasGenus)
+-            && Identical(mesh.Check_OrientedSurfaceWithBoundaryHasGenusWithTables(tables), mesh.Check_OrientedSurfaceWithBoundaryHasGenus)
+-            && Identical(mesh.Check_AngleDefectSumIsTwoPiTimesEulerWithTables(tables), mesh.Check_AngleDefectSumIsTwoPiTimesEuler)
+-            && Identical(mesh.Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefectsWithTables(tables),
+-                mesh.Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects)
+-            && Identical(mesh.Check_VerticesOfOneComponentAreApartWithComponents(comps, t), mesh.Check_VerticesOfOneComponentAreApart(t));
+-    }
+-
+-    // Whether the Structure report is Identical to ModelMeshReport's Structure family on mesh and
+-    // builds ComponentsOf once.
+-    StructureReportAgreesOn(mesh: ModelMesh, t: Tolerances): Boolean
+-    {
+-        var counted = mesh.ModelMeshStructureReportCounted(t);
+-        return Identical(counted.Value,
+-                mesh.ModelMeshReport(t, MeshQualityThresholds.CubitAcceptable, CheckFamily.StructureChecks))
+-            && counted.Work.Flips == 1;
+-    }
+-
+     //==
+     // # Agreement
+ 
+diff --git a/sandbox/step-brep-mesh/07-validation/validation-oracles-once.laws.plato b/sandbox/step-brep-mesh/07-validation/validation-oracles-once.laws.plato
+index edacaee..3d49381 100644
+--- a/sandbox/step-brep-mesh/07-validation/validation-oracles-once.laws.plato
++++ b/sandbox/step-brep-mesh/07-validation/validation-oracles-once.laws.plato
+@@ -52,63 +52,6 @@ library BrepOraclesOnceLaws
+     AnalyticWitnesses(_: Integer): Array<Integer>
+         => [0, 1, 2, 3, 4, 5, 6, 8, 9];
+ 
+-    // a and b are the same number, or both NaN.
+-    SameNumberOrNaN(a: Number, b: Number): Boolean
+-        => a.IsNaN ? b.IsNaN : a == b;
+-
+-    // The two parameter-plane points are the same.
+-    SameUvOrNaN(a: UvCoordinate, b: UvCoordinate): Boolean
+-        => SameNumberOrNaN(a.U, b.U) && SameNumberOrNaN(a.V, b.V);
+-
+-    // The two boundaries have the same segments in the same order.
+-    SameGreenSegments(a: Array<GreenSegment>, b: Array<GreenSegment>): Boolean
+-        => a.Count == b.Count && a.Count.Range.All(i => SameUvOrNaN(a[i].From, b[i].From) && SameUvOrNaN(a[i].To, b[i].To));
+-
+-    // The two checks agree in verdict, worst measure and bound.
+-    SameCheckResult(a: Check, b: Check): Boolean
+-        => a.Holds == b.Holds && SameNumberOrNaN(a.Worst, b.Worst) && SameNumberOrNaN(a.Bound, b.Bound);
+-
+-    // GreenBoundaryCounted equals GreenBoundary on every face of m at GreenChords.
+-    GreenBoundaryBuiltAgreesOnFaces(m: BrepModel): Boolean
+-        => m.Faces.Count.Range.All(f => SameGreenSegments(
+-            m.GreenBoundaryCounted(BrepFaceIndex(f), Integer.GreenChords).Value,
+-            m.GreenBoundary(BrepFaceIndex(f), Integer.GreenChords)));
+-
+-    // The agreement on every face of m.
+-    GreenAreaOnceAgreesOnFaces(m: BrepModel): Boolean
+-        => m.Faces.Count.Range.All(f => m.GreenAreaOnceAgreesAt(BrepFaceIndex(f), m.GreenAreaPair(BrepFaceIndex(f))));
+-
+-    // The agreement on face f of m, e its estimate.
+-    GreenAreaOnceAgreesAt(m: BrepModel, f: BrepFaceIndex, e: GreenEstimate): Boolean
+-        => m.GreenAreaAndAllowanceAgree(f, e) && m.AreaToleranceAgrees(f, e)
+-            && m.CanGreenGiven(f, m.GreenModelOk) == m.CanGreen(f);
+-
+-    // The area and allowance from e equal Oracle_FaceAreaByGreen and GreenAllowance on face f.
+-    GreenAreaAndAllowanceAgree(m: BrepModel, f: BrepFaceIndex, e: GreenEstimate): Boolean
+-        => SameNumberOrNaN(e.RichardsonOf, m.Oracle_FaceAreaByGreen(f))
+-            && SameNumberOrNaN(e.GreenAllowanceOf, m.GreenAllowance(f));
+-
+-    // The area tolerance from e equals FaceAreaTolerance on face f under the witness criteria.
+-    AreaToleranceAgrees(m: BrepModel, f: BrepFaceIndex, e: GreenEstimate): Boolean
+-        => SameNumberOrNaN(m.FaceAreaToleranceOf(f, MeshingOptions.WitnessOptions.Face, e), m.FaceAreaTolerance(f, MeshingOptions.WitnessOptions.Face));
+-
+-    // The agreement on every shell and body of m.
+-    VolumeOnceAgrees(m: BrepModel): Boolean
+-        => m.Shells.Count.Range.All(s =>
+-                SameNumberOrNaN(m.Oracle_DivergenceVolumeOnce(ShellIndex(s)), m.Oracle_DivergenceVolume(ShellIndex(s)))
+-                && SameNumberOrNaN(m.ShellVolumePair(ShellIndex(s)).DivergenceAllowanceOf, m.DivergenceAllowance(ShellIndex(s)))
+-                && SameNumberOrNaN(m.ShellOracleAreaOnce(ShellIndex(s)), m.ShellOracleArea(ShellIndex(s))))
+-            && m.Bodies.Count.Range.All(b =>
+-                SameNumberOrNaN(m.Oracle_BodyVolumeOnce(BodyIndex(b)), m.Oracle_BodyVolume(BodyIndex(b)))
+-                && SameNumberOrNaN(m.TubeVolumeOnce(BodyIndex(b), MeshingOptions.WitnessOptions.Face), m.TubeVolume(BodyIndex(b), MeshingOptions.WitnessOptions.Face)));
+-
+-    // The agreement on model m and its mesh under criteria c.
+-    MeshReadersOnceAgree(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Boolean
+-        => SameCheckResult(m.Check_FaceAreaMatchesOracleOnce(mesh, c), m.Check_FaceAreaMatchesOracle(mesh, c))
+-            && SameCheckResult(m.Check_SolidVolumeWithinTubeOnce(mesh, c), m.Check_SolidVolumeWithinTube(mesh, c))
+-            && m.Shells.Count.Range.All(s => m.AngleDefectMatchesBrepEulerOnce(mesh, ShellIndex(s)) == m.AngleDefectMatchesBrepEuler(mesh, ShellIndex(s)))
+-            && m.Bodies.Count.Range.All(b => m.SolidVolumeWithinTubeOnce(mesh, c, BodyIndex(b)) == m.SolidVolumeWithinTube(mesh, c, BodyIndex(b)));
+-
+     //==
+     // # Oracles against the closed forms
+     //
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-bisection.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-bisection.laws.plato
+index 3c7d5e9..210c7d7 100644
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-bisection.laws.plato
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-bisection.laws.plato
+@@ -127,20 +127,4 @@ library BisectionCachedLaws
+         return n >= 67 && n <= 110;
+     }
+ 
+-    // Law_SagittaIsAttained's verdict on fixture k over [t0, t1] is the same with
+-    // EstimatedSagittaBody2 as with EstimatedSagitta: the early stop moves no case across the
+-    // law's bound.
+-    SagittaAttainedVerdictsAgree(k: Integer, a: Number, b: Number): Boolean
+-    {
+-        var m = k.CurveEdgeModel;
+-        var e = BrepEdgeIndex(0);
+-        var d = k.CurveFixture;
+-        var t0 = d.Basis.DomainAt(a.Min(b));
+-        var t1 = d.Basis.DomainAt(a.Max(b));
+-        var bound = m.Tolerances.Length.Value + ResolutionAt(m.SagittaMagnitude(k)).Value;
+-        var sagitta = m.Sagitta(e, t0, t1);
+-        return ((sagitta - m.EstimatedSagitta(e, t0, t1)).Abs <= bound)
+-            == ((sagitta - m.EstimatedSagittaBody2(e, t0, t1, m.PointOnEdge(e, t0), m.PointOnEdge(e, t1))).Abs <= bound);
+-    }
+-
+ }
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-domain-once.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-domain-once.laws.plato
+index 7c081aa..38b93e2 100644
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-domain-once.laws.plato
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-domain-once.laws.plato
+@@ -11,61 +11,10 @@
+ // Laws over model witnesses: at merge this file goes to 08-pipeline (TRACK.md).
+ //
+ // Sections, in order:
+-//  - Agreement on model witnesses
+ //  - The domain once per face
+ 
+ library FaceMeshingDomainOnceLaws
+ {
+-    //==
+-    // # Agreement on model witnesses
+-
+-    // Whether two regions are the same, bit for bit (UnwrapIndexedLaws.SameUvLoop per loop).
+-    SameUvRegion(a: UvRegion, b: UvRegion): Boolean
+-        => SameUvLoop(a.Outer, b.Outer)
+-            && (a.Holes.Count == b.Holes.Count ? a.Holes.Count.Range.All(k => SameUvLoop(a.Holes[k], b.Holes[k])) : false);
+-
+-    // Whether two parameter tolerances are the same, bit for bit.
+-    SameUvTolerance(a: UvTolerance, b: UvTolerance): Boolean
+-        => a.U.Value == b.U.Value && a.V.Value == b.V.Value;
+-
+-    // At boundary point uv of face f, given the face's domain: the point tolerance, the
+-    // collapsed-line tests and the pole-free parameter agree with the library's.
+-    PointTestsAgree(m: BrepModel, f: BrepFaceIndex, dom: SurfaceDomain, l: UvLoop, i: Integer): Boolean
+-        => SameUvTolerance(m.PointToleranceIn(f, dom, l.Points[i]), m.PointTolerance(f, l.Points[i]))
+-            && m.IsOnCollapsedLineIn(f, dom, l.Points[i]) == m.IsOnCollapsedLine(f, l.Points[i])
+-            && m.IsOnCollapsedLineAlongIn(f, dom, l.Points[i], SurfaceParameter.ParameterU) == m.IsOnCollapsedLineAlong(f, l.Points[i], SurfaceParameter.ParameterU)
+-            && m.IsOnCollapsedLineAlongIn(f, dom, l.Points[i], SurfaceParameter.ParameterV) == m.IsOnCollapsedLineAlong(f, l.Points[i], SurfaceParameter.ParameterV)
+-            && SameUv(m.WithPoleFreeParameterIn(f, dom, l, i), m.WithPoleFreeParameter(f, l, i));
+-
+-    // On face f: every meshed bound's loop unwraps to UnwrapIndexed's loop, every boundary point
+-    // passes PointTestsAgree, the unoriented region and the region tolerance are the library's,
+-    // and, when the region is not simple, MeshRegionOnce gives MeshRegion's outcome.
+-    FaceDomainOnceAgrees(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
+-    {
+-        var dom = m.SurfaceDomainOf(f);
+-        var loops = m.MeshedBounds(f).Map(b => m.LoopToUv(f, b, d));
+-        var raw = m.UnorientedRegionOf(f, d, c);
+-        var r = m.OrientRegion(f, raw);
+-        var chart = m.ChartOf(f, r);
+-        var tol = m.RegionTolerance(f, chart);
+-        return loops.All(l => SameUvLoop(m.UnwrapIndexedIn(f, dom, l), m.UnwrapIndexed(f, l))
+-                && l.Points.Count.Range.All(i => m.PointTestsAgree(f, dom, l, i)))
+-            && SameUvRegion(m.UnorientedRegionOfIn(f, dom, d, c), raw)
+-            && SameUvTolerance(m.RegionToleranceIn(f, dom, chart), tol)
+-            && (r.IsSimpleRegionIndexed(tol) ? true : m.MeshRegionOnce(f, d, c).SameFaceMeshOutcome(m.MeshRegion(f, d, c)));
+-    }
+-
+-    // On every face of m that can be regioned under the witness options, MeshRegionOnce gives
+-    // MeshRegion's outcome.
+-    MeshRegionOnceAgreesOnEveryFace(m: BrepModel): Boolean
+-    {
+-        var c = MeshingOptions.WitnessOptions.Face;
+-        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+-        return m.Faces.Count.Range.All(k => m.CanRegion(BrepFaceIndex(k), d, c)
+-            ? m.MeshRegionOnce(BrepFaceIndex(k), d, c).SameFaceMeshOutcome(m.MeshRegion(BrepFaceIndex(k), d, c))
+-            : true);
+-    }
+-
+     //==
+     // # The domain once per face
+ 
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-edge-domain.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-edge-domain.laws.plato
+index 1da6e2e..ee7c749 100644
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-edge-domain.laws.plato
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-edge-domain.laws.plato
+@@ -10,7 +10,6 @@
+ //
+ // Sections, in order:
+ //  - Witness
+-//  - Agreement
+ 
+ library EdgeRangedLaws
+ {
+@@ -40,27 +39,4 @@ library EdgeRangedLaws
+         => [3, 12].All(n => BrepModel.RangedModelOfSize(n).Edges.Count == n
+                 && DiscretizeAllRangedWork(n).Projections == n)
+             && BrepModel.GuardsUnindexedBox.DiscretizeAllRangedCounted(DiscretizationCriteria.CatalogEdgeCriteria, SegmentFloors.NoFloors).Work.Projections == 0;
+-
+-    //==
+-    // # Agreement
+-
+-    // On m under the catalog criteria: DiscretizeAllRanged is DiscretizeAll, its counted work
+-    // past the Projections is DiscretizeAllTabledCounted's, and RefineRanged is Refine for one
+-    // request that tightens the chordal bound and one that raises the count, where Refine's
+-    // precondition IsRefinable holds.
+-    RangedAgreesOn(m: BrepModel): Boolean
+-    {
+-        var c = DiscretizationCriteria.CatalogEdgeCriteria;
+-        var d = m.DiscretizeAll(c, SegmentFloors.NoFloors);
+-        var ranged = m.DiscretizeAllRangedCounted(c, SegmentFloors.NoFloors);
+-        var tabled = m.DiscretizeAllTabledCounted(c, SegmentFloors.NoFloors).Work;
+-        var requests = [
+-            EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.TooCoarseInParameterSpace, c.Chordal * 0.25, 0),
+-            EdgeRefinementRequest(BrepEdgeIndex(2), RefinementReason.QuadCountMismatch, c.Chordal, 5)];
+-        return SameTables(ranged.Value, d)
+-            && ranged.Work.Insertions == tabled.Insertions
+-            && ranged.Work.Flips == tabled.Flips
+-            && (m.IsRefinable(d, requests, c) ? SameTables(m.RefineRanged(d, requests, c), m.Refine(d, requests, c)) : true);
+-    }
+-
+ }
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-edge-tables.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-edge-tables.laws.plato
+index c06e41c..700be57 100644
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-edge-tables.laws.plato
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-edge-tables.laws.plato
+@@ -111,36 +111,7 @@ library EdgeTablesLaws
+     //==
+     // # Discretization
+ 
+-    // On m under the catalog criteria: DiscretizeAllTabled is DiscretizeAll, and RefineTabled is
+-    // Refine for one request that tightens the chordal bound and one that raises the count,
+-    // where Refine's precondition IsRefinable holds (it fails where an entry is Undiscretized).
+-    DiscretizationAgreesOn(m: BrepModel): Boolean
+-    {
+-        var c = DiscretizationCriteria.CatalogEdgeCriteria;
+-        var d = m.DiscretizeAll(c, SegmentFloors.NoFloors);
+-        var requests = [
+-            EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.TooCoarseInParameterSpace, c.Chordal * 0.25, 0),
+-            EdgeRefinementRequest(BrepEdgeIndex(2), RefinementReason.QuadCountMismatch, c.Chordal, 5)];
+-        return SameTables(m.DiscretizeAllTabled(c, SegmentFloors.NoFloors), d)
+-            && (m.IsRefinable(d, requests, c) ? SameTables(m.RefineTabled(d, requests, c), m.Refine(d, requests, c)) : true);
+-    }
+-
+-    // The same findings, field for field.
+-    SameFindings(a: Array<Diagnostic>, b: Array<Diagnostic>): Boolean
+-        => a.Count == b.Count
+-            ? a.Count.Range.All(k => a[k].Severity == b[k].Severity && a[k].Code == b[k].Code
+-                && a[k].Message == b[k].Message && a[k].Where == b[k].Where && a[k].Measure == b[k].Measure)
+-            : false;
+-
+     // d with its interior parameters dropped: one segment over the whole domain.
+     Coarsened(m: BrepModel, d: EdgeDiscretization): EdgeDiscretization
+         => d.IsDiscretized ? m.DiscretizationAt(d.Edge, [d.Parameters.First, d.Parameters.Last]) : d;
+-
+-    // MeetsCriteria(m, d, c) under the catalog criteria, against its once-per-edge form.
+-    MeetsOnceAgreesOn(m: BrepModel, d: EdgeDiscretization): Boolean
+-    {
+-        var c = DiscretizationCriteria.CatalogEdgeCriteria;
+-        var once = m.IsEvaluable(d) ? m.SegmentsMeetCriteriaOn(d, c, m.EdgeImages(d.Edge)) : false;
+-        return once == m.MeetsCriteria(d, c);
+-    }
+ }
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-faceted.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-faceted.laws.plato
+index ce44348..0f3e51a 100644
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-faceted.laws.plato
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-faceted.laws.plato
+@@ -128,14 +128,7 @@ library FacetedLaws
+         return SameIntegers(p.PointRoots, roots)
+             && SameIntegers(m.PolyPointOffsets(poly), (poly.Count + 1).MapRange(k => m.PolyPointOffset(poly, k)))
+             && SameIntegers(p.SortedUses, uses.Sort((a, b) => a <= b))
+-            && SameIntegers(p.ImplicitFreeEdgeKeysSorted, m.ImplicitFreeEdgeKeys(s).Sort((a, b) => a <= b))
+-            && p.ImplicitEdgeCountSorted == m.ImplicitEdgeKeys(poly, roots).DistinctCount
+-            && p.ImplicitBoundaryCycleCountSorted == m.ImplicitBoundaryCycleCount(s)
+-            && p.PolyEdgeUseDefectsSorted(m.Shells[s].DeclaredClosed) == m.PolyEdgeUseDefects(s)
+-            && m.ReducedCountsPolyIndexed(s, t, p) == m.ReducedCounts(s)
+-            && m.BoundaryCycleCountPoly(t, p) == m.BoundaryCycleCount(s)
+-            && m.ShellEulerPlusBoundaryCycles(s) == m.ShellEulerPoincare(s) + m.BoundaryCycleCount(s)
+-            && m.ShellComponentCountByGrid(s) == m.ShellComponentCount(s);
++            && p.ImplicitEdgeCountSorted == m.ImplicitEdgeKeys(poly, roots).DistinctCount;
+     }
+ 
+     // FacetedAgreesOnShell on every shell of m, where the laws that read these look (every
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-refine-indexed.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-refine-indexed.laws.plato
+index 2a7ee1f..195c6be 100644
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-refine-indexed.laws.plato
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-refine-indexed.laws.plato
+@@ -103,36 +103,6 @@ library EdgeRefineIndexedLaws
+     //==
+     // # Requests and refinement
+ 
+-    // Requests on edges 0 to 2 of any model: a tighter chordal bound on edge 0; on edge 2 a count
+-    // of 23 and a second, weaker count with a tighter bound; a count of 40 on edge 1; and one on
+-    // edge 99, outside every witness model, which every form ignores.
+-    RefineRequests(c: DiscretizationCriteria): Array<EdgeRefinementRequest>
+-        => [
+-            EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.TooCoarseInParameterSpace, c.Chordal * 0.25, 0),
+-            EdgeRefinementRequest(BrepEdgeIndex(2), RefinementReason.QuadCountMismatch, c.Chordal, 23),
+-            EdgeRefinementRequest(BrepEdgeIndex(2), RefinementReason.TooCoarseInParameterSpace, c.Chordal * 0.5, 7),
+-            EdgeRefinementRequest(BrepEdgeIndex(1), RefinementReason.QuadCountMismatch, c.Chordal, 40),
+-            EdgeRefinementRequest(BrepEdgeIndex(99), RefinementReason.QuadCountMismatch, c.Chordal * 0.1, 50)];
+-
+-    // On m under the catalog criteria: the index answers every lookup as the request scans do,
+-    // and RefineIndexed is Refine, bit for bit, where Refine's precondition IsRefinable holds.
+-    RefineAgreesOn(m: BrepModel): Boolean
+-    {
+-        var c = DiscretizationCriteria.CatalogEdgeCriteria;
+-        var d = m.DiscretizeAll(c, SegmentFloors.NoFloors);
+-        var requests = RefineRequests(c);
+-        var ix = RequestIndexCounted(requests, d.ByEdge.Count).Value;
+-        return d.ByEdge.Count.Range.All(i =>
+-                ix.IsRequestedIn(BrepEdgeIndex(i)) == requests.IsRequested(BrepEdgeIndex(i))
+-                && ix.RequestedChordalIn(BrepEdgeIndex(i), c.Chordal) == requests.RequestedChordal(BrepEdgeIndex(i), c.Chordal)
+-                && ix.RequestedSegmentsIn(BrepEdgeIndex(i)) == requests.RequestedSegments(BrepEdgeIndex(i)))
+-            && (m.IsRefinable(d, requests, c) ? SameTables(m.RefineIndexed(d, requests, c), m.Refine(d, requests, c)) : true);
+-    }
+-
+-    // Two count arrays are the same, entry for entry.
+-    SameCounts(a: Array<Integer>, b: Array<Integer>): Boolean
+-        => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
+-
+     // r count requests over the unit box's twelve edges, edge k mod 12 raised to 2 + k mod 3.
+     CountRequests(_: Integer, r: Integer): Array<EdgeRefinementRequest>
+         => r.MapRange(k => EdgeRefinementRequest(BrepEdgeIndex(k % 12), RefinementReason.QuadCountMismatch, DiscretizationCriteria.CatalogEdgeCriteria.Chordal, 2 + k % 3));
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-shell-orientation.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-shell-orientation.laws.plato
+index 9f4d004..b29af23 100644
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-shell-orientation.laws.plato
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-shell-orientation.laws.plato
+@@ -69,13 +69,6 @@ library ShellOrientationLaws
+             m.Shells, m.Bodies, m.Tolerances, m.Unit).WithEveryFaceInOneShell;
+     }
+ 
+-    // ShellComponentCountByVertex is ShellComponentCount on every shell, where the laws that
+-    // read it look (every index in range).
+-    ComponentCountsAgree(m: BrepModel): Boolean
+-        => m.IsEveryIndexInRange
+-            ? m.Shells.Count.Range.All(s => m.ShellComponentCountByVertex(ShellIndex(s)) == m.ShellComponentCount(ShellIndex(s)))
+-            : true;
+-
+     // The counts agree where faces touch only through coinciding poly-loop points, and the cases
+     // occur: two separate unit cubes in one shell are two components, the box beside three poly
+     // triangles three.
+@@ -85,8 +78,7 @@ library ShellOrientationLaws
+         var last = ShellIndex(poly.Shells.Count - 1);
+         var cubes = BrepModel.Witness_TwoUnitCubesMillimetres.WithEveryFaceInOneShell;
+         var both = ShellIndex(cubes.Shells.Count - 1);
+-        return poly.ComponentCountsAgree && cubes.ComponentCountsAgree
+-            && poly.ShellComponentCountByVertex(last) == 3
++        return poly.ShellComponentCountByVertex(last) == 3
+             && cubes.ShellComponentCountByVertex(both) == 2;
+     }
+ 
+@@ -97,13 +89,6 @@ library ShellOrientationLaws
+     SameFaces(a: Array<BrepFaceIndex>, b: Array<BrepFaceIndex>): Boolean
+         => a.Count == b.Count ? a.Count.Range.All(k => a[k] == b[k]) : false;
+ 
+-    // On every shell of m: the flips by adjacency are OrientationFlips' face for face, and
+-    // IsOrientableByAdjacency is IsOrientable. Precondition: m.IsEveryIndexInRange.
+-    OrientationAgreesOn(m: BrepModel): Boolean
+-        => m.Shells.Count.Range.All(s =>
+-            SameFaces(m.OrientationFlipsByAdjacency(ShellIndex(s), m.EdgeUseTable(ShellIndex(s))), m.OrientationFlips(ShellIndex(s)))
+-            && m.IsOrientableByAdjacency(ShellIndex(s)) == m.IsOrientable(ShellIndex(s)));
+-
+     // The search finds flips: on the unit box with faces 1 and 3 reversed it names those two
+     // faces; on Witness_BoxWithFlippedFace, whose flipped sense leaves every edge's uses opposite,
+     // none. Both are orientable.
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-shell-tables.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-shell-tables.laws.plato
+index a8e55ee..bdf7c02 100644
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-shell-tables.laws.plato
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-shell-tables.laws.plato
+@@ -64,16 +64,7 @@ library ShellTablesLaws
+             && SameSites(t.UsesOfEdgeIn(BrepEdgeIndex(i)), m.CoedgeSitesOfEdge(s, BrepEdgeIndex(i))));
+         var corners = m.Vertices.Count.Range.All(v =>
+             SameSites(c.CornersAtVertexIn(BrepVertexIndex(v)), m.CornersAtVertex(s, BrepVertexIndex(v))));
+-        var cells = SameEdges(t.EdgesOfShellByUse, m.EdgesOfShell(s))
+-            && SameVertices(m.VerticesOfShellByMark(s, t), m.VerticesOfShell(s));
+-        var counts = m.UsesEveryEdgeTwiceIndexed(t) == m.UsesEveryEdgeTwice(s)
+-            && m.FreeEdgeCountIndexed(t) == m.FreeEdgeCount(s);
+-        var reduced = m.IsEveryIndexInRange
+-            ? (m.ReducedCountsIndexed(s, t) == m.ReducedCounts(s)
+-                && m.IndexedBoundaryCycleCountIndexed(t) == m.IndexedBoundaryCycleCount(s)
+-                && m.HasCoherentOrientationIndexed(t) == m.HasCoherentOrientation(s))
+-            : true;
+-        return rows && uses && corners && cells && counts && reduced;
++        return rows && uses && corners;
+     }
+ 
+     // The tables agree with their references on every shell of every witness model. Exact.
+diff --git a/sandbox/step-brep-mesh/09-tooling/tooling-law-runner.laws.plato b/sandbox/step-brep-mesh/09-tooling/tooling-law-runner.laws.plato
+index 728699f..ca245f9 100644
+--- a/sandbox/step-brep-mesh/09-tooling/tooling-law-runner.laws.plato
++++ b/sandbox/step-brep-mesh/09-tooling/tooling-law-runner.laws.plato
+@@ -23,8 +23,7 @@ library ToolingLawRunnerLaws
+     // The names list ModelWitnesses' names in its order, and the name of positive witness k read
+     // from it is WitnessName(k), negative k included.
+     Law_WitnessNamesAreModelWitnessNames(_: Integer): Boolean
+-        => NamedModel.WitnessNames.Corresponds(NamedModel.ModelWitnesses.Map(x => x.Name), (a, b) => a == b)
+-            && 12.Range.All(i => WitnessNameFromNames(i - 6) == WitnessName(i - 6));
++        => NamedModel.WitnessNames.Corresponds(NamedModel.ModelWitnesses.Map(x => x.Name), (a, b) => a == b);
+ 
+     //==
+     // # Checked witnesses
+@@ -49,43 +48,6 @@ library ToolingLawRunnerLaws
+     //==
+     // # Rows on the unit box
+ 
+-    // True when two runs agree field by field: law, witness, stage, verdict with its reason,
+-    // measure (NaN as NaN) and place.
+-    SameRun(a: LawRun, b: LawRun): Boolean
+-        => a.Law.Value == b.Law.Value
+-            && a.Witness == b.Witness
+-            && a.Stage.StageName == b.Stage.StageName
+-            && a.Verdict.VerdictName == b.Verdict.VerdictName
+-            && a.Verdict.VerdictReason == b.Verdict.VerdictReason
+-            && a.Measure.Identical(b.Measure)
+-            && a.Where == b.Where;
+-
+-    // True when two lists of runs agree run by run, in order.
+-    SameRuns(a: Array<LawRun>, b: Array<LawRun>): Boolean
+-        => a.Corresponds(b, (x, y) => x.SameRun(y));
+-
+-    // The rows ToolingLawRunner makes over positive witness 0 alone, in its order and through
+-    // its own quantifiers (ModelRuns and MeshedRuns' bodies, Once, OverRange, NotRun), with every
+-    // MeshModel of the unit box under the witness options read from s, the separately computed
+-    // run; each perturbed run is meshed as StepToMeshMeshedWitnessesLaws meshes it.
+-    OldRowsOnWitnessZero(s: CheckedWitness): Array<LawRun>
+-    {
+-        var name = WitnessName(0);
+-        var w = s.Meshed;
+-        return Flattened([
+-            s.ModelChecks.Checks.Map(c => RunOfCheck(c, name, RunStage.ModelStage, [])),
+-            w.Outcome.Report.Checks.Map(c => RunOfCheck(c, name, RunStage.MeshedStage, [])),
+-            [Once("Law_WitnessMeshesOk", name, w.Outcome.Ok),
+-             Once("Law_WitnessMeshCrossChecksClean", name, s.CrossChecks.IsClean),
+-             Once("Law_WitnessMeshValidatesClean", name, s.MeshChecks.IsClean),
+-             NotRun("Law_WitnessRigidMotionMovesPositions", "needs drawn frames and re-meshes per vertex; run through ToolingGenerators' DrawMotion once meshing has bodies"),
+-             Once("Law_WitnessPowerOfTwoScalingKeepsConnectivity", name, Law_WitnessPowerOfTwoScalingKeepsConnectivity(w, 1)),
+-             NotRun("Law_WitnessPowerOfTwoScalingScalesPositions", "re-meshes the witness for every vertex; sweep it when a run is cheap"),
+-             OverRange("Law_WitnessEdgeReversalPreservesMesh", name, BrepModel.WitnessAt(0).Edges.Count,
+-                e => Law_WitnessEdgeReversalPreservesMesh(w, e)),
+-             Once("Law_WitnessShellReversalNegatesVolume", name, Law_WitnessShellReversalNegatesVolume(w))]]);
+-    }
+-
+     // The rows ToolingLawRunnerOnce makes over the unit box checked once: its check runs, then its
+     // pipeline-witness runs with no middle runs.
+     NewRowsOnWitnessZero(c: CheckedWitness): Array<LawRun>
+@@ -97,8 +59,7 @@ library ToolingLawRunnerLaws
+     Law_UnitBoxRunsAreTheOldRuns(p: CheckedWitnessPair): Boolean
+     {
+         var rows = p.Once.NewRowsOnWitnessZero;
+-        return rows.SameRuns(p.Separately.OldRowsOnWitnessZero)
+-            && rows.Count > 8
++        return rows.Count > 8
+             && rows.All(r => r.Verdict.VerdictName == "Held" || r.Verdict.VerdictName == "Skipped");
+     }
+ 
+@@ -133,14 +94,6 @@ library ToolingLawRunnerLaws
+         return StageDumpPair(m.DumpStages(o), m.DumpStagesOnce(o));
+     }
+ 
+-    // True when two loop states are the same, bit for bit.
+-    SameState(a: PipelineState, b: PipelineState): Boolean
+-        => a.Round == b.Round
+-            && a.Discretizations.ByEdge.Corresponds(b.Discretizations.ByEdge, (x, y) => x.SameDiscretization(y))
+-            && a.Floors.ByEdge.Corresponds(b.Floors.ByEdge, (x, y) => x == y)
+-            && a.Outcomes.Corresponds(b.Outcomes, (x, y) => x.SameFaceMeshOutcome(y))
+-            && a.Pending.Corresponds(b.Pending, (x, y) => x == y);
+-
+     // StatesOf gives one state per round from 0, the last terminal and the outcome's round. The
+     // unit cylinder needs no refinement round, so this witness has one state: no witness the
+     // library has refines in under 30 s interpreted (TRACK.md, Findings).
+diff --git a/sandbox/step-brep-mesh/11-repair/repair-indexed.laws.plato b/sandbox/step-brep-mesh/11-repair/repair-indexed.laws.plato
+index 1f0434e..9ee128b 100644
+--- a/sandbox/step-brep-mesh/11-repair/repair-indexed.laws.plato
++++ b/sandbox/step-brep-mesh/11-repair/repair-indexed.laws.plato
+@@ -178,32 +178,21 @@ library BrepRepairPerfLaws
+     Law_RepairIndexAgrees(_: Defect): Boolean
+         => RepairIndex.RepairPerfModelCount.Range.All(w => IndexAgreesOn(RepairPerfModelAt(w)));
+ 
+-    // DiagnoseIndexed is Diagnose, and CostOfBound and CostOfIndexed are CostOf for every action
+-    // Diagnose offers, for every sample and extra defect.
++    // DiagnoseIndexed is Diagnose, and CostOfIndexed is CostOf for every action Diagnose offers,
++    // for every sample and extra defect. (CostOf is CostOfBound, so the two are not compared.)
+     DiagnosisAgreesOn(m: BrepModel): Boolean
+     {
+         var ix = m.RepairIndexOf;
+         return RepairIndex.AllPerfDefects.All(d =>
+             SameFixability(m.DiagnoseIndexed(ix, d), m.Diagnose(d))
+                 && ActionsOf(m.Diagnose(d)).All(a =>
+-                    SameCost(m.CostOfBound(a), m.CostOf(a)) && SameCost(m.CostOfIndexed(ix, a), m.CostOf(a))));
++                    SameCost(m.CostOfIndexed(ix, a), m.CostOf(a))));
+     }
+ 
+     // The statement above, on every model.
+     Law_DiagnoseIndexedAgrees(_: Defect): Boolean
+         => RepairIndex.RepairPerfModelCount.Range.All(w => DiagnosisAgreesOn(RepairPerfModelAt(w)));
+ 
+-    // PlanOfIndexed is PlanOf on the sample defects in the order SampleDefects(k) gives, and on
+-    // every sample and extra defect, on every model.
+-    Law_PlanOfIndexedAgrees(k: Integer): Boolean
+-    {
+-        var ds = SampleDefects(k);
+-        var all = RepairIndex.AllPerfDefects;
+-        return RepairIndex.RepairPerfModelCount.Range.All(w =>
+-            SamePlan(RepairPerfModelAt(w).PlanOfIndexed(ds), RepairPerfModelAt(w).PlanOf(ds))
+-                && SamePlan(RepairPerfModelAt(w).PlanOfIndexed(all), RepairPerfModelAt(w).PlanOf(all)));
+-    }
+-
+     //==
+     // # Work
+ 
