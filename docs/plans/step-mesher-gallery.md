@@ -1,6 +1,6 @@
 # STEP mesher gallery
 
-Written 2026-10-21 at the owner's request: a gallery of meshing results, successful and failed, that stand for the challenges of a complete STEP mesher. The page is the artifact **STEP Mesher Gallery** (https://claude.ai/artifact/MvSKq4pnsqHmoX1arp7mhK, private until shared): a three.js viewer with 27 cases, each a GLB meshed by the corpus harness's new `gallery` mode (bim-open-data `94d4d67`) from the library compiled at bim-open-toolkit `8984df4b`, the same build as `docs/plans/step-mesher-corpus-2026-10-21.md`. Faces are coloured by surface kind, every discretized edge is a thin line, and the edges of unmeshed faces are red, so a hole in a part shows its outline.
+Written 2026-10-21 at the owner's request: a gallery of meshing results, successful and failed, that stand for the challenges of a complete STEP mesher. The page is the artifact **STEP Mesher Gallery** (https://claude.ai/artifact/MvSKq4pnsqHmoX1arp7mhK, private until shared): a three.js viewer, 27 cases on 2026-10-21 and 33 since 2026-10-22, each a GLB meshed by the corpus harness's new `gallery` mode (bim-open-data `94d4d67`) from the library compiled at bim-open-toolkit `8984df4b`, the same build as `docs/plans/step-mesher-corpus-2026-10-21.md`. Faces are coloured by surface kind, every discretized edge is a thin line, and the edges of unmeshed faces are red, so a hole in a part shows its outline.
 
 ## The cases
 
@@ -25,16 +25,28 @@ Not shown: ELLA-W1, where every edge throws the stub and no face meshes, and NIN
 
 `witness:BSplinePatchSolid:0.3` at chordal 0.01 meshes to six quads with digest `AC03233177AEA985`, the unit box's. The B-spline top face takes the grid branch and becomes the one quad through its corners; the chordal bound is tested along the straight boundary edges, where it is zero, so the interior bump is invisible. Filed as TKT-415; TKT-401 (the bump solid's degenerate element) is the nearby defect, and TKT-405 (prefer quads) is the decision that routes four-edge faces to the grid.
 
+## Rerun of 2026-10-22
+
+The gallery was regenerated on the library generated from toolkit c47db0b3 (bim-open-data 58f6fcb), which adds TKT-406, TKT-407 and TKT-408 to the 2026-10-21 build. The fixes made on 2026-10-22 for TKT-410, TKT-411, TKT-413 and TKT-415 sat in `sandbox/step-mesh-staging/` and were not in that library, so they do not show. Two other corpus runs shared the machine, so whole-file times are not compared.
+
+| Measure | 2026-10-21 | 2026-10-22 |
+|---|---|---|
+| Witness meshes | 10 | 10, byte for byte the same |
+| Faces meshed in the 10 corpus files | as listed | unchanged; no failure fixed |
+| ODIN-W260 face 2584 (cylinder, 12 edges) | 1,296 ms, 958 triangles | 82 ms, 806 triangles |
+| ODIN-W260 face 34 (plane, 212 edges) | 1,216 ms | 200 ms, same 2,328 triangles |
+| ODIN-W160 triangles | 29,104 | 27,864 |
+
+Yesterday's ODIN-W260 sidecar came from a cold run, but JIT compilation cannot account for a 6 to 16 times drop on five separate faces. Six public samples were added. STEP Tools io1-tc-214 (the epic's AP214 criterion), NIST FTC 06 and STEP Tools cubcylso mesh closed. NIST CTC 01 and STEP Tools block lose faces to TKT-410; block's lines are wrapped in INTERSECTION_CURVE. The moon buggy's full spheres refine to about 19,000 triangles each, and its assembly has 180 misoriented edges; the gallery shows three of the spheres because the whole mesh exceeds the host's 16 MB file limit. STEP Tools clip.stp decodes to no faces because it uses entity short names (TKT-422). NASA's RASSOR did not finish its 78,659 edges in 150 s and is left out.
+
 ## How to regenerate
 
 ```
 dotnet build deps/bim-open-data/tools/step-corpus-harness -c Release --artifacts-path artifacts/builders/<id>
-<harness> gallery <file.step> out.glb --parallel --warmup
-<harness> gallery witness:Cylinder out.glb --parallel --chordal 0.01
-<harness> gallery <file.step> out.glb --faces 202,203,204 --ring 1 --parallel
-python deps/bim-open-data/tools/step-corpus-harness/gallery-page.py artifacts/step-gallery
+python deps/bim-open-data/tools/step-corpus-harness/gallery-page.py run artifacts/step-gallery --harness <artifacts path>/bin/StepCorpusHarness/release/step-corpus-harness.exe
+python deps/bim-open-data/tools/step-corpus-harness/gallery-page.py page artifacts/step-gallery --previous artifacts/step-gallery/<earlier run> --label "<library and date>"
 ```
 
-The harness's README lists the flags. `gallery-page.py` holds the case table (stem, group, verdict, ticket, title, sentence) and writes `index.html` plus a base64 `.glb.txt` beside each GLB, because the artifact host serves text and images but not `model/gltf-binary`; the page decodes the text and hands the bytes to `GLTFLoader.parse`. The GLBs and the page live in `artifacts/step-gallery/` (git-ignored); `.claude/launch.json`'s `step-gallery` entry serves that folder on port 8777 for a local look. To republish, publish `artifacts/step-gallery/index.html` to the artifact URL above with the `.glb.txt` files.
+Before a run, copy the folder's `.json` files into a dated subfolder; that is the next page's `--previous`. Each case's source and flags live in the script's case table, so `run` remakes every GLB and sidecar, and `--only stem,stem` remakes a few. `page` writes `index.html` plus a base64 `.glb.txt` beside each GLB, because the artifact host serves text and images but not `model/gltf-binary`, and a text file there may not exceed 16 MB. The folder `artifacts/step-gallery/` is git-ignored; `.claude/launch.json`'s `step-gallery` entry serves it on port 8777. To republish, publish `artifacts/step-gallery/index.html` to the artifact URL above with the `.glb.txt` files. The corpus is `C:\Users\cdigg\git\3d-format-shootout\data\submodules\3D-Step-Models-Library`; the public samples come from `scripts/fetch-step-samples.ps1`.
 
-The corpus is `C:\Users\cdigg\git\3d-format-shootout\data\submodules\3D-Step-Models-Library`. After the next corpus-changing merge (TKT-410 above all), rerun the commands and republish: the gallery is a snapshot of one build, not a live view.
+The gallery is a snapshot of one build: after a merge that regenerates `Ara3D.StepBrep`, run it again.
