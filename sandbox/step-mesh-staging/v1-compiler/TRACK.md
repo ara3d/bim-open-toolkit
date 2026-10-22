@@ -61,6 +61,17 @@ to merge into the library.
   `# differential: N mismatch(es)`, followed by one `# differs` line each. The first such file is
   `verdicts-differential-cpu64.tsv` here: 0 mismatches over 1,376 laws and 204 witnesses in 255 s.
   The warm server takes `backend=differential` once it runs Plato `ec51f061`.
+- Warm server replacement, built 2026-10-22 and not started on 8768:
+  `C:\Users\cdigg\.plato-cli\navmcp-9d014311-clean`. It is a clean export of Plato `9d014311`
+  (ec51f061 plus four Navigation lines that carry the differential mismatches to the server) with
+  parakeet `eedf2f0`, and studio `bdbc49ef` (`labs/PlatoNavigationMcp`: `ok` is false on vacuous
+  and differs, `mismatches` listed) with its ara3d-sdk submodule `82df7322`. Parakeet's two
+  references to `C:\Users\cdigg\ara3d-sdk` (a plain folder, not a git checkout) were rewritten to
+  that absolute path, as in earlier exports. Smoke-tested on port 8779 with the 8768 arguments:
+  interpreter, csharp and differential give the same verdicts (Law_WitnessIsSameAsItself and
+  Law_ReversalIsAnInvolution pass, Law_PendingRequestIsInSomeOutcome vacuous with the staged
+  premise, 0 mismatches). The generated C# of layers 00-08 at 9d014311 is byte-identical to
+  c8c83c8b's apart from the header line (1,419 files and the runtime copies).
 
 ## Contract requests
 
