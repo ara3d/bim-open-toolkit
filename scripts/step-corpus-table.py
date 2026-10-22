@@ -35,7 +35,7 @@ CSV_COLUMNS = [
     'edges_ms', 'faces_ms', 'refine_ms', 'assemble_ms', 'contract_ms', 'faces', 'faces_meshed', 'faces_threw', 'edges',
     'edges_threw', 'mesh_vertices', 'mesh_triangles', 'mesh_quads', 'hash', 'closed', 'oriented', 'boundary_edges',
     'nonmanifold_edges', 'misoriented_edges', 'closed_shells_closed', 'closed_shells', 'boundary_open_shell',
-    'boundary_edge_cited_once', 'boundary_beside_unmeshed_face', 'boundary_gap', 'boundary_inside_face', 'contract', 'over_chordal', 'flipped', 'degenerate', 'unexplained',
+    'boundary_edge_cited_once', 'boundary_beside_unmeshed_face', 'boundary_gap', 'boundary_inside_face', 'contract', 'over_chordal', 'flipped', 'degenerate', 'unexplained', 'excused',
     'worst_excess', 'last_stage', 'cause', 'previous_outcome', 'previous_process_ms', 'previous_faces_meshed',
     'previous_closed', 'previous_boundary_edges', 'previous_closed_shells_closed', 'previous_boundary_gap']
 # The harness's boundary causes (BoundaryCheck.cs, bim-open-data 97495d8) and their CSV columns: an open shell's
@@ -140,7 +140,7 @@ def per_file(files, previous):
                        nonmanifold_edges=ck.get('NonManifoldEdges', ''), misoriented_edges=ck.get('MisorientedEdges', ''),
                        contract=field(r'contract (\w+)', con), over_chordal=field(r'over-chordal (\d+)', con, int),
                        flipped=field(r'flipped (\d+)', con, int), degenerate=field(r'degenerate (\d+)', con, int),
-                       unexplained=field(r'unexplained (\d+)', con, int), worst_excess=field(r'worst-excess (\S+)', con),
+                       unexplained=field(r'unexplained (\d+)', con, int), excused=field(r'excused (\d+)', con, int), worst_excess=field(r'worst-excess (\S+)', con),
                        cause='; '.join(f'{k} {v}' for k, v in sorted(why.items())),
                        closed_shells_closed=s.get('ClosedShellsClosed', ''),
                        contract_ms=round(s['ContractMs']) if s.get('ContractMs') is not None else '',
@@ -180,7 +180,8 @@ def summary(files, rows, previous):
     out.append('- Edges by curve: ' + '; '.join(f"{k} {dict(v)}" for k, v in sorted(curves.items(), key=lambda kv: -kv[1]['all'])) + '.')
     broken = [r for r in done if r.get('contract') == 'broken']
     out.append(f"- Contract: {len(done) - len(broken)} hold, {len(broken)} broken (over chordal {total('over_chordal')},"
-               f" flipped {total('flipped')}, degenerate {total('degenerate')}, unexplained {total('unexplained')} faces).")
+               f" flipped {total('flipped')}, degenerate {total('degenerate')}, unexplained {total('unexplained')} faces; excused, a forced"
+               f" degenerate the face explains, {total('excused')} faces).")
     for r in files:
         for c in r['contract']:
             out.append(f"  - {r['file']} face {c['face']} {c['surface']}: deviation {c['deviation']} (bound {c['bound']},"
