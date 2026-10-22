@@ -1,7 +1,7 @@
 # v1-edges: edge discretization, edge identity, and the assembled mesh's watertightness
 
 Ticket: TKT-413, TKT-419, TKT-414, TKT-400
-Status: ready: E3, E1, E2 | working: corpus rerun of E1 with E2
+Status: ready: E3, E1, E2 | waiting: E2's check on the merged library once v1-close regenerates (supervisor, 2026-10-22)
 
 ## Chunks
 
@@ -37,7 +37,7 @@ Status: ready: E3, E1, E2 | working: corpus rerun of E1 with E2
   - All 16 laws of this track, the same run: 16 pass, 0.7 s summed.
   - NINA-B222's four edges, on C# regenerated from HEAD plus E1 and E2 wired in: range [pi/2, pi] (was [-5.3e29, 1.1e30]), minimum segment count 1 (was 47), and they return at once: bisection reaches `SagittaByHullBoundGiven`, the compiler's throwing stub (TKT-410, track v1-compiler), so they are undiscretized until that body exists, then discretize by bisection like every other surface-curve edge.
 
-## Merge instructions
+- Partial corpus run with E1 and E2 together (scratch C#, harness `all`, 120 s, parallel, warm-up), stopped at 37 of 88 files on the supervisor's instruction (no scratch regenerations for ready chunks). Against a baseline at the current library (the harness built on the working-tree C#, layers at c47db0b3, rerun on each file whose digest moved since 2026-10-21), 30 files compared: all 30 identical (digest, faces meshed, checks). The digests that moved since 2026-10-21 in that set (CEL/LENA-R8, CEL/MPCI, 4 B-spline faces in LENA-R8 at 5 triangles instead of 7) moved with TKT-406 to TKT-408, which merged after that run, not with this track.
 
 E3, recommended form (contract request below): `ShellImplicitEdges` replaces `ShellPolyEdges`.
 - Types into `02-topology/topology-faceted.types.plato`, library block `V1EdgesFacetedRanks` into `02-topology/topology-faceted.library.plato`, laws into `08-pipeline/pipeline-faceted.laws.plato` (they read layer 8's `FacetedCase` and `FacetedModel`).
