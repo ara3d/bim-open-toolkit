@@ -1,0 +1,81 @@
+//==
+// # The curved-face checks one by one (TKT-399)
+//
+// Layer 07's ValidateFaceMesh at Geometric runs sixteen checks on a face mesh; the six
+// *FaceChecksHold laws state them all at once, so a failure never named its check. Here each
+// check is its own law over every face of every PoleWitness (07-validation/poles-witness), so
+// the verdict file says which check fails on which witness. Each law's comment gives its kind
+// under the version 1 contract (gate or quality, as in TRACK.md).
+//
+// Sections, in order:
+//  - Checks
+
+library V1PoleChecksLaws
+{
+    //==
+    // # Checks
+
+    // LocalVertexInRange holds on every face of the witness (gate: structure).
+    Law_V1Gate_PoleLocalVertexInRange(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => fm.Check_LocalVertexInRange.Holds);
+
+    // LocalVertexSurjective holds on every face of the witness (gate: structure).
+    Law_V1Gate_PoleLocalVertexSurjective(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => fm.Check_LocalVertexSurjective.Holds);
+
+    // LocalVertexFibresAreIdentifications holds on every face of the witness (gate: closure).
+    Law_V1Gate_PoleLocalVertexFibresAreIdentifications(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => fm.Check_LocalVertexFibresAreIdentifications.Holds);
+
+    // ElementFacesFaceNormal holds on every face of the witness (gate: orientation).
+    Law_V1Gate_PoleElementFacesFaceNormal(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => w.Model.Check_ElementFacesFaceNormal(fm).Holds);
+
+    // TriangulationCornersInRange holds on every face of the witness (gate: structure).
+    Law_V1Gate_PoleTriangulationCornersInRange(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => fm.Check_TriangulationCornersInRange.Holds);
+
+    // ElementPositiveInChart holds on every face of the witness (gate: orientation).
+    Law_V1Gate_PoleElementPositiveInChart(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => w.Model.Check_ElementPositiveInChart(fm).Holds);
+
+    // ElementSpansBelowHalfPeriod holds on every face of the witness (gate: orientation).
+    Law_V1Gate_PoleElementSpansBelowHalfPeriod(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => w.Model.Check_ElementSpansBelowHalfPeriod(fm).Holds);
+
+    // PointNormalIsFaceNormal holds on every face of the witness (gate: trace).
+    Law_V1Gate_PolePointNormalIsFaceNormal(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => w.Model.Check_PointNormalIsFaceNormal(fm).Holds);
+
+    // SharedPositionIsCopied holds on every face of the witness (gate: closure).
+    Law_V1Gate_PoleSharedPositionIsCopied(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => w.Model.Check_SharedPositionIsCopied(w.Discretizations, fm).Holds);
+
+    // ProvenanceMatchesSource holds on every face of the witness (gate: trace).
+    Law_V1Gate_PoleProvenanceMatchesSource(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => w.Discretizations.Check_ProvenanceMatchesSource(fm).Holds);
+
+    // ElementDeviationWithinSurfaceChordal holds on every face of the witness (gate: chordal).
+    Law_V1Gate_PoleElementDeviationWithinSurfaceChordal(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => w.Model.Check_ElementDeviationWithinSurfaceChordal(w.Discretizations, fm, w.Options.Face).Holds);
+
+    // SurfaceWithinSurfaceChordalOfElement holds on every face of the witness (gate: chordal).
+    Law_V1Gate_PoleSurfaceWithinSurfaceChordalOfElement(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => w.Model.Check_SurfaceWithinSurfaceChordalOfElement(w.Discretizations, fm, w.Options.Face).Holds);
+
+    // QuadConvex holds on every face of the witness (quality).
+    Law_V1Gate_PoleQuadConvex(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => fm.Check_QuadConvex.Holds);
+
+    // QuadPlanarWithinSurfaceChordal holds on every face of the witness (quality).
+    Law_V1Gate_PoleQuadPlanarWithinSurfaceChordal(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => fm.Check_QuadPlanarWithinSurfaceChordal(w.Options.Face).Holds);
+
+    // ElementNormalAgreesWithSurface holds on every face of the witness (quality).
+    Law_V1Gate_PoleElementNormalAgreesWithSurface(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => w.Model.Check_ElementNormalAgreesWithSurface(fm, w.Options.Face).Holds);
+
+    // SurfaceEdgeNormalTurnWithinSurfaceAngular holds on every face of the witness (quality).
+    Law_V1Gate_PoleSurfaceEdgeNormalTurnWithinSurfaceAngular(w: PoleWitness): Boolean
+        => w.FaceMeshes.All(fm => w.Model.Check_SurfaceEdgeNormalTurnWithinSurfaceAngular(w.Discretizations, fm, w.Options.Face).Holds);
+}

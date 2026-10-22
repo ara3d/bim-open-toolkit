@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: ready: V1G-1, V1G-2 | working: V1G-3
+Status: ready: V1G-1, V1G-2, V1G-3 (V1G-3 is the diagnosis and the per-check laws; its fix waits on a decision, below)
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -24,6 +24,11 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
   - Before the witness edits, three `TriangulatedWitnessLaws` failed on the cylinder's disk (`Law_RefinedIsFaceTriangulation`, `Law_OutcomeLiftsRefined`, `Law_LiftKeepsPointsOnSamples`): the witness's `Refined` is the insertion refinement, which MeshFace no longer lifts on a plane. They are restated on `MeshedTriangulationOf`; `Refined` keeps its meaning, so the refinement agreement laws still test the refinement.
   - TKT-349: in the corpus run of 2026-10-21 the 80 to 212 edge plane faces already took 76 to 80 ms sequentially (0.8 to 1.5 s with 22 rows sharing the cores), after TKT-351's incremental refinement; with this path they skip refinement. The corpus faces are timed again only after the supervisor regenerates the C#; the witness timing above is the evidence until then.
   - TKT-412: the 27 twelve-edge plane faces (three MAYA REVC files, 9 each) are a file defect, not a false collision. In SHO/MAYA-W260_REVC.step loop #39396, edge #39442 (an arc of radius 0.15) is written with its vertices against the loop's vertex chain, so read literally it runs 350.4 degrees instead of 9.6, and the loop crosses itself through three of its own vertices. Layer 5's FACE-NOT-SIMPLE diagnostic is correct and kept; the evidence and the repair are TKT-419 (filed). The other 18 faces (ODIN-W260 4, LENA-R8 1, ANN-MB2 2, CAM, ANNA-B4, and the 54-edge MAYA faces) have no broken vertex chain; each keeps its located FACE-NOT-SIMPLE diagnostic with edge requests, and its cause is not yet named.
+- V1G-3 (TKT-399), this commit, about 1.3 h against 2 h. No type added. Library `V1PoleChecksLaws` (v1-poles.laws.plato), 16 laws `Law_V1Gate_Pole<Check>`: each of the sixteen checks `ValidateFaceMesh` runs at Geometric, as its own law over every face of every `PoleWitness` (07-validation/poles-witness), so a verdict names the failing check. Each law's comment gives its kind.
+  - Committed library, compiled, budget 600 s: 13 pass, 3 fail. Quality, so out of the version 1 gate: `ElementNormalAgreesWithSurface` (fails first on the sphere) and `SurfaceEdgeNormalTurnWithinSurfaceAngular` (first on the cone). Gate: `ElementFacesFaceNormal`, on the cone's lateral face only: 4 of its 4,378 elements, each with three corners nearly on one ruling through the apex (three on the seam copy u = -2 pi, one on u = 0 within 1.3e-6), 3D area 1e-8 or less, winding sign -1 or 0. Their corners are `Interior` points: refinement inserts points ever closer to the seam beside the apex (u distances 6.8e-4, 3.4e-4, 1.7e-4, 8.5e-5, each still 85 or more tolerance units inside, 122 of the 2,177 interior points within 1e-3 of a seam copy), and the apex's zero radius makes the resulting triangles degenerate in space. Every gate check passes on both spheres, the torus, the torus pinned at a vertex, the redundant-pole sphere and the cone's base disk. So the *FaceChecksHold failures on the sphere, torus and pinned torus were quality checks; the one gate failure is the cone.
+  - Cause, by elimination on scratch copies: with the angle pass off (`RefinementMinAngle` 0) the 4 slivers stay; with the angular surface criterion also off (SurfaceAngular 180 degrees in the pole options) all 16 checks pass, witnesses build in 1.1 s against 14.6 s, and the 16 laws take 1.9 s summed against 295 s. Both criteria are quality under the contract. But in that run the two pole-loop sphere witnesses throw `ArgumentOutOfRangeException` while being built (with SurfaceAngular off they mesh coarser), so it covers six witnesses of eight; the throw looks like TKT-411's.
+  - Not fixed here: refinement on version 1's curved faces against the chordal bound alone (no angle pass, no SurfaceAngular test) changes every curved face's mesh and needs the index error fixed first; it is a decision for the supervisor (see Requests). The per-check laws stay staged until then: on the committed library they take 15 to 108 s each, compiled.
+  - TKT-399's second criterion (ValidateFaceMesh under 2 s on a built mesh): `LocalVertexFibresAreIdentifications` is the slow check, 108.5 s over the 8 witnesses with the others at 15 to 25 s while they share the cores and 0.02 s for the cheap ones; on the chordal-only meshes all 16 take 1.9 s summed. Not fixed.
 
 ## Gate and quality: every law of layer 5
 
@@ -209,9 +214,14 @@ V1G-2 (TKT-349, TKT-412):
 - In `CappedAt` (08-pipeline/pipeline-attainable.laws.plato), the `Wired` field lifts `m.RefineToSurface(...)` in place of `m.RefineToSurfaceByInsertion(...)`, so `Law_CappedPathIsMeshFace` compares MeshFace with the live refinement.
 - The wired copy these edits were checked on: `git archive HEAD sandbox/step-brep-mesh` at 884466ac with exactly these four edits.
 
+V1G-3 (TKT-399):
+- None yet. `v1-poles.laws.plato` moves to `07-validation/poles-checks.laws.plato` (library `V1PoleChecksLaws`) only together with the chordal-only refinement below, or with the four gate laws alone (`Law_V1Gate_PoleElementFacesFaceNormal`, `..ElementPositiveInChart`, `..ElementDeviationWithinSurfaceChordal`, `..SurfaceWithinSurfaceChordalOfElement`) and a budget the 15 to 25 s they take today allows.
+
 ## Contract requests
 
 ## Requests to other tracks
+- supervisor (decision, blocks TKT-399's fix): should version 1 refine curved faces against the chordal bound alone, dropping the angle pass and the SurfaceAngular test from refinement? The contract makes both quality; doing so clears the cone's only gate failure (4 apex slivers) and cuts the pole witnesses' build from 14.6 s to 1.1 s, but changes every curved face's mesh, and two pole-loop sphere witnesses then throw an index error (see the next line). If yes, the change is a `RefineToSurfaceV1` that passes SurfaceAngular 180 degrees and skips the angle pass, which this track can stage as V1G-4.
+- v1-faces (TKT-411): `Witness_SphereByPoleLoops(1.0)` at chordal 0.05 and 0.01 with SurfaceAngular 180 degrees throws `ArgumentOutOfRangeException` while meshing (scratch copy, compiled); it may be a small witness for TKT-411's index error. Not blocking.
 - v1-faces (TKT-415): `Law_V1Gate_QuadSplitsWithinChordal` fails on `Witness_BumpSolidV1Gate` (the bump solid at 0.3): the quad grid keeps the top face as one flat quad. It is the law TKT-415's first criterion asks for, on the whole witness; the fix is yours. Not blocking V1G-1.
 - v1-faces (quad grid): the version 1 contract relaxes the grid's keep rule. Today a quad is kept only when planar within SurfaceChordal and strictly convex (`QuadGridIfRectangular`, "Quads" section of face-meshing.library.plato); the contract keeps any quad whose both diagonal splits are within the chordal bound and oriented (`QuadSplitsWithin`, `QuadSplitsOriented` in this folder's `v1-gate.library.plato`). Changing the keep rule is yours, since you own the grid functions; not blocking.
 
@@ -237,7 +247,14 @@ V1G-2 (TKT-349, TKT-412):
 | TKT-412: harness time and gallery runs on MAYA-W260_REVC | 9 min | 4 (two gallery runs at 3.5 min each while the sweep held the cores) |
 | TKT-412: probe against the compiled library, STEP entity reading, chain script | 25 min | 3 builds, 4 runs |
 | TKT-419 and TRACK.md | 15 min | 0 |
+| V1G-3: per-check laws | 10 min | 0 |
+| Per-check laws, budget 20 s then 600 s, compiled | 3.5 min, then 3.2 min in the background | 2 |
+| Cone probe against the compiled library | 15 min | 4 builds, 4 runs |
+| Scratch copies without the angle pass, then without SurfaceAngular | 2.1 min | 2 |
+| TRACK.md | 10 min | 0 |
 
 ## Lessons
+- Sixteen laws over the same eight witnesses at a 20 s budget made almost every law a budget error: the laws share the cores, so each law's wall time is the batch's. A larger budget gave the verdicts in 3 minutes.
+- A probe console project referencing the corpus harness's release folder reads the compiled library directly (witnesses included), which named the failing elements in minutes where a law could only say "fails".
 - A `find` over `artifacts/` took 2 minutes; the corpus report names the build folder, which is the place to look.
 - The full sweep on a pristine and on a wired `git archive` copy, one after the other, gave a clean before and after in 12 minutes; a budget error that flips both ways is load, and a rerun alone settles it.
