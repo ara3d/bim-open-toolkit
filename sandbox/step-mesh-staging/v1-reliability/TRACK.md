@@ -22,7 +22,7 @@ Fence: `sandbox/step-brep-mesh/tools/**`, `sandbox/step-brep-mesh/09-tooling/**`
 | R4 | TKT-439 | a failing corpus face extracted as a Plato witness | 2 h | about 1.5 h |
 | R7 | TKT-441 | layer 7's checks on every corpus file's raw and prepared models | 2 h | about 1.5 h, corpus run going |
 | R2A | TKT-465 | cause A: a closed direction evaluated at unwrapped parameters (JODY-W5/W6 faces 322, 444, 584) | 2 h | about 2 h |
-| R2B | TKT-465 | cause B: a surface curve's pcurve image off its surface (NINA-B222 face 678) | 2 h | waiting for J5's merge |
+| R2B | TKT-465 | cause B: a surface curve's pcurve image off its surface (NINA-B222 face 678) | 2 h | about 40 min: J5 fixes it, witness and law staged |
 
 ## Done
 
@@ -63,6 +63,15 @@ LENA-R8, MAYA-W160, ODIN-W160 digests identical. Merge, on a `git archive` copy 
 - `closed-wrap.laws.plato` and `corpus-jody-w5-w6-faces-322-444-584.library.plato` into `08-pipeline` (the corner law
   reads layer 8's `FinalState` and `HostMeshingOptions`), as `pipeline-closed-wrap.laws.plato` and
   `pipeline-corpus-witness-jody-w5-w6.library.plato`.
+
+R2B (TKT-465 cause B): no library change. J5 (3cc7edb4, ParameterPeriodOn's negligible component) already fixes it:
+on a scratch regeneration of HEAD with J5, every parameter point of NINA-B222 face 678 lies on the cylinder (gap 0,
+was up to 0.55 mm) and NINA-B222-W1x2 meshes closed and oriented, 145 of 145 closed shells closed, contract holding on
+its 1,007 faces. Staged the witness (`corpus-nina-b222-face-678.library.plato`, ring 1, 5 faces) and
+`corpus-witness-nina.laws.plato` (`Law_V1Reliability_NinaB222Face678CornersOnSurface`): fails on the library before
+J5 (29dd7411), passes on HEAD. Merge both into `08-pipeline` beside the ANN-MB2 witness
+(`pipeline-corpus-witness-nina-b222-678.library.plato`, and the law into `pipeline-corpus-witnesses.laws.plato`), with
+R2A, since the law reads R2A's `CornersOnSurface`.
 
 Otherwise none into the library. For the supervisor:
 - Move the bim-open-data pin in `deps.json` to d8bb198 or later when it next moves, so a fresh `node deps.mjs` gets
