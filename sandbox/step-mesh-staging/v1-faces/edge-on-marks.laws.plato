@@ -1,0 +1,54 @@
+//==
+// # A drawn triangle edge-on to the surface is always refined: laws (TKT-421, F4b)
+//
+// The corpus case (CEL/LENA-R8.STEP's polar lunes under V1G-4 and V1G-13) depends on the face's
+// edge sampling, and a half-cap witness under the default criteria did not reproduce it, so the
+// law states WithEdgeOnMarked on a positioned triangulation built for it: three triangles at the
+// unit sphere's south pole, one drawn edge-on (a pole copy and two points of one meridian, in the
+// meridian plane), one collapsed at the pole (two pole copies), and one facing the face normal.
+//
+// Sections, in order:
+//  - The triangulation
+//  - Laws
+
+library FaceMeshingEdgeOnMarksLaws
+{
+    //==
+    // # The triangulation
+
+    // Points: 0 and 1 copies of the south pole (u 0 and -1, Pole sources of one side, identified),
+    // 2 and 3 on the meridian u = 0 (latitudes -1.2 and -0.9), 4 at u = -1, latitude -1.2.
+    // Triangles: (1, 2, 3) is edge-on (in the plane y = 0); (0, 1, 4) is collapsed; (1, 2, 4)
+    // faces the outward normal, which points down at the south pole.
+    FlatMarksTriangulation(_: FlatMarksCase): PositionedTriangulation
+    {
+        var uvs = [UvCoordinate(0.0, 0.0 - Number.HalfPi), UvCoordinate(-1.0, 0.0 - Number.HalfPi),
+            UvCoordinate(0.0, -1.2), UvCoordinate(0.0, -0.9), UvCoordinate(-1.0, -1.2)];
+        var sources = [UvPointSource.Pole(DomainSide.VMin, 0), UvPointSource.Pole(DomainSide.VMin, 0),
+            UvPointSource.Interior, UvPointSource.Interior, UvPointSource.Interior];
+        var t = UvTriangulation(uvs, sources,
+            [TriangleFace(VertexIndex(1), VertexIndex(2), VertexIndex(3)),
+             TriangleFace(VertexIndex(0), VertexIndex(1), VertexIndex(4)),
+             TriangleFace(VertexIndex(1), VertexIndex(2), VertexIndex(4))],
+            [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
+        return PositionedTriangulation(t, uvs.Map(uv => Point3D(uv.V.Cos * uv.U.Cos, uv.V.Cos * uv.U.Sin, uv.V.Sin)));
+    }
+
+    Witness_FlatMarksCase(_: FlatMarksCase): FlatMarksCase
+        => FlatMarksCase(0);
+
+    //==
+    // # Laws
+
+    // With no mark set, WithEdgeOnMarked marks the edge-on triangle only: not the collapsed one,
+    // not the one facing the face normal. On the unit sphere witness's face.
+    Law_V1Faces_EdgeOnTriangleIsMarked(w: FlatMarksCase): Boolean
+    {
+        var marks = BrepModel.Witness_Sphere(1.0).WithEdgeOnMarked(BrepFaceIndex(0), FlatMarksCase.FlatMarksTriangulation, [false, false, false]);
+        return marks[0] && marks[1].Not && marks[2].Not;
+    }
+
+    // A mark already set stays set.
+    Law_V1Faces_EdgeOnMarksKeepMarks(w: FlatMarksCase): Boolean
+        => BrepModel.Witness_Sphere(1.0).WithEdgeOnMarked(BrepFaceIndex(0), FlatMarksCase.FlatMarksTriangulation, [true, true, true]).All(x => x);
+}

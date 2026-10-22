@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1 in 1369e852, F3 and F3b in edb4ae49, F2 in 8e10a3f2 | F4a: not merged, a gate law regresses on HEAD (merger, see the note under Merge instructions) | working: F4b (waits on V1G-4 and F2/F3 on HEAD)
+Status: merged: F1, F3, F3b, F2 | dropped: F4a | ready: F4b (merge after V1G-13)
 
 ## Chunks
 
@@ -50,6 +50,12 @@ F3 runs before F2: it loses faces in 7 corpus files, and F2 is one element on a 
   - Laws: `Law_V1Faces_ApexCutFollowsGenerator` fails on HEAD b1790f51 and passes with F4a (wired F1+F3+F2+F3b copy); `Law_V1Faces_ApexConeElementsFaceNormal` passes on both (the small witness at chordal 0.05 grows no slivers; the moon buggy's large cones do).
   - Harness on a scratch regeneration with F1+F3+F2+F3b+F4a, `--parallel`: moon_buggy_asm.stp cones 76 and 132 no flipped element, cone 26 4 of 5802 (before: 192, 192, 192); torus face 33 clean; its 180 misoriented edges, between faces 33/34/36, 65/66/68 and 127/128/130, are there on the committed C# too (not from these chunks; worth a ticket). CEL/LENA-R8.STEP, SHO/MAYA-W160.step and SHO/MAYA-W260_REVC.step: same digests as without F4a.
 
+- F4a dropped (supervisor's plan of 2026-10-22): on HEAD with V1G-13 and F4b, moon_buggy_asm.stp's cones 26, 76 and 132 are oriented without F4a, and on HEAD with V1G-4 F4a's own witness (`Law_V1Faces_ApexConeElementsFaceNormal`) failed (dce1eca7). Its files are removed from the staging folder; ad646aa6 holds them.
+- F4b (TKT-421), about 2 h: `edge-on-marks.library.plato` (`OffPoleUvCentroid`, `EdgeOnCosine`, `WithEdgeOnMarked`, `IsEdgeOnDrawn`), laws in `edge-on-marks.laws.plato`, `FlatMarksCase` in `edge-on-marks.types.plato`. Diagnosis on HEAD (dce1eca7 and ab3ed3ed, scratch regenerations of the committed library): MAYA-W160's needle cones 3327 and 3337 still fold (4 non-manifold, 8 misoriented edges). The chordal round inserts points near u = 3 because of the triangles that collapse at the apex, and flips join the apex copy at u = 0 to them. With V1G-13 wired (its staged edit in `RefinementRoundChordal`), MAYA-W160, MAYA-W260_REVC and moon_buggy are clean, but CEL/LENA-R8.STEP regresses from 0 to 16 non-manifold and 32 misoriented edges. Its polar lunes 198 to 201, 212 to 215, 226 to 229 and 245 to 248 keep, unrefined, a triangle joining a pole copy to two points of one meridian: it lies in the meridian plane, edge-on to the sphere, within the chordal bound, and the face across the meridian draws the same triangle, so the pole's edges to those points are used four times. Before V1G-13 the collapsed triangles' marks split it by chance. `WithEdgeOnMarked` marks every drawn triangle (not collapsed at a pole) whose normal is more than 80 degrees from the face normal, read at the mean of its corners off the pole, so the chordal round splits it.
+  - Laws: `Law_V1Faces_EdgeOnTriangleIsMarked` and `Law_V1Faces_EdgeOnMarksKeepMarks` on a three-triangle positioned triangulation at the unit sphere's south pole (edge-on, collapsed, facing), pass on HEAD with the staging folder (a function law; a half-cap lune witness under the default criteria did not reproduce the corpus triangle, so it is not staged).
+  - Regression, the 26 law libraries of layer 5 and 07-validation/poles*, `V1GateLaws` and F4b's own (167 laws, budget 120 s): HEAD ab3ed3ed with V1G-13, 166 pass and 1 error (`Law_V1Types_EarlyExitAgreesWithAll`, v1-types); with V1G-13 and F4b, the same 166 and 1. No verdict changed.
+  - Harness, scratch regeneration of HEAD ab3ed3ed with V1G-13 and F4b, `--parallel`: SHO/MAYA-W160.step, SHO/MAYA-W260_REVC.step, CEL/LENA-R8.STEP and steptools-ap203 moon_buggy_asm.stp each with 0 non-manifold and 0 misoriented edges and no face with an element against the face normal (HEAD: MAYA-W160 4 and 8, moon_buggy cones 2 elements each against the normal; HEAD with V1G-13 alone: LENA-R8 16 and 32).
+
 ## Merge instructions
 
 - **F4a merge stopped (merger, 2026-10-22).** On HEAD e2a2eedf (after V1G-4's chordal-only refinement, F2, F3, T1 and V1G-8), the merge instruction applied (`JoinedByCut` calls `NearestPairTied`, below V1G-8's `BandEndCopy`; `cut-pair.*.plato` in 05-face-meshing), compiled laws on a `git archive` of HEAD plus only F4a's files (pinned CLI e37c032f, csharp, cpu64, 60 s budget):
@@ -77,12 +83,16 @@ F3 runs before F2: it loses faces in 7 corpus files, and F2 is one element on a 
 
 ## Considered and rejected
 
+- F4b, marking drawn triangles thinner than ten length tolerances (scratch commit b67de56, never committed): cleaned the four files, but only because LENA-R8's length tolerance is large enough to cover its edge-on triangle (altitude about 0.03); a pole copy and two meridian points lie on a circle, not a line, so the triangle is not thin in general. Replaced by the edge-on test.
+
 - F4, the fold test read at the corners off the pole (`FoldTestUv` in LiftsFacingFaceNormal, WindingSign and refinement's CentroidNormalTest; scratch copy 44f40fa, never committed): MAYA-W160's needle-cone digests and folds did not change. Refinement on those needles runs because the needle (radius 1e-4, below the chordal bound) fails the normal tests; V1G-4 drops the angular test, so F4b re-tests on HEAD with V1G-4 first.
 
 - F2, ring-side clearance (scratch copy 79ccfb5, never committed): keep a point only when it is at least `least` from each boundary side of its ring. Bump 0.5 got worse, 4120 elements and 61 below 1e-6: the slivers are three interior points lined up beside the edge, with ordinary triangles between them and it, so no boundary side is in their ring.
 - F2, a thickness bound of `least` (the effective minimum length, scratch copy 519db69): bump 0.5 clean (634 elements), but CEL/LENA-R8.STEP lost points on 78 faces and went from 0 to 16 non-manifold and 32 misoriented edges: its polar lunes keep triangles with one corner on the expanded pole and two on one meridian, which have no area in space, and refinement may no longer split them. Ten tolerances alone left LENA the same; comparing with the replaced triangles fixed it.
 
 - F4a: move `cut-pair.*.plato` into `05-face-meshing`; in `uv-regions.library.plato`, `JoinedByCut`: `var pair = m.NearestPair(f, a, b);` becomes `var pair = m.NearestPairTied(f, a, b);`.
+
+- F4b, after V1G-13 (it wraps V1G-13's line): move `edge-on-marks.*.plato` into `05-face-meshing`; in `RefinementRoundChordal` (05-face-meshing/face-meshing-v1-plane.library.plato), V1G-13's `var surface = s.Current.Positioned.Triangulation.WithoutCollapsedMarks(m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least));` becomes `var surface = m.WithEdgeOnMarked(f, s.Current.Positioned, s.Current.Positioned.Triangulation.WithoutCollapsedMarks(m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least)));`. Without V1G-13 it is not needed.
 
 ## Contract requests
 

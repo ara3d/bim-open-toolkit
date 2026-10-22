@@ -1,0 +1,60 @@
+//==
+// # A drawn triangle edge-on to the surface is always refined (TKT-421, F4b)
+//
+// Version 1 refines curved faces against the chordal bound alone (V1G-4), and V1G-13 stops chasing
+// triangles that collapse at a pole. Then nothing marks a triangle that joins a pole copy to two
+// points of one meridian through that pole: it lies in the meridian plane, edge-on to the surface,
+// and can be within the chordal bound, so the chordal test passes it. CEL/LENA-R8.STEP's polar
+// lunes 198 to 201, 212 to 215, 226 to 229 and 245 to 248 keep such a triangle on each side of a
+// shared meridian, so the pole's edges to the meridian points are used four times (16 non-manifold
+// and 32 misoriented edges on that file). Before V1G-13 the collapsed triangles' marks happened to
+// split them. WithEdgeOnMarked marks every drawn triangle (not collapsed at a pole) whose normal
+// is more than 80 degrees from the face normal, read where the triangle lies: at the mean of its
+// corners off the pole (a pole copy's free parameter is arbitrary, and taking it into the mean
+// would read the normal a quarter turn away).
+//
+// Sections, in order:
+//  - Where a triangle lies
+//  - Marks
+
+library FaceMeshingEdgeOnMarks
+{
+    //==
+    // # Where a triangle lies
+
+    // The mean of the parameter points uvs whose flag in onLine is false (the corners off a
+    // collapsed line); the mean of all of them when every flag is true.
+    OffPoleUvCentroid(uvs: Array<UvCoordinate>, onLine: Array<Boolean>): UvCoordinate
+    {
+        var off = uvs.Count.Range.FlatMap(i => onLine[i] ? uvs.Take(0) : [uvs[i]]);
+        var kept = off.Count == 0 ? uvs : off;
+        var n = kept.Count.ToNumber;
+        return UvCoordinate(kept.Reduce(0.0, (s, p) => s + p.U) / n, kept.Reduce(0.0, (s, p) => s + p.V) / n);
+    }
+
+    //==
+    // # Marks
+
+    // The cosine of the largest angle a drawn triangle's normal may make with the face normal
+    // before it is marked: cos 80 degrees.
+    EdgeOnCosine(_: Number): Number
+        => 0.17364817766693033;
+
+    // marks with every edge-on drawn triangle of pt on face f marked too (IsEdgeOnDrawn).
+    WithEdgeOnMarked(m: BrepModel, f: BrepFaceIndex, pt: PositionedTriangulation, marks: Array<Boolean>): Array<Boolean>
+        => marks.Count.MapRange(k => marks[k] ? true : m.IsEdgeOnDrawn(f, pt, k));
+
+    // Whether triangle k of pt is drawn (not collapsed at a pole, IsCollapsedElement) and its
+    // normal is more than 80 degrees from the face normal at OffPoleUvCentroid of its corners
+    // (folded triangles included).
+    IsEdgeOnDrawn(m: BrepModel, f: BrepFaceIndex, pt: PositionedTriangulation, k: Integer): Boolean
+    {
+        var t = pt.Triangulation.Triangles[k];
+        var uvs = [pt.Triangulation.Points[t.A], pt.Triangulation.Points[t.B], pt.Triangulation.Points[t.C]];
+        var area = [pt.Positions[t.A.Value], pt.Positions[t.B.Value], pt.Positions[t.C.Value]].VectorArea;
+        var at = OffPoleUvCentroid(uvs, uvs.Map(uv => m.IsOnCollapsedLine(f, uv)));
+        return pt.Triangulation.IsCollapsedElement(ElementIndex(k))
+            ? false
+            : area.Dot(m.FaceNormalAt(f, at, area)) <= area.Length * 0.0.EdgeOnCosine;
+    }
+}
