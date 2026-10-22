@@ -199,15 +199,25 @@ library BrepTopologyLaws
     //==
     // # Euler-Poincare
 
-    // For a shell declared closed, V - E + 2F - L on reduced counts is even and
-    // at most 2 (ISO 10303-42 eq. 9); the genus is then (2 - chi) / 2.
-    // Structural, exact.
+    // For a shell declared closed whose surface is a manifold (every vertex link
+    // one cycle, Law_VertexLinkIsOneCycle), V - E + 2F - L on reduced counts is
+    // even and at most 2 (ISO 10303-42 eq. 9); the genus is then (2 - chi) / 2.
+    // A pinched vertex is outside the premise: Witness_TwoBoxesSharingCorner,
+    // two boxes on one vertex, gives V - E + F = 3 (exposed when E4a's witnesses
+    // shifted the sampled cases onto it, TKT-468). Structural, exact.
     Law_EulerPoincareEvenAndBounded(m: BrepModel, s: ShellIndex): Boolean
+        => m.Premise_EulerPoincareEvenAndBounded(s) ? m.ShellEulerPoincare(s).IsEvenAndAtMostTwo : true;
+
+    // Law_EulerPoincareEvenAndBounded's premise: indices in range, s a shell
+    // declared closed, and every vertex link of it one cycle.
+    Premise_EulerPoincareEvenAndBounded(m: BrepModel, s: ShellIndex): Boolean
         => m.IsEveryIndexInRange
             ? (m.IsShellInRange(s)
-                ? (m.Shells[s].DeclaredClosed ? m.ShellEulerPoincare(s).IsEvenAndAtMostTwo : true)
-                : true)
-            : true;
+                ? (m.Shells[s].DeclaredClosed
+                    ? m.Vertices.Count.Range.All(v => m.Law_VertexLinkIsOneCycle(s, BrepVertexIndex(v)))
+                    : false)
+                : false)
+            : false;
 
     // For a shell not declared closed, reduced V - E + 2F - L plus the number
     // of boundary cycles B is even and at most 2: a compact orientable surface

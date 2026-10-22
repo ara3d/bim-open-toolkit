@@ -135,7 +135,7 @@ Not in the table, on purpose: TKT-337 waits on TKT-345 (Plato parse errors name 
 
 1. A chunk's owner marks it `ready: <id>` in its `TRACK.md` and commits it.
 2. The supervisor moves its files into the right layer folders, renames `Law_<Track>_` laws, makes its wiring edits, and type-checks the whole library.
-3. Merge check, under ten minutes: the laws the chunk's row names plus the laws of the files it touched, with `plato_laws.py`; once chunk I6 lands, the affected-law filter instead. A law that passed and no longer passes stops the merge; the chunk goes back with the evidence.
+3. Merge check, under ten minutes: the laws the chunk's row names plus the laws of the files it touched, with `plato_laws.py`; once chunk I6 lands, the affected-law filter instead. A law that passed and no longer passes stops the merge; the chunk goes back with the evidence. A merge that adds a witness or changes a law helper runs the full compiled sweep instead, not only its own laws: laws that sample witnesses, or read the helper, change with it (E4a, 2026-10-22).
 4. Commit the merge and the chunk's findings in `reviews/FINDINGS.md`.
 5. Record the chunk in the ledger: id, claim-to-ready time against expected, types added.
 6. Full sweep with `--report` and `--baseline` against `sandbox/step-brep-mesh/reviews/verdicts-cpu64.tsv` once a day or after every fifth merge; commit the new verdict file; trace each changed verdict to its chunk.
@@ -237,6 +237,7 @@ Wave 1 in total: 8 merges, 0 types added, 402 to 556 passing laws, one sweep of 
 | 2026-10-19 | Additions are never frozen: a track adds types and functions in new files at will; only changes to existing contracts wait for the wave | Seven merges (G, T, D2, Term, F, C, TKT-351) added no type; builders routed every new type through a contract request and used a Number or Vector3 instead |
 | 2026-10-19 | The chunk is the unit of work and of merge: every planned row is one commit of at most two hours, marked ready when green; a brief holds one chunk and names the next | Wave 1's rows were tickets; tracks ran 2 h to 2 days before their first merge, and the owner asked for significantly finer work (now platonic `CHUNKING.md`, `PLANNING.md` step 7, parallel-wave skill) |
 | 2026-10-19 | A merge check answers in under ten minutes (named laws, then the affected-law filter I6, then the compiled runner); the full sweep runs daily or after every fifth merge | Eight merges each paid a 12 to 120 minute sweep, which made batching merges rational (now platonic `TESTING.md`) |
+| 2026-10-22 | A merge that adds a witness or changes a law helper runs the full compiled sweep, not only its own laws (merge procedure, step 3) | E4a (0165cccd) ran its 7 laws only; its three corpus witnesses shifted `Law_EulerPoincareEvenAndBounded`'s sampled cases onto `Witness_TwoBoxesSharingCorner` and it failed, found one merge later in E4b's sweep. R2A and R2B's witnesses did the same to `Law_ValidationIsIdempotent` (640a2005), and V1G-17's cut of a helper changed what E4b's instructions pointed at |
 
 ## Log
 
