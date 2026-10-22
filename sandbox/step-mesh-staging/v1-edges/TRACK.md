@@ -39,6 +39,10 @@ Status: ready: E3, E1, E2 | waiting: E2's check on the merged library once v1-cl
 
 - Partial corpus run with E1 and E2 together (scratch C#, harness `all`, 120 s, parallel, warm-up), stopped at 37 of 88 files on the supervisor's instruction (no scratch regenerations for ready chunks). Against a baseline at the current library (the harness built on the working-tree C#, layers at c47db0b3, rerun on each file whose digest moved since 2026-10-21), 30 files compared: all 30 identical (digest, faces meshed, checks). The digests that moved since 2026-10-21 in that set (CEL/LENA-R8, CEL/MPCI, 4 B-spline faces in LENA-R8 at 5 triangles instead of 7) moved with TKT-406 to TKT-408, which merged after that run, not with this track.
 
+- On bim-open-data e646e28 (Plato c8c83c8b, `SagittaByHullBoundGiven` real code, layers c47db0b3, without E1 to E3): NINA-B222's four edges still get [-5.3e29, 1.06e30] and `BisectedCachedCounted` does not return in 20 s each. TKT-410's fix alone does not clear TKT-414; E2 is needed. The E2 check against the merged library waits for the regeneration from HEAD.
+
+## Merge instructions
+
 E3, recommended form (contract request below): `ShellImplicitEdges` replaces `ShellPolyEdges`.
 - Types into `02-topology/topology-faceted.types.plato`, library block `V1EdgesFacetedRanks` into `02-topology/topology-faceted.library.plato`, laws into `08-pipeline/pipeline-faceted.laws.plato` (they read layer 8's `FacetedCase` and `FacetedModel`).
 - `ImplicitEdgeUses(m, poly, pointRoots)` => `m.ImplicitEdgeUsesRanked(poly, pointRoots)`; `ImplicitEdgeUsesByOffsets` likewise.
