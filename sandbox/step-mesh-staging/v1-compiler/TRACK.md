@@ -16,6 +16,7 @@ to merge into the library.
 | C2 | TKT-355 | Cause of the three interpreter/compiled divergences; fix with a regression test | 2 h | about 1 h |
 | C4 | TKT-437 | Premise_<Law> companions counted; a law whose premise never held is vacuous | 2 h | about 1 h |
 | C5 | TKT-438 | `plato run --laws --differential`: interpreter against compiled C#, every witness, laws under 2 s | 1.5 h | about 1.5 h |
+| C6 | TKT-478 | "Circular expression" with no location: duplicate symbol Ids from concurrent compilations; located resolution errors | - | about 1.5 h |
 | C3 | TKT-398 | Only if it blocks the corpus: it does not (both defects have library workarounds, and the regenerated library has no stub) | - | - |
 
 ## Done
