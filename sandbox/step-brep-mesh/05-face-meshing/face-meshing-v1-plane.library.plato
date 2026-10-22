@@ -43,13 +43,14 @@ library V1Plane
     // One round of RefinementRoundCarried without its angle pass: the surface test on the
     // triangles not known to pass (those that collapse at a pole unmarked, WithoutCollapsedMarks:
     // Lift drops them, TKT-428; drawn triangles edge-on to the surface marked, WithEdgeOnMarked,
-    // TKT-421), the surface pass, and the marks carried; Current and Mid are
+    // TKT-421; triangles spanned by one model edge and those across their inner sides marked,
+    // WithOneEdgeFlapsMarked, TKT-460), the surface pass, and the marks carried; Current and Mid are
     // both the surface pass's result, and the angle marks are carried unchanged.
     RefinementRoundChordal(m: BrepModel, f: BrepFaceIndex, r: UvRegion, x: BoundaryIndex, chart: FaceChart, least: Number, c: FaceMeshingCriteria, s: CarriedRefinement): CarriedRefinement
     {
         var none = [0].Take(0);
         var now = s.Current.Positioned.Triangulation;
-        var surface = m.WithEdgeOnMarked(f, s.Current.Positioned, s.Current.Positioned.Triangulation.WithoutCollapsedMarks(m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least)));
+        var surface = m.WithOneEdgeFlapsMarked(s.Current, m.WithEdgeOnMarked(f, s.Current.Positioned, s.Current.Positioned.Triangulation.WithoutCollapsedMarks(m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least))));
         var mid = m.SurfacePassCarried(f, x, chart, least, s.Current, surface);
         var midT = mid.Positioned.Triangulation;
         return CarriedRefinement(mid, mid,
@@ -62,7 +63,8 @@ library V1Plane
 
     // Triangulation t of region r of face f refined against the chordal bound alone: chordal
     // rounds (RefinementRoundChordal) under c without SurfaceAngular, up to forty while a round adds
-    // a point, as RefineToSurfaceByInsertionCarried stops.
+    // a point, as RefineToSurfaceByInsertionCarried stops; then each one-edge flap left is flipped
+    // out of the face where both new triangles are positive (FlapsFlippedOut, TKT-460).
     RefineToSurfaceChordal(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
     {
         var x = r.BoundaryIndexOf(m.RegionTolerance(f, chart));
@@ -73,7 +75,7 @@ library V1Plane
         {
             s = m.RefinementRoundChordal(f, r, x, chart, least, chordal, s);
         }
-        return s.Current.Positioned.Triangulation;
+        return m.FlapsFlippedOut(r, chart, s.Current.Positioned.Triangulation);
     }
 
     //==
