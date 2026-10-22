@@ -1,7 +1,7 @@
 //==
 // # The attainable face angle: laws (TKT-406)
 //
-// RefineToSurfaceByInsertionAttainable against the library's RefineToSurfaceByInsertion: on every
+// RefineToSurfaceByInsertionIndexed against the library's RefineToSurfaceByInsertion: on every
 // TriangulatedWitness (the 42 faces of layer 5's six sample models at chordal 1/100, built once
 // per sweep) the side test and the whole refinement agree with the library's; on the
 // CappedWitness models (curved witnesses at chordal bounds where the minimum length caps the
@@ -20,7 +20,7 @@ library RefinementAttainableLaws
     // # Capped witnesses
 
     // Model m meshed under DefaultMeshingOptions(chordal) twice, every face refined from the same
-    // constrained Delaunay triangulation by the library's refinement (RefineToSurfaceByInsertionIndexed,
+    // constrained Delaunay triangulation by the library's refinement (RefineToSurfaceByInsertionReference,
     // the reference, which stays reachable after the merge) and by the attainable one,
     // each lifted and assembled as MeshModel does; capped when the cap binds on some arc. Also
     // every face lifted from the wired RefineToSurfaceByInsertion, and MeshFace's meshes.
@@ -32,8 +32,8 @@ library RefinementAttainableLaws
         var regions = n.MapRange(f => m.RegionOf(BrepFaceIndex(f), d, c));
         var charts = n.MapRange(f => m.ChartOf(BrepFaceIndex(f), regions[f]));
         var cdt = n.MapRange(f => regions[f].TriangulateRegionCdt(charts[f]));
-        var reference = n.MapRange(f => m.RefineToSurfaceByInsertionIndexed(BrepFaceIndex(f), regions[f], charts[f], cdt[f], c));
-        var attainable = n.MapRange(f => m.RefineToSurfaceByInsertionAttainable(BrepFaceIndex(f), regions[f], charts[f], cdt[f], c));
+        var reference = n.MapRange(f => m.RefineToSurfaceByInsertionReference(BrepFaceIndex(f), regions[f], charts[f], cdt[f], c));
+        var attainable = n.MapRange(f => m.RefineToSurfaceByInsertionIndexed(BrepFaceIndex(f), regions[f], charts[f], cdt[f], c));
         var referenceFaces = n.MapRange(f => m.Lift(BrepFaceIndex(f), d, reference[f]));
         var attainableFaces = n.MapRange(f => m.Lift(BrepFaceIndex(f), d, attainable[f]));
         return CappedWitness(name, m, capped, c, d, regions, charts, cdt, reference, attainable,
@@ -72,7 +72,7 @@ library RefinementAttainableLaws
     // The witness meshes faces as MeshModel does: on every face, MeshFace's mesh is the lift of
     // RefineToSurfaceByInsertion of the constrained Delaunay triangulation, so the reference before
     // the merge and the attainable refinement after it.
-    Law_Perf_CappedPathIsMeshFace(w: CappedWitness): Boolean
+    Law_CappedPathIsMeshFace(w: CappedWitness): Boolean
         => w.Model.Faces.Count.Range.All(f => SameFaceMesh(w.Wired[f], w.Library[f]));
 
     //==
@@ -90,17 +90,17 @@ library RefinementAttainableLaws
     // On every triangulated witness, SideNormalsTurnAttainable gives SideNormalsTurn's verdict on
     // every triangle of the constrained Delaunay triangulation and of the refined one: at chordal
     // 1/100 no side that turns by more than 15 degrees is shorter than twice the minimum length.
-    Law_Perf_SideNormalsTurnAttainableAgrees(w: TriangulatedWitness): Boolean
+    Law_SideNormalsTurnAttainableAgrees(w: TriangulatedWitness): Boolean
         => w.Model.SideTestsAgreeOn(w.Face, w.Region, w.Cdt, TriCriteria(0))
             && w.Model.SideTestsAgreeOn(w.Face, w.Region, w.Refined, TriCriteria(0));
 
     // On every triangulated witness, planar or curved, the attainable refinement of the
-    // constrained Delaunay triangulation is the library's (RefineToSurfaceByInsertionIndexed),
+    // constrained Delaunay triangulation is the library's (RefineToSurfaceByInsertionReference),
     // field for field.
-    Law_Perf_AttainableRefinementAgrees(w: TriangulatedWitness): Boolean
+    Law_AttainableRefinementAgrees(w: TriangulatedWitness): Boolean
     {
-        var t = w.Model.RefineToSurfaceByInsertionAttainable(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0));
-        var u = w.Model.RefineToSurfaceByInsertionIndexed(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0));
+        var t = w.Model.RefineToSurfaceByInsertionIndexed(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0));
+        var u = w.Model.RefineToSurfaceByInsertionReference(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0));
         return t.Points.Count == u.Points.Count ? SameTriangulation(t, u) : false;
     }
 
@@ -126,10 +126,10 @@ library RefinementAttainableLaws
     // The side test is met on every triangulated witness: after the attainable refinement no
     // triangle has a side that turns by more than the angle and that refinement could still
     // halve. On the triangulated witnesses this is also SideNormalsTurn's
-    // test (Law_Perf_SideNormalsTurnAttainableAgrees), so the library's refinement meets it there.
-    Law_Perf_SideNormalsTurnAttainable(w: TriangulatedWitness): Boolean
+    // test (Law_SideNormalsTurnAttainableAgrees), so the library's refinement meets it there.
+    Law_SideNormalsTurnAttainable(w: TriangulatedWitness): Boolean
         => w.Model.SideNormalsTurnAttainableCount(w.Face, w.Region,
-            w.Model.RefineToSurfaceByInsertionAttainable(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0)), TriCriteria(0)) == 0;
+            w.Model.RefineToSurfaceByInsertionIndexed(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0)), TriCriteria(0)) == 0;
 
     // The triangles each refinement leaves flagged by its own side test, summed over the faces
     // of a capped witness: SideNormalsTurn on the library's, SideNormalsTurnAttainable on the
@@ -145,13 +145,13 @@ library RefinementAttainableLaws
     // circumcentre refused, when that lands within the minimum length of another corner of the
     // cavity, which the side test does not see (QuarterCylinder 4 keeps one side of 2.2 minimum
     // lengths turning 16.4 degrees).
-    Law_Perf_CappedRefinementLeavesFewerFlags(w: CappedWitness): Boolean
+    Law_CappedRefinementLeavesFewerFlags(w: CappedWitness): Boolean
         => w.Capped ? w.AttainableLeftover < w.ReferenceLeftover : w.AttainableLeftover == 0;
 
     // The capped witnesses show the defect: on some face the library's refinement stops with
     // triangles SideNormalsTurn still flags, since no insertion the guard allows can fix them.
     // At the fine bound it leaves none.
-    Law_Perf_CappedWitnessesShowTheDefect(w: CappedWitness): Boolean
+    Law_CappedWitnessesShowTheDefect(w: CappedWitness): Boolean
         => w.Model.Faces.Count.Range.Any(f =>
             w.Model.SideNormalsTurnCount(BrepFaceIndex(f), w.Regions[f], w.Reference[f], w.Criteria) > 0) == w.Capped;
 
@@ -160,7 +160,7 @@ library RefinementAttainableLaws
 
     // The attainable refinement adds no triangle the library's does not: on every face of every
     // capped witness it has at most as many triangles, and the same where nothing is capped.
-    Law_Perf_AttainableRefinementNoLarger(w: CappedWitness): Boolean
+    Law_AttainableRefinementNoLarger(w: CappedWitness): Boolean
         => w.Model.Faces.Count.Range.All(f => w.Capped
             ? w.Attainable[f].Triangles.Count <= w.Reference[f].Triangles.Count
             : w.Attainable[f].Triangles.Count == w.Reference[f].Triangles.Count);
@@ -168,7 +168,7 @@ library RefinementAttainableLaws
     // The model mesh assembled from the attainable refinement is closed and consistently
     // oriented, with the Euler characteristic of the library's: the change is per face and leaves
     // every boundary, so each model edge still has its two sides.
-    Law_Perf_AttainableMeshesClosed(w: CappedWitness): Boolean
+    Law_AttainableMeshesClosed(w: CappedWitness): Boolean
         => w.AttainableMesh.IsClosed
             && w.AttainableMesh.IsConsistentlyOriented
             && w.AttainableMesh.EulerCharacteristic == w.ReferenceMesh.EulerCharacteristic;

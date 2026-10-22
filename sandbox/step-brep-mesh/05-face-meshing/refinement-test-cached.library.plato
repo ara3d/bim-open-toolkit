@@ -141,9 +141,39 @@ library RefinementTestCached
 
     // UvDelaunay's NeedsRefinement over pt, with the surface evaluations, normals and projections
     // it made counted as Evaluations: one normal per corner of a tested triangle, at most four
-    // per tested triangle for its corner and centroid tests, and three per side sampled.
+    // per tested triangle for its corner and centroid tests, and three per side sampled. Not on
+    // the live path: the reference for the attainable side test's laws (TKT-406), with the
+    // SideNormalsTurn criterion and its own NeighbourSlots; the live test is NeighboursCarried's
+    // NeedsRefinementCarriedCounted.
     NeedsRefinementCachedCounted(m: BrepModel, f: BrepFaceIndex, r: UvRegion, pt: PositionedTriangulation, known: Array<Boolean>, c: FaceMeshingCriteria): Counted<Array<Boolean>>
-        => m.NeedsRefinementCarriedCounted(f, r, pt.WithNeighbourTable, known, c);
+    {
+        var t = pt.Triangulation;
+        var tris = t.Triangles;
+        var tested = tris.Count.MapRange(k => (k < known.Count ? known[k] : false).Not);
+        var marks = new List<Boolean>().AddRange(t.Points.Map(x => false));
+        var i = 0;
+        while (i < tris.Count)
+        {
+            if (tested[i])
+            {
+                marks = marks.Set(tris[i].A.Value, true).Set(tris[i].B.Value, true).Set(tris[i].C.Value, true);
+            }
+            i = i + 1;
+        }
+        var corners = marks.Freeze();
+        var pn = m.PointNormalsOf(f, t, corners);
+        var first = tris.Count.MapRange(k => tested[k] ? m.TriangleCentroidTest(f, r, pt, pn, k, c) : CentroidTest(false, 0));
+        var pending = tris.Count.MapRange(k => tested[k] ? first[k].Fails.Not : false);
+        var nb = NeighbourSlots(tris, t.Points.Count);
+        var sources = (3 * tris.Count).MapRange(s => SampleSlot(tris, nb, pending, s));
+        var sampled = (3 * tris.Count).MapRange(s => r.IsSampled(tris, pending, sources, s));
+        var samples = (3 * tris.Count).MapRange(s => sampled[s]
+            ? m.SideSampleOf(f, pt, tris[s / 3], s % 3)
+            : SideSample(0.0, Point3D(0.0, 0.0, 0.0)));
+        var value = tris.Count.MapRange(k => tested[k] ? r.TriangleNeedsRefinementCached(pt, first[k], samples, sources, k, c) : false);
+        var work = corners.TrueCount + first.Reduce(0, (n, x) => n + x.Evaluations) + 3 * sampled.TrueCount;
+        return Counted(value, Evaluations(work));
+    }
 
     // UvDelaunay's NeedsRefinement over pt: the same Boolean per triangle.
     NeedsRefinementCached(m: BrepModel, f: BrepFaceIndex, r: UvRegion, pt: PositionedTriangulation, known: Array<Boolean>, c: FaceMeshingCriteria): Array<Boolean>

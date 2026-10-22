@@ -173,7 +173,8 @@ library TriangulationBuiltIndexed
 
     // TriangulationBuilt's RefineToSurfaceByInsertionBuilt with the region's boundary indexed
     // once (BoundaryIndexOf under the region tolerance) and the passes over the index: the same
-    // rounds, marks, stopping rule and insertions.
+    // rounds, marks, stopping rule and insertions, through NeighboursCarried (the neighbour table
+    // built once, TKT-408) with the attainable side test (RefinementAttainable, TKT-406).
     RefineToSurfaceByInsertionIndexed(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
         => m.RefineToSurfaceByInsertionCarried(f, r, chart, t, c);
 }

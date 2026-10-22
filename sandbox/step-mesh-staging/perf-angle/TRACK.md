@@ -1,7 +1,7 @@
 # perf-angle: refinement's face angle criterion made attainable
 
 Ticket: TKT-406
-Status: ready: TKT-406
+Status: merged: TKT-406 (2026-10-21, into 05-face-meshing/refinement-attainable.library.plato and 08-pipeline/pipeline-attainable.{types,laws}.plato; the attainable side test wired into NeighboursCarried's NeedsRefinementCarriedCounted, the live test since TKT-408, so the table stays built once; the chunk's own driver and pass became RefineToSurfaceByInsertionReference with the old SideNormalsTurn test, and RefinementTestCached.NeedsRefinementCachedCounted got its per-pass body back as that reference's test; the laws compare RefineToSurfaceByInsertionIndexed, now attainable, against the reference; Law_Perf_* renamed Law_*)
 
 ## Done
 - TKT-406, this commit, about 1.3 h against the 2 to 3 h estimate: idea 28 of `docs/plans/step-mesher-ideas-evaluation.md`.

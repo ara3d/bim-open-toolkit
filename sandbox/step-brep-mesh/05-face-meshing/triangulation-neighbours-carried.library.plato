@@ -31,8 +31,10 @@ library NeighboursCarried
     // # The surface test
 
     // RefinementTestCached's NeedsRefinementCachedCounted with t's carried table in place of
-    // NeighbourSlots: the same Boolean per triangle and the same work.
-    NeedsRefinementCarriedCounted(m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: PositionedTriangulationWithNeighbours, known: Array<Boolean>, c: FaceMeshingCriteria): Counted<Array<Boolean>>
+    // NeighbourSlots and the attainable side test (RefinementAttainable, TKT-406: a side counts
+    // only when its chord is at least twice the minimum length `least`): the same work, and the
+    // same Boolean per triangle wherever every side turning over the angle is that long.
+    NeedsRefinementCarriedCounted(m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: PositionedTriangulationWithNeighbours, known: Array<Boolean>, c: FaceMeshingCriteria, least: Number): Counted<Array<Boolean>>
     {
         var pt = t.Positioned;
         var u = pt.Triangulation;
@@ -50,7 +52,7 @@ library NeighboursCarried
         }
         var corners = marks.Freeze();
         var pn = m.PointNormalsOf(f, u, corners);
-        var first = tris.Count.MapRange(k => tested[k] ? m.TriangleCentroidTest(f, r, pt, pn, k, c) : CentroidTest(false, 0));
+        var first = tris.Count.MapRange(k => tested[k] ? m.TriangleCentroidTestAttainable(f, r, pt, pn, k, c, least) : CentroidTest(false, 0));
         var pending = tris.Count.MapRange(k => tested[k] ? first[k].Fails.Not : false);
         var nb = t.Neighbours;
         var sources = (3 * tris.Count).MapRange(s => SampleSlot(tris, nb, pending, s));
@@ -64,8 +66,8 @@ library NeighboursCarried
     }
 
     // NeedsRefinementCarriedCounted's marks.
-    NeedsRefinementCarried(m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: PositionedTriangulationWithNeighbours, known: Array<Boolean>, c: FaceMeshingCriteria): Array<Boolean>
-        => m.NeedsRefinementCarriedCounted(f, r, t, known, c).Value;
+    NeedsRefinementCarried(m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: PositionedTriangulationWithNeighbours, known: Array<Boolean>, c: FaceMeshingCriteria, least: Number): Array<Boolean>
+        => m.NeedsRefinementCarriedCounted(f, r, t, known, c, least).Value;
 
     //==
     // # The passes
@@ -190,7 +192,7 @@ library NeighboursCarried
     {
         var none = [0].Take(0);
         var now = s.Current.Positioned.Triangulation;
-        var surface = planar ? now.Triangles.Map(z => false) : m.NeedsRefinementCarried(f, r, s.Current, s.Known, c);
+        var surface = planar ? now.Triangles.Map(z => false) : m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least);
         var mid = m.SurfacePassCarried(f, x, chart, least, s.Current, surface);
         var midT = mid.Positioned.Triangulation;
         var carried = now.Triangles.CarriedMarks(s.Refused, none, midT.Triangles);

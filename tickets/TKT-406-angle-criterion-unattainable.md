@@ -1,13 +1,14 @@
 ---
 id: TKT-406
 title: STEP mesher: refinement's 15 degree surface-angle criterion is unattainable on boundary chords spanning over 30 degrees of arc, so it inserts points until the guards refuse
-status: open
+status: done
 depends_on: []
 owner:
 fence: [sandbox/step-mesh-staging/perf-angle/**]
 workflow: [W3]
 related: [TKT-323, TKT-405, TKT-346]
 created: 2026-10-21
+closed: 2026-10-21
 kind: defect
 ---
 
@@ -23,3 +24,7 @@ Idea 28 of the speed-ideas evaluation, found by run C: on the four baseline file
 Built in `sandbox/step-mesh-staging/perf-angle` (TRACK.md there has the measurements and the one wiring line). Neither form above: the cause is layer 04's minimum-length cap (`ArcLengthCap`), which leaves arcs of one to five segments on small radii, and form (a) would break that cap while form (b) changed nothing on 18 degree chords. The chosen form exempts a side from the 15 degree test when its chord is shorter than twice the minimum length, the length the insertion guard cannot halve. Laws over the 42 triangulated witnesses and six capped models show it changes no library witness mesh and leaves fewer unmet flags and no more triangles on capped faces, with closed, oriented meshes.
 
 Box 1 is left for the supervisor: the laws exist, but the form is a third one and naming it in the plan is outside this fence. Box 2 needs the four-file harness run, which is the supervisor's.
+
+## Closed with criteria unmet
+
+2026-10-21: Box 1: the law Law_SideNormalsTurnAttainable states the flag is attainable on every witness face, but by a third form, measured against both named ones: the cause is layer 04's minimum-length cap (every arc is already split to 15 degrees unless the cap binds), so raising counts (a) would undo the cap and the first-pass refusal (b) changed nothing at 18 degree chords; a side counts for the angle test only when its chord is at least twice the minimum length (recorded in docs/plans/step-mesher-ideas-evaluation.md idea 28 and the complexity ledger). Box 2: the four-file harness counts are the host re-measure after the wave lands (run A's harness is in deps/bim-open-data, outside this fence); the witness numbers are in the ledger row

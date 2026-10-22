@@ -2,7 +2,7 @@
 // # Capped witnesses for the attainable face angle (TKT-406)
 //
 // A curved witness model meshed twice under criteria Criteria: once with the library's
-// refinement, RefineToSurfaceByInsertionIndexed (Reference) and once with RefineToSurfaceByInsertionAttainable (Attainable), every
+// refinement, RefineToSurfaceByInsertionReference (Reference) and once with RefineToSurfaceByInsertionIndexed (Attainable), every
 // face from the same region, chart and constrained Delaunay triangulation. At a chordal bound
 // comparable to the model's radii the minimum length (a tenth of the chordal bound) caps the
 // arcs' segment counts, which is where the two refinements differ; at a fine bound they agree.
