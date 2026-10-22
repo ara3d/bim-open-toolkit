@@ -41,13 +41,14 @@ library V1Plane
         => FaceMeshingCriteria(c.Discretization, c.SurfaceChordal, 180.0.Degrees, c.PreferQuads);
 
     // One round of RefinementRoundCarried without its angle pass: the surface test on the
-    // triangles not known to pass, the surface pass, and the marks carried; Current and Mid are
+    // triangles not known to pass (those that collapse at a pole unmarked, WithoutCollapsedMarks:
+    // Lift drops them, TKT-428), the surface pass, and the marks carried; Current and Mid are
     // both the surface pass's result, and the angle marks are carried unchanged.
     RefinementRoundChordal(m: BrepModel, f: BrepFaceIndex, r: UvRegion, x: BoundaryIndex, chart: FaceChart, least: Number, c: FaceMeshingCriteria, s: CarriedRefinement): CarriedRefinement
     {
         var none = [0].Take(0);
         var now = s.Current.Positioned.Triangulation;
-        var surface = m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least);
+        var surface = s.Current.Positioned.Triangulation.WithoutCollapsedMarks(m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least));
         var mid = m.SurfacePassCarried(f, x, chart, least, s.Current, surface);
         var midT = mid.Positioned.Triangulation;
         return CarriedRefinement(mid, mid,
