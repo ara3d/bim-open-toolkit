@@ -73,7 +73,8 @@ library GeometryParameterFloorLaws
     }
 
     // On every face of layer 7's ten witness models, each parameter that is not a B-spline's keeps
-    // exactly the floor ParameterFloorAlong gives it, and a B-spline's is no coarser.
+    // exactly the floor ParameterFloorAlong gave it before TKT-459 (UnitSpeedFloor), and a
+    // B-spline's is no coarser.
     Law_V1Faces_FloorKeptOffSplines(k: Integer): Boolean
         => k < 0 || k > 9 ? true : BrepModel.WitnessAt(k).FloorsKept;
 
@@ -81,8 +82,13 @@ library GeometryParameterFloorLaws
     FloorsKept(m: BrepModel): Boolean
         => m.Faces.Count.Range.All(i => [SurfaceParameter.ParameterU, SurfaceParameter.ParameterV].All(which =>
             m.Geometry.IsSplineParameter(m.Faces[i].Surface, which)
-                ? m.Geometry.ParameterFloorAlongBody(m.Faces[i].Surface, which, m.Tolerances).Value
-                    <= m.Geometry.ParameterFloorAlong(m.Faces[i].Surface, which, m.Tolerances).Value
-                : m.Geometry.ParameterFloorAlongBody(m.Faces[i].Surface, which, m.Tolerances).Value
-                    == m.Geometry.ParameterFloorAlong(m.Faces[i].Surface, which, m.Tolerances).Value));
+                ? m.Geometry.ParameterFloorAlong(m.Faces[i].Surface, which, m.Tolerances).Value
+                    <= m.Geometry.UnitSpeedFloor(m.Faces[i].Surface, which, m.Tolerances).Value
+                : m.Geometry.ParameterFloorAlong(m.Faces[i].Surface, which, m.Tolerances).Value
+                    == m.Geometry.UnitSpeedFloor(m.Faces[i].Surface, which, m.Tolerances).Value));
+
+    // The reference: ParameterFloorAlong before TKT-459, the angle floor for an angle and the
+    // length floor for every other parameter.
+    UnitSpeedFloor(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): ParameterTolerance
+        => g.IsAngleParameter(s, which) ? tol.AngleParameter : tol.LengthParameter;
 }

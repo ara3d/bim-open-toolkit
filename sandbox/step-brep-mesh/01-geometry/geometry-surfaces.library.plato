@@ -513,9 +513,13 @@ library BrepGeometrySurfaces
         };
 
     // The model's parameter floor for the surface's given parameter: the
-    // angle floor for an angle, the length floor otherwise.
+    // angle floor for an angle, the resolution of its values for a B-spline
+    // surface's parameter (geometry-parameter-floor.library.plato, TKT-459),
+    // the length floor otherwise.
     ParameterFloorAlong(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): ParameterTolerance
-        => g.IsAngleParameter(s, which) ? tol.AngleParameter : tol.LengthParameter;
+        => g.IsAngleParameter(s, which)
+            ? tol.AngleParameter
+            : (g.IsSplineParameter(s, which) ? g.SplineParameterFloor(s, which) : tol.LengthParameter);
 
     // The floors of both parameters, the box layer 0's UvToleranceAt raises
     // its per-point tolerance to.
