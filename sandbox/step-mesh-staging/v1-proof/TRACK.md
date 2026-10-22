@@ -1,7 +1,7 @@
 # v1-proof: the host meshes through layer 8's own refinement step and one definition of its options
 
 Ticket: TKT-454, TKT-436
-Status: ready: P6
+Status: merged: P6 in 6ed55e6e (host-after-merge.patch waits on the regeneration)
 
 ## Done
 - P6, this commit, about 2.5 h against 2 h expected.
