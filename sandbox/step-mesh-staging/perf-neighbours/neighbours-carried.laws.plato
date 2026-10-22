@@ -1,0 +1,75 @@
+//==
+// # The neighbour table carried through refinement: laws (complexity sweep, TKT-408)
+//
+// The carried table against NeighbourSlots after every pass of the refinement of every
+// TriangulatedWitness (the 42 faces of layer 5's six sample models, built once per sweep), the
+// whole carried refinement against the witness's refined triangulation, and the count witness
+// of the tables built from scratch on a strip over the cylinder's side.
+//
+// Sections, in order:
+//  - The count witness
+//  - Agreement
+
+library NeighboursCarriedLaws
+{
+    //==
+    // # The count witness
+
+    // The neighbour table slots RefineToSurfaceByInsertionCarried builds from scratch while
+    // refining the constrained Delaunay triangulation of the n-point strip
+    // (InsertionBuiltLaws.StripRegion: u from 0 to 1 radian, v from 0 to 0.25) on the cylinder's
+    // side, face 0 of Witness_Cylinder.
+    NeighbourTableWork(n: Integer): WorkBudget
+    {
+        var m = BrepModel.Witness_Cylinder;
+        var f = BrepFaceIndex(0);
+        var r = StripRegion(n);
+        var chart = m.ChartOf(f, r);
+        return m.RefineToSurfaceByInsertionCarriedCounted(f, r, chart, r.TriangulateRegionCdt(chart), TriCriteria(0)).Work;
+    }
+
+    // A refinement builds the neighbour table from scratch once, before its first round: 3 slots
+    // per triangle of the constrained Delaunay triangulation (n - 2 triangles for n boundary
+    // points), counted as Insertions (slots written), at 8 and 32 boundary points. The library
+    // built it three times per round (the surface test, the surface pass, the angle pass), each
+    // time over the triangles the rounds before had added.
+    Witness_NeighbourTableWork(_: WorkClaim): WorkClaim
+        => WorkClaim("RefineToSurfaceByInsertionCarried: neighbour table slots built from scratch", Insertions(3), [8, 32], n => NeighbourTableWork(n));
+
+    //==
+    // # Agreement
+
+    // Whether t's carried table is the one NeighbourSlots builds from its triangles, slot for slot.
+    HoldsNeighbourSlots(t: PositionedTriangulationWithNeighbours): Boolean
+        => SameSlots(t.Neighbours, NeighbourSlots(t.Positioned.Triangulation.Triangles, t.Positioned.Triangulation.Points.Count));
+
+    // Refining the witness's constrained Delaunay triangulation round by round, the carried table
+    // is NeighbourSlots of the triangulation it sits beside before the first round and after
+    // every surface pass and every angle pass, and the last round leaves the witness's refined
+    // triangulation.
+    Law_Perf_CarriedTableIsNeighbourSlots(w: TriangulatedWitness): Boolean
+    {
+        var m = w.Model;
+        var f = w.Face;
+        var r = w.Region;
+        var chart = w.Chart;
+        var c = TriCriteria(0);
+        var planar = m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord;
+        var x = r.BoundaryIndexOf(m.RegionTolerance(f, chart));
+        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
+        var s = m.CarriedRefinementOf(f, w.Cdt);
+        var ok = s.Current.HoldsNeighbourSlots;
+        while (s.Rounds < 40 && s.Changed)
+        {
+            s = m.RefinementRoundCarried(f, r, x, chart, least, planar, c, s);
+            ok = ok && s.Mid.HoldsNeighbourSlots && s.Current.HoldsNeighbourSlots;
+        }
+        return ok && SameTriangulation(s.Current.Positioned.Triangulation, w.Refined);
+    }
+
+    // The carried refinement of the witness's constrained Delaunay triangulation is the
+    // witness's refined triangulation (the library's RefineToSurfaceByInsertion) point for point
+    // and triangle for triangle: the same insertions in the same order.
+    Law_Perf_RefineCarriedAgrees(w: TriangulatedWitness): Boolean
+        => SameTriangulation(w.Model.RefineToSurfaceByInsertionCarried(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0)), w.Refined);
+}
