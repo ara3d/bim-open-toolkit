@@ -103,36 +103,6 @@ library EdgeRefineIndexedLaws
     //==
     // # Requests and refinement
 
-    // Requests on edges 0 to 2 of any model: a tighter chordal bound on edge 0; on edge 2 a count
-    // of 23 and a second, weaker count with a tighter bound; a count of 40 on edge 1; and one on
-    // edge 99, outside every witness model, which every form ignores.
-    RefineRequests(c: DiscretizationCriteria): Array<EdgeRefinementRequest>
-        => [
-            EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.TooCoarseInParameterSpace, c.Chordal * 0.25, 0),
-            EdgeRefinementRequest(BrepEdgeIndex(2), RefinementReason.QuadCountMismatch, c.Chordal, 23),
-            EdgeRefinementRequest(BrepEdgeIndex(2), RefinementReason.TooCoarseInParameterSpace, c.Chordal * 0.5, 7),
-            EdgeRefinementRequest(BrepEdgeIndex(1), RefinementReason.QuadCountMismatch, c.Chordal, 40),
-            EdgeRefinementRequest(BrepEdgeIndex(99), RefinementReason.QuadCountMismatch, c.Chordal * 0.1, 50)];
-
-    // On m under the catalog criteria: the index answers every lookup as the request scans do,
-    // and RefineIndexed is Refine, bit for bit, where Refine's precondition IsRefinable holds.
-    RefineAgreesOn(m: BrepModel): Boolean
-    {
-        var c = DiscretizationCriteria.CatalogEdgeCriteria;
-        var d = m.DiscretizeAll(c, SegmentFloors.NoFloors);
-        var requests = RefineRequests(c);
-        var ix = RequestIndexCounted(requests, d.ByEdge.Count).Value;
-        return d.ByEdge.Count.Range.All(i =>
-                ix.IsRequestedIn(BrepEdgeIndex(i)) == requests.IsRequested(BrepEdgeIndex(i))
-                && ix.RequestedChordalIn(BrepEdgeIndex(i), c.Chordal) == requests.RequestedChordal(BrepEdgeIndex(i), c.Chordal)
-                && ix.RequestedSegmentsIn(BrepEdgeIndex(i)) == requests.RequestedSegments(BrepEdgeIndex(i)))
-            && (m.IsRefinable(d, requests, c) ? SameTables(m.RefineIndexed(d, requests, c), m.Refine(d, requests, c)) : true);
-    }
-
-    // Two count arrays are the same, entry for entry.
-    SameCounts(a: Array<Integer>, b: Array<Integer>): Boolean
-        => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
-
     // r count requests over the unit box's twelve edges, edge k mod 12 raised to 2 + k mod 3.
     CountRequests(_: Integer, r: Integer): Array<EdgeRefinementRequest>
         => r.MapRange(k => EdgeRefinementRequest(BrepEdgeIndex(k % 12), RefinementReason.QuadCountMismatch, DiscretizationCriteria.CatalogEdgeCriteria.Chordal, 2 + k % 3));

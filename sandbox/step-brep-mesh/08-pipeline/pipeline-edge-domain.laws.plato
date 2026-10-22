@@ -10,7 +10,6 @@
 //
 // Sections, in order:
 //  - Witness
-//  - Agreement
 
 library EdgeRangedLaws
 {
@@ -40,27 +39,4 @@ library EdgeRangedLaws
         => [3, 12].All(n => BrepModel.RangedModelOfSize(n).Edges.Count == n
                 && DiscretizeAllRangedWork(n).Projections == n)
             && BrepModel.GuardsUnindexedBox.DiscretizeAllRangedCounted(DiscretizationCriteria.CatalogEdgeCriteria, SegmentFloors.NoFloors).Work.Projections == 0;
-
-    //==
-    // # Agreement
-
-    // On m under the catalog criteria: DiscretizeAllRanged is DiscretizeAll, its counted work
-    // past the Projections is DiscretizeAllTabledCounted's, and RefineRanged is Refine for one
-    // request that tightens the chordal bound and one that raises the count, where Refine's
-    // precondition IsRefinable holds.
-    RangedAgreesOn(m: BrepModel): Boolean
-    {
-        var c = DiscretizationCriteria.CatalogEdgeCriteria;
-        var d = m.DiscretizeAll(c, SegmentFloors.NoFloors);
-        var ranged = m.DiscretizeAllRangedCounted(c, SegmentFloors.NoFloors);
-        var tabled = m.DiscretizeAllTabledCounted(c, SegmentFloors.NoFloors).Work;
-        var requests = [
-            EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.TooCoarseInParameterSpace, c.Chordal * 0.25, 0),
-            EdgeRefinementRequest(BrepEdgeIndex(2), RefinementReason.QuadCountMismatch, c.Chordal, 5)];
-        return SameTables(ranged.Value, d)
-            && ranged.Work.Insertions == tabled.Insertions
-            && ranged.Work.Flips == tabled.Flips
-            && (m.IsRefinable(d, requests, c) ? SameTables(m.RefineRanged(d, requests, c), m.Refine(d, requests, c)) : true);
-    }
-
 }

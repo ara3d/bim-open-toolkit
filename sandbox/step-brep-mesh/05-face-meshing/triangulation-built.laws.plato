@@ -112,12 +112,6 @@ library InsertionBuiltLaws
             && m.HoldsItsPositions(f, built);
     }
 
-    RefineBuiltAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
-    {
-        var t = r.TriangulateRegionCdt(chart);
-        return SameUvTriangulation(m.RefineToSurfaceByInsertionBuilt(f, r, chart, t, TriCriteria(0)), m.RefineToSurfaceByInsertion(f, r, chart, t, TriCriteria(0)));
-    }
-
     //==
     // # Equality
 

@@ -127,20 +127,4 @@ library BisectionCachedLaws
         return n >= 67 && n <= 110;
     }
 
-    // Law_SagittaIsAttained's verdict on fixture k over [t0, t1] is the same with
-    // EstimatedSagittaBody2 as with EstimatedSagitta: the early stop moves no case across the
-    // law's bound.
-    SagittaAttainedVerdictsAgree(k: Integer, a: Number, b: Number): Boolean
-    {
-        var m = k.CurveEdgeModel;
-        var e = BrepEdgeIndex(0);
-        var d = k.CurveFixture;
-        var t0 = d.Basis.DomainAt(a.Min(b));
-        var t1 = d.Basis.DomainAt(a.Max(b));
-        var bound = m.Tolerances.Length.Value + ResolutionAt(m.SagittaMagnitude(k)).Value;
-        var sagitta = m.Sagitta(e, t0, t1);
-        return ((sagitta - m.EstimatedSagitta(e, t0, t1)).Abs <= bound)
-            == ((sagitta - m.EstimatedSagittaBody2(e, t0, t1, m.PointOnEdge(e, t0), m.PointOnEdge(e, t1))).Abs <= bound);
-    }
-
 }

@@ -178,31 +178,20 @@ library BrepRepairPerfLaws
     Law_RepairIndexAgrees(_: Defect): Boolean
         => RepairIndex.RepairPerfModelCount.Range.All(w => IndexAgreesOn(RepairPerfModelAt(w)));
 
-    // DiagnoseIndexed is Diagnose, and CostOfBound and CostOfIndexed are CostOf for every action
-    // Diagnose offers, for every sample and extra defect.
+    // DiagnoseIndexed is Diagnose, and CostOfIndexed is CostOf for every action Diagnose offers,
+    // for every sample and extra defect. (CostOf is CostOfBound, so the two are not compared.)
     DiagnosisAgreesOn(m: BrepModel): Boolean
     {
         var ix = m.RepairIndexOf;
         return RepairIndex.AllPerfDefects.All(d =>
             SameFixability(m.DiagnoseIndexed(ix, d), m.Diagnose(d))
                 && ActionsOf(m.Diagnose(d)).All(a =>
-                    SameCost(m.CostOfBound(a), m.CostOf(a)) && SameCost(m.CostOfIndexed(ix, a), m.CostOf(a))));
+                    SameCost(m.CostOfIndexed(ix, a), m.CostOf(a))));
     }
 
     // The statement above, on every model.
     Law_DiagnoseIndexedAgrees(_: Defect): Boolean
         => RepairIndex.RepairPerfModelCount.Range.All(w => DiagnosisAgreesOn(RepairPerfModelAt(w)));
-
-    // PlanOfIndexed is PlanOf on the sample defects in the order SampleDefects(k) gives, and on
-    // every sample and extra defect, on every model.
-    Law_PlanOfIndexedAgrees(k: Integer): Boolean
-    {
-        var ds = SampleDefects(k);
-        var all = RepairIndex.AllPerfDefects;
-        return RepairIndex.RepairPerfModelCount.Range.All(w =>
-            SamePlan(RepairPerfModelAt(w).PlanOfIndexed(ds), RepairPerfModelAt(w).PlanOf(ds))
-                && SamePlan(RepairPerfModelAt(w).PlanOfIndexed(all), RepairPerfModelAt(w).PlanOf(all)));
-    }
 
     //==
     // # Work

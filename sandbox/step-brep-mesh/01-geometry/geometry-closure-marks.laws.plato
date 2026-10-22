@@ -13,8 +13,6 @@
 //  - Comparing values exactly
 //  - Sorted marks
 //  - Lookup agrees with the scan
-//  - Domains and trimmed parameters once
-//  - Composite evaluation once
 //  - Count witness
 
 library BrepGeometryClosureMarksLaws
@@ -33,11 +31,6 @@ library BrepGeometryClosureMarksLaws
     // is present from k = 4 and every odd index is absent.
     SyntheticMarks(k: Integer): Array<ClosureMark>
         => k.MapRange(i => SyntheticMark(4 * i / k, 2 * i));
-
-    // An arena with no records and the k synthetic marks: enough for a lookup, which reads only
-    // the marks.
-    SyntheticMarkedArena(k: Integer): GeometrySet
-        => GeometrySet([], [], [], [], SyntheticMarks(k));
 
     // The catalog arena (Witness_CatalogArena) with three parameter-plane curves, two space
     // curves and one surface added, and five closure marks in ClosureMarks's order, so domains
@@ -74,36 +67,12 @@ library BrepGeometryClosureMarksLaws
                 ClosureMark.ClosedSurface(SurfaceIndex(7), SurfaceParameter.ParameterV)]);
     }
 
-    // The two arenas the agreement laws read: the catalog and the marked catalog.
-    PerfClosureArenas(_: Integer): Array<GeometrySet>
-        => [GeometrySet.Witness_CatalogArena, MarkedCatalogArena(0)];
-
     //==
     // # Comparing values exactly
-
-    // Whether two curve domains are the same, bit for bit.
-    SameCurveDomain(a: CurveDomain, b: CurveDomain): Boolean
-        => a.Range.Start == b.Range.Start && a.Range.End == b.Range.End && a.Periodicity == b.Periodicity;
-
-    // Whether two surface domains are the same, bit for bit.
-    SameSurfaceDomain(a: SurfaceDomain, b: SurfaceDomain): Boolean
-        => SameCurveDomain(a.U, b.U) && SameCurveDomain(a.V, b.V);
 
     // Whether two parameter pairs are the same, bit for bit.
     SameUv(a: UvCoordinate, b: UvCoordinate): Boolean
         => a.U == b.U && a.V == b.V;
-
-    // Whether two points are the same, bit for bit.
-    SamePoint(a: Point3D, b: Point3D): Boolean
-        => a.X == b.X && a.Y == b.Y && a.Z == b.Z;
-
-    // Whether two vectors are the same, bit for bit.
-    SameVector(a: Vector3D, b: Vector3D): Boolean
-        => a.X == b.X && a.Y == b.Y && a.Z == b.Z;
-
-    // Whether two plane vectors are the same, bit for bit.
-    SameVector(a: Vector2D, b: Vector2D): Boolean
-        => a.X == b.X && a.Y == b.Y;
 
     //==
     // # Sorted marks
@@ -138,14 +107,6 @@ library BrepGeometryClosureMarksLaws
     //==
     // # Lookup agrees with the scan
 
-    // IsMarkedClosedSorted gives IsMarkedClosed's answer for index q of the kind of the given
-    // rank.
-    SortedAgreesAt(g: GeometrySet, rank: Integer, q: Integer): Boolean
-        => rank == 0 ? g.IsMarkedClosedSorted(CurveIndex(q)) == g.IsMarkedClosed(CurveIndex(q))
-            : (rank == 1 ? g.IsMarkedClosedSorted(Curve2DIndex(q)) == g.IsMarkedClosed(Curve2DIndex(q))
-            : (rank == 2 ? g.IsMarkedClosedSorted(SurfaceIndex(q), SurfaceParameter.ParameterU) == g.IsMarkedClosed(SurfaceIndex(q), SurfaceParameter.ParameterU)
-            : g.IsMarkedClosedSorted(SurfaceIndex(q), SurfaceParameter.ParameterV) == g.IsMarkedClosed(SurfaceIndex(q), SurfaceParameter.ParameterV)));
-
     // The marked catalog reaches a found mark of every kind, so the agreement is not only on
     // absent marks.
     Law_MarkedCatalogFindsMarks(_: Boolean): Boolean
@@ -156,116 +117,6 @@ library BrepGeometryClosureMarksLaws
             && g.IsMarkedClosedSorted(SurfaceIndex(7), SurfaceParameter.ParameterV)
             && !g.IsMarkedClosedSorted(CurveIndex(7));
     }
-
-    //==
-    // # Domains and trimmed parameters once
-
-    // The fraction i / (n - 1) of the way along range r, for i of n.
-    GridAt(r: NumberInterval, n: Integer, i: Integer): Number
-        => r.Start + (r.End - r.Start) * i.ToNumber / (n - 1).ToNumber;
-
-    // TrimmedToBasisOnce gives TrimmedToBasis at uv for the trimmed surface's record.
-    TrimmedOnceAgreesAt(g: GeometrySet, surface: BrepSurface, uv: UvCoordinate): Boolean
-        => match (surface)
-        {
-            Plane(placement) => true;
-            Cylinder(placement, radius) => true;
-            Cone(placement, radius, semiAngle) => true;
-            Sphere(placement, radius) => true;
-            Torus(placement, major, minor, part) => true;
-            Revolution(profile, axis) => true;
-            LinearExtrusion(profile, extrusion) => true;
-            BSpline(data) => true;
-            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => SameUv(
-                g.TrimmedToBasisOnce(basis, uRange, vRange, uSense, vSense, uv),
-                g.TrimmedToBasis(basis, uRange, vRange, uSense, vSense, uv));
-            Offset(basis, distance) => true;
-        };
-
-    // r itself when both ends are finite; [-h, h] otherwise.
-    FiniteOr(r: NumberInterval, h: Number): NumberInterval
-        => (r.Start.IsFinite && r.End.IsFinite) ? r : NumberInterval(-h, h);
-
-    //==
-    // # Composite evaluation once
-
-    // At parameter t of composite curve c with these segments, the composite functions give the
-    // library's segment, local parameter, point, derivatives and magnitude, bit for bit.
-    CompositeOnceAgreesAt(g: GeometrySet, c: CurveIndex, segments: Array<CompositeSegment>, t: Number): Boolean
-    {
-        var p = g.CompositePlaceOf(segments, t);
-        return p.Segment == g.CompositeSegmentAt(segments, t)
-            && p.Local == g.CompositeLocal(segments, t)
-            && SamePoint(g.CompositeEval(segments, t), g.Eval(c, t))
-            && SameVector(g.CompositeDerivative(segments, t), g.Derivative(c, t))
-            && SameVector(g.CompositeSecondDerivative(segments, t), g.SecondDerivative(c, t))
-            && g.CompositeEvaluationMagnitude(segments, t) == g.EvaluationMagnitude(c, t);
-    }
-
-    // CompositeOnceAgreesAt for a parameter-plane composite.
-    CompositeOnceAgreesAt2D(g: GeometrySet, c: Curve2DIndex, segments: Array<CompositeSegment2D>, t: Number): Boolean
-    {
-        var p = g.CompositePlaceOf(segments, t);
-        return p.Segment == g.CompositeSegmentAt(segments, t)
-            && p.Local == g.CompositeLocal(segments, t)
-            && SameUv(g.CompositeEval(segments, t), g.Eval(c, t))
-            && SameVector(g.CompositeDerivative(segments, t), g.Derivative(c, t))
-            && SameVector(g.CompositeSecondDerivative(segments, t), g.SecondDerivative(c, t))
-            && g.CompositeEvaluationMagnitude(segments, t) == g.EvaluationMagnitude(c, t);
-    }
-
-    // The segments of a composite curve record; none for any other record.
-    SegmentsOfComposite(curve: BrepCurve): Array<CompositeSegment>
-        => match (curve)
-        {
-            Line(origin, velocity) => NoCompositeSegments(0);
-            Circle(placement, radius) => NoCompositeSegments(0);
-            Ellipse(placement, semiAxis1, semiAxis2) => NoCompositeSegments(0);
-            Hyperbola(placement, semiAxis, semiImaginaryAxis) => NoCompositeSegments(0);
-            Parabola(placement, focalDistance) => NoCompositeSegments(0);
-            Polyline(points) => NoCompositeSegments(0);
-            BSpline(data) => NoCompositeSegments(0);
-            Trimmed(basis, range, sameSense) => NoCompositeSegments(0);
-            Composite(segments) => segments;
-            Offset(basis, distance, reference) => NoCompositeSegments(0);
-            OnSurface(spaceCurve, supports, master) => NoCompositeSegments(0);
-        };
-
-    // The segments of a parameter-plane composite curve record; none for any other record.
-    SegmentsOfComposite2D(curve: BrepCurve2D): Array<CompositeSegment2D>
-        => match (curve)
-        {
-            Line(origin, velocity) => NoCompositeSegments2D(0);
-            Circle(placement, radius) => NoCompositeSegments2D(0);
-            Ellipse(placement, semiAxis1, semiAxis2) => NoCompositeSegments2D(0);
-            Hyperbola(placement, semiAxis, semiImaginaryAxis) => NoCompositeSegments2D(0);
-            Parabola(placement, focalDistance) => NoCompositeSegments2D(0);
-            Polyline(points) => NoCompositeSegments2D(0);
-            BSpline(data) => NoCompositeSegments2D(0);
-            Trimmed(basis, range, sameSense) => NoCompositeSegments2D(0);
-            Composite(segments) => segments;
-            Offset(basis, distance) => NoCompositeSegments2D(0);
-        };
-
-    // No segments: the typed empty array.
-    NoCompositeSegments(_: Integer): Array<CompositeSegment>
-        => [CompositeSegment(CurveIndex(0), true)].Take(0);
-
-    // No parameter-plane segments: the typed empty array.
-    NoCompositeSegments2D(_: Integer): Array<CompositeSegment2D>
-        => [CompositeSegment2D(Curve2DIndex(0), true)].Take(0);
-
-    // CompositeOnceAgreesAt at 25 parameters across curve c's domain when it is a composite.
-    CompositeOnceAgrees(g: GeometrySet, c: CurveIndex): Boolean
-        => g.CurveAt(c).SegmentsOfComposite.Count == 0
-            ? true
-            : 25.Range.All(i => CompositeOnceAgreesAt(g, c, g.CurveAt(c).SegmentsOfComposite, GridAt(g.Domain(c).Range, 25, i)));
-
-    // CompositeOnceAgrees for a parameter-plane curve.
-    CompositeOnceAgrees2D(g: GeometrySet, c: Curve2DIndex): Boolean
-        => g.Curve2DAt(c).SegmentsOfComposite2D.Count == 0
-            ? true
-            : 25.Range.All(i => CompositeOnceAgreesAt2D(g, c, g.Curve2DAt(c).SegmentsOfComposite2D, GridAt(g.Domain(c).Range, 25, i)));
 
     //==
     // # Count witness

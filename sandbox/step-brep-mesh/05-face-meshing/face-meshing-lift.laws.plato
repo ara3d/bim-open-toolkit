@@ -112,27 +112,6 @@ library FaceMeshingLiftIndexedLaws
     SameUvPoints(a: Array<UvCoordinate>, b: Array<UvCoordinate>): Boolean
         => a.Count == b.Count && a.Count.Range.All(i => a[i].U == b[i].U && a[i].V == b[i].V);
 
-    // True when two arrays of positions are identical.
-    SamePositions(a: Array<Point3D>, b: Array<Point3D>): Boolean
-        => a.Count == b.Count ? a.Count.Range.All(i => a[i].X == b[i].X && a[i].Y == b[i].Y && a[i].Z == b[i].Z) : false;
-
-    // True when two arrays of normals are identical.
-    SameNormals(a: Array<Direction3D>, b: Array<Direction3D>): Boolean
-        => a.Count == b.Count && a.Count.Range.All(i =>
-            a[i].Vector.X == b[i].Vector.X && a[i].Vector.Y == b[i].Vector.Y && a[i].Vector.Z == b[i].Vector.Z);
-
-    // True when two face meshes are identical in every field.
-    SameLiftedFaceMesh(a: FaceMesh, b: FaceMesh): Boolean
-        => a.Face == b.Face
-            && SameUvPoints(a.UvPoints, b.UvPoints)
-            && a.Sources.Count == b.Sources.Count && a.Sources.Count.Range.All(i => a.Sources[i] == b.Sources[i])
-            && a.LocalVertex.Count == b.LocalVertex.Count && a.LocalVertex.Count.Range.All(i => a.LocalVertex[i] == b.LocalVertex[i])
-            && SamePositions(a.Positions, b.Positions)
-            && SameNormals(a.Normals, b.Normals)
-            && a.Triangles.Count == b.Triangles.Count && a.Triangles.Count.Range.All(i => a.Triangles[i] == b.Triangles[i])
-            && a.Quads.Count == b.Quads.Count && a.Quads.Count.Range.All(i => a.Quads[i] == b.Quads[i])
-            && a.Provenance.Count == b.Provenance.Count && a.Provenance.Count.Range.All(i => a.Provenance[i] == b.Provenance[i]);
-
     // True when some face of case w has a point whose source key is of the given kind
     // (SourceKey: 0 interior, 3 seam cut, 4 pole).
     HasSourceKind(w: LiftCase, kind: Integer): Boolean

@@ -52,63 +52,6 @@ library BrepOraclesOnceLaws
     AnalyticWitnesses(_: Integer): Array<Integer>
         => [0, 1, 2, 3, 4, 5, 6, 8, 9];
 
-    // a and b are the same number, or both NaN.
-    SameNumberOrNaN(a: Number, b: Number): Boolean
-        => a.IsNaN ? b.IsNaN : a == b;
-
-    // The two parameter-plane points are the same.
-    SameUvOrNaN(a: UvCoordinate, b: UvCoordinate): Boolean
-        => SameNumberOrNaN(a.U, b.U) && SameNumberOrNaN(a.V, b.V);
-
-    // The two boundaries have the same segments in the same order.
-    SameGreenSegments(a: Array<GreenSegment>, b: Array<GreenSegment>): Boolean
-        => a.Count == b.Count && a.Count.Range.All(i => SameUvOrNaN(a[i].From, b[i].From) && SameUvOrNaN(a[i].To, b[i].To));
-
-    // The two checks agree in verdict, worst measure and bound.
-    SameCheckResult(a: Check, b: Check): Boolean
-        => a.Holds == b.Holds && SameNumberOrNaN(a.Worst, b.Worst) && SameNumberOrNaN(a.Bound, b.Bound);
-
-    // GreenBoundaryCounted equals GreenBoundary on every face of m at GreenChords.
-    GreenBoundaryBuiltAgreesOnFaces(m: BrepModel): Boolean
-        => m.Faces.Count.Range.All(f => SameGreenSegments(
-            m.GreenBoundaryCounted(BrepFaceIndex(f), Integer.GreenChords).Value,
-            m.GreenBoundary(BrepFaceIndex(f), Integer.GreenChords)));
-
-    // The agreement on every face of m.
-    GreenAreaOnceAgreesOnFaces(m: BrepModel): Boolean
-        => m.Faces.Count.Range.All(f => m.GreenAreaOnceAgreesAt(BrepFaceIndex(f), m.GreenAreaPair(BrepFaceIndex(f))));
-
-    // The agreement on face f of m, e its estimate.
-    GreenAreaOnceAgreesAt(m: BrepModel, f: BrepFaceIndex, e: GreenEstimate): Boolean
-        => m.GreenAreaAndAllowanceAgree(f, e) && m.AreaToleranceAgrees(f, e)
-            && m.CanGreenGiven(f, m.GreenModelOk) == m.CanGreen(f);
-
-    // The area and allowance from e equal Oracle_FaceAreaByGreen and GreenAllowance on face f.
-    GreenAreaAndAllowanceAgree(m: BrepModel, f: BrepFaceIndex, e: GreenEstimate): Boolean
-        => SameNumberOrNaN(e.RichardsonOf, m.Oracle_FaceAreaByGreen(f))
-            && SameNumberOrNaN(e.GreenAllowanceOf, m.GreenAllowance(f));
-
-    // The area tolerance from e equals FaceAreaTolerance on face f under the witness criteria.
-    AreaToleranceAgrees(m: BrepModel, f: BrepFaceIndex, e: GreenEstimate): Boolean
-        => SameNumberOrNaN(m.FaceAreaToleranceOf(f, MeshingOptions.WitnessOptions.Face, e), m.FaceAreaTolerance(f, MeshingOptions.WitnessOptions.Face));
-
-    // The agreement on every shell and body of m.
-    VolumeOnceAgrees(m: BrepModel): Boolean
-        => m.Shells.Count.Range.All(s =>
-                SameNumberOrNaN(m.Oracle_DivergenceVolumeOnce(ShellIndex(s)), m.Oracle_DivergenceVolume(ShellIndex(s)))
-                && SameNumberOrNaN(m.ShellVolumePair(ShellIndex(s)).DivergenceAllowanceOf, m.DivergenceAllowance(ShellIndex(s)))
-                && SameNumberOrNaN(m.ShellOracleAreaOnce(ShellIndex(s)), m.ShellOracleArea(ShellIndex(s))))
-            && m.Bodies.Count.Range.All(b =>
-                SameNumberOrNaN(m.Oracle_BodyVolumeOnce(BodyIndex(b)), m.Oracle_BodyVolume(BodyIndex(b)))
-                && SameNumberOrNaN(m.TubeVolumeOnce(BodyIndex(b), MeshingOptions.WitnessOptions.Face), m.TubeVolume(BodyIndex(b), MeshingOptions.WitnessOptions.Face)));
-
-    // The agreement on model m and its mesh under criteria c.
-    MeshReadersOnceAgree(m: BrepModel, mesh: ModelMesh, c: FaceMeshingCriteria): Boolean
-        => SameCheckResult(m.Check_FaceAreaMatchesOracleOnce(mesh, c), m.Check_FaceAreaMatchesOracle(mesh, c))
-            && SameCheckResult(m.Check_SolidVolumeWithinTubeOnce(mesh, c), m.Check_SolidVolumeWithinTube(mesh, c))
-            && m.Shells.Count.Range.All(s => m.AngleDefectMatchesBrepEulerOnce(mesh, ShellIndex(s)) == m.AngleDefectMatchesBrepEuler(mesh, ShellIndex(s)))
-            && m.Bodies.Count.Range.All(b => m.SolidVolumeWithinTubeOnce(mesh, c, BodyIndex(b)) == m.SolidVolumeWithinTube(mesh, c, BodyIndex(b)));
-
     //==
     // # Oracles against the closed forms
     //

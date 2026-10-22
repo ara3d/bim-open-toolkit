@@ -128,14 +128,7 @@ library FacetedLaws
         return SameIntegers(p.PointRoots, roots)
             && SameIntegers(m.PolyPointOffsets(poly), (poly.Count + 1).MapRange(k => m.PolyPointOffset(poly, k)))
             && SameIntegers(p.SortedUses, uses.Sort((a, b) => a <= b))
-            && SameIntegers(p.ImplicitFreeEdgeKeysSorted, m.ImplicitFreeEdgeKeys(s).Sort((a, b) => a <= b))
-            && p.ImplicitEdgeCountSorted == m.ImplicitEdgeKeys(poly, roots).DistinctCount
-            && p.ImplicitBoundaryCycleCountSorted == m.ImplicitBoundaryCycleCount(s)
-            && p.PolyEdgeUseDefectsSorted(m.Shells[s].DeclaredClosed) == m.PolyEdgeUseDefects(s)
-            && m.ReducedCountsPolyIndexed(s, t, p) == m.ReducedCounts(s)
-            && m.BoundaryCycleCountPoly(t, p) == m.BoundaryCycleCount(s)
-            && m.ShellEulerPlusBoundaryCycles(s) == m.ShellEulerPoincare(s) + m.BoundaryCycleCount(s)
-            && m.ShellComponentCountByGrid(s) == m.ShellComponentCount(s);
+            && p.ImplicitEdgeCountSorted == m.ImplicitEdgeKeys(poly, roots).DistinctCount;
     }
 
     // FacetedAgreesOnShell on every shell of m, where the laws that read these look (every

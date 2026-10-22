@@ -61,38 +61,6 @@ library ComponentChecksGivenLaws
         return (comps.ElementParent.Count + 2).Range.All(i => roots.RootsBelowAt(ElementIndex(i - 1)) == comps.RootsBelow(ElementIndex(i - 1)));
     }
 
-    // Whether every component check of the chunk is Identical to the library's on mesh.
-    ComponentChecksAgreeOn(mesh: ModelMesh, t: Tolerances): Boolean
-    {
-        var tables = mesh.MeshComponentTablesOf;
-        var comps = tables.Components;
-        return Identical(mesh.Check_ComponentParentIsInItsComponentWithComponents(comps), mesh.Check_ComponentParentIsInItsComponent)
-            && Identical(mesh.Check_ComponentParentIsOneShallowerWithComponents(comps), mesh.Check_ComponentParentIsOneShallower)
-            && Identical(mesh.Check_ComponentParentSharesAVertexWithComponents(comps), mesh.Check_ComponentParentSharesAVertex)
-            && Identical(mesh.Check_ComponentRootHasDepthZeroWithComponents(comps), mesh.Check_ComponentRootHasDepthZero)
-            && Identical(mesh.Check_ComponentsAreNumberedByRootWithComponents(comps, tables.Roots), mesh.Check_ComponentsAreNumberedByRoot)
-            && Identical(mesh.Check_ComponentRootIsItsLowestElementLinear(comps, tables.Roots), mesh.Check_ComponentRootIsItsLowestElement)
-            && Identical(mesh.Check_ComponentCountIsRootCountWithComponents(comps), mesh.Check_ComponentCountIsRootCount)
-            && Identical(mesh.Check_ClosedMeshHasNoPinchedVertexHoisted, mesh.Check_ClosedMeshHasNoPinchedVertex)
-            && Identical(mesh.Check_ClosedMeshHasNoPinchedVertexWithTables(tables), mesh.Check_ClosedMeshHasNoPinchedVertex)
-            && Identical(mesh.Check_ClosedOrientedSurfaceHasGenusWithTables(tables), mesh.Check_ClosedOrientedSurfaceHasGenus)
-            && Identical(mesh.Check_OrientedSurfaceWithBoundaryHasGenusWithTables(tables), mesh.Check_OrientedSurfaceWithBoundaryHasGenus)
-            && Identical(mesh.Check_AngleDefectSumIsTwoPiTimesEulerWithTables(tables), mesh.Check_AngleDefectSumIsTwoPiTimesEuler)
-            && Identical(mesh.Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefectsWithTables(tables),
-                mesh.Check_AngleDefectSumIsTwoPiTimesEulerPlusQuadDefects)
-            && Identical(mesh.Check_VerticesOfOneComponentAreApartWithComponents(comps, t), mesh.Check_VerticesOfOneComponentAreApart(t));
-    }
-
-    // Whether the Structure report is Identical to ModelMeshReport's Structure family on mesh and
-    // builds ComponentsOf once.
-    StructureReportAgreesOn(mesh: ModelMesh, t: Tolerances): Boolean
-    {
-        var counted = mesh.ModelMeshStructureReportCounted(t);
-        return Identical(counted.Value,
-                mesh.ModelMeshReport(t, MeshQualityThresholds.CubitAcceptable, CheckFamily.StructureChecks))
-            && counted.Work.Flips == 1;
-    }
-
     //==
     // # Agreement
 

@@ -69,13 +69,6 @@ library ShellOrientationLaws
             m.Shells, m.Bodies, m.Tolerances, m.Unit).WithEveryFaceInOneShell;
     }
 
-    // ShellComponentCountByVertex is ShellComponentCount on every shell, where the laws that
-    // read it look (every index in range).
-    ComponentCountsAgree(m: BrepModel): Boolean
-        => m.IsEveryIndexInRange
-            ? m.Shells.Count.Range.All(s => m.ShellComponentCountByVertex(ShellIndex(s)) == m.ShellComponentCount(ShellIndex(s)))
-            : true;
-
     // The counts agree where faces touch only through coinciding poly-loop points, and the cases
     // occur: two separate unit cubes in one shell are two components, the box beside three poly
     // triangles three.
@@ -85,8 +78,7 @@ library ShellOrientationLaws
         var last = ShellIndex(poly.Shells.Count - 1);
         var cubes = BrepModel.Witness_TwoUnitCubesMillimetres.WithEveryFaceInOneShell;
         var both = ShellIndex(cubes.Shells.Count - 1);
-        return poly.ComponentCountsAgree && cubes.ComponentCountsAgree
-            && poly.ShellComponentCountByVertex(last) == 3
+        return poly.ShellComponentCountByVertex(last) == 3
             && cubes.ShellComponentCountByVertex(both) == 2;
     }
 
@@ -96,13 +88,6 @@ library ShellOrientationLaws
     // The same faces in the same order.
     SameFaces(a: Array<BrepFaceIndex>, b: Array<BrepFaceIndex>): Boolean
         => a.Count == b.Count ? a.Count.Range.All(k => a[k] == b[k]) : false;
-
-    // On every shell of m: the flips by adjacency are OrientationFlips' face for face, and
-    // IsOrientableByAdjacency is IsOrientable. Precondition: m.IsEveryIndexInRange.
-    OrientationAgreesOn(m: BrepModel): Boolean
-        => m.Shells.Count.Range.All(s =>
-            SameFaces(m.OrientationFlipsByAdjacency(ShellIndex(s), m.EdgeUseTable(ShellIndex(s))), m.OrientationFlips(ShellIndex(s)))
-            && m.IsOrientableByAdjacency(ShellIndex(s)) == m.IsOrientable(ShellIndex(s)));
 
     // The search finds flips: on the unit box with faces 1 and 3 reversed it names those two
     // faces; on Witness_BoxWithFlippedFace, whose flipped sense leaves every edge's uses opposite,

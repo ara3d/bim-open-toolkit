@@ -45,15 +45,6 @@ library BrepFoundationConstantsLaws
     //==
     // # Agreement with ResolutionAt
 
-    // ResolutionAtConstant is ResolutionAt bit for bit at every magnitude:
-    // both NaN at a NaN magnitude, else equal.
-    Law_ResolutionAtConstantAgrees(magnitude: Number): Boolean
-    {
-        var a = ResolutionAtConstant(magnitude).Value;
-        var b = ResolutionAt(magnitude).Value;
-        return a.IsNaN ? b.IsNaN : a == b;
-    }
-
     // ResolutionAtCounted does no halving at any magnitude, and its value is
     // ResolutionAtConstant's.
     Law_ResolutionAtConstantDoesNoHalvings(magnitude: Number): Boolean

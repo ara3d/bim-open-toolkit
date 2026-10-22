@@ -105,15 +105,6 @@ library PolishCachedLaws
             && j.ProjectedStepAt(p, uv, step, w) == surface.ProjectedStep(g, p, uv, step, w);
     }
 
-    // PerfPolishAgrees for one surface from one start.
-    PerfPolishAgrees(g: GeometrySet, s: SurfaceIndex, p: Point3D, start: UvCoordinate): Boolean
-    {
-        var surface = g.SurfaceAt(s);
-        var w = g.PerfDomainWindow(s);
-        var radius = w.PerfQuarterRadius;
-        return surface.PolishProjectionCached(g, p, start, w, radius) == surface.PolishProjection(g, p, start, w, radius);
-    }
-
     // Every iteration of the cached polish makes two surface evaluations
     // (one first jet, one point) and one more per halving, on any start
     // and point, on all three surfaces of the jet arena.

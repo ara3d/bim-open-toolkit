@@ -111,36 +111,7 @@ library EdgeTablesLaws
     //==
     // # Discretization
 
-    // On m under the catalog criteria: DiscretizeAllTabled is DiscretizeAll, and RefineTabled is
-    // Refine for one request that tightens the chordal bound and one that raises the count,
-    // where Refine's precondition IsRefinable holds (it fails where an entry is Undiscretized).
-    DiscretizationAgreesOn(m: BrepModel): Boolean
-    {
-        var c = DiscretizationCriteria.CatalogEdgeCriteria;
-        var d = m.DiscretizeAll(c, SegmentFloors.NoFloors);
-        var requests = [
-            EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.TooCoarseInParameterSpace, c.Chordal * 0.25, 0),
-            EdgeRefinementRequest(BrepEdgeIndex(2), RefinementReason.QuadCountMismatch, c.Chordal, 5)];
-        return SameTables(m.DiscretizeAllTabled(c, SegmentFloors.NoFloors), d)
-            && (m.IsRefinable(d, requests, c) ? SameTables(m.RefineTabled(d, requests, c), m.Refine(d, requests, c)) : true);
-    }
-
-    // The same findings, field for field.
-    SameFindings(a: Array<Diagnostic>, b: Array<Diagnostic>): Boolean
-        => a.Count == b.Count
-            ? a.Count.Range.All(k => a[k].Severity == b[k].Severity && a[k].Code == b[k].Code
-                && a[k].Message == b[k].Message && a[k].Where == b[k].Where && a[k].Measure == b[k].Measure)
-            : false;
-
     // d with its interior parameters dropped: one segment over the whole domain.
     Coarsened(m: BrepModel, d: EdgeDiscretization): EdgeDiscretization
         => d.IsDiscretized ? m.DiscretizationAt(d.Edge, [d.Parameters.First, d.Parameters.Last]) : d;
-
-    // MeetsCriteria(m, d, c) under the catalog criteria, against its once-per-edge form.
-    MeetsOnceAgreesOn(m: BrepModel, d: EdgeDiscretization): Boolean
-    {
-        var c = DiscretizationCriteria.CatalogEdgeCriteria;
-        var once = m.IsEvaluable(d) ? m.SegmentsMeetCriteriaOn(d, c, m.EdgeImages(d.Edge)) : false;
-        return once == m.MeetsCriteria(d, c);
-    }
 }

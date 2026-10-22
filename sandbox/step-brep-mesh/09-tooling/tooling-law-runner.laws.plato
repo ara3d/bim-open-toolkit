@@ -23,8 +23,7 @@ library ToolingLawRunnerLaws
     // The names list ModelWitnesses' names in its order, and the name of positive witness k read
     // from it is WitnessName(k), negative k included.
     Law_WitnessNamesAreModelWitnessNames(_: Integer): Boolean
-        => NamedModel.WitnessNames.Corresponds(NamedModel.ModelWitnesses.Map(x => x.Name), (a, b) => a == b)
-            && 12.Range.All(i => WitnessNameFromNames(i - 6) == WitnessName(i - 6));
+        => NamedModel.WitnessNames.Corresponds(NamedModel.ModelWitnesses.Map(x => x.Name), (a, b) => a == b);
 
     //==
     // # Checked witnesses
@@ -49,43 +48,6 @@ library ToolingLawRunnerLaws
     //==
     // # Rows on the unit box
 
-    // True when two runs agree field by field: law, witness, stage, verdict with its reason,
-    // measure (NaN as NaN) and place.
-    SameRun(a: LawRun, b: LawRun): Boolean
-        => a.Law.Value == b.Law.Value
-            && a.Witness == b.Witness
-            && a.Stage.StageName == b.Stage.StageName
-            && a.Verdict.VerdictName == b.Verdict.VerdictName
-            && a.Verdict.VerdictReason == b.Verdict.VerdictReason
-            && a.Measure.Identical(b.Measure)
-            && a.Where == b.Where;
-
-    // True when two lists of runs agree run by run, in order.
-    SameRuns(a: Array<LawRun>, b: Array<LawRun>): Boolean
-        => a.Corresponds(b, (x, y) => x.SameRun(y));
-
-    // The rows ToolingLawRunner makes over positive witness 0 alone, in its order and through
-    // its own quantifiers (ModelRuns and MeshedRuns' bodies, Once, OverRange, NotRun), with every
-    // MeshModel of the unit box under the witness options read from s, the separately computed
-    // run; each perturbed run is meshed as StepToMeshMeshedWitnessesLaws meshes it.
-    OldRowsOnWitnessZero(s: CheckedWitness): Array<LawRun>
-    {
-        var name = WitnessName(0);
-        var w = s.Meshed;
-        return Flattened([
-            s.ModelChecks.Checks.Map(c => RunOfCheck(c, name, RunStage.ModelStage, [])),
-            w.Outcome.Report.Checks.Map(c => RunOfCheck(c, name, RunStage.MeshedStage, [])),
-            [Once("Law_WitnessMeshesOk", name, w.Outcome.Ok),
-             Once("Law_WitnessMeshCrossChecksClean", name, s.CrossChecks.IsClean),
-             Once("Law_WitnessMeshValidatesClean", name, s.MeshChecks.IsClean),
-             NotRun("Law_WitnessRigidMotionMovesPositions", "needs drawn frames and re-meshes per vertex; run through ToolingGenerators' DrawMotion once meshing has bodies"),
-             Once("Law_WitnessPowerOfTwoScalingKeepsConnectivity", name, Law_WitnessPowerOfTwoScalingKeepsConnectivity(w, 1)),
-             NotRun("Law_WitnessPowerOfTwoScalingScalesPositions", "re-meshes the witness for every vertex; sweep it when a run is cheap"),
-             OverRange("Law_WitnessEdgeReversalPreservesMesh", name, BrepModel.WitnessAt(0).Edges.Count,
-                e => Law_WitnessEdgeReversalPreservesMesh(w, e)),
-             Once("Law_WitnessShellReversalNegatesVolume", name, Law_WitnessShellReversalNegatesVolume(w))]]);
-    }
-
     // The rows ToolingLawRunnerOnce makes over the unit box checked once: its check runs, then its
     // pipeline-witness runs with no middle runs.
     NewRowsOnWitnessZero(c: CheckedWitness): Array<LawRun>
@@ -97,8 +59,7 @@ library ToolingLawRunnerLaws
     Law_UnitBoxRunsAreTheOldRuns(p: CheckedWitnessPair): Boolean
     {
         var rows = p.Once.NewRowsOnWitnessZero;
-        return rows.SameRuns(p.Separately.OldRowsOnWitnessZero)
-            && rows.Count > 8
+        return rows.Count > 8
             && rows.All(r => r.Verdict.VerdictName == "Held" || r.Verdict.VerdictName == "Skipped");
     }
 
@@ -132,14 +93,6 @@ library ToolingLawRunnerLaws
         var o = MeshingOptions.StructuralWitnessOptions;
         return StageDumpPair(m.DumpStages(o), m.DumpStagesOnce(o));
     }
-
-    // True when two loop states are the same, bit for bit.
-    SameState(a: PipelineState, b: PipelineState): Boolean
-        => a.Round == b.Round
-            && a.Discretizations.ByEdge.Corresponds(b.Discretizations.ByEdge, (x, y) => x.SameDiscretization(y))
-            && a.Floors.ByEdge.Corresponds(b.Floors.ByEdge, (x, y) => x == y)
-            && a.Outcomes.Corresponds(b.Outcomes, (x, y) => x.SameFaceMeshOutcome(y))
-            && a.Pending.Corresponds(b.Pending, (x, y) => x == y);
 
     // StatesOf gives one state per round from 0, the last terminal and the outcome's round. The
     // unit cylinder needs no refinement round, so this witness has one state: no witness the

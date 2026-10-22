@@ -949,35 +949,6 @@ library BrepGeometryLaws
             ? g.Eval(c, g.Domain(c).SampleIn(t)).GapTo(g, g.SupportSurface(g.CurveAt(c).SupportsOf[k]))
             : 0.0;
 
-    // The measure of Law_SurfaceCurvePcurveLiesOnCurve, a length: the
-    // distance from the k-th pcurve's point at sample t to the space curve; 0
-    // when there is no k-th pcurve. The pcurve is sampled over the range that
-    // covers the space curve (PcurveSampleFor), not over its own domain: a
-    // bounded curve with a line pcurve would otherwise be compared with
-    // points of the line beyond the curve's ends, and an unbounded pcurve
-    // domain gives no finite samples (review F4). Precondition:
-    // g.CanEvaluate(c).
-    PcurveToCurveGap(g: GeometrySet, c: CurveIndex, t: Number, k: Integer): Number
-        => g.PcurveToCurveGapOnce(c, t, k);
-
-    // PcurveToCurveGap over the parts of a surface curve.
-    PcurveToCurveGap(g: GeometrySet, spaceCurve: CurveIndex, supports: Array<CurveSupport>, t: Number, k: Integer): Number
-        => supports.IsValidIndex(k)
-            ? (supports[k].PcurveOrNone.IsNone || spaceCurve.IsNone
-                ? 0.0
-                : g.Eval(spaceCurve, g.ClosestParameter(spaceCurve, g.Eval(supports[k].PcurveOrNone, g.PcurveSampleFor(supports[k].PcurveOrNone, spaceCurve, t))))
-                    .Distance(g.Eval(supports[k].PcurveOrNone, g.PcurveSampleFor(supports[k].PcurveOrNone, spaceCurve, t))))
-            : 0.0;
-
-    // The pcurve parameter that sample t of space curve c stands for: when
-    // c's domain is bounded, t moved into it and carried by proportion onto
-    // PcurveRangeOver(p, c, domain), so a sampling of c's domain samples the
-    // matching stretch of the pcurve evenly; when it is unbounded (a line
-    // with a line pcurve), t moved into the pcurve's own domain, where every
-    // finite parameter's point lies on the line.
-    PcurveSampleFor(g: GeometrySet, p: PcurveIndex, c: CurveIndex, t: Number): Number
-        => g.PcurveSampleForOnce(p, c, t);
-
     // Every point of a surface curve's space curve lies on its k-th pcurve
     // within the length tolerance: the second half of the point-set
     // agreement. Measure CurveToPcurveGap.

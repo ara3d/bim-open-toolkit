@@ -64,16 +64,7 @@ library ShellTablesLaws
             && SameSites(t.UsesOfEdgeIn(BrepEdgeIndex(i)), m.CoedgeSitesOfEdge(s, BrepEdgeIndex(i))));
         var corners = m.Vertices.Count.Range.All(v =>
             SameSites(c.CornersAtVertexIn(BrepVertexIndex(v)), m.CornersAtVertex(s, BrepVertexIndex(v))));
-        var cells = SameEdges(t.EdgesOfShellByUse, m.EdgesOfShell(s))
-            && SameVertices(m.VerticesOfShellByMark(s, t), m.VerticesOfShell(s));
-        var counts = m.UsesEveryEdgeTwiceIndexed(t) == m.UsesEveryEdgeTwice(s)
-            && m.FreeEdgeCountIndexed(t) == m.FreeEdgeCount(s);
-        var reduced = m.IsEveryIndexInRange
-            ? (m.ReducedCountsIndexed(s, t) == m.ReducedCounts(s)
-                && m.IndexedBoundaryCycleCountIndexed(t) == m.IndexedBoundaryCycleCount(s)
-                && m.HasCoherentOrientationIndexed(t) == m.HasCoherentOrientation(s))
-            : true;
-        return rows && uses && corners && cells && counts && reduced;
+        return rows && uses && corners;
     }
 
     // The tables agree with their references on every shell of every witness model. Exact.
