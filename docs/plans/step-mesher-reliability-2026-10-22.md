@@ -11,7 +11,7 @@ it was found and why no law caught it, groups the causes, and turns them into ra
 - **40 defects in the mesher or its generated code** were found since 2026-10-17. A law caught 9 of them, and only 5
   of those in time: the other 4 sat behind budget errors for days. The corpus run and the public samples found 15, the
   C# build and its timing 8, a compiled law sweep 3, the gallery by eye 2, and reading or measuring 3.
-- **21 defects in the checking apparatus itself**: laws that say nothing, laws that throw instead of failing, and a
+- **23 defects in the checking apparatus itself**: laws that say nothing, laws that throw instead of failing, and a
   law server that answers "0 laws" when it did not compile.
 - **The specs and laws work as a regression net for code they are run against.** About 1,190 laws pass. Fast bodies
   are tied to reference bodies by agreement laws: 41 performance chunks changed hot loops, and the corpus files
@@ -107,6 +107,8 @@ where it does not.
 | The warm server answers "0 laws, 0 type errors" on a parse failure (TKT-337), an unresolved symbol (F-60), or a payload-free qualified case (F-58) | tickets, findings | F |
 | The server keeps stale paths and misses LINT001 (F-58); the runner missed bare names and MSYS paths (TKT-427) | F-58, TKT-427 | F |
 | The mathematical review: 12 false or imprecise laws, 4 false theorems, 11 missing laws | F-2 to F-44 | A, I |
+| 33 `Undecided => true` arms in the proof laws (18 in layer 8, 14 in layer 7, 1 in layer 1): a law passes when its checker declines to decide | v1-types, through the supervisor | A |
+| The V1G-1 merge (7a59273d) moved two quality laws to `10-editing` while layer 7 still calls them: layers 00 to 08 alone, the program the regeneration compiles, fail with 12 symbol errors, and the merge check passed because the warm server compiles every folder together | supervisor | J |
 
 ## Classes
 
@@ -115,7 +117,7 @@ check's cost.
 
 | Class | P | T | The check that catches it | Cost |
 |---|---|---|---|---|
-| **A. Laws that pass without testing**: skipped, vacuous, or comparing a function with itself | 0 | 8 | Count each law's cases and the cases where its premise held; fail on skipped and vacuous laws; flag staged comparisons before the merge | Skips: none (built, TKT-434). Premise counts: a runner change (about 2 h, TKT-437). Staged comparisons: a lint (built, TKT-440) |
+| **A. Laws that pass without testing**: skipped, vacuous, passing on `Undecided`, or comparing a function with itself | 0 | 9 | Count each law's cases and the cases where its premise held; fail on skipped and vacuous laws; flag staged comparisons before the merge | Skips: none (built, TKT-434). Premise counts: a runner change (about 2 h, TKT-437). Staged comparisons: a lint (built, TKT-440) |
 | **B. Witnesses do not reach the corpus's cases**: lunes, needle cones, surface curves with pcurve masters, edges against their loop, large shells | 13 | 0 | The contract checked on every corpus file's own mesh (built, TKT-432), then each failing face extracted as a witness so a law reaches it (TKT-439) | A corpus run is about 18 minutes on 22 cores; the contract adds 4 to 9 s per file. Extraction: about 2 h to build, then minutes per face |
 | **C. Properties stated on parts or generated values, not on the mesh a file produces** | 1 (and secondary on 2) | 1 | The same contract check: chordal by sampling against the surface catches the flat quad and the 352 degree arcs that `MeshCheck` cannot | As B |
 | **D. The host does work, or uses settings, the laws never see**: quads preferred, no refinement loop, obligation laws never run | 5 | 0 | One definition of the host's criteria in layer 8, used by the host and by the witness laws (TKT-436); the 84 obligation laws run compiled on each corpus file (TKT-441) | About 1 h for the criteria (layer 8 and the host); about 2 h for the obligation laws (regeneration and harness) |
@@ -124,8 +126,34 @@ check's cost.
 | **G. Verdicts that cannot be told from load** | 5 | 1 | Rerun each budget error alone with a larger budget before recording it (built, TKT-434) | Minutes per sweep |
 | **H. Traps of the law language**: `&&` and `||` evaluate both operands, a `var` before its guard, no precondition on generated values | 0 (secondary on TKT-411) | 6 | A lint for guards that do not guard (built, TKT-440); laws over a function's inputs, not over arbitrary values (F-54's rule, already decided) | Under 1 s per run |
 | **I. No law states the property** | 1 | 1 | A review of each layer's spec against the contract; the mathematical review did this for layers 0 to 6 | A reviewer session per layer |
+| **J. A check runs a different program than the one shipped** (the warm server compiles every folder; the regeneration compiles layers 00 to 08 alone) | 0 | 1 | Type-check the shipped folder set on every merge check and law run (see below) | 15 to 25 s cold with the pinned CLI; under 1 s warm with no edit |
 | Caught by a law in time | 5 | | | |
-| **Total** | **40** | **21** | | |
+| **Total** | **40** | **23** | | |
+
+## Two cases added after the first version
+
+**Laws that pass on `Undecided`** (class A). 33 proof laws match a decided result and answer `Undecided(r) => true`
+(layer 8: 18, layer 7: 14, layer 1: 1). A checker that declines to decide on every witness makes all of them pass,
+which is the vacuity of class A in another form. The 3 such arms in `00-foundation/foundation-decided.spec.plato` are
+invariants and carry no claim, so they are fine. Proposed rule: in a law, `Undecided` is not a pass. Either the law
+returns its premise result through a `Premise_<Law>` companion (TKT-437), so a law undecided on every case is
+reported vacuous, or, until TKT-437 lands, each such law gets a companion `Law_<Name>Decides` that some witness gives
+a decided result. Then a checker that gives up everywhere fails a law, and one that gives up on some cases does not.
+`law_lint.py` can list the arms; adding that check is a small follow-up to TKT-440.
+
+**A check on a different program than the one shipped** (class J). The V1G-1 merge passed its warm-server check,
+while layers 00 to 08 alone did not compile. Should the warm server compile the regeneration's folder set by default?
+**Yes, for the type check; no, for the law run.** The laws of layers 09 to 11 must still run, and they need those
+layers. So `plato_laws.py` should run two compilations:
+- the shipped set first: the stdlib tiers without `brep.*`, `remeshing.*` and `lattices.*`, and layers 00 to 08
+  without spec files, exactly what `regen-step-brep.ps1` and `tools/compile-layers-00-08.sh` compile, as a type
+  check only (`filter none`);
+- then the whole program, for the laws.
+
+A type error in the first fails the run. The server keeps each folder set compiled, so the first check costs under a
+second when nothing changed. Its price is memory: F-58 saw the server grow to 2.8 GB on many fresh paths, and the
+set is one fixed path, not a fresh path per call. This belongs in `plato_laws.py` (this track's fence). The merge
+agent's 00-to-08 compile with the pinned CLI is the same check, run cold once per merge; both can stay.
 
 ## Verdict: are the specs and laws working?
 
