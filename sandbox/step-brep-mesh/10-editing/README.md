@@ -20,6 +20,7 @@ Written 2026-10-20 by the catalog-editing track (TKT-323) and merged the same da
 | `editing-invalidation.library.plato` | library `BrepEditingInvalidation`: `InvalidationOf(m, edit)`, `Covers`, `DirtyAfter(Transaction)` |
 | `editing-outcome.library.plato` | library `BrepEditing`, the layer's main block: `Apply(m, ModelEdit): EditOutcome`, `Apply(m, EditScript): ScriptOutcome`, `Preview`, the remaps (`IdentityRemap`, `Compose`), the table rewrites, and the outcome readers; five topological edits deferred |
 | `editing.laws.plato` | library `BrepEditingLaws`: 17 laws |
+| `face-quality.laws.plato` | library `FaceQualityLaws`: 12 laws moved from layer 5 (TKT-418): the quality claims of the version 1 split (angles, the Delaunay property, side-normal turn, quad planarity and convexity, refinement targets); see `05-face-meshing/README.md`, "Gate and quality" |
 | `editing.spec.plato` | contracts of `Apply`, `ClosureOf`, `InvalidationOf`, `CountDelta` and the deferred edits; the gate does not read it |
 
 The library files sort closure, euler, invalidation, outcome, and each calls only files that sort

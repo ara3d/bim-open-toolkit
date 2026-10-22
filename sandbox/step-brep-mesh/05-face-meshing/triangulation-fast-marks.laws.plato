@@ -41,22 +41,4 @@ library TriangulationFastMarksLaws
     // The library's BelowAngle allocated a T-element range per triangle, T^2 Insertions.
     Witness_BelowAngleWork(_: WorkClaim): WorkClaim
         => WorkClaim("BelowAngle: lifts and indices per triangle", Insertions(1).Add(Evaluations(3)), [32, 128], n => BelowAngleWork(n));
-
-    // The counted angle test lifts exactly the triangles no mark skips: all of them with no
-    // marks, none when every one is known good, half when every other one is; and it adds one
-    // index per triangle it keeps.
-    Law_BelowAngleCountsItsLifts(n: Integer): Boolean
-    {
-        var m = BrepModel.Witness_UnitBox;
-        var f = BrepFaceIndex(0);
-        var t = PlaneStrip(2 * (((n % 16) + 16) % 16) + 2);
-        var count = t.Triangles.Count;
-        var plain = m.BelowAngleCounted(f, t, [false].Take(0), [false].Take(0));
-        var allGood = m.BelowAngleCounted(f, t, [false].Take(0), t.Triangles.Map(x => true));
-        var evenGood = m.BelowAngleCounted(f, t, [false].Take(0), count.MapRange(k => k % 2 == 0));
-        return plain.Work.Evaluations == 3 * count && plain.Work.Insertions == plain.Value.Count
-            && allGood.Work.Evaluations == 0 && allGood.Value.Count == 0
-            && evenGood.Work.Evaluations == 3 * (count / 2)
-            && evenGood.Value.All(k => k % 2 == 1);
-    }
 }

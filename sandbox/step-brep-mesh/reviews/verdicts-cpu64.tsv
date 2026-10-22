@@ -692,7 +692,6 @@ FaceMeshingLaws.Law_ElementAreasSumToRegionArea	pass
 FaceMeshingLaws.Law_ElementDeviationWithinSurfaceChordal	pass	
 FaceMeshingLaws.Law_ElementFacesFaceNormal	pass	
 FaceMeshingLaws.Law_ElementLiftsFacingFaceNormal	pass	
-FaceMeshingLaws.Law_ElementNormalAgreesWithSurface	pass	
 FaceMeshingLaws.Law_ElementPositiveInChart	pass	
 FaceMeshingLaws.Law_ElementSpansBelowHalfPeriod	pass	
 FaceMeshingLaws.Law_EmptyMeshIsExplained	pass	
@@ -711,8 +710,6 @@ FaceMeshingLaws.Law_NoQuadsUnlessPreferred	pass
 FaceMeshingLaws.Law_PcurveAgreesWithProjection	pass	
 FaceMeshingLaws.Law_PointNormalIsFaceNormal	pass	
 FaceMeshingLaws.Law_ProvenanceMatchesSource	pass	
-FaceMeshingLaws.Law_QuadConvex	pass	
-FaceMeshingLaws.Law_QuadPlanarWithinSurfaceChordal	pass	
 FaceMeshingLaws.Law_RegionLoopClosesInPlane	pass	
 FaceMeshingLaws.Law_RegionSegmentsSeparated	pass	
 FaceMeshingLaws.Law_RequestHasDiagnostic	pass	
@@ -720,7 +717,6 @@ FaceMeshingLaws.Law_RequestsNameFaceEdges	pass
 FaceMeshingLaws.Law_SeamCutCopiesRunOpposite	pass	
 FaceMeshingLaws.Law_SeamUsesOnOppositeCopies	pass	
 FaceMeshingLaws.Law_SharedPositionIsCopied	pass	
-FaceMeshingLaws.Law_SurfaceEdgeNormalTurnWithinSurfaceAngular	pass	
 FaceMeshingLaws.Law_SurfaceWithinSurfaceChordalOfElement	pass	
 FaceMeshingLaws.Law_TriangulationAddsOnlyInteriorPoints	pass	
 FaceMeshingLaws.Law_TriangulationCornersInRange	pass	
@@ -732,6 +728,18 @@ FaceMeshingLaws.Law_UvHoleWindingNegative	pass
 FaceMeshingLaws.Law_UvRegionWindingPositive	pass	
 FaceMeshingLiftIndexedLaws.Law_LiftCaseReachesItsBranches	pass	
 FaceMeshingLiftIndexedLaws.Law_SourceKeyMatchesIdentification	pass	
+FaceQualityLaws.Law_AnglePassBuiltAgrees	pass	
+FaceQualityLaws.Law_BelowAngleCountsItsLifts	pass	
+FaceQualityLaws.Law_CdtNoFlippableEdge	pass	
+FaceQualityLaws.Law_ElementNormalAgreesWithSurface	pass	
+FaceQualityLaws.Law_MinAngleBetterOnCylinders	pass	
+FaceQualityLaws.Law_MinAngleNoWorseThanLibrary	pass	
+FaceQualityLaws.Law_QuadConvex	pass	
+FaceQualityLaws.Law_QuadPlanarWithinSurfaceChordal	pass	
+FaceQualityLaws.Law_QualityRequestsOnBoxes	pass	
+FaceQualityLaws.Law_RefinedNoFlippableEdge	pass	
+FaceQualityLaws.Law_StripPassAgrees	pass	
+FaceQualityLaws.Law_SurfaceEdgeNormalTurnWithinSurfaceAngular	pass	
 FacetedLaws.Law_CoincidenceRootsByGridAgrees	pass	
 FacetedLaws.Law_FacetedAgrees	pass	
 FacetedLaws.Law_FacetedAgreesOnWitnesses	pass	
@@ -743,8 +751,6 @@ GeometryLawsOnceLaws.Law_ProjectIsMinimal	pass
 GeometryLawsOnceLaws.Law_ProjectNoWorseThanSample	pass	
 GeometryLawsOnceLaws.Law_ProjectRecoversPoint	pass	
 GeometryLawsOnceLaws.Law_SurfaceCurvePcurveLiesOnCurve	pass	
-InsertionBuiltLaws.Law_AnglePassBuiltAgrees	pass	
-InsertionBuiltLaws.Law_StripPassAgrees	pass	
 InsertionBuiltLaws.Law_SurfacePassBuiltAgrees	pass	
 InsertionBuiltLaws.Law_TrialAgreesWithTryInsertion	pass	
 InsideOnGridLaws.Law_InsideOnGridAgrees	pass	
@@ -1290,21 +1296,15 @@ TriangulatedWitnessLaws.Law_CdtAreaIsRegionArea	pass
 TriangulatedWitnessLaws.Law_CdtIsConforming	pass	
 TriangulatedWitnessLaws.Law_CdtKeepsBoundary	pass	
 TriangulatedWitnessLaws.Law_CdtKeepsEverySegment	pass	
-TriangulatedWitnessLaws.Law_CdtNoFlippableEdge	pass	
 TriangulatedWitnessLaws.Law_CdtPositiveOrientation	pass	
 TriangulatedWitnessLaws.Law_EveryPointIsACornerOnSamples	pass	
 TriangulatedWitnessLaws.Law_LiftKeepsPointsOnSamples	pass	
 TriangulatedWitnessLaws.Law_LocalVertexInRangeOnSamples	pass	
 TriangulatedWitnessLaws.Law_LocalVertexSurjectiveOnSamples	pass	
-TriangulatedWitnessLaws.Law_MinAngleBetterOnCylinders	pass	
-TriangulatedWitnessLaws.Law_MinAngleNoWorseThanLibrary	pass	
 TriangulatedWitnessLaws.Law_OutcomeLiftsRefined	pass	
 TriangulatedWitnessLaws.Law_ProvenanceMatchesSourceOnSamples	pass	
-TriangulatedWitnessLaws.Law_QualityRequestsOnBoxes	pass	
 TriangulatedWitnessLaws.Law_RefineMeetsContract	pass	
-TriangulatedWitnessLaws.Law_RefinedInteriorMeetsMinAngle	fail	case 7: w = TriangulatedWitness(Cylinder face 0, 1, BrepModel(GeometrySet([BrepCurve.Circle(Frame3D(Point3D(0, 0, 0), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 1), BrepCurve.Circle(Frame3D(Point3D(0, 0, 1), Direction3D(Vector3D(1, 0, 0)), Direction3D(Vector3D(0, 1, 0)), Direction3D(Vector3D(0, 0, 1))), 1), BrepCurve.Line(Point3D(1, 0, 0), Vector3D(0, 0, 1))], ~), ~), ~)
 TriangulatedWitnessLaws.Law_RefinedIsFaceTriangulation	pass	
-TriangulatedWitnessLaws.Law_RefinedNoFlippableEdge	pass	
 TriangulatedWitnessLaws.Law_RequestsNameFaceEdgesOnSamples	pass	
 TriangulatedWitnessLaws.Law_TriangulatedWitnessesCoverTheSamples	pass	
 TriangulatedWitnessLaws.Law_TriangulationCornersInRangeOnSamples	pass	
@@ -1314,7 +1314,6 @@ TriangulationCdtIndexedLaws.Law_TriangulateRegionCdtIndexedAgrees	pass
 TriangulationCdtIndexedLaws.Law_TriangulateRegionCdtIndexedAgreesOnJagged	pass	
 TriangulationCdtIndexedLaws.Law_TriangulateRegionCdtIndexedAgreesOnStars	pass	
 TriangulationCdtIndexedLaws.Law_TriangulateRegionCdtIndexedAgreesWhenWoken	pass	
-TriangulationFastMarksLaws.Law_BelowAngleCountsItsLifts	pass	
 TriangulationLaws.Law_FlipNeverUndone	pass	
 TriangulationLaws.Law_InCircleOfAgreesWithInCircle	pass	
 TriangulationLaws.Law_InCircleWitnesses	pass	

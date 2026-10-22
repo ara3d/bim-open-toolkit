@@ -146,11 +146,4 @@ library TriangulationLaws
     // The smallest lifted corner angle over t's triangles; pi for none.
     SmallestLiftedAngle(m: BrepModel, f: BrepFaceIndex, t: UvTriangulation): Number
         => t.Triangles.Reduce(Number.Pi, (least, x) => least.Min(m.LiftedMinAngle(f, t, x)));
-
-    // Whether triangle x of a triangulation of region r touches the boundary: one of its corners
-    // is a boundary point. Only such a triangle can be forbidden 30 degrees by the fixed boundary
-    // (TRACK.md, Findings).
-    TouchesBoundary(r: UvRegion, x: TriangleFace): Boolean
-        => x.A.Value < r.BoundaryCount || x.B.Value < r.BoundaryCount || x.C.Value < r.BoundaryCount;
-
 }

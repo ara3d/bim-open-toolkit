@@ -18,7 +18,7 @@
 //  - The witness list
 //  - The constrained triangulation
 //  - Refinement by insertion
-//  - Element quality
+//  - Plane faces
 //  - Triangulations, lifting and the face mesh
 
 library TriangulatedWitnessLaws
@@ -164,10 +164,6 @@ library TriangulatedWitnessLaws
     Law_CdtPositiveOrientation(w: TriangulatedWitness): Boolean
         => w.Region.CdtPositiveOn(w.Chart, w.Cdt);
 
-    // Law_CdtNoFlippableEdge: no edge is flippable by the in-circle determinant.
-    Law_CdtNoFlippableEdge(w: TriangulatedWitness): Boolean
-        => w.Region.FlippableEdgeCount(w.Cdt, w.Chart) == 0;
-
     // Law_CdtAreaIsRegionArea: the triangles' chart areas sum to the region's.
     Law_CdtAreaIsRegionArea(w: TriangulatedWitness): Boolean
         => w.Model.AreasSumOn(w.Face, w.Region, w.Cdt, w.Model.RegionTolerance(w.Face, w.Chart));
@@ -184,34 +180,8 @@ library TriangulatedWitnessLaws
     Law_RefineMeetsContract(w: TriangulatedWitness): Boolean
         => w.Model.MeetsRefineContractOn(w.Face, w.Region, w.Chart, w.Refined);
 
-    // Law_RefinedNoFlippableEdge: the refined triangulation is still constrained Delaunay.
-    Law_RefinedNoFlippableEdge(w: TriangulatedWitness): Boolean
-        => w.Region.FlippableEdgeCount(w.Refined, w.Chart) == 0;
-
     //==
-    // # Element quality
-
-    // Law_RefinedInteriorMeetsMinAngle: every refined triangle that touches no boundary point has
-    // its smallest lifted angle at least 30 degrees. Fails on the cylinder, as before
-    // (reviews/verdicts-cpu64.tsv: k = 1).
-    Law_RefinedInteriorMeetsMinAngle(w: TriangulatedWitness): Boolean
-        => w.Model.RefinedMinAngleOn(w.Face, w.Region, w.Refined);
-
-    // Law_MinAngleNoWorseThanLibrary: the refinement's smallest lifted angle is no smaller than
-    // RefinedTriangulation's, within 1e-5 rad; one fresh RefinedTriangulation per face.
-    Law_MinAngleNoWorseThanLibrary(w: TriangulatedWitness): Boolean
-    {
-        var library = w.Model.RefinedTriangulation(w.Face, w.Region, w.Chart, TriCriteria(0));
-        return w.Model.SmallestLiftedAngle(w.Face, w.Refined) >= w.Model.SmallestLiftedAngle(w.Face, library) - 1e-5;
-    }
-
-    // Law_MinAngleBetterOnCylinders: on every face of the cylinder (sample 1) and the quarter
-    // sector (4), the smallest lifted angle is larger than the library's before the merge, 4.99
-    // and 8.50 degrees. The original compared the least over the faces, which is the same claim.
-    Law_MinAngleBetterOnCylinders(w: TriangulatedWitness): Boolean
-        => (w.Sample == 1 || w.Sample == 4)
-            ? w.Model.SmallestLiftedAngle(w.Face, w.Refined) > (w.Sample == 4 ? 8.50 : 4.99) * Number.Pi / 180.0
-            : true;
+    // # Plane faces
 
     // Law_BoxFacesStayTwoTriangles: every face of the unit box (sample 0) and of the 2 x 3 x 4
     // box (5) is refined to its four corners and two triangles.
@@ -219,36 +189,6 @@ library TriangulatedWitnessLaws
         => (w.Sample == 0 || w.Sample == 5)
             ? w.Refined.Points.Count == 4 && w.Refined.Triangles.Count == 2
             : true;
-
-    // The quality requests at 30 degrees for the witness's face, on its refined triangulation.
-    QualityRequestsOn(w: TriangulatedWitness): Array<EdgeRefinementRequest>
-        => w.Model.QualitySegmentRequestsCdt(w.Face, w.Discretizations, w.Region, w.Refined, TriCriteria(0), 30.0.Degrees);
-
-    // The sum of the extents of the face mesh's positions along x, y and z: for a face of the
-    // 2 x 3 x 4 box, 6 exactly on its 2 x 4 faces (5 on the 2 x 3 and 7 on the 3 x 4).
-    ExtentSum(fm: FaceMesh): Number
-    {
-        var p = fm.Positions;
-        var lo = p.Reduce(Point3D(Number.MaxValue, Number.MaxValue, Number.MaxValue), (a, x) => Point3D(a.X.Min(x.X), a.Y.Min(x.Y), a.Z.Min(x.Z)));
-        var hi = p.Reduce(Point3D(0.0 - Number.MaxValue, 0.0 - Number.MaxValue, 0.0 - Number.MaxValue), (a, x) => Point3D(a.X.Max(x.X), a.Y.Max(x.Y), a.Z.Max(x.Z)));
-        return (hi.X - lo.X) + (hi.Y - lo.Y) + (hi.Z - lo.Z);
-    }
-
-    // Law_QualityRequestsOnBoxes: the quality requests at 30 degrees ask for nothing on the unit
-    // box (sample 0), and on the 2 x 3 x 4 box (5) every request names an edge of its face. The
-    // original's "some face of the 2 x 3 x 4 box asks" is stated per face, and more sharply: a
-    // face asks exactly when it is a 2 x 4 face, the one shape whose two triangles stay below 30
-    // degrees (atan(1/2) = 26.6; atan(2/3) = 33.7 and atan(3/4) = 36.9 pass).
-    Law_QualityRequestsOnBoxes(w: TriangulatedWitness): Boolean
-    {
-        var requests = (w.Sample == 0 || w.Sample == 5) ? QualityRequestsOn(w) : EdgeRefinementRequest.NoRequests;
-        return w.Sample == 0
-            ? requests.Count == 0
-            : (w.Sample == 5
-                ? (requests.Count > 0) == ((ExtentSum(w.Outcome.Mesh) - 6.0).Abs < 1e-9)
-                    && requests.All(q => w.Model.FaceEdges(w.Face).Any(e => e == q.Edge))
-                : true);
-    }
 
     //==
     // # Triangulations, lifting and the face mesh

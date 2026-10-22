@@ -282,6 +282,172 @@ adopted: on a sphere or torus, flipping `SameSense` without reversing the loops 
 side of a winding loop, so the face itself changes. The statement holds with the loops reversed too,
 which is layer 08's `Law_ShellReversalNegatesVolume`.
 
+### Gate and quality: every law of layer 5 (version 1, TKT-418)
+
+126 laws in 15 law files (`grep Law_` over `05-face-meshing/*.laws.plato`, 2026-10-21). The four
+properties of the contract are: **closure** (faces that share an edge use its one
+discretization, so the meshes join), **orientation** (no inverted or folded element, regions
+wound the right way), **coverage** (the face is tiled, no gap or overlap, and every face gets a
+mesh or a located diagnostic), and **chordal** (every element within the chordal bound of the
+surface, both ways). Two more kinds of law serve the gate without stating one of the four:
+**trace** (provenance and stored data, the contract's fourth bullet) and **structure** (a fast
+body equals its reference, a sum round-trips, a predicate is consistent, a witness reaches its
+cases): they carry the gate laws from the reference function to the body on the live path, so
+they stay in the gate. **Quality** is everything the contract leaves to the improvement pass:
+angles (including the Delaunay property, which exists to maximise the smallest angle), aspect,
+side-normal turn and element-normal agreement, quad planarity and convexity, slivers, and
+refinement targets.
+
+| Law | File | Kind |
+|---|---|---|
+| `Law_LoopPointLiftsToSharedPoint` | face-meshing.laws | gate: closure |
+| `Law_LoopToUvCountMatchesDiscretization` | face-meshing.laws | gate: closure |
+| `Law_PcurveAgreesWithProjection` | face-meshing.laws | gate: closure |
+| `Law_UnwrapKeepsSources` | face-meshing.laws | gate: trace |
+| `Law_UnwrapMovesByWholePeriods` | face-meshing.laws | gate: closure |
+| `Law_UnwrappedStepBelowHalfPeriod` | face-meshing.laws | gate: coverage |
+| `Law_SeamUsesOnOppositeCopies` | face-meshing.laws | gate: closure |
+| `Law_RegionLoopClosesInPlane` | face-meshing.laws | gate: coverage |
+| `Law_UvRegionWindingPositive` | face-meshing.laws | gate: orientation |
+| `Law_UvHoleWindingNegative` | face-meshing.laws | gate: orientation |
+| `Law_RegionSegmentsSeparated` | face-meshing.laws | gate: coverage |
+| `Law_HoleInsideOuter` | face-meshing.laws | gate: coverage |
+| `Law_SeamCutCopiesRunOpposite` | face-meshing.laws | gate: closure |
+| `Law_MeshedFaceHasSimpleRegion` | face-meshing.laws | gate: coverage |
+| `Law_TriangulationCornersInRange` | face-meshing.laws | gate: structure |
+| `Law_TriangulationKeepsBoundary` | face-meshing.laws | gate: closure |
+| `Law_TriangulationAddsOnlyInteriorPoints` | face-meshing.laws | gate: coverage |
+| `Law_EveryPointIsACorner` | face-meshing.laws | gate: coverage |
+| `Law_ElementPositiveInChart` | face-meshing.laws | gate: orientation |
+| `Law_ElementAreasSumToRegionArea` | face-meshing.laws | gate: coverage |
+| `Law_ElementLiftsFacingFaceNormal` | face-meshing.laws | gate: orientation |
+| `Law_BoundarySegmentIsElementSide` | face-meshing.laws | gate: closure |
+| `Law_InteriorSideIsShared` | face-meshing.laws | gate: coverage |
+| `Law_ElementSpansBelowHalfPeriod` | face-meshing.laws | gate: orientation |
+| `Law_LiftKeepsPoints` | face-meshing.laws | gate: structure |
+| `Law_LocalVertexInRange` | face-meshing.laws | gate: structure |
+| `Law_LocalVertexSurjective` | face-meshing.laws | gate: structure |
+| `Law_LocalVertexFibresAreIdentifications` | face-meshing.laws | gate: closure |
+| `Law_SharedPositionIsCopied` | face-meshing.laws | gate: closure |
+| `Law_ProvenanceMatchesSource` | face-meshing.laws | gate: trace |
+| `Law_PointNormalIsFaceNormal` | face-meshing.laws | gate: trace |
+| `Law_DroppedElementsArePoleCollapsed` | face-meshing.laws | gate: closure |
+| `Law_CollapsedQuadsBecomeTriangles` | face-meshing.laws | gate: closure |
+| `Law_ElementFacesFaceNormal` | face-meshing.laws | gate: orientation |
+| `Law_ElementNormalAgreesWithSurface` | face-meshing.laws | **quality**: element normal against the surface normal (SurfaceAngular) |
+| `Law_SurfaceEdgeNormalTurnWithinSurfaceAngular` | face-meshing.laws | **quality**: side-normal turn |
+| `Law_ElementDeviationWithinSurfaceChordal` | face-meshing.laws | gate: chordal |
+| `Law_SurfaceWithinSurfaceChordalOfElement` | face-meshing.laws | gate: chordal |
+| `Law_QuadPlanarWithinSurfaceChordal` | face-meshing.laws | **quality**: quad planarity; replaced in the gate by `Law_V1Gate_QuadSplitsWithinChordal` |
+| `Law_QuadConvex` | face-meshing.laws | **quality**: quad convexity; replaced in the gate by `Law_V1Gate_QuadSplitsOriented` |
+| `Law_NoQuadsUnlessPreferred` | face-meshing.laws | gate: structure |
+| `Law_RequestsNameFaceEdges` | face-meshing.laws | gate: closure |
+| `Law_MeshFaceReadsOnlyFaceEdges` | face-meshing.laws | gate: closure |
+| `Law_BlockingRequestMeansEmptyMesh` | face-meshing.laws | gate: coverage |
+| `Law_RequestHasDiagnostic` | face-meshing.laws | gate: coverage |
+| `Law_EmptyMeshIsExplained` | face-meshing.laws | gate: coverage |
+| `Law_OrientationOfAgreesWithLibrarySign` | face-meshing-charts.laws | gate: orientation |
+| `Law_ExactOrientationIsLibrarySign` | face-meshing-charts.laws | gate: orientation |
+| `Law_OrientationIsAntisymmetric` | face-meshing-charts.laws | gate: orientation |
+| `Law_ElementInChartAreaHasItsOrientation` | face-meshing-charts.laws | gate: orientation |
+| `Law_NeighbourTableIsInvolution` | face-meshing-charts.laws | gate: structure |
+| `Law_NeighbourTableSeesClosure` | face-meshing-charts.laws | gate: structure |
+| `Law_DelaunayCertificateIsConsistent` | face-meshing-charts.laws | gate: structure (the certificate's own consistency, not the Delaunay property) |
+| `Law_LoopConstraintsAreSides` | face-meshing-charts.laws | gate: closure |
+| `Law_OtherDiagonalIsNotASide` | face-meshing-charts.laws | gate: structure |
+| `Law_WorseBoundsBoth` | face-meshing-charts.laws | gate: chordal |
+| `Law_OtherCopyIsInvolution` | face-meshing-charts.laws | gate: structure |
+| `Law_CopiesAreTheEnds` | face-meshing-charts.laws | gate: structure |
+| `Law_LiftTableJoinsSeamPairsAndPoles` | face-meshing-charts.laws | gate: closure |
+| `Law_LiftTableJoinsNothingElse` | face-meshing-charts.laws | gate: closure |
+| `Law_QuadGridSidesRoundTrip` | face-meshing-charts.laws | gate: structure |
+| `Law_InsertionRejectionRoundTrips` | face-meshing-decided.laws | gate: structure |
+| `Law_InsertionAttemptRoundTrips` | face-meshing-decided.laws | gate: structure |
+| `Law_FlipRejectionRoundTrips` | face-meshing-decided.laws | gate: structure |
+| `Law_FlipAttemptRoundTrips` | face-meshing-decided.laws | gate: structure |
+| `Law_FaceMeshOutcomeBlockedMapsToBlocked` | face-meshing-decided.laws | gate: coverage |
+| `Law_FaceMeshResultKeepsDiagnostics` | face-meshing-decided.laws | gate: coverage |
+| `Law_LiftCaseReachesItsBranches` | face-meshing-lift.laws | gate: structure |
+| `Law_SourceKeyMatchesIdentification` | face-meshing-lift.laws | gate: closure |
+| `Law_NeedsRefinementCachedAgrees` | refinement-test-cached.laws | gate: structure (the surface test drives chordal refinement) |
+| `Law_InCircleWitnesses` | triangulation.laws | gate: structure |
+| `Law_FlipNeverUndone` | triangulation.laws | gate: structure (flips terminate) |
+| `Law_InCircleOfAgreesWithInCircle` | triangulation.laws | gate: structure |
+| `Law_TrialAgreesWithTryInsertion` | triangulation-built.laws | gate: structure |
+| `Law_SurfacePassBuiltAgrees` | triangulation-built.laws | gate: structure (the surface pass is the chordal refinement) |
+| `Law_AnglePassBuiltAgrees` | triangulation-built.laws | **quality**: the angle pass |
+| `Law_StripPassAgrees` | triangulation-built.laws | **quality**: the angle pass |
+| `Law_TriangulateRegionCdtIndexedAgrees` | triangulation-cdt-indexed.laws | gate: structure |
+| `Law_TriangulateRegionCdtIndexedAgreesOnStars` | triangulation-cdt-indexed.laws | gate: structure |
+| `Law_TriangulateRegionCdtIndexedAgreesOnJagged` | triangulation-cdt-indexed.laws | gate: structure |
+| `Law_TriangulateRegionCdtIndexedAgreesWhenWoken` | triangulation-cdt-indexed.laws | gate: structure |
+| `Law_StarCasesRetestSlots` | triangulation-cdt-indexed.laws | gate: structure |
+| `Law_BelowAngleCountsItsLifts` | triangulation-fast-marks.laws | **quality**: the angle pass |
+| `Law_CarriedTableIsNeighbourSlots` | triangulation-neighbours-carried.laws | gate: structure |
+| `Law_TriangulatedWitnessesCoverTheSamples` | triangulation-witness.laws | gate: structure |
+| `Law_RefinedIsFaceTriangulation` | triangulation-witness.laws | gate: structure |
+| `Law_OutcomeLiftsRefined` | triangulation-witness.laws | gate: structure |
+| `Law_CdtKeepsBoundary` | triangulation-witness.laws | gate: closure |
+| `Law_CdtKeepsEverySegment` | triangulation-witness.laws | gate: closure |
+| `Law_CdtIsConforming` | triangulation-witness.laws | gate: coverage |
+| `Law_CdtPositiveOrientation` | triangulation-witness.laws | gate: orientation |
+| `Law_CdtNoFlippableEdge` | triangulation-witness.laws | **quality**: angles (the Delaunay property) |
+| `Law_CdtAreaIsRegionArea` | triangulation-witness.laws | gate: coverage |
+| `Law_UpdatedNeighboursAreTheTable` | triangulation-witness.laws | gate: structure |
+| `Law_RefineMeetsContract` | triangulation-witness.laws | gate: coverage and orientation (every postcondition of `RefineToSurface`; none is an angle) |
+| `Law_RefinedNoFlippableEdge` | triangulation-witness.laws | **quality**: angles (the Delaunay property) |
+| `Law_RefinedInteriorMeetsMinAngle` | triangulation-witness.laws | **quality**: angles; **deleted** (TKT-416) |
+| `Law_MinAngleNoWorseThanLibrary` | triangulation-witness.laws | **quality**: angles |
+| `Law_MinAngleBetterOnCylinders` | triangulation-witness.laws | **quality**: angles |
+| `Law_BoxFacesStayTwoTriangles` | triangulation-witness.laws | gate: the plane path (a plane face is its boundary's triangulation, no refinement) |
+| `Law_QualityRequestsOnBoxes` | triangulation-witness.laws | **quality**: refinement targets |
+| `Law_TriangulationCornersInRangeOnSamples` | triangulation-witness.laws | gate: structure |
+| `Law_EveryPointIsACornerOnSamples` | triangulation-witness.laws | gate: coverage |
+| `Law_LiftKeepsPointsOnSamples` | triangulation-witness.laws | gate: structure |
+| `Law_LocalVertexInRangeOnSamples` | triangulation-witness.laws | gate: structure |
+| `Law_LocalVertexSurjectiveOnSamples` | triangulation-witness.laws | gate: structure |
+| `Law_ProvenanceMatchesSourceOnSamples` | triangulation-witness.laws | gate: trace |
+| `Law_RequestsNameFaceEdgesOnSamples` | triangulation-witness.laws | gate: closure |
+| `Law_InsideOnGridAgrees` | uv-boundary-index-inside.laws | gate: structure |
+| `Law_InsideOnGridAgreesOnStars` | uv-boundary-index-inside.laws | gate: structure |
+| `Law_InsideOnGridAgreesOnWideSegments` | uv-boundary-index-inside.laws | gate: structure |
+| `Law_InsideOnGridAgreesBeyondTheGrid` | uv-boundary-index-inside.laws | gate: structure |
+| `Law_IsConstrainedInAgrees` | uv-boundary-index.laws | gate: structure |
+| `Law_IsConstrainedInAgreesOnStars` | uv-boundary-index.laws | gate: structure |
+| `Law_IsStrictlyInsideIndexedAgrees` | uv-boundary-index.laws | gate: structure |
+| `Law_IsStrictlyInsideIndexedAgreesOnStars` | uv-boundary-index.laws | gate: structure |
+| `Law_IsStrictlyInsideIndexedAgreesOnJagged` | uv-boundary-index.laws | gate: structure |
+| `Law_InCircleOfSortedAgrees` | uv-boundary-index.laws | gate: structure |
+| `Law_DelaunayedIndexedAgrees` | uv-boundary-index.laws | gate: structure |
+| `Law_DelaunayedIndexedAgreesOnStars` | uv-boundary-index.laws | gate: structure |
+| `Law_SplitSideSlotIndexedAgrees` | uv-boundary-index.laws | gate: structure |
+| `Law_RefineIndexedAgrees` | uv-boundary-index.laws | gate: structure |
+| `Law_RefineIndexedAgreesOnStars` | uv-boundary-index.laws | gate: structure |
+| `Law_ThirteenHolesAgree` | uv-boundary-index.laws | gate: structure |
+| `Law_UnwrapIndexedFindsTwins` | uv-regions-indexed.laws | gate: structure |
+| `Law_CoarseRequestsByEdgeAsks` | uv-regions-indexed.laws | gate: structure |
+
+Totals: 113 gate, 13 quality (`Law_RefinedInteriorMeetsMinAngle` deleted, twelve moved to
+`10-editing/face-quality.laws.plato`; the File column names the file each left). New gate laws in this folder: 6
+(`V1GateLaws`, below).
+
+#### Where the quality laws went
+
+Merged with V1G-1: the 12 remaining quality laws moved into one new file of the improvement pass,
+`10-editing/face-quality.laws.plato`, library `FaceQualityLaws`, bodies unchanged. Layer 10 sees
+layer 5, so the helpers they call stay where they are. Every law left in a layer 5 library
+is a gate law, and the version 1 run is the layer 5 libraries plus the gate library
+(`V1GateLaws`, `08-pipeline/pipeline-v1-gate.laws.plato`):
+
+```
+python -I sandbox/step-brep-mesh/tools/plato_laws.py "FaceMeshingLaws,FaceMeshingChartsLaws,FaceMeshingDecidedLaws,FaceMeshingLiftIndexedLaws,RefinementTestCachedLaws,TriangulationLaws,InsertionBuiltLaws,TriangulationCdtIndexedLaws,TriangulationFastMarksLaws,NeighboursCarriedLaws,TriangulatedWitnessLaws,BoundaryIndexLaws,InsideOnGridLaws,UnwrapIndexedLaws,V1GateLaws"
+```
+
+The two alternatives were weighed: a tag the version 1 run skips needs a runner change
+(`plato_laws.py` filters by law or library name only) and leaves quality claims inside gate
+libraries, where a later reader cannot tell them apart; deleting them loses the claims the
+improvement pass will want back. A move needs neither.
+
 ## Names used from layers 00 to 04
 
 Beyond the fixed contract, the layer calls these, as declared on 2026-10-17:

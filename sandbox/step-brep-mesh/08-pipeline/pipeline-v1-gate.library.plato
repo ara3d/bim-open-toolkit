@@ -15,7 +15,6 @@
 //  - Building a witness
 //  - Triangles given by their corners
 //  - Elements and quads
-//  - Plane faces
 
 library V1Gate
 {
@@ -158,19 +157,4 @@ library V1Gate
     // The face meshes of witness w's final state.
     V1GateMeshes(w: V1GateWitness): Array<FaceMesh>
         => w.State.Outcomes.Map(o => o.Mesh);
-
-    //==
-    // # Plane faces
-
-    // The faces of model m, each plane face meshed by MeshFace and every other one empty, under
-    // the gate options at chordal bound `chordal`, every edge discretized once at that bound: the
-    // timing case for many-segment plane faces (a unit circle at 1e-4 has about 220 segments).
-    PlaneFaceMeshesAt(m: BrepModel, chordal: Number): Array<FaceMesh>
-    {
-        var c = V1GateOptions(chordal).Face;
-        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
-        return m.Faces.Count.MapRange(f => m.IsPlaneFace(BrepFaceIndex(f))
-            ? m.MeshFace(BrepFaceIndex(f), d, c).Mesh
-            : EmptyFaceMesh(BrepFaceIndex(f)));
-    }
 }

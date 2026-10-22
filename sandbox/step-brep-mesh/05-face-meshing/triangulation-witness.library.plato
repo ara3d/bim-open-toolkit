@@ -13,7 +13,6 @@
 //  - Building a witness
 //  - The constrained triangulation
 //  - Refinement
-//  - Element quality
 //  - Triangulations and lifting
 //  - Face meshes
 
@@ -117,18 +116,6 @@ library TriangulatedWitnesses
             && r.SidesSharedByNeighbours(t)
             && m.AreasSumOn(f, r, t, tol)
             && t.Quads.Count == 0;
-    }
-
-    //==
-    // # Element quality
-
-    // Law_RefinedInteriorMeetsMinAngle's claim on refined triangulation t of region r of face f:
-    // every triangle that touches no boundary point has its smallest lifted angle at least
-    // Cubit's acceptable 30 degrees.
-    RefinedMinAngleOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, t: UvTriangulation): Boolean
-    {
-        var least = MeshQualityThresholds.CubitAcceptable.TriangleMinAngle.Radians;
-        return t.Triangles.All(x => r.TouchesBoundary(x) ? true : m.LiftedMinAngle(f, t, x) >= least);
     }
 
     //==

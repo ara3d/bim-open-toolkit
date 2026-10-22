@@ -16,7 +16,6 @@
 //  - Triangulations
 //  - Lifting and identification
 //  - Geometry of the face mesh
-//  - Quads
 //  - Outcomes
 
 library FaceMeshingLaws
@@ -425,24 +424,6 @@ library FaceMeshingLaws
     Law_ElementFacesFaceNormal(m: BrepModel, fm: FaceMesh, k: ElementIndex): Boolean
         => m.CanMeasure(fm, k) ? m.FacesFaceNormal(fm, k) : true;
 
-    // Every element that touches no collapsed line has its normal within SurfaceAngular of the
-    // face normal at its parameter centroid.
-    Law_ElementNormalAgreesWithSurface(m: BrepModel, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex): Boolean
-        => m.CanMeasure(fm, k)
-            ? (m.TouchesCollapsedLine(fm, k) ? true : m.ElementNormalDeviation(fm, k) <= c.SurfaceAngular)
-            : true;
-
-    // The face normal turns by at most SurfaceAngular along every surface edge of every element
-    // (edge j of element k): the definition of SurfaceAngular.
-    Law_SurfaceEdgeNormalTurnWithinSurfaceAngular(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, c: FaceMeshingCriteria, k: ElementIndex, j: Integer): Boolean
-        => (m.CanMeasure(fm, k) && m.IsDiscretizedFace(fm.Face, d))
-            ? ((j >= 0 && j < fm.ElementCorners(k).Count)
-                ? (m.IsSurfaceEdge(d, fm, fm.ElementCorners(k)[j], fm.ElementCorners(k).AtModulo(j + 1))
-                    ? fm.EdgeNormalTurn(k, j) <= c.SurfaceAngular
-                    : true)
-                : true)
-            : true;
-
     // Every element's deviation from the surface, over the midpoints of its surface edges and the
     // mean of its corners, is at most SurfaceChordal plus the length tolerance (the corners
     // themselves may lie that far from the surface).
@@ -459,18 +440,6 @@ library FaceMeshingLaws
         => (m.CanMeasure(fm, k) && m.IsDiscretizedFace(fm.Face, d))
             ? m.ElementCoverageGap(d, fm, k) <= c.SurfaceChordal + m.Tolerances.Length.Value
             : true;
-
-    //==
-    // # Quads
-
-    // Every quad of a face mesh is planar within SurfaceChordal: no corner lies farther than that
-    // from its mid-plane.
-    Law_QuadPlanarWithinSurfaceChordal(fm: FaceMesh, c: FaceMeshingCriteria, q: FaceIndex): Boolean
-        => fm.IsMeasurableQuad(q) ? fm.QuadWarp(q) <= c.SurfaceChordal : true;
-
-    // Every quad of a face mesh is strictly convex.
-    Law_QuadConvex(fm: FaceMesh, q: FaceIndex): Boolean
-        => fm.IsMeasurableQuad(q) ? fm.IsConvexQuad(q) : true;
 
     //==
     // # Outcomes

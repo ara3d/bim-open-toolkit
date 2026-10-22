@@ -102,12 +102,6 @@ library InsertionBuiltLaws
             && m.HoldsItsPositions(f, built);
     }
 
-    // AnglePassBuilt gives AnglePassLocal's triangulation, and the surface point of each of its
-    // points, from every face's constrained Delaunay triangulation of sample k with every
-    // triangle below the angle.
-    Law_AnglePassBuiltAgrees(k: Integer): Boolean
-        => EveryTriangulableFace(k, (m, f, r, chart) => m.AnglePassAgreesOn(f, r, chart));
-
     AnglePassAgreesOn(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart): Boolean
     {
         var c = TriCriteria(0);
@@ -122,17 +116,6 @@ library InsertionBuiltLaws
     {
         var t = r.TriangulateRegionCdt(chart);
         return SameUvTriangulation(m.RefineToSurfaceByInsertionBuilt(f, r, chart, t, TriCriteria(0)), m.RefineToSurfaceByInsertion(f, r, chart, t, TriCriteria(0)));
-    }
-
-    // The strip of the count witness at 32 points: the angle pass over builders agrees with
-    // AnglePassLocal there too, so the witness measures the same insertions.
-    Law_StripPassAgrees(_: Integer): Boolean
-    {
-        var m = BrepModel.Witness_UnitBox;
-        var f = BrepFaceIndex(0);
-        var r = StripRegion(32);
-        var chart = m.ChartOf(f, r);
-        return m.AnglePassAgreesOn(f, r, chart);
     }
 
     //==
