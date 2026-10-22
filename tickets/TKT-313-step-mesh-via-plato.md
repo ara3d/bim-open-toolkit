@@ -15,8 +15,8 @@ claimed: 2026-10-18
 
 ## Acceptance criteria
 
-- [ ] a public AP242 or AP214 sample meshes with every solid closed and the bounds matching the file's units (moved from TKT-305)
-- [ ] the compiled Plato library comes from a reproducible build step, documented, not hand-copied C#
+- [x] a public AP242 or AP214 sample meshes with every solid closed and the bounds matching the file's units (moved from TKT-305)
+- [x] the compiled Plato library comes from a reproducible build step, documented, not hand-copied C#
 - [ ] the 88-file corpus meshes with zero exceptions; per-surface-kind support and failures are in the build log
 
 Plan: docs/plans/step-reader.md, section 'Pivot: geometry in Plato' (owner decision 2026-10-17). Grows chunk by chunk with the Plato library's TASKS.md (cube, cylinder, sphere/torus/cone, B-spline, genus and voids, corpus); this ticket closes when chunk H's corpus criterion holds through the C# entry point StepMesher.Mesh.
@@ -107,3 +107,20 @@ Plan: docs/plans/step-reader.md, section 'Pivot: geometry in Plato' (owner decis
   3 s; scaling probes 33 s and 248 s; decoder tests 5.0 s build and 5.8 s; mesher full tests 7.1 s build and 21.0 s
   (one aborted full run of 10 min at 0.001 mm, and a per-class run of 93 s that found it); builds slowed to 82 to 184 s
   twice under machine load.
+- 2026-10-21, builder 14b9bcc0, chunks E1 and E3. **E1, regeneration**: bim-open-data 5571854 (pinned in toolkit
+  26a7ded4), `tools/regen-step-brep.ps1 -PlatoCli C:/Users/cdigg/.plato-cli/e37c032f/Plato.CLI.dll`, header `Plato
+  2847ef71 and bim-open-toolkit 8984df4b`, 1,409 generated and 13 runtime files in 200 s, one DEGRADED body
+  (`BisectionCached.SagittaByHullBoundGiven`, a throwing stub, TKT-410); Ara3D.Step.Mesher Release 0 warnings; mesher
+  tests 33 passed (the two sphere tests now assert that the unit sphere meshes closed and oriented, one supported item);
+  decoder tests 14 passed, `CommittedOutputIsCurrent` skipped because another wave had uncommitted edits in
+  `sandbox/step-brep-mesh` by then (the regeneration ran on a clean 8984df4b). Second criterion ticked: the library is
+  the script's output, header and all. **Host**: TKT-402 (once-per-model tables, 33206f5), TKT-405 (quads, 376273f),
+  TKT-403 (parallel rows, 3245cb7), all closed; the harness `tools/step-corpus-harness` (9680e0f) is the corpus runner.
+  **E3, corpus**: docs/plans/step-mesher-corpus-2026-10-21.md and its CSV. 14 files fully meshed, all closed and
+  oriented (EMMY-W1, an AP214 sample, among them: first criterion ticked, bounds and units as checked in October on the
+  same decoder), 73 partly, 0 failed, 1 over 120 s; 168,965 of 191,450 faces (88.3%); per-surface-kind table in the
+  report. Third criterion not met: 45,123 edges throw the compiler's stub (TKT-410), 30 faces throw an index out of
+  range (TKT-411); also TKT-412 (45 planes not simple), TKT-413 (4 files with misoriented edges), TKT-414 (NINA-B222-W1x2
+  over 600 s in edges). Durations: regeneration 200 s; cold Release build 127 s; test runs 104 and 109 s; harness
+  builds 27 to 78 s; verification runs about 12 minutes; corpus 1,065 s plus a 600 s rerun of one file.
+
