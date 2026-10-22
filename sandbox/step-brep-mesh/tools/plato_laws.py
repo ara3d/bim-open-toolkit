@@ -26,6 +26,8 @@ days). --coverage FILE writes one row per law: its verdict, the cases run, how t
 one case or on 25 generated values can be told from one that passes on every witness. A law whose
 Premise_<Law> companion held on no case is reported "vacuous" (Plato 00610b70, TKT-437) and fails the
 run like a fail; the coverage table gives the premise-held count of every pass with a companion.
+--backend differential (Plato ec51f061, TKT-438) runs every law and witness in both engines; a
+disagreement is the verdict "differs", with the case and both answers, and fails the run too.
 
 Before the laws, the program the C# regeneration compiles (shipped-program.txt: the stdlib tiers and layers 00 to
 08 alone) is type-checked on its own, and a type error there fails the run: the whole program the laws need can
@@ -61,10 +63,10 @@ TIMEOUT = 1800
 BLOCK = re.compile(r"^\s*(?:library|laws)\s+(\w+)")
 LAW = re.compile(r"^\s+(Law_\w+)\s*\([^()]*\)\s*:")
 # One result line of the server: LawResult.ToString() in Plato's LawRunner.cs.
-RESULT = re.compile(r"^(pass|fail|error|obligation|skipped|vacuous)\s+(\S+)\s*(.*)$")
+RESULT = re.compile(r"^(pass|fail|error|obligation|skipped|vacuous|differs)\s+(\S+)\s*(.*)$")
 CASES = re.compile(r"\((\d+) cases(, exhaustive)?(?:, premise held on (\d+))?\)")
 BUDGET = re.compile(r"over the [\d.]+s budget|still running after|time budget exceeded")
-VERDICTS = ("pass", "fail", "error", "obligation", "skipped", "vacuous")
+VERDICTS = ("pass", "fail", "error", "obligation", "skipped", "vacuous", "differs")
 
 
 def windows_path(path):
@@ -246,6 +248,9 @@ def main():
                              "copy of a committed state, to tell a regression from a slower day")
     parser.add_argument("--budget", type=float,
                         help="seconds one law may take before it is reported as an error (server default otherwise)")
+    parser.add_argument("--backend", choices=["interpreter", "csharp", "differential"],
+                        help="the server's law backend; differential runs every law and witness in the interpreter "
+                             "and on compiled C# and reports each disagreement as differs (Plato ec51f061, TKT-438)")
     parser.add_argument("--allow-skipped", action="store_true",
                         help="do not count a skipped law (no values for a parameter type) as a failure")
     parser.add_argument("--rerun-budget", type=float, metavar="SECONDS",
@@ -270,7 +275,7 @@ def main():
                  "profile": args.profile}
     if args.staging or args.library:
         arguments["folders"] = ",".join(folders)
-    for key in ("types", "report", "baseline", "budget"):
+    for key in ("types", "report", "baseline", "budget", "backend"):
         if getattr(args, key) is not None:
             arguments[key] = getattr(args, key)
     shipped_errors = 0 if args.no_shipped_check else check_shipped(library[-1], args.profile)
@@ -315,8 +320,8 @@ def main():
     # does not parse can never turn a failing run into a pass.
     counts = {} if args.rerun_budget else data.get("counts", {})
     failed = data.get("isError") or bool(compile_errors(data)) or data.get("typeErrorCount", 0) > 0 \
-        or tally["fail"] > 0 or tally["error"] > 0 or tally["vacuous"] > 0 or skipped \
-        or counts.get("fail", 0) > 0 or counts.get("error", 0) > 0 or counts.get("vacuous", 0) > 0 \
+        or tally["fail"] > 0 or tally["error"] > 0 or tally["vacuous"] > 0 or tally["differs"] > 0 or skipped \
+        or counts.get("fail", 0) > 0 or counts.get("error", 0) > 0 or counts.get("vacuous", 0) > 0 or counts.get("differs", 0) > 0 \
         or shipped_errors > 0
     return 1 if failed else 0
 
