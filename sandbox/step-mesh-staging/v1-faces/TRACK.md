@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1, F3, F3b, F2, F4b, P1 | dropped: F4a | handed over: P2 to v1-jody (J9); cusps, planes and slits to v1-edges (E5) | next: TKT-466 (ANN-MB2 cone face 1466)
+Status: merged: F1, F3, F3b, F2, F4b, P1 | dropped: F4a | handed over: P2 to v1-jody (J9, 3be261bd); cusps, planes and slits to v1-edges (E5) | TKT-466 diagnosed, closes with J9 | idle
 
 ## Chunks
 
@@ -101,6 +101,8 @@ Scratch state that is not in the repository: the regenerated C# and probe harnes
   - `05-face-meshing/face-meshing-domain-once.library.plato`, `MeshedOutcomeIn`: the advisory requests get `.Concatenate(m.FoldRequestsOf(f, d, t, c))`.
   - `08-pipeline/pipeline-host-options.library.plato`, `BlockingRequests`: `q.Reason.IsBlocking` becomes `q.Reason.IsAnsweredByHost`.
   - VOCABULARY.md's "Changes to this contract": a line for the new case.
+
+- TKT-466 (ANN-MB2 cone face 1466), diagnosed, no chunk of its own: the two flipped elements sit at a sharp corner (vertex 11, where the rim meets the edge to point 12) of a nearly flat cone, where a parameter-plane triangle across the thin wedge winds backwards in space and refinement may not insert near the corner. Same family as P2; v1-jody's J9 reports ANN-MB2 free of flipped elements on its scratch regeneration, so the ticket closes with J9 (diagnosis in the ticket).
 
 ## Merge instructions
 
