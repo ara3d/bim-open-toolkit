@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1) , V1G-11 in 8a30a057 | ready: V1G-12, V1G-13 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1), V1G-11 in 8a30a057, V1G-12 in c82a14a7 | ready: V1G-13 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
