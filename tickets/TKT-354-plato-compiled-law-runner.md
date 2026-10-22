@@ -1,7 +1,7 @@
 ---
 id: TKT-354
 title: Plato law runner over compiled C#: 2 s budget, laws in parallel, time per law
-status: claimed
+status: done
 depends_on: []
 owner: builder 415b3c71-2c9c-4409-8fae-081c3b236679
 session: 415b3c71-2c9c-4409-8fae-081c3b236679
@@ -11,6 +11,7 @@ related: [TKT-317, TKT-332, TKT-335, TKT-351]
 confidence: high
 created: 2026-10-19
 claimed: 2026-10-19
+closed: 2026-10-22
 ---
 
 ## Acceptance criteria
