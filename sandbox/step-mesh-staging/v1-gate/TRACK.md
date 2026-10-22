@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: ready: V1G-1, V1G-2, V1G-3 (V1G-3 is the diagnosis and the per-check laws; its fix waits on a decision, below)
+Status: ready: V1G-1, V1G-2, V1G-3, V1G-4
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -11,6 +11,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 |---|---|---|---|
 | V1G-1 | TKT-418, TKT-416 | the gate/quality list of every layer 5 law; where the quality laws go; the gate laws on real face meshes, including both diagonal splits of every quad; delete `Law_RefinedInteriorMeetsMinAngle` | 2 h |
 | V1G-2 | TKT-349, TKT-412 | plane faces triangulated from boundary and holes with no refinement; the 45 not-simple plane faces meshed or explained | 2 h |
+| V1G-4 | TKT-399 | curved faces refined against the chordal bound alone (supervisor's decision, 2026-10-22) | 1 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -29,6 +30,10 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
   - Cause, by elimination on scratch copies: with the angle pass off (`RefinementMinAngle` 0) the 4 slivers stay; with the angular surface criterion also off (SurfaceAngular 180 degrees in the pole options) all 16 checks pass, witnesses build in 1.1 s against 14.6 s, and the 16 laws take 1.9 s summed against 295 s. Both criteria are quality under the contract. But in that run the two pole-loop sphere witnesses throw `ArgumentOutOfRangeException` while being built (with SurfaceAngular off they mesh coarser), so it covers six witnesses of eight; the throw looks like TKT-411's.
   - Not fixed here: refinement on version 1's curved faces against the chordal bound alone (no angle pass, no SurfaceAngular test) changes every curved face's mesh and needs the index error fixed first; it is a decision for the supervisor (see Requests). The per-check laws stay staged until then: on the committed library they take 15 to 108 s each, compiled.
   - TKT-399's second criterion (ValidateFaceMesh under 2 s on a built mesh): `LocalVertexFibresAreIdentifications` is the slow check, 108.5 s over the 8 witnesses with the others at 15 to 25 s while they share the cores and 0.02 s for the cheap ones; on the chordal-only meshes all 16 take 1.9 s summed. Not fixed.
+- V1G-4 (TKT-399), this commit, about 0.7 h against 1 h. Supervisor's decision of 2026-10-22: version 1 refines curved faces against the chordal bound alone. No type added. In `V1Plane` (v1-plane.library.plato): `RefineToSurfaceV1` now gives a curved face `RefineToSurfaceChordal`, which runs `RefinementRoundChordal` (RefinementRoundCarried without its angle pass, on the carried neighbour table) under `WithoutSurfaceAngular` (SurfaceAngular 180 degrees, so the chordal deviation and the fold test still drive the surface pass); `MeshedTriangulationOf` is now `RefineToSurfaceV1` of the witness's constrained triangulation.
+  - Checked on the V1G-2 wired copy with the lift-case edit below, compiled, budget 120 s, layer 5's law libraries plus `V1GateLaws`, `V1PlaneLaws`, `V1PoleChecksLaws`, `RefinementAttainableLaws`, `PolesWitnessLaws`: 160 laws, 154 pass, 6 fail, then the lift-case law passes after its edit. The 5 remaining fails are expected: four quality laws (`Law_V1Gate_PoleElementNormalAgreesWithSurface`, `Law_V1Gate_PoleSurfaceEdgeNormalTurnWithinSurfaceAngular`, `Law_MinAngleNoWorseThanLibrary`, `Law_RefinedInteriorMeetsMinAngle`) and the bump solid's quad split (TKT-415). All twelve gate checks of `V1PoleChecksLaws` pass on all eight pole witnesses: the cone's four apex slivers are gone. No witness threw (the pole-loop sphere's index error came from SurfaceAngular 180 in the whole criteria, which this path does not set). The whole batch ran in 4.2 s wall (laws 6.3 s summed, 91 witnesses 5.3 s) against minutes with the angle pass.
+  - `Law_LiftCaseReachesItsBranches` failed on its CylinderRefined case: without the angular test a cylinder needs no interior point (it is ruled, so triangles along the height lie on it), so that case no longer reaches the interior-points branch. The case becomes SphereRefined (merge instructions); with it the law passes.
+  - `Law_MinAngleNoWorseThanLibrary` (moving to `FaceQualityLaws`) compares the insertion refinement's smallest angle with `RefinedTriangulation`'s; under version 1 `RefinedTriangulation` is the chordal-only refinement, so the law fails by design. Delete it at merge, or restate it in the improvement pass against that pass's own refinement.
 
 ## Gate and quality: every law of layer 5
 
@@ -214,13 +219,16 @@ V1G-2 (TKT-349, TKT-412):
 - In `CappedAt` (08-pipeline/pipeline-attainable.laws.plato), the `Wired` field lifts `m.RefineToSurface(...)` in place of `m.RefineToSurfaceByInsertion(...)`, so `Law_CappedPathIsMeshFace` compares MeshFace with the live refinement.
 - The wired copy these edits were checked on: `git archive HEAD sandbox/step-brep-mesh` at 884466ac with exactly these four edits.
 
-V1G-3 (TKT-399):
-- None yet. `v1-poles.laws.plato` moves to `07-validation/poles-checks.laws.plato` (library `V1PoleChecksLaws`) only together with the chordal-only refinement below, or with the four gate laws alone (`Law_V1Gate_PoleElementFacesFaceNormal`, `..ElementPositiveInChart`, `..ElementDeviationWithinSurfaceChordal`, `..SurfaceWithinSurfaceChordalOfElement`) and a budget the 15 to 25 s they take today allows.
+V1G-3 and V1G-4 (TKT-399):
+- No new wiring for the refinement: `RefineToSurface` already points at `RefineToSurfaceV1` (V1G-2), whose body now refines curved faces against the chordal bound alone.
+- `v1-poles.laws.plato` moves to `07-validation/poles-checks.laws.plato` (library `V1PoleChecksLaws`), except its four quality laws (`Law_V1Gate_PoleQuadConvex`, `..QuadPlanarWithinSurfaceChordal`, `..ElementNormalAgreesWithSurface`, `..SurfaceEdgeNormalTurnWithinSurfaceAngular`), which go to `FaceQualityLaws` with V1G-1's quality laws.
+- In `face-meshing-lift.laws.plato` (05), `Witness_CylinderRefinedLift` becomes `Witness_SphereRefinedLift(_: LiftCase): LiftCase => LiftCaseAt("SphereRefined", 2, 2, [LiftBranch.InteriorPoints, LiftBranch.IdentifiedPoints]);`, and the comment on `Law_LiftCaseReachesItsBranches` says "SphereRefined interior points" for "CylinderRefined interior points".
+- Delete `Law_MinAngleNoWorseThanLibrary` (see V1G-4 above), or keep it out of the version 1 run in `FaceQualityLaws` and expect it to fail.
 
 ## Contract requests
 
 ## Requests to other tracks
-- supervisor (decision, blocks TKT-399's fix): should version 1 refine curved faces against the chordal bound alone, dropping the angle pass and the SurfaceAngular test from refinement? The contract makes both quality; doing so clears the cone's only gate failure (4 apex slivers) and cuts the pole witnesses' build from 14.6 s to 1.1 s, but changes every curved face's mesh, and two pole-loop sphere witnesses then throw an index error (see the next line). If yes, the change is a `RefineToSurfaceV1` that passes SurfaceAngular 180 degrees and skips the angle pass, which this track can stage as V1G-4.
+- supervisor: decided 2026-10-22 (yes, chordal bound alone); staged as V1G-4.
 - v1-faces (TKT-411): `Witness_SphereByPoleLoops(1.0)` at chordal 0.05 and 0.01 with SurfaceAngular 180 degrees throws `ArgumentOutOfRangeException` while meshing (scratch copy, compiled); it may be a small witness for TKT-411's index error. Not blocking.
 - v1-faces (TKT-415): `Law_V1Gate_QuadSplitsWithinChordal` fails on `Witness_BumpSolidV1Gate` (the bump solid at 0.3): the quad grid keeps the top face as one flat quad. It is the law TKT-415's first criterion asks for, on the whole witness; the fix is yours. Not blocking V1G-1.
 - v1-faces (quad grid): the version 1 contract relaxes the grid's keep rule. Today a quad is kept only when planar within SurfaceChordal and strictly convex (`QuadGridIfRectangular`, "Quads" section of face-meshing.library.plato); the contract keeps any quad whose both diagonal splits are within the chordal bound and oriented (`QuadSplitsWithin`, `QuadSplitsOriented` in this folder's `v1-gate.library.plato`). Changing the keep rule is yours, since you own the grid functions; not blocking.
@@ -252,6 +260,9 @@ V1G-3 (TKT-399):
 | Cone probe against the compiled library | 15 min | 4 builds, 4 runs |
 | Scratch copies without the angle pass, then without SurfaceAngular | 2.1 min | 2 |
 | TRACK.md | 10 min | 0 |
+| V1G-4: chordal-only refinement | 15 min | 0 |
+| V1G-4 check on the wired copy, compiled, budget 120 s | 1 min | 1 |
+| Lift-case fix and recheck | 5 min | 1 (front end recompiled after the library edit, 1.8 min) |
 
 ## Lessons
 - Sixteen laws over the same eight witnesses at a 20 s budget made almost every law a budget error: the laws share the cores, so each law's wall time is the batch's. A larger budget gave the verdicts in 3 minutes.
