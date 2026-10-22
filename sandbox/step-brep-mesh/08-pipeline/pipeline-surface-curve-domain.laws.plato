@@ -1,18 +1,18 @@
 //==
-// # Surface curves parameterized by a pcurve: laws (track v1-edges, chunk E2, TKT-414)
+// # Surface curves parameterized by a pcurve: laws (TKT-414)
 //
 // The NINA-B222 edges in miniature: a circle of radius 0.3 at height 0.5 on a cylinder of radius
 // 0.3, written as a surface curve whose master is its pcurve, a 2D line along u. With the pcurve's
 // ClosestParameter and the repeating domain, an edge on it gets its arc's range: a quarter turn
 // from pi / 2 to pi, a quarter turn across u = 0, and the same quarter turn on a line of speed 2
-// in u, whose parameter is half the angle. Every positive witness's edges keep their ranges, and
-// every one is tractable; an absurd range on a line is not.
+// in u, whose parameter is half the angle. Every positive witness's edge ranges are tractable;
+// an absurd range on a line is not. The laws read layer 7's witnesses, so they live in layer 8.
 //
 // Sections, in order:
 //  - The surface-curve edge
 //  - Laws
 
-library V1EdgesSurfaceCurvesLaws
+library SurfaceCurveDomainLaws
 {
     //==
     // # The surface-curve edge
@@ -37,11 +37,11 @@ library V1EdgesSurfaceCurvesLaws
             Tolerances.Witness_Tolerances,
             LengthUnit.Metre);
 
-    // Whether the edge's range under EdgeDomainV1 is [start, end] to 1e-9, and tractable.
+    // Whether the edge's range under EdgeDomain is [start, end] to 1e-9, and tractable.
     HasRange(m: BrepModel, start: Number, end: Number): Boolean
     {
         var e = BrepEdgeIndex(0);
-        var r = m.EdgeDomainV1(e).Range;
+        var r = m.EdgeDomain(e).Range;
         return (r.Start - start).Abs <= 1e-9 && (r.End - end).Abs <= 1e-9
             && m.IsTractableRange(e, DefaultCriteria(0.001), r);
     }
@@ -63,21 +63,20 @@ library V1EdgesSurfaceCurvesLaws
     // [0, pi) at speed 2.
     Law_V1Edges_SurfaceCurveDomainRepeats(_: Integer): Boolean
     {
-        var one = BrepModel.SurfaceCurveEdge(0.0, 1.0, 1.0).Geometry.DomainV1(CurveIndex(1));
-        var two = BrepModel.SurfaceCurveEdge(0.0, 1.0, 2.0).Geometry.DomainV1(CurveIndex(1));
+        var one = BrepModel.SurfaceCurveEdge(0.0, 1.0, 1.0).Geometry.Domain(CurveIndex(1));
+        var two = BrepModel.SurfaceCurveEdge(0.0, 1.0, 2.0).Geometry.Domain(CurveIndex(1));
         return one.Range.Start == 0.0 && (one.Range.End - Number.Tau).Abs <= 1e-12 && one.Periodicity.IsPeriodic
             && two.Range.Start == 0.0 && (two.Range.End - Number.Pi).Abs <= 1e-12 && two.Periodicity.IsPeriodic;
     }
 
-    // On every positive witness, EdgeDomainV1 gives every intact edge the range EdgeDomain gives
-    // it, and every such range is tractable at DefaultCriteria(0.001).
-    Law_V1Edges_WitnessEdgeRangesKept(_: Integer): Boolean
+    // On every positive witness, every intact edge's range under EdgeDomain is tractable at
+    // DefaultCriteria(0.001). (Staged as Law_V1Edges_WitnessEdgeRangesKept, which also compared
+    // EdgeDomainV1 with EdgeDomain; after the merge that half compared EdgeDomain with itself.)
+    Law_V1Edges_WitnessEdgeRangesTractable(_: Integer): Boolean
         => BrepModel.WitnessCount.Range.All(k =>
             BrepModel.WitnessAt(k).IsEveryIndexInRange
                 ? BrepModel.WitnessAt(k).Edges.Count.Range.All(i =>
-                    BrepModel.WitnessAt(k).EdgeDomainV1(BrepEdgeIndex(i)).Range.Start == BrepModel.WitnessAt(k).EdgeDomain(BrepEdgeIndex(i)).Range.Start
-                    && BrepModel.WitnessAt(k).EdgeDomainV1(BrepEdgeIndex(i)).Range.End == BrepModel.WitnessAt(k).EdgeDomain(BrepEdgeIndex(i)).Range.End
-                    && BrepModel.WitnessAt(k).IsTractableRange(BrepEdgeIndex(i), DefaultCriteria(0.001),
+                    BrepModel.WitnessAt(k).IsTractableRange(BrepEdgeIndex(i), DefaultCriteria(0.001),
                         BrepModel.WitnessAt(k).EdgeDomain(BrepEdgeIndex(i)).Range))
                 : true);
 

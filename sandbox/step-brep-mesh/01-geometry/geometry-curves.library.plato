@@ -39,7 +39,7 @@ library BrepGeometryCurves
     // circles and ellipses; [0, n - 1] for a polyline; the knot span for a
     // spline; [0, b - a] for a trimmed curve; [0, total parametric length] for
     // a composite; the basis's for an offset; the master representation's for
-    // a surface curve.
+    // a surface curve, with a pcurve master given MasterPcurveDomain.
     Domain(g: GeometrySet, c: CurveIndex): CurveDomain
         => g.CurveAt(c).Domain(g).WithClosure(g.IsMarkedClosed(c));
 
@@ -59,8 +59,21 @@ library BrepGeometryCurves
             Offset(basis, distance, reference) => g.Domain(basis);
             OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
                 ? g.Domain(spaceCurve)
-                : g.Domain(supports.MasterPcurve(master));
+                : g.MasterPcurveDomain(supports.MasterPcurve(master));
         };
+
+    // The domain of a surface curve whose master is pcurve p: [0, T) with period T when p's space
+    // point repeats with parameter period T (PcurveParameterPeriod) on a domain that has no seam,
+    // as a 2D line along a periodic direction does; p's own domain otherwise (TKT-414: the
+    // unbounded domain of such a line gave NINA-B222's arcs ranges near 1e30).
+    MasterPcurveDomain(g: GeometrySet, p: PcurveIndex): CurveDomain
+    {
+        var own = g.Domain(p);
+        var period = g.PcurveParameterPeriod(p);
+        return (period > 0.0 && own.HasSeam.Not)
+            ? CurveDomain(NumberInterval(0.0, period), Periodicity.Periodic(period))
+            : own;
+    }
 
     // The basis's parameter of a trimmed piece's parameter t, wrapped into
     // the basis's range when the basis is closed but not periodic: a trim may
@@ -175,7 +188,9 @@ library BrepGeometryCurves
     // are derived from it (layer 2's EdgeDomain), so it is on the main path.
     // Closed forms for lines, circles and polylines, and for a surface curve
     // whose master is its space curve (it is that curve, as Eval says); a
-    // search for the rest.
+    // surface curve whose master is a pcurve is answered by that pcurve's
+    // ClosestParameter (its closed form, or the search that covers one
+    // period of a repeating 2D line); a search for the rest.
     ClosestParameter(g: GeometrySet, c: CurveIndex, p: Point3D): Number
         => g.CurveAt(c).ClosestParameter(g, p);
 
@@ -195,7 +210,7 @@ library BrepGeometryCurves
             Offset(basis, distance, reference) => curve.ClosestParameterBySearch(g, p);
             OnSurface(spaceCurve, supports, master) => supports.MasterPcurve(master).IsNone
                 ? g.ClosestParameter(spaceCurve, p)
-                : curve.ClosestParameterBySearch(g, p);
+                : g.ClosestParameter(supports.MasterPcurve(master), p);
         };
 
     // deferred: global minimization of |Eval(t) - p|^2 over the domain:

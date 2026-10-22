@@ -212,7 +212,8 @@ library EdgeRangedDiscretizing
     // and the tables built from m, with the edge domain computed once when the edge passes the
     // index checks and never otherwise: Projections counts those computations, 0 or 1. The entry
     // is chunk E1's (CanDiscretizeInRange behind inRange, then DiscretizeTabled, else
-    // Undiscretized), bit for bit.
+    // Undiscretized), bit for bit, except that an edge whose range fails IsTractableRange is
+    // Undiscretized (TKT-414) where the reference would bisect a range it cannot finish.
     DiscretizeEdgeRangedCounted(m: BrepModel, t: EdgeFaceTable, twoEdgeLoop: Array<Boolean>, inRange: Boolean, e: BrepEdgeIndex, c: DiscretizationCriteria, floors: SegmentFloors): Counted<EdgeDiscretization>
     {
         if ((inRange ? (c.IsWellFormed && m.IsEdgeEvaluable(e)) : false).Not)
@@ -220,7 +221,36 @@ library EdgeRangedDiscretizing
             return Counted(Undiscretized(e), Projections(0));
         }
         var range = m.EdgeDomain(e).Range;
-        return Counted(range.Start < range.End ? m.DiscretizeRanged(t, twoEdgeLoop, e, c, floors, range) : Undiscretized(e), Projections(1));
+        return Counted(m.IsTractableRange(e, c, range) ? m.DiscretizeRanged(t, twoEdgeLoop, e, c, floors, range) : Undiscretized(e), Projections(1));
+    }
+
+    // The most segments an edge's range may imply before its discretization is refused:
+    // 2^20. No corpus edge comes near it: 2^20 segments of 0.1 mm is 105 m.
+    SegmentCap(_: Integer): Integer
+        => 1048576;
+
+    // An upper estimate of the length of edge e's curve over range: the span times the largest
+    // speed at five evenly spaced parameters (each wrapped into the curve's domain, as
+    // EdgeCurvePoint evaluates). Infinite or NaN when the range or a speed is not finite.
+    RangeLengthBound(m: BrepModel, e: BrepEdgeIndex, range: NumberInterval): Number
+    {
+        var curve = m.Edges[e].Curve;
+        var d = m.Geometry.Domain(curve);
+        var span = range.End - range.Start;
+        var fastest = 5.Range.Reduce(0.0, (s, k) =>
+            s.Max(m.Geometry.Derivative(curve, d.Wrap(range.Start + span * k.ToNumber / 4.0)).Length));
+        return span * fastest;
+    }
+
+    // Whether edge e's range is one its discretization can finish on: finite, increasing, and
+    // with RangeLengthBound at most SegmentCap effective minimum lengths. A range that fails gets
+    // the undiscretized entry, which layer 8 reports (PIPELINE-EDGE-UNDISCRETIZED), instead of a
+    // bisection that does not return (TKT-414).
+    IsTractableRange(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, range: NumberInterval): Boolean
+    {
+        var bound = m.RangeLengthBound(e, range);
+        return range.Start.IsFinite && range.End.IsFinite && range.Start < range.End
+            && bound.IsFinite && bound <= 0.SegmentCap.ToNumber * c.EffectiveMinLength(m.Tolerances);
     }
 
     // Chunk E1's DiscretizeAllTabledCounted with each edge's domain computed once: its work
