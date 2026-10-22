@@ -138,7 +138,7 @@ def declared(paths):
 
 def staged_comparisons(path, library_names, staged_names):
     """Laws of a staged file that call a staged name and the library name it extends."""
-    body, law, start = [], None, 0
+    body, law, start, indent = [], None, 0, 0
     def judge():
         if law is None:
             return None
@@ -149,12 +149,22 @@ def staged_comparisons(path, library_names, staged_names):
     with open(path, encoding="utf-8", errors="replace") as f:
         for number, line in enumerate(f, 1):
             match = LAW.match(line)
+            declaration = DECLARATION.match(line)
+            # A law's body ends at the next declaration at its own indentation: a helper after the law is not part
+            # of it (R2A's Law_V1Reliability_ClosedDirectionIsPeriodic was charged with the comparisons of the
+            # helpers written below it).
+            if law is not None and declaration and not match and len(line) - len(line.lstrip()) <= indent:
+                found = judge()
+                if found:
+                    yield found
+                law = None
             if match:
                 found = judge()
                 if found:
                     yield found
-                law, start, body = match.group(1), number, []
-            body.append(line.split("//", 1)[0])
+                law, start, body, indent = match.group(1), number, [], len(line) - len(line.lstrip())
+            if law is not None:
+                body.append(line.split("//", 1)[0])
     found = judge()
     if found:
         yield found

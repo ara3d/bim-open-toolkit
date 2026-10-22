@@ -104,9 +104,26 @@ def qualified(filter_text, folders):
     out = []
     for name in names:
         block, _, law = name.rpartition(".")
-        bare = law.startswith("Law_") and not block and law in blocks
-        out.extend([f"{b}.{law}" for b in blocks[law]] if bare else [name])
+        known = law.startswith("Law_") and law in blocks
+        if known and block and block not in blocks[law]:
+            # Qualified with a block that does not declare it (renamed or moved at a merge), it would match no law
+            # on the server; qualify it with the blocks that do.
+            print(f"note: {name}: {law} is declared in {', '.join(blocks[law])}, not in {block}")
+        moved = known and (not block or block not in blocks[law])
+        out.extend([f"{b}.{law}" for b in blocks[law]] if moved else [name])
     return ",".join(dict.fromkeys(out))
+
+
+def filter_entries(filter_text):
+    """The entries of a filter, split on the commas outside parentheses, each without its signature."""
+    return [re.sub(r"\(.*$", "", t).strip() for t in re.split(r",(?![^()]*\))", filter_text) if t.strip()]
+
+
+def unmatched(filter_text, results):
+    """The filter entries that no result's law name contains (the server's rule, ignoring case). With other entries
+    matching, the server drops such an entry without a word, so the script reports it."""
+    names = [r[1].lower() for r in results if r[1]]
+    return [e for e in filter_entries(filter_text) if not any(e.lower() in n for n in names)]
 
 
 def post(body, session=None):
@@ -313,6 +330,9 @@ def main():
         print("no laws matched: a misspelled filter, or a file that does not parse. "
               "Run the pinned CLI with the same --filter to see a parse error.")
         return 2
+    missing = unmatched(arguments["filter"], results) if args.filter != "none" and data.get("laws", 0) > 0 else []
+    for entry in missing:
+        print(f"filter entry {entry} matched no law: a failure")
     skipped = tally["skipped"] > 0 and not args.allow_skipped
     if skipped:
         print(f"{tally['skipped']} skipped law(s) checked nothing: a failure (--allow-skipped to accept)")
@@ -320,7 +340,7 @@ def main():
     # does not parse can never turn a failing run into a pass.
     counts = {} if args.rerun_budget else data.get("counts", {})
     failed = data.get("isError") or bool(compile_errors(data)) or data.get("typeErrorCount", 0) > 0 \
-        or tally["fail"] > 0 or tally["error"] > 0 or tally["vacuous"] > 0 or tally["differs"] > 0 or skipped \
+        or tally["fail"] > 0 or tally["error"] > 0 or tally["vacuous"] > 0 or tally["differs"] > 0 or skipped or missing \
         or counts.get("fail", 0) > 0 or counts.get("error", 0) > 0 or counts.get("vacuous", 0) > 0 or counts.get("differs", 0) > 0 \
         or shipped_errors > 0
     return 1 if failed else 0
