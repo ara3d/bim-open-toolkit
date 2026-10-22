@@ -846,7 +846,7 @@ library BrepTopology
     {
         var corners = m.CornersAtVertex(s, v);
         var n = corners.Count;
-        var withFreeEnd = n.Range.FlatMap(i => m.HasFreeEnd(corners, i) ? [i] : Integer.NoIndices);
+        var withFreeEnd = n.Range.FlatMap(i => m.HasFreeEnd(corners, i) ? [i] : n.Range.Take(0));
         var used = new Buffer<Boolean>(n);
         var k = 0;
         while (k < n)
@@ -991,7 +991,7 @@ library BrepTopology
     {
         var n = points.Count;
         var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
-            (i < j ? m.IsCoincident(points[i], points[j]) : false) ? [i * n + j] : Integer.NoIndices));
+            (i < j ? m.IsCoincident(points[i], points[j]) : false) ? [i * n + j] : n.Range.Take(0)));
         return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n));
     }
 

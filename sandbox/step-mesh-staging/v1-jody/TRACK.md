@@ -1,7 +1,7 @@
 # v1-jody: small closed B-spline loops of the M2-JODY-W377 files discretized and meshed
 
 Ticket: TKT-431, TKT-453
-Status: ready: J1, J2, J3; J4 committed in place (supervisor's instruction)
+Status: ready: J1, J2, J3, J4
 
 ## Chunks
 
@@ -9,7 +9,7 @@ Status: ready: J1, J2, J3; J4 committed in place (supervisor's instruction)
 |---|---|---|---|
 | J1 | TKT-431 | The 24 one-edge plane loops of the two M2-JODY-W377 files discretized: a B-spline written unclamped in periodic form is decided closed from its record | 2 h |
 | J2 | TKT-453 | A closed span whose ends coincide fails the segment test, so small closed loops are not meshed as triangles | 1 h |
-| J4 | (supervisor's performance finding) | The other `Count.Range.Take(0)` empties replaced by one layer-0 helper, `Integer.NoIndices`, in place in the library | 1 h |
+| J4 | (supervisor's performance finding) | The other `Count.Range.Take(0)` empties replaced by one layer-0 helper, `Integer.NoIndices` (J4.patch) | 1 h |
 | J3 | (supervisor's performance finding) | Reduced and ChangedSensePositions build a filter's empty case as `[k].Take(0)`, not an eagerly built `n.Range.Take(0)`: prepare no longer O(V^2 + E^2) | 1 h |
 
 ## Done
@@ -26,7 +26,7 @@ Status: ready: J1, J2, J3; J4 committed in place (supervisor's instruction)
 
   About 3.3 to 4.4 s saved per large file on this machine, a factor of 10 to 15 on prepare; the corpus figure the finding quoted (9.9 s on ELLA-W1) was measured under other load. No type added.
 
-- J4, see the commit, about 1 h against 1 h. Layer 0 gains `NoIndices(_: Integer): Array<Integer> => [0].Take(0)` (foundation.library.plato, beside `Corresponds`), the one place the idiom lives; nine library sites use it, edited in place on the supervisor's instruction, and the staged J3 copies use it too. Sites, with whether the host's meshing path reaches them (a name-level call graph over layers 00 to 08 from the functions StepPlatoMesher and StepPlatoTables call):
+- J4, about 1.5 h against 1 h. Layer 0 gains `NoIndices(_: Integer): Array<Integer> => [0].Take(0)` beside `Corresponds`, the one place the idiom lives; nine library sites use it, and the staged J3 copies use it too. First committed in the library (662b6c51) on a misreading of "in place"; reverted in the next commit, which keeps the library diff as `J4.patch` and the helper as `no-indices.library.plato` for the staged J3 copies. Sites, with whether the host's meshing path reaches them (a name-level call graph over layers 00 to 08 from the functions StepPlatoMesher and StepPlatoTables call):
 
   | Site | Function | Size of the range built per rejected element | Meshing path |
   |---|---|---|---|
@@ -60,6 +60,10 @@ J3:
 - `03-step/step-loop-chaining.library.plato`, `ChangedSensePositions`: both `before.Count.Range.Take(0)` => `Integer.NoIndices` (the body of `ChangedSensePositionsFlat`).
 - Then delete `reduced-flat.library.plato` and `reduced-flat.laws.plato`: after the edit both laws compare a function with itself; `Law_PrepareIsIdempotent` and `Law_PrepareKeepsPointSet` keep the check. The other empties are J4's.
 
+J4:
+- `git apply sandbox/step-mesh-staging/v1-jody/J4.patch` (11 hunks, 10 files: the helper in 00-foundation/foundation.library.plato and the nine sites in the table above), then delete `no-indices.library.plato`.
+- `05-face-meshing/face-meshing.library.plato`, `CollapsedToTriangle`, lines 363 and 365: both `4.Range.Take(0)` => `Integer.NoIndices` (not in the patch: the file held another session's edits).
+
 ## Contract requests
 
 - None.
@@ -83,9 +87,11 @@ J3:
 | J3: regeneration (one failed on a newer bim-open-data script) and timing | 15 | 2 regenerations, 1 build, 12 timed meshings |
 | J4: edits, call graph, laws | 15 | 2 law runs (one 100 s sweep) |
 | J4: regenerations and timing | 12 | 2 regenerations, 2 builds, 6 timed meshings |
+| J4: moving the library edit into staging | 5 | 1 law run |
 
 ## Lessons
 
+- Edit nothing under `sandbox/step-brep-mesh`, even when a supervisor says "in place": ask whether it means the merge's form or the tree. J4 went into the library while a merge agent was working in the same layers and had to be reverted.
 - A baseline regeneration must use the same library commit as the scratch copy; the first baseline used an older commit and had to be redone.
 - Comparing library trees with `git rev-parse <commit>:<path>` is instant; extracting each commit to diff took 2 minutes for nothing.
 - A witness copied from a corpus record does not reproduce a defect that turns on exact equality of evaluated points: the corpus edge's ends were equal, the copy's differed by rounding. A C# probe over the decoded model found that in one run; a witness built so equality holds by construction (a clamped loop) then showed the defect.

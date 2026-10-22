@@ -267,7 +267,7 @@ library ModelMeshIncidence
         incidence: VertexIncidence, c: Integer): MeshComponentCounts
     {
         var edges = t.CountEdges.Range.FlatMap(k =>
-            comps.VertexComponentOf(t.Edges.UndirectedEdges[k].A).Value == c ? [k] : Integer.NoIndices);
+            comps.VertexComponentOf(t.Edges.UndirectedEdges[k].A).Value == c ? [k] : t.CountEdges.Range.Take(0));
         return MeshComponentCounts(
             comps.ComponentVertexCount(MeshComponentIndex(c)),
             edges.Count,

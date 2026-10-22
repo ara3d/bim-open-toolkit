@@ -128,7 +128,7 @@ library TriangulationRefine
     {
         var area = TwiceSignedArea(points[tri.Corner(0)], points[tri.Corner(1)], points[tri.Corner(2)]);
         var near = 3.Range.FlatMap(j =>
-            TwiceSignedArea(points[tri.Corner(j)], points[tri.Corner(j + 1)], p) <= 1e-4 * area ? [j] : Integer.NoIndices);
+            TwiceSignedArea(points[tri.Corner(j)], points[tri.Corner(j + 1)], p) <= 1e-4 * area ? [j] : 3.Range.Take(0));
         return near.Count == 0 ? -1 : (near.Count == 1 ? near[0] : 3);
     }
 

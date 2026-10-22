@@ -1,0 +1,144 @@
+diff --git a/sandbox/step-brep-mesh/00-foundation/foundation.library.plato b/sandbox/step-brep-mesh/00-foundation/foundation.library.plato
+index 9617f2cf..d70a42c0 100644
+--- a/sandbox/step-brep-mesh/00-foundation/foundation.library.plato
++++ b/sandbox/step-brep-mesh/00-foundation/foundation.library.plato
+@@ -837,6 +837,13 @@ library BrepFoundation
+     Corresponds(xs: Array<$T>, ys: Array<$T>, same: Function2<$T, $T, Boolean>): Boolean
+         => xs.Count == ys.Count ? xs.Count.Range.All(i => same(xs[i], ys[i])) : false;
+ 
++    // The empty array of indices, for the rejected case of a filter written as a FlatMap:
++    // `n.Range.FlatMap(k => keep(k) ? [k] : Integer.NoIndices)`. It builds one element and keeps
++    // none; an empty written `n.Range.Take(0)` builds all n indices first (a Range is built
++    // eagerly), once per rejected element, which makes the filter quadratic.
++    NoIndices(_: Integer): Array<Integer>
++        => [0].Take(0);
++
+     //==
+     // # Integer folds
+ 
+diff --git a/sandbox/step-brep-mesh/02-topology/topology-faceted.library.plato b/sandbox/step-brep-mesh/02-topology/topology-faceted.library.plato
+index 6c2212e5..4afe14af 100644
+--- a/sandbox/step-brep-mesh/02-topology/topology-faceted.library.plato
++++ b/sandbox/step-brep-mesh/02-topology/topology-faceted.library.plato
+@@ -52,7 +52,7 @@ library BrepFacetedShells
+     {
+         var n = points.Count;
+         var side = m.Tolerances.Length.CoincidenceCellSide;
+-        var candidates = n.Range.FlatMap(k => points[k].IsFinitePoint ? [k] : n.Range.Take(0));
++        var candidates = n.Range.FlatMap(k => points[k].IsFinitePoint ? [k] : Integer.NoIndices);
+         var cells = points.Map(p => p.CoincidenceCellOf(side));
+         var exact = (side > 0.0 && side.IsFinite) ? candidates.All(k => cells[k].IsExactCoincidenceCell) : false;
+         return exact
+diff --git a/sandbox/step-brep-mesh/02-topology/topology-shell-tables.library.plato b/sandbox/step-brep-mesh/02-topology/topology-shell-tables.library.plato
+index 6ffafa1e..d5dd894f 100644
+--- a/sandbox/step-brep-mesh/02-topology/topology-shell-tables.library.plato
++++ b/sandbox/step-brep-mesh/02-topology/topology-shell-tables.library.plato
+@@ -258,7 +258,7 @@ library BrepShellTables
+         var free = shellEdges.FlatMap(e => (t.UseCountIn(e) == 1 ? m.CountsAsEdge(e) : false) ? [e] : shellEdges.Take(0));
+         var n = free.Count;
+         var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
+-            (i < j ? m.EdgesShareClass(free[i], free[j], roots) : false) ? [i * n + j] : n.Range.Take(0)));
++            (i < j ? m.EdgesShareClass(free[i], free[j], roots) : false) ? [i * n + j] : Integer.NoIndices));
+         return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n)).ClassCount;
+     }
+ 
+diff --git a/sandbox/step-brep-mesh/02-topology/topology.library.plato b/sandbox/step-brep-mesh/02-topology/topology.library.plato
+index 8b7dd464..c876570e 100644
+--- a/sandbox/step-brep-mesh/02-topology/topology.library.plato
++++ b/sandbox/step-brep-mesh/02-topology/topology.library.plato
+@@ -846,7 +846,7 @@ library BrepTopology
+     {
+         var corners = m.CornersAtVertex(s, v);
+         var n = corners.Count;
+-        var withFreeEnd = n.Range.FlatMap(i => m.HasFreeEnd(corners, i) ? [i] : n.Range.Take(0));
++        var withFreeEnd = n.Range.FlatMap(i => m.HasFreeEnd(corners, i) ? [i] : Integer.NoIndices);
+         var used = new Buffer<Boolean>(n);
+         var k = 0;
+         while (k < n)
+@@ -991,7 +991,7 @@ library BrepTopology
+     {
+         var n = points.Count;
+         var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
+-            (i < j ? m.IsCoincident(points[i], points[j]) : false) ? [i * n + j] : n.Range.Take(0)));
++            (i < j ? m.IsCoincident(points[i], points[j]) : false) ? [i * n + j] : Integer.NoIndices));
+         return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n));
+     }
+ 
+diff --git a/sandbox/step-brep-mesh/05-face-meshing/triangulation-refine.library.plato b/sandbox/step-brep-mesh/05-face-meshing/triangulation-refine.library.plato
+index 65add88c..46beff5f 100644
+--- a/sandbox/step-brep-mesh/05-face-meshing/triangulation-refine.library.plato
++++ b/sandbox/step-brep-mesh/05-face-meshing/triangulation-refine.library.plato
+@@ -128,7 +128,7 @@ library TriangulationRefine
+     {
+         var area = TwiceSignedArea(points[tri.Corner(0)], points[tri.Corner(1)], points[tri.Corner(2)]);
+         var near = 3.Range.FlatMap(j =>
+-            TwiceSignedArea(points[tri.Corner(j)], points[tri.Corner(j + 1)], p) <= 1e-4 * area ? [j] : 3.Range.Take(0));
++            TwiceSignedArea(points[tri.Corner(j)], points[tri.Corner(j + 1)], p) <= 1e-4 * area ? [j] : Integer.NoIndices);
+         return near.Count == 0 ? -1 : (near.Count == 1 ? near[0] : 3);
+     }
+ 
+diff --git a/sandbox/step-brep-mesh/06-mesh/mesh-coincident-gridded.library.plato b/sandbox/step-brep-mesh/06-mesh/mesh-coincident-gridded.library.plato
+index 9e5dd5c4..3b28e72b 100644
+--- a/sandbox/step-brep-mesh/06-mesh/mesh-coincident-gridded.library.plato
++++ b/sandbox/step-brep-mesh/06-mesh/mesh-coincident-gridded.library.plato
+@@ -72,7 +72,7 @@ library ModelMeshCoincidentGridded
+     {
+         var n = mesh.Positions.Count;
+         var side = tol.CoincidenceCellSide;
+-        var candidates = n.Range.FlatMap(v => mesh.IsCoincidenceCandidate(comps, v) ? [v] : n.Range.Take(0));
++        var candidates = n.Range.FlatMap(v => mesh.IsCoincidenceCandidate(comps, v) ? [v] : Integer.NoIndices);
+         var cells = n.MapRange(v => mesh.Positions[v].CoincidenceCellOf(side));
+         var exact = (side > 0.0 && side.IsFinite) ? candidates.All(v => cells[v].IsExactCoincidenceCell) : false;
+         return exact
+diff --git a/sandbox/step-brep-mesh/06-mesh/mesh-conversions.library.plato b/sandbox/step-brep-mesh/06-mesh/mesh-conversions.library.plato
+index 520f0ee4..6ff1364d 100644
+--- a/sandbox/step-brep-mesh/06-mesh/mesh-conversions.library.plato
++++ b/sandbox/step-brep-mesh/06-mesh/mesh-conversions.library.plato
+@@ -59,7 +59,7 @@ library ModelMeshConversions
+     {
+         var count = mesh.CornerCount;
+         var firstOf = count.MapRange(c => mesh.FirstMatchingCorner(c));
+-        var reps = count.Range.FlatMap(c => firstOf[c] == c ? [c] : count.Range.Take(0))
++        var reps = count.Range.FlatMap(c => firstOf[c] == c ? [c] : Integer.NoIndices)
+             .Sort((a, b) => mesh.CornerVertex(CornerIndex(a)).Value < mesh.CornerVertex(CornerIndex(b)).Value
+                 || (mesh.CornerVertex(CornerIndex(a)).Value == mesh.CornerVertex(CornerIndex(b)).Value && a <= b));
+         var splitOf = count.MapRange(c => reps.PositionOfItem(firstOf[c]));
+diff --git a/sandbox/step-brep-mesh/06-mesh/mesh-elements.library.plato b/sandbox/step-brep-mesh/06-mesh/mesh-elements.library.plato
+index 10c56550..044e4805 100644
+--- a/sandbox/step-brep-mesh/06-mesh/mesh-elements.library.plato
++++ b/sandbox/step-brep-mesh/06-mesh/mesh-elements.library.plato
+@@ -121,7 +121,7 @@ library ModelMeshElements
+     // The restriction of mesh to faces: the elements whose ElementFace is one of them, in order.
+     SliceOf(mesh: ModelMesh, faces: Array<BrepFaceIndex>): MeshSlice
+         => MeshSlice(faces, mesh.ElementCount.Range
+-            .FlatMap(k => IsOneOf(mesh.ElementFaceAt(k), faces) ? [ElementIndex(k)] : mesh.ElementCount.Range.Take(0).Map(i => ElementIndex(i))));
++            .FlatMap(k => IsOneOf(mesh.ElementFaceAt(k), faces) ? [ElementIndex(k)] : Integer.NoIndices.Map(i => ElementIndex(i))));
+ 
+     // The mesh vertices that are a corner of some element on face f, in increasing order.
+     VerticesOnFace(mesh: ModelMesh, f: BrepFaceIndex): Array<VertexIndex>
+diff --git a/sandbox/step-brep-mesh/06-mesh/mesh-incidence.library.plato b/sandbox/step-brep-mesh/06-mesh/mesh-incidence.library.plato
+index 1cc7324c..212c32dd 100644
+--- a/sandbox/step-brep-mesh/06-mesh/mesh-incidence.library.plato
++++ b/sandbox/step-brep-mesh/06-mesh/mesh-incidence.library.plato
+@@ -267,7 +267,7 @@ library ModelMeshIncidence
+         incidence: VertexIncidence, c: Integer): MeshComponentCounts
+     {
+         var edges = t.CountEdges.Range.FlatMap(k =>
+-            comps.VertexComponentOf(t.Edges.UndirectedEdges[k].A).Value == c ? [k] : t.CountEdges.Range.Take(0));
++            comps.VertexComponentOf(t.Edges.UndirectedEdges[k].A).Value == c ? [k] : Integer.NoIndices);
+         return MeshComponentCounts(
+             comps.ComponentVertexCount(MeshComponentIndex(c)),
+             edges.Count,
+diff --git a/sandbox/step-brep-mesh/07-validation/validation-checks-topology-sparse.library.plato b/sandbox/step-brep-mesh/07-validation/validation-checks-topology-sparse.library.plato
+index 66043c2d..2825000c 100644
+--- a/sandbox/step-brep-mesh/07-validation/validation-checks-topology-sparse.library.plato
++++ b/sandbox/step-brep-mesh/07-validation/validation-checks-topology-sparse.library.plato
+@@ -131,7 +131,7 @@ library BrepCheckingTopologySparse
+     {
+         var n = corners.Count;
+         var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
+-            (i < j ? m.CornersShareEnd(corners[i], corners[j]) : false) ? [i * n + j] : n.Range.Take(0)));
++            (i < j ? m.CornersShareEnd(corners[i], corners[j]) : false) ? [i * n + j] : Integer.NoIndices));
+         return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n)).ClassCount;
+     }
+ 

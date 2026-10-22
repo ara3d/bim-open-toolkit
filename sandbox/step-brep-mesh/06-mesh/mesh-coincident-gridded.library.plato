@@ -72,7 +72,7 @@ library ModelMeshCoincidentGridded
     {
         var n = mesh.Positions.Count;
         var side = tol.CoincidenceCellSide;
-        var candidates = n.Range.FlatMap(v => mesh.IsCoincidenceCandidate(comps, v) ? [v] : Integer.NoIndices);
+        var candidates = n.Range.FlatMap(v => mesh.IsCoincidenceCandidate(comps, v) ? [v] : n.Range.Take(0));
         var cells = n.MapRange(v => mesh.Positions[v].CoincidenceCellOf(side));
         var exact = (side > 0.0 && side.IsFinite) ? candidates.All(v => cells[v].IsExactCoincidenceCell) : false;
         return exact
