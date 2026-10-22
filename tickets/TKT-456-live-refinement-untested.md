@@ -1,7 +1,7 @@
 ---
 id: TKT-456
 title: STEP mesher: the live insertion passes (SurfacePassCarried, AnglePassCarried, TryInsertionIndexed) have no agreement law, and about ten agreement laws compare a function with an alias of itself
-status: open
+status: done
 depends_on: []
 owner:
 fence: [sandbox/step-brep-mesh/05-face-meshing/**, sandbox/step-brep-mesh/08-pipeline/**, sandbox/step-brep-mesh/10-editing/face-quality.laws.plato]
@@ -9,6 +9,7 @@ workflow: [W3, W4]
 related: [TKT-323]
 confidence: high
 created: 2026-10-22
+closed: 2026-10-22
 kind: defect
 ---
 
