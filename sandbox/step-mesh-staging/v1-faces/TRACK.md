@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1, F3, F3b, F2, F4b | dropped: F4a | ready: P1 (TKT-459, closes TKT-461 too) | blocked: P2, cusps, slits and touching holes (supervisor decisions, below)
+Status: merged: F1, F3, F3b, F2, F4b, P1 | dropped: F4a | handed over: P2 to v1-jody (J9); cusps, planes and slits to v1-edges (E5) | next: TKT-466 (ANN-MB2 cone face 1466)
 
 ## Chunks
 
@@ -92,6 +92,15 @@ The four tickets stay claimed until the corpus run on the regenerated library; e
 Not started, the supervisor's call: F1b (size a refused grid by floor requests instead of refining the face). The cost it would save is not measured on the corpus.
 
 Scratch state that is not in the repository: the regenerated C# and probe harness under the session scratchpad and `artifacts/builders/v1-faces*` (git-ignored); the probe harness adds per-face checks (`HARNESS_FACECHECK`, `HARNESS_NM`, `HARNESS_FLIPS`, `HARNESS_CDT`, `HARNESS_ALTITUDE`) that the corpus harness lacks; TKT-439/441's harness work may want them.
+
+- P2, handed to the v1-jody session as J9 on 2026-10-22 (not built further here): `fold-requests.library.plato` (`FoldRequestsOf`, `FoldRequestDiagnostic`, `IsAnsweredByHost`). It type-checked on a wired copy of HEAD 6772b185 with the six edits below (warm server, 0 type errors); no law written yet, and the corpus check on a scratch regeneration was still running at hand-over. Design: FoldAgainstBoundary is not blocking (a blocking request withholds the face's mesh, Law_BlockingRequestMeansEmptyMesh, so a fold the rounds cannot fix would become a hole); BlockingRequests (08-pipeline) keeps requests that are blocking or FoldAgainstBoundary (IsAnsweredByHost), so the host's loop still answers it. It asks for twice the edge's current segments at the criteria's chordal (layer 4 honours a request's Segments as a floor whatever the reason). v1-edges' E5c adds RefinementReason.SplitAt and edits the same three matches.
+  Wiring (the script that applied it to the scratch copy):
+  - `04-discretization/discretization.types.plato`: `| NeighbourDensity;` becomes `| NeighbourDensity` and `| FoldAgainstBoundary;`.
+  - `04-discretization/discretization-requests.library.plato`, `ReasonName`: add `FoldAgainstBoundary => "FoldAgainstBoundary";`.
+  - `05-face-meshing/face-meshing.library.plato`, `IsBlocking`: add `FoldAgainstBoundary => false;`; `RequestDiagnostic`: add `FoldAgainstBoundary => q.FoldRequestDiagnostic;`.
+  - `05-face-meshing/face-meshing-domain-once.library.plato`, `MeshedOutcomeIn`: the advisory requests get `.Concatenate(m.FoldRequestsOf(f, d, t, c))`.
+  - `08-pipeline/pipeline-host-options.library.plato`, `BlockingRequests`: `q.Reason.IsBlocking` becomes `q.Reason.IsAnsweredByHost`.
+  - VOCABULARY.md's "Changes to this contract": a line for the new case.
 
 ## Merge instructions
 
