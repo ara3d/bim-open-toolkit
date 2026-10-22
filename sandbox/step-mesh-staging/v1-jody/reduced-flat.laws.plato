@@ -1,0 +1,49 @@
+//==
+// # Reduced without a quadratic empty: laws (track v1-jody, chunk J3)
+//
+// ReducedFlat gives Reduced's result on every raw witness, at the witness's own tolerances and at
+// the tolerances PrepareModelWith sets: the same model (layer 7's SameModel), the same repairs
+// and diagnostics in order, and the same vertex and edge sources. ChangedSensePositionsFlat gives
+// ChangedSensePositions's positions on every loop of every positive witness against itself and
+// against the loop with its first coedge's sense flipped.
+//
+// Sections, in order:
+//  - Comparing
+//  - Laws
+
+library V1JodyReducedFlatLaws
+{
+    //==
+    // # Comparing
+
+    // Whether the two raw models agree in model, repairs, diagnostics and kernel sources.
+    SameReduction(a: RawDecodedModel, b: RawDecodedModel): Boolean
+        => a.Model.SameModel(b.Model)
+            && a.Repairs.Corresponds(b.Repairs, (x, y) => x.SameRepair(y))
+            && a.Diagnostics.Corresponds(b.Diagnostics, (x, y) => x == y)
+            && a.Sources.Vertices.Corresponds(b.Sources.Vertices, (x, y) => x == y)
+            && a.Sources.Edges.Corresponds(b.Sources.Edges, (x, y) => x == y);
+
+    // The raw model with the tolerances PrepareModelWith gives it before Reduced.
+    WithPreparedTolerances(raw: RawDecodedModel): RawDecodedModel
+        => raw.WithModel(raw.Model.WithTolerances(raw.PrepareModel.Model.Tolerances));
+
+    //==
+    // # Laws
+
+    // On every raw witness, at its own tolerances and at the prepared ones, ReducedFlat is
+    // Reduced.
+    Law_V1Jody_ReducedFlatIsReduced(raw: RawDecodedModel): Boolean
+        => raw.ReducedFlat.SameReduction(raw.Reduced)
+            && raw.WithPreparedTolerances.ReducedFlat.SameReduction(raw.WithPreparedTolerances.Reduced);
+
+    // On every loop of every positive witness, ChangedSensePositionsFlat is ChangedSensePositions,
+    // against the loop itself and against the loop with its first coedge's sense flipped.
+    Law_V1Jody_ChangedSensePositionsFlat(_: Integer): Boolean
+        => 10.Range.All(k => BrepModel.WitnessAt(k).Loops.All(l => l.SamePositionsFlat(l)
+            && BrepLoop.EdgeLoop(l.CoedgesOf.WithSensesFlipped(1)).SamePositionsFlat(l)));
+
+    // Whether ChangedSensePositionsFlat(a, b) is ChangedSensePositions(a, b).
+    SamePositionsFlat(a: BrepLoop, b: BrepLoop): Boolean
+        => ChangedSensePositionsFlat(a, b).Corresponds(ChangedSensePositions(a, b), (x, y) => x == y);
+}
