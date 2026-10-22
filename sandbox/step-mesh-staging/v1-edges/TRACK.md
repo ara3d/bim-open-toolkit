@@ -1,7 +1,7 @@
 # v1-edges: edge discretization, edge identity, and the assembled mesh's watertightness
 
 Ticket: TKT-413, TKT-419, TKT-414, TKT-400
-Status: ready: E3, E1, E2 | blocked: E4 (TKT-468), on the supervisor's choice of seed (asked 2026-10-22)
+Status: ready: E3, E1, E2, E4a | working: E4b (the seed wired into TriangulateRegionCdtIndexedCounted, corpus check)
 
 ## Chunks
 
@@ -9,7 +9,9 @@ Status: ready: E3, E1, E2 | blocked: E4 (TKT-468), on the supervisor's choice of
 |---|---|---|---|
 | E1 | TKT-413, TKT-419 | The four MAYA files' non-manifold and misoriented edges traced to a face and fixed; the edge-loop chain repair TKT-419 asks for | 2 h |
 | E2 | TKT-414 | NINA-B222-W1x2's edges that do not return named, and made to finish or report undecided | 2 h |
-| E4 | TKT-468, TKT-462 (mesher half) | Plane regions with many holes triangulate to n + 2h - 2 non-degenerate triangles | 1 to 1.5 days for option A |
+| E4a | TKT-468, TKT-462 (mesher half) | The constrained Delaunay seed by insertion, with its laws and corpus witnesses | 1 day |
+| E4b | TKT-468 | The seed wired in place of the ear-clipped seed; the corpus check | 0.5 day |
+| E5 | (supervisor, 2026-10-22) | Weakly simple regions: points within tolerance merged, overlapping collinear pieces one side, touching and overlap accepted, a cusp's forced triangle with FACE-CUSP; V1G-6's keyhole rule folded in | after E4b |
 | E3 | TKT-400 | Implicit edge use keys that cannot collide at any 32-bit poly point count | 1 h |
 
 ## Done
@@ -42,6 +44,11 @@ Status: ready: E3, E1, E2 | blocked: E4 (TKT-468), on the supervisor's choice of
 
 - On bim-open-data e646e28 (Plato c8c83c8b, `SagittaByHullBoundGiven` real code, layers c47db0b3, without E1 to E3): NINA-B222's four edges still get [-5.3e29, 1.06e30] and `BisectedCachedCounted` does not return in 20 s each. TKT-410's fix alone does not clear TKT-414; E2 is needed. The E2 check against the merged library waits for the regeneration from HEAD.
 
+- E4a (TKT-468, TKT-462's mesher half), see the commit, about 6 h against 1 day. Library `V1EdgesCdtSeed` (`cdt-seed.library.plato`): `CdtSeedByInsertion(points, next)` and `CdtSeedOfRegion(r, points)`. Every boundary point is inserted into a super triangle in a serpentine grid order (CountingSortBy), with Lawson flips after each insertion. The flip test is InCircleOfSorted above 1e-12 of InCircleScale, which stops cocircular points flipping in a cycle (a 60-points-a-side rectangle did over 2 million flips without the margin). Each boundary segment that is not yet a side is recovered by Sloan's queue of crossed sides; flipping the first convex crossing side found by a scan cycled on SAM_AP203 F49. Triangles below the area floor (2·area < 1e-9·longest²) are flipped across their longest side after insertion and again after recovery, the second time never across a boundary segment: a point inserted exactly on a side leaves a flat triangle, and NORA-B100 F2745 kept 15 of them, pads of different holes on one line. The region is the flood from the triangles left of each directed boundary segment, never across one. No bridges, no ear clipping. The state is one List<Integer> in blocks (types cannot hold a List). No type added.
+  - Laws (server, budget 120 s; the 2 s budget is the merge sweep's), 5 pass in 161 s: `Law_V1Edges_SeedFactsOnSynthetic` (pad arrays 1×1, 3×2 and 10×10 with aligned rows; rectangles with 5 and 60 points a side: n + 2h − 2 triangles, every boundary segment a side once, the region's area, none below the floor), `Law_V1Edges_SeedAgreesWhereEarClippingIsComplete`, `Law_V1Edges_SeedOnLaraPads` (CEL/LARA 742 and 504, today's seed 546 of 602 and 118 of 154), `Law_V1Edges_SeedOnNoraPlane` (NORA-B100 2745), `Law_V1Edges_SeedOnRcbPlane` (RCB-F9T 874, TKT-462's collinear triangle not made). The witnesses come from `step-corpus-harness extract` (`witness-*.library.plato`) and each reproduces its face's mesh.
+  - All 72 first-pass rings where ear clipping falls short (a Python port of the same algorithm over the dumped rings): 39 complete. The other 33 lie outside the seed's contract. 31 cross themselves, being first-pass rings of faces the host refines before it triangulates them (ANN-MB2, CAM, M2-MAYA, M2_JODY, NINA-B222 677, RCB-F9T's six small faces) or faces it reports not simple (ELLA-W1 304, c211 81, 84 and 88). LENA-R8 258 repeats points inside a loop, and ODIN-W260 2613 is a slit at the tolerance: E5's kinds.
+  - The supervisor's single-loop witness, ELLA-W1 F304, is not simple (two crossings), and every single-loop face where ear clipping falls short is one of the not-simple kind; NORA-B100 2745 took its place, and the synthetic rectangles stand for one loop.
+
 ## Merge instructions
 
 E3, recommended form (contract request below): `ShellImplicitEdges` replaces `ShellPolyEdges`.
@@ -63,6 +70,10 @@ E2 (TKT-414):
 - `MasterPcurveDomain` into `01-geometry/geometry-curves.library.plato`. In `Domain(curve: BrepCurve, g)` the `OnSurface` arm's pcurve branch becomes `g.MasterPcurveDomain(supports.MasterPcurve(master))`; in `ClosestParameter(curve: BrepCurve, g, p)` the `OnSurface` arm's pcurve branch becomes `g.ClosestParameter(supports.MasterPcurve(master), p)` (the bodies of `DomainV1` and `ClosestParameterV1`; delete those two and `EdgeDomainV1` after, and point the laws at `Domain`, `ClosestParameter` and `EdgeDomain`). The comment above `ClosestParameter` then says a surface curve with a pcurve master is answered by its pcurve.
 - `SegmentCap`, `RangeLengthBound`, `IsTractableRange` into `04-discretization/discretization-edge-domain.library.plato`; in `DiscretizeEdgeRangedCounted`, `range.Start < range.End` => `m.IsTractableRange(e, c, range)` (the body of `DiscretizeEdgeRangedGuardedCounted`; delete that after).
 - The laws (`surface-curve-domain.laws.plato`) into `08-pipeline`: they read layer 7's `WitnessAt` and `Witness_UnitBox`.
+
+E4a (TKT-468):
+- `cdt-seed.library.plato` into `05-face-meshing` (block `V1EdgesCdtSeed`; it calls TwiceSignedArea, InCircleOfSorted, InCircleScale, NextBoundaryTable, IsConstrainedIn and layer 2's CountingSortBy). `cdt-seed.laws.plato` into `05-face-meshing`; `cdt-seed-witnesses.laws.plato` and the three `witness-*.library.plato` into `08-pipeline`, since they read HostMeshingOptions and the face pipeline. The witness laws build their regions and seeds from 100 to 660 points, slow for the 2 s sweep: put them on the sweep's long list.
+- The wiring is E4b's and comes in its own commit.
 
 ## Contract requests
 
