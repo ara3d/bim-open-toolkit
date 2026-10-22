@@ -1,7 +1,7 @@
 # v1-edges: edge discretization, edge identity, and the assembled mesh's watertightness
 
 Ticket: TKT-413, TKT-419, TKT-414, TKT-400
-Status: merged: E3 in d02f0f52, E1 in 367d9dfb, E2 in 2770f293 | waiting: E2's corpus check (NINA-B222) on the regenerated C# (supervisor, 2026-10-22)
+Status: ready: E3, E1, E2 | blocked: E4 (TKT-468), on the supervisor's choice of seed (asked 2026-10-22)
 
 ## Chunks
 
@@ -9,6 +9,7 @@ Status: merged: E3 in d02f0f52, E1 in 367d9dfb, E2 in 2770f293 | waiting: E2's c
 |---|---|---|---|
 | E1 | TKT-413, TKT-419 | The four MAYA files' non-manifold and misoriented edges traced to a face and fixed; the edge-loop chain repair TKT-419 asks for | 2 h |
 | E2 | TKT-414 | NINA-B222-W1x2's edges that do not return named, and made to finish or report undecided | 2 h |
+| E4 | TKT-468, TKT-462 (mesher half) | Plane regions with many holes triangulate to n + 2h - 2 non-degenerate triangles | 1 to 1.5 days for option A |
 | E3 | TKT-400 | Implicit edge use keys that cannot collide at any 32-bit poly point count | 1 h |
 
 ## Done
@@ -77,6 +78,9 @@ E2 (TKT-414):
 - v1-compiler: TKT-410 (`SagittaByHullBoundGiven`) is yours; this track does not replace that function.
 
 ## Findings
+
+- E4 (TKT-468): ear clipping stops early because hole bridging makes the ring weakly simple. On CEL/LARA F742, 7 vertices carry 3 or 4 bridges, and bridges collinear with pad sides give 116 straight angles out of 604 positions. The first bad cut is step 213: the ear (26, 27, 340), where vertex 27 appears 3 times. Another copy of 27 has a side that leaves through the ear's new diagonal, and IsEar, which tests only for points in the triangle, accepts the ear; the remainder is not simple, and clipping sticks 56 triangles short. Prototypes (C# and Python over the dumped rings): a stricter ear test (area floor 2·area ≥ 1e-9·longest², diagonal crossing, points on the diagonal, local insideness at both ends), an earcut-style split at a valid diagonal, bridging that avoids hub vertices, and removing straight-angle points to put them back by side splits. None reaches n + 2h - 2; the best is 595 of 602 on F742. Options A (a constrained Delaunay seed by insertion and flips, no bridges), B (an earcut port) and C (a diagnostic only) are with the supervisor; A recommended.
+- Boundary classification of the 2026-10-22 corpus (bim-open-data 97495d8 adds it to the harness summary): open shells 25,912 edges, cited once in closed shells 4,170 (TKT-467), beside unmeshed faces 5,094, gaps 1,749 and inside faces 1,152 (both TKT-468); per file in the side-session notes.
 
 - E3: the stdlib's `Sort`/`SortedIndices` with a closure comparator costs about 300 us per comparison on the server (12 s for 40,000 three-key uses), and `DistinctCount` sorts the same way; a counting sort over the class range does the same order in about 40 ms. `CoincidenceRootsByGrid` sorts every poly point with a comparator, so a shell of 33,000 poly points exceeds the 2 s law budget in that sort alone. Any shell-scale law over tens of thousands of elements meets this.
 - E3: `CoincidenceRootsPairwise`'s `i * n + j` also overflows a 32-bit Integer above 46,340 points under gpu32; it is the quadratic reference only, not called by the production path.

@@ -1,13 +1,15 @@
 ---
 id: TKT-468
 title: STEP mesher: ear clipping stops early on plane regions with many collinear boundary points and drops 3,221 triangles in 72 faces of 36 corpus files, opening the closed shells around them
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 53a578f9
+session: 53a578f9-98e0-45c4-bc66-a8c1cacb3bae
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3]
 related: [TKT-323, TKT-462, TKT-349]
 created: 2026-10-22
+claimed: 2026-10-22
 kind: defect
 ---
 
