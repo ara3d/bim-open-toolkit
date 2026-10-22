@@ -56,6 +56,18 @@ F3 runs before F2: it loses faces in 7 corpus files, and F2 is one element on a 
   - Regression, the 26 law libraries of layer 5 and 07-validation/poles*, `V1GateLaws` and F4b's own (167 laws, budget 120 s): HEAD ab3ed3ed with V1G-13, 166 pass and 1 error (`Law_V1Types_EarlyExitAgreesWithAll`, v1-types); with V1G-13 and F4b, the same 166 and 1. No verdict changed.
   - Harness, scratch regeneration of HEAD ab3ed3ed with V1G-13 and F4b, `--parallel`: SHO/MAYA-W160.step, SHO/MAYA-W260_REVC.step, CEL/LENA-R8.STEP and steptools-ap203 moon_buggy_asm.stp each with 0 non-manifold and 0 misoriented edges and no face with an element against the face normal (HEAD: MAYA-W160 4 and 8, moon_buggy cones 2 elements each against the normal; HEAD with V1G-13 alone: LENA-R8 16 and 32).
 
+## Open after the merges (2026-10-22, everything of this track merged by aac39758)
+
+The four tickets stay claimed until the corpus run on the regenerated library; each box and what closes it:
+- TKT-415: box 1, `Law_V1Faces_FourSidedMeshWithinChordal` (merged in grid-chordal.laws.plato) on the merged library; box 2, the merged `GridUnlessFoldedOrCoarse` (now v1-types' rule on the contract's triangles) refuses the bump top, `Law_V1Faces_GridRefusedWhereCurvedBothWays`; box 3, the harness's `gallery witness:BSplinePatchSolid:0.3 --chordal 0.01` on the regenerated library: interior vertices and a digest other than `AC03233177AEA985` (the scratch build gave `A05ACC8F74D84B8C`).
+- TKT-401: its box names `Law_BumpSolidValidatesStructurally`, which this tree skips (no `Witness_*` returns a `CostlyLoopRunWitness`). `Law_V1Faces_BumpTopHasNoDegenerateElement` states the same check on the top face; since V1G-4 it passes without F2 too (supervisor, dce1eca7). Close with that law and a waiver naming the skipped one, or restate the box.
+- TKT-411: box 1, the corpus run's per-face rows for CEL/LENA-R8.STEP 202 to 204 and SHO/MAYA-W160.step 3337 (meshed, or a located diagnostic); box 2, the corpus summary's failure lines (no ArgumentOutOfRangeException).
+- TKT-421: both boxes from the corpus run's MeshCheck and the per-face orientation of the named faces (the scratch build of HEAD with V1G-13 and F4b gave 0 non-manifold and 0 misoriented edges on all three files). MAYA-W260_REVC faces 1566 and 1595 report FACE-NOT-SIMPLE (TKT-412's family), not a fold.
+
+Not started, the supervisor's call: F1b (size a refused grid by floor requests instead of refining the face). The cost it would save is not measured on the corpus.
+
+Scratch state that is not in the repository: the regenerated C# and probe harness under the session scratchpad and `artifacts/builders/v1-faces*` (git-ignored); the probe harness adds per-face checks (`HARNESS_FACECHECK`, `HARNESS_NM`, `HARNESS_FLIPS`, `HARNESS_CDT`, `HARNESS_ALTITUDE`) that the corpus harness lacks; TKT-439/441's harness work may want them.
+
 ## Merge instructions
 
 - **F4a merge stopped (merger, 2026-10-22).** On HEAD e2a2eedf (after V1G-4's chordal-only refinement, F2, F3, T1 and V1G-8), the merge instruction applied (`JoinedByCut` calls `NearestPairTied`, below V1G-8's `BandEndCopy`; `cut-pair.*.plato` in 05-face-meshing), compiled laws on a `git archive` of HEAD plus only F4a's files (pinned CLI e37c032f, csharp, cpu64, 60 s budget):
