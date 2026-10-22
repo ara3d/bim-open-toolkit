@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff | ready: V1G-3, V1G-5, V1G-6, V1G-7, V1G-8
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff | ready: V1G-3, V1G-5, V1G-6, V1G-7, V1G-8 | V1G-9: diagnosed, no library change (TKT-455, the measure)
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -16,6 +16,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-6 | TKT-412 | pinched plane faces: weakly simple loops split into outer and holes; zero-width faces | 2 h |
 | V1G-7 | TKT-399 | ValidateFaceMesh under 2 s on a built curved mesh: the two quadratic identification checks in n log n | 2 h |
 | V1G-8 | TKT-429 | a torus band bounded by two full circles meshed on the half of the tube its loops bound | 2 h |
+| V1G-9 | TKT-455 | moon_buggy's B-spline faces 41 and 117 reported at 3.8 times the chordal bound | 2 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -64,6 +65,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
   - Compiled, budget 120 s, copies of HEAD at dc2ccca4 with V1G-4's refinement: before the edit the outer band fails (meshed inside) and the inner passes (the tie happened to fall its way); after, both pass. The laws over the band, pole and gate witnesses (`BrepWitnessesLaws`, `PolesWitnessLaws`, `PolesLaws`, `FaceMeshingLaws`, `TriangulatedWitnessLaws`, `UnwrapIndexedLaws`, `FaceMeshingLiftIndexedLaws`, `StepToMeshWitnessesLaws`, `RefinementAttainableLaws`, `V1GateLaws`): 127 laws, the same verdicts before and after (126 pass; the one fail is the CylinderRefined lift case, which V1G-4's merge instructions replace).
   - moon_buggy_asm.stp through the harness, on scratch regenerations of the same library with and without the edit (regen-step-brep.ps1 into a scratch copy of bim-open-data at 3f1ad1b, Plato c8c83c8b; harness built with -p:DepsRoot pointing at the toolkit's deps): without, 162 of 162 faces meshed, closed, not oriented, 180 misoriented edges; with, closed and oriented, 0 boundary, 0 non-manifold, 0 misoriented. Faces 33, 65 and 127 lie 176 to 193 mm from an axis fitted to their own points (the outer half, 177.8 to 190.5 mm, within the fitted axis's error; before, 165 to 178 mm). The harness's contract check gives the same five failing faces with and without the edit (cones 26, 76, 132 with flipped elements; B-spline faces 41, 117 over the chordal bound), so none comes from this chunk.
   - Not run: the corpus rerun (TKT-429's third box; it needs the merged regeneration).
+- V1G-9 (TKT-455), this commit, about 0.8 h. No staged code: the meshes are within the bound and the excess is in the measure. Faces 41 and 117 of moon_buggy_asm.stp take the quad grid (13 planar strip quads, about 80 by 1016 mm) under both F1's keep rule and T1's. A probe against a scratch regeneration of HEAD dc2ccca4 with V1G-4 (chordal 1.0, bound 1.00001) gives, per quad: F1's samples at most 0.96; the harness's contract samples (each triangle of both splits, seven barycentric points, the surface over the triangle's own parameter triangle measured to that triangle) up to 3.80, 2.35 and 1.62 on quads 0 to 2, all from one sample, the parameter midpoint of the split's diagonal, which lies 3.80 from one triangle of the split and 0.77 from the other. Geometrically, on a 21 x 21 sample: every point of every split triangle is within 0.954 of the surface (projection), and every surface point over a quad is within 0.956 of the quad. The B-spline's parametrization is not uniform across the strip, so a parameter point of one triangle lands in 3D inside its neighbour; the per-triangle parametric measure then overstates the chordal error. Refinement does not stop early here: the grid is kept and correct. The fix belongs to the harness's ContractCheck (and to this track's merged gate claim, which uses the same per-triangle form): TKT-455.
 
 ## Gate and quality: every law of layer 5
 
@@ -462,6 +464,7 @@ V1G-5 (triage):
 | V1G-8: regression laws before and after | 3.5 min, background | 2 |
 | V1G-8: two scratch regenerations and harness builds | 2 and 2.5 min, background | 2 (regeneration 1.5 min each) |
 | V1G-8: moon_buggy gallery runs and the axis distances | 6 min | 5 |
+| V1G-9: face table, measure comparison, probe of face 41 (three versions), ticket | 45 min | 4 builds, 4 runs |
 
 ## Lessons
 - The compile cache follows the folder path: a fresh scratch folder cost 6.8 minutes, the same folder rerun about 1 minute. Keep one scratch folder per check.
