@@ -117,6 +117,13 @@ type FoldRecord
 // reduced model, RawVertex the merged one's index in the raw model.
 // DroppedZeroLengthEdge: an edge_curve whose vertices coincide on an open
 // curve, removed from its loops; RawEdge is its index in the raw model.
+// MergedEdgeInto: an edge of a declared-closed shell that runs between the
+// same two vertices along the same curve as another edge of the shell, merged
+// into it by sewing (step-shell-sewing.library.plato, TKT-467); Edge is the
+// kept edge in the prepared model, RawEdge the merged edge's index in the
+// model sewing read. For a vertex merged by sewing, MergedInto's RawVertex is
+// likewise its index in the model sewing read (the reduced model), not the
+// decoder's.
 // Skipped: an instance that could not be decoded (wrong arity or kinds, a
 // dangling reference, a direction of zero length); a diagnostic names it.
 // Layer 11's RepairAction projects onto it losslessly (ToStepRepair,
@@ -124,6 +131,7 @@ type FoldRecord
 type StepRepair
     = MergedInto(Vertex: BrepVertexIndex, RawVertex: BrepVertexIndex)
     | DroppedZeroLengthEdge(RawEdge: BrepEdgeIndex)
+    | MergedEdgeInto(Edge: BrepEdgeIndex, RawEdge: BrepEdgeIndex)
     | Skipped;
 
 // One repair: the source that has no kernel element of its own, and why.

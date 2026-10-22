@@ -366,7 +366,7 @@ layer's own and may change inside the layer.
 - `ProvenanceMap { Occurrences; Sources: KernelSources; ByInstance; Folds: Array<FoldRecord>; Repairs: Array<RepairRecord> }`,
   keyed by `StepSource { Occurrence: StepOccurrenceIndex; Instance: StepInstanceId }`, with
   `StepOccurrence`, `KernelElement`, `FoldCause = OrientedFace | OrientedShell | MirroredPlacement`,
-  `StepRepair = MergedInto(Vertex, RawVertex) | DroppedZeroLengthEdge(RawEdge) | Skipped`, and
+  `StepRepair = MergedInto(Vertex, RawVertex) | DroppedZeroLengthEdge(RawEdge) | MergedEdgeInto(Edge, RawEdge) | Skipped`, and
   `KernelOf(map, source)`.
 - `DecodePolicy` (with `StandardPolicy`), `ContextUnits`, `ContextUncertainty`, `ResolveContexts`;
   `ModelLengthTolerance(used, unit, modelSize, extent, policy)`,
@@ -662,7 +662,7 @@ TYPE-CATALOG.md sections 12 and 15; the README lists the helpers.
 TYPE-CATALOG.md sections 13 and 15; the README lists the helpers. Blocks `BrepRepairDiagnosis`,
 `BrepRepairPlans`.
 
-- Actions and diagnosis: `RepairAction` (the catalog's 20 cases and `SkipInstance(Instance)`),
+- Actions and diagnosis: `RepairAction` (the catalog's 20 cases, `MergeEdges(Keep, Drop)` and `SkipInstance(Instance)`),
   `RepairCost { TouchedFaces; ToleranceGrowth; Locality }`, `Fixability = Fixable(Action, Cost) |
   FixableWithChoice(Options) | Unfixable(Why)`, `GapClosure`, `SeamRepair`, `StepRepairProjection =
   Projected(Repair) | NotProjected(Finding)`; `Diagnose(m, defect)`, `CostOf(m, action)`,
@@ -694,6 +694,18 @@ TYPE-CATALOG.md sections 13 and 15; the README lists the helpers. Blocks `BrepRe
 ## Changes to this contract
 
 Format: date, layer, old name, new name, reason.
+
+- 2026-10-22, 3, `StepDiagnosticCode` gains `ShellVertexSewn` (`STEP-SHELL-VERTEX-SEWN`, Info;
+  Measure the distance merged), `ShellEdgeSewn` (`STEP-SHELL-EDGE-SEWN`, Info; Measure the kept
+  edge's index), `ClosedShellOpen` (`STEP-CLOSED-SHELL-OPEN`, Warning; Measure the once-cited
+  edges) and `ClosedShellEdgeCitedOnce` (`STEP-CLOSED-SHELL-EDGE-CITED-ONCE`, Warning; Measure the
+  twin's shell or Unmeasured), all `AboutInstance`: `Sewn` (step-shell-sewing.library.plato), run
+  by `PrepareModelWith` after `LoopsChained`, sews declared-closed shells along their open
+  boundary and reports the ones left open (TKT-467, J6).
+- 2026-10-22, 3, `StepRepair` gains `MergedEdgeInto(Edge, RawEdge)`: a sewn edge is a repair
+  record as a sewn vertex is; for a vertex or edge merged by sewing, the raw index is the reduced
+  model's, not the decoder's. 11, `RepairAction` gains `MergeEdges(Keep, Drop)`, its action, so
+  `ToRepairAction` and `ToStepRepair` still round-trip every case (TKT-467, J6).
 
 - 2026-10-22, 3, `StepDiagnosticCode` gains `CoedgeSenseFlipped` (`STEP-COEDGE-SENSE-FLIPPED`,
   Warning, `AboutInstance`; Measure the coedge's position in its loop as written) and

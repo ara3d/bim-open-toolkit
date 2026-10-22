@@ -122,12 +122,26 @@ library V1JodyShellSewingLaws
         => match (r) {
             MergedInto(vertex, rawVertex) => true;
             DroppedZeroLengthEdge(rawEdge) => false;
+            MergedEdgeInto(edge, rawEdge) => false;
             Skipped => false;
         };
 
     // How many repairs are vertex merges.
     VertexMergeCount(rs: Array<RepairRecord>): Integer
         => rs.Reduce(0, (n, r) => IsVertexMerge(r.Repair) ? n + 1 : n);
+
+    // Whether the repair is an edge merge.
+    IsEdgeMerge(r: StepRepair): Boolean
+        => match (r) {
+            MergedInto(vertex, rawVertex) => false;
+            DroppedZeroLengthEdge(rawEdge) => false;
+            MergedEdgeInto(edge, rawEdge) => true;
+            Skipped => false;
+        };
+
+    // How many repairs are edge merges.
+    EdgeMergeCount(rs: Array<RepairRecord>): Integer
+        => rs.Reduce(0, (n, r) => IsEdgeMerge(r.Repair) ? n + 1 : n);
 
     // The diagnostics with the code.
     WithCode(ds: Array<Diagnostic>, code: String): Array<Diagnostic>
@@ -143,14 +157,14 @@ library V1JodyShellSewingLaws
     Law_V1Jody_UnsewnCubeSewsBack(_: Integer): Boolean
     {
         var raw = 0.UnsewnCube;
-        var before = raw.PrepareModel;
-        var after = raw.PrepareModelRepaired;
+        var after = raw.PrepareModel;
         var m = after.Model;
         return raw.Model.Vertices.Count == 24 && raw.Model.Edges.Count == 24
-            && before.Model.EdgeUseTable(ShellIndex(0)).UseCountIn(BrepEdgeIndex(0)) == 1
+            && raw.Model.EdgeUseTable(ShellIndex(0)).UseCountIn(BrepEdgeIndex(0)) == 1
             && m.Vertices.Count == 8 && m.Edges.Count == 12
             && m.EveryEdgeCitedTwice(0)
             && after.Map.Repairs.VertexMergeCount == 16
+            && after.Map.Repairs.EdgeMergeCount == 12
             && after.Diagnostics.CountOf("STEP-SHELL-VERTEX-SEWN") == 16
             && after.Diagnostics.CountOf("STEP-SHELL-EDGE-SEWN") == 12
             && after.Diagnostics.CountOf("STEP-CLOSED-SHELL-OPEN") == 0
@@ -165,6 +179,7 @@ library V1JodyShellSewingLaws
                 ? before.Vertices[rawVertex.Value].Point.Coincident(after.Vertices[vertex.Value].Point, after.Tolerances.Length)
                 : false;
             DroppedZeroLengthEdge(rawEdge) => true;
+            MergedEdgeInto(edge, rawEdge) => true;
             Skipped => true;
         };
 
@@ -172,7 +187,7 @@ library V1JodyShellSewingLaws
     // reported open with 4 once-cited edges, and every one of the 24 edges names a twin's shell.
     Law_V1Jody_FaceShellsReportedNotSewn(_: Integer): Boolean
     {
-        var after = 0.FaceShellsCube.PrepareModelRepaired;
+        var after = 0.FaceShellsCube.PrepareModel;
         var open = after.Diagnostics.WithCode("STEP-CLOSED-SHELL-OPEN");
         var edges = after.Diagnostics.WithCode("STEP-CLOSED-SHELL-EDGE-CITED-ONCE");
         return after.Model.Vertices.Count == 24 && after.Model.Edges.Count == 24
@@ -185,7 +200,7 @@ library V1JodyShellSewingLaws
     // none with a twin; nothing merged.
     Law_V1Jody_OpenBoxReported(_: Integer): Boolean
     {
-        var after = 0.OpenBoxCube.PrepareModelRepaired;
+        var after = 0.OpenBoxCube.PrepareModel;
         var open = after.Diagnostics.WithCode("STEP-CLOSED-SHELL-OPEN");
         var edges = after.Diagnostics.WithCode("STEP-CLOSED-SHELL-EDGE-CITED-ONCE");
         return open.Count == 1 && open[0].Measure == 4.0
@@ -203,13 +218,13 @@ library V1JodyShellSewingLaws
         return roots[0] == 0 && roots[1] == 0 && roots[2] == 2;
     }
 
-    // On every raw witness, preparing with sewing gives the library's model and no sewing
-    // diagnostic.
+    // On every raw witness, preparation sews nothing: no sewing diagnostic. (Staged, the law
+    // also compared the model with the library's before sewing; merged, that is the same
+    // function.)
     Law_V1Jody_SewingKeepsRawWitnesses(raw: RawDecodedModel): Boolean
     {
-        var after = raw.PrepareModelRepaired;
-        return after.Model.SameModel(raw.PrepareModel.Model)
-            && after.Diagnostics.CountOf("STEP-SHELL-VERTEX-SEWN") == 0
+        var after = raw.PrepareModel;
+        return after.Diagnostics.CountOf("STEP-SHELL-VERTEX-SEWN") == 0
             && after.Diagnostics.CountOf("STEP-SHELL-EDGE-SEWN") == 0;
     }
 }

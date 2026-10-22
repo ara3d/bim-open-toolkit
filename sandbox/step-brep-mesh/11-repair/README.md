@@ -14,7 +14,7 @@ went to layer 7 and section 14's STEP names and units to layer 3 (`03-step/step-
 
 | File | Holds |
 |---|---|
-| `repair-diagnosis.types.plato` | `RepairAction` (the catalog's 20 cases and `SkipInstance`), `RepairCost`, `Fixability`, `GapClosure`, `SeamRepair`, `StepRepairProjection` |
+| `repair-diagnosis.types.plato` | `RepairAction` (the catalog's 20 cases, `MergeEdges` and `SkipInstance`), `RepairCost`, `Fixability`, `GapClosure`, `SeamRepair`, `StepRepairProjection` |
 | `repair-plans.types.plato` | `RepairStep`, `RepairPlan`, `RepairPolicy`, `RepairOutcome`, `RepairEntry`, `RepairLedger`, `HealedModel` |
 | `repair.concepts.plato` | `IRepairable { Defects(x); Repair(x, plan, policy) }`, declared by `HealedModel` |
 | `repair-diagnosis.library.plato` | library `BrepRepairDiagnosis`: the faces an action touches, `CostOf`, `RaisedLength`, `RaisedAngle`, `Diagnose(m, defect)`, `PlanOf(m, defects)`, `ChangesTopology`, `FlipsShell`, `Permits`, `ToStepRepair`, `ToRepairAction(record)`, `ToRepairAction(seamRepair, edge)` |
@@ -43,7 +43,8 @@ layers.
   class: Structural, Tolerance, Geometric, Quality.
 - `StrictPolicy` allows nothing that grows a tolerance, changes a table size, or flips a shell.
 - `RepairLedger.Records` holds `RepairEntry { Source; Action; Outcome }`.
-- `ToStepRepair(action)`: `MergeVertices(keep, drop)` is `MergedInto(keep, drop)`, `DropEdge(e)` is
+- `ToStepRepair(action)`: `MergeVertices(keep, drop)` is `MergedInto(keep, drop)`, `MergeEdges(keep, drop)` is
+  `MergedEdgeInto(keep, drop)`, `DropEdge(e)` is
   `DroppedZeroLengthEdge(e)`, `SkipInstance` is `Skipped`, every other action `NotProjected` with an
   Info diagnostic. Since the merge `StepRepair` keeps the raw index of what it removed, so
   `ToRepairAction(record)` is the way back with no extra argument.

@@ -1,5 +1,5 @@
 //==
-// # Sewing within a declared-closed shell, and reporting the shells left open (v1-jody, J6, TKT-467)
+// # Sewing within a declared-closed shell, and reporting the shells left open (TKT-467)
 //
 // A file may write the faces of a closed shell with vertex and edge records of their own, so two
 // faces meet along two edge records at the same positions and each record is cited once. Layer
@@ -25,8 +25,9 @@
 // never into a vertex or edge that is itself merged. Each vertex merge is a RepairRecord
 // (MergedInto, as Reduced writes; its RawVertex is the merged vertex's index in the model
 // before sewing, the reduced model's, not the decoder's) and a diagnostic; each edge merge a
-// diagnostic (no StepRepair case names an edge merge yet: contract request in TRACK.md). The
-// kept vertex of every earlier MergedInto is moved to the sewn model's numbering.
+// RepairRecord (MergedEdgeInto, its RawEdge likewise the reduced model's index) and a
+// diagnostic. The kept vertex of every earlier MergedInto is moved to the sewn model's numbering.
+// PrepareModelWith (step.library.plato) calls Sewn after LoopsChained.
 //
 // After sewing, a declared-closed shell some of whose edges its faces cite once is open in the
 // file. Supervisor's decision of 2026-10-22: no sewing across shells (that would merge touching
@@ -36,8 +37,7 @@
 // boundary edge there is counted as the file's, not the mesher's.
 //
 // Sections, in order:
-//  - Diagnostics
-//  - Small helpers
+//  - Small helpers (with LoopFaces and FaceEdgeIndices, which the sheet repair and the laws read)
 //  - Vertices
 //  - Edges
 //  - The sewn model
@@ -46,40 +46,6 @@
 
 library V1JodyShellSewing
 {
-    //==
-    // # Diagnostics
-    //
-    // Staged with their codes until StepDiagnosticCode gains the cases (TRACK.md, contract
-    // requests); at merge each becomes Diagnose(StepDiagnosticCode.<Case>, where, measure).
-
-    // Vertex v of a declared-closed shell was merged into a vertex at the same position.
-    // Measure: the distance between the two.
-    ShellVertexSewnDiagnostic(where: Provenance, distance: Number): Diagnostic
-        => Diagnostic(Severity.Info, "STEP-SHELL-VERTEX-SEWN",
-            "A vertex of a closed shell coincides with another vertex of the shell that no edge joins; it was merged into it. Measure is the distance between them.",
-            where, distance);
-
-    // Edge e of a declared-closed shell was merged into another edge on the same two vertices
-    // along the same curve. Measure: the kept edge's index in the prepared model.
-    ShellEdgeSewnDiagnostic(where: Provenance, kept: Integer): Diagnostic
-        => Diagnostic(Severity.Info, "STEP-SHELL-EDGE-SEWN",
-            "An edge of a closed shell runs between the same two vertices along the same curve as another edge of the shell; it was merged into it, and the coedges citing it cite the kept edge. Measure is the kept edge's index.",
-            where, kept.ToNumber);
-
-    // A shell the file declares closed has edges that only one of its faces cites after sewing.
-    // Measure: how many.
-    ClosedShellOpenDiagnostic(where: Provenance, onceCited: Integer): Diagnostic
-        => Diagnostic(Severity.Warning, "STEP-CLOSED-SHELL-OPEN",
-            "The file declares this shell closed, but after sewing within the shell some of its edges are cited by only one of its faces: the shell is open in the file. Measure is the number of such edges.",
-            where, onceCited.ToNumber);
-
-    // An edge cited once in a declared-closed shell. Measure: the index of another shell with an
-    // edge at the same two positions (its twin), or Unmeasured when no shell has one.
-    OnceCitedEdgeDiagnostic(where: Provenance, twinShell: Integer): Diagnostic
-        => Diagnostic(Severity.Warning, "STEP-CLOSED-SHELL-EDGE-CITED-ONCE",
-            "Only one face of a shell the file declares closed cites this edge. Measure is the index of another shell whose edge lies at the same two positions, or unmeasured when there is none.",
-            where, twinShell >= 0 ? twinShell.ToNumber : Number.Unmeasured);
-
     //==
     // # Small helpers
 
@@ -134,6 +100,34 @@ library V1JodyShellSewing
         }
         return target.Freeze();
     }
+
+    // The face each loop bounds: the first face whose bounds name it, or -1.
+    LoopFaces(m: BrepModel): Array<Integer>
+    {
+        var owner = new Buffer<Integer>(m.Loops.Count);
+        var i = 0;
+        while (i < m.Loops.Count)
+        {
+            owner = owner.Set(i, -1);
+            i = i + 1;
+        }
+        var f = m.Faces.Count - 1;
+        while (f >= 0)
+        {
+            var b = 0;
+            while (b < m.Faces[f].Bounds.Count)
+            {
+                owner = owner.Set(m.Faces[f].Bounds[b].Loop.Value, f);
+                b = b + 1;
+            }
+            f = f - 1;
+        }
+        return owner.Freeze();
+    }
+
+    // The edges face f's loops cite, distinct and increasing.
+    FaceEdgeIndices(m: BrepModel, f: Integer): Array<Integer>
+        => DistinctSorted(m.Faces[f].Bounds.FlatMap(b => m.Loops[b.Loop.Value].CoedgesOf.Map(c => c.Edge.Value)));
 
     //==
     // # Vertices
@@ -288,9 +282,10 @@ library V1JodyShellSewing
     // # The raw model
 
     // The raw model sewn within each declared-closed shell: the sewn model, the sources of the
-    // removed vertices and edges dropped, one MergedInto repair and one ShellVertexSewn
-    // diagnostic per merged vertex in index order, one ShellEdgeSewn diagnostic per merged edge
-    // in index order, then the diagnostics of the shells left open. The raw model unchanged, but
+    // removed vertices and edges dropped, one MergedInto repair per merged vertex then one
+    // MergedEdgeInto repair per merged edge, one ShellVertexSewn diagnostic per merged vertex in
+    // index order, one ShellEdgeSewn diagnostic per merged edge in index order, then the
+    // diagnostics of the shells left open. The raw model unchanged, but
     // for those diagnostics, when nothing is merged. Precondition: raw.Model.IsEveryIndexInRange.
     Sewn(raw: RawDecodedModel): RawDecodedModel
     {
@@ -307,10 +302,11 @@ library V1JodyShellSewing
             m.Vertices.Count.Range.FlatMap(v => roots[v] == v ? [s.Vertices[v]] : s.Vertices.Take(0)),
             m.Edges.Count.Range.FlatMap(e => edgeRoots[e] == e ? [s.Edges[e]] : s.Edges.Take(0)),
             s.Loops, s.Faces, s.Shells, s.Bodies, s.Curves, s.Curves2D, s.Pcurves, s.Surfaces);
-        var repairs = mergedVertices.Map(v => RepairRecord(s.Vertices[v], StepRepair.MergedInto(BrepVertexIndex(vertexAt[roots[v]]), BrepVertexIndex(v))));
-        var vertexFindings = mergedVertices.Map(v => ShellVertexSewnDiagnostic(
+        var repairs = mergedVertices.Map(v => RepairRecord(s.Vertices[v], StepRepair.MergedInto(BrepVertexIndex(vertexAt[roots[v]]), BrepVertexIndex(v))))
+            .Concatenate(mergedEdges.Map(e => RepairRecord(s.Edges[e], StepRepair.MergedEdgeInto(BrepEdgeIndex(edgeAt[edgeRoots[e]]), BrepEdgeIndex(e)))));
+        var vertexFindings = mergedVertices.Map(v => Diagnose(StepDiagnosticCode.ShellVertexSewn,
             Provenance.AtInstance(s.Vertices[v].Instance), m.Vertices[v].Point.Distance(m.Vertices[roots[v]].Point)));
-        var edgeFindings = mergedEdges.Map(e => ShellEdgeSewnDiagnostic(Provenance.AtInstance(s.Edges[e].Instance), edgeAt[edgeRoots[e]]));
+        var edgeFindings = mergedEdges.Map(e => Diagnose(StepDiagnosticCode.ShellEdgeSewn, Provenance.AtInstance(s.Edges[e].Instance), edgeAt[edgeRoots[e]].ToNumber));
         var earlier = raw.Repairs.Map(r => RepairRecord(r.Source, r.Repair.WithKeptVertexMoved(roots, vertexAt)));
         var sewnRaw = RawDecodedModel(sewn, raw.Occurrences, sources, raw.Folds, earlier.Concatenate(repairs),
             raw.Units, raw.LengthFactor, raw.AngleFactor,
@@ -325,6 +321,7 @@ library V1JodyShellSewing
         => match (r) {
             MergedInto(vertex, rawVertex) => StepRepair.MergedInto(BrepVertexIndex(vertexAt[roots[vertex.Value]]), rawVertex);
             DroppedZeroLengthEdge(rawEdge) => r;
+            MergedEdgeInto(edge, rawEdge) => r;
             Skipped => r;
         };
 
@@ -400,30 +397,10 @@ library V1JodyShellSewing
         var uses = m.OnceCitedUses;
         var twins = m.TwinShells(uses);
         var openShells = DistinctSorted(uses.Map(u => u[1]));
-        var shellFindings = openShells.Map(s => ClosedShellOpenDiagnostic(
-            Provenance.AtInstance(raw.Sources.Shells[s].Instance), uses.Reduce(0, (n, u) => u[1] == s ? n + 1 : n)));
-        var edgeFindings = uses.Count.MapRange(i => OnceCitedEdgeDiagnostic(Provenance.AtInstance(raw.Sources.Edges[uses[i][0]].Instance), twins[i]));
+        var shellFindings = openShells.Map(s => Diagnose(StepDiagnosticCode.ClosedShellOpen,
+            Provenance.AtInstance(raw.Sources.Shells[s].Instance), uses.Reduce(0, (n, u) => u[1] == s ? n + 1 : n).ToNumber));
+        var edgeFindings = uses.Count.MapRange(i => Diagnose(StepDiagnosticCode.ClosedShellEdgeCitedOnce, Provenance.AtInstance(raw.Sources.Edges[uses[i][0]].Instance), twins[i] >= 0 ? twins[i].ToNumber : Number.Unmeasured));
         return RawDecodedModel(m, raw.Occurrences, raw.Sources, raw.Folds, raw.Repairs, raw.Units, raw.LengthFactor, raw.AngleFactor,
             raw.Diagnostics.Concatenate(shellFindings).Concatenate(edgeFindings));
     }
-
-    // PrepareModelWith with this track's two preparation repairs after the loops are chained:
-    // Sewn (J6), then SheetsRemoved (J7, double-sheets.library.plato); the library's body with
-    // those two calls added (TRACK.md, merge instructions).
-    PrepareModelWithRepaired(raw: RawDecodedModel, policy: DecodePolicy): DecodedModel
-    {
-        var size = raw.Model.ModelSize;
-        var extent = raw.Model.CoordinateExtent;
-        var tolerances = ModelTolerances(raw.Units.UsedContextsOf(raw.Occurrences), raw.Model.Unit, size, extent, policy);
-        var reduced = raw.WithModel(raw.Model.WithTolerances(tolerances)).Reduced.LoopsChained.Sewn.SheetsRemoved;
-        var folds = reduced.Folds.Concatenate(reduced.MirrorFolds);
-        var folded = reduced.Model.WithFacesReversedMarked(FoldParity(folds, reduced.Model.Faces.Count));
-        var model = folded.WithGeometry(folded.Geometry.WithClosures(folded.Geometry.ClosureMarks(tolerances)));
-        var map = ProvenanceMap(reduced.Occurrences, reduced.Sources, reduced.Sources.ByInstanceOrder, folds, reduced.Repairs);
-        return DecodedModel(model, map, reduced.Diagnostics.Concatenate(raw.ToleranceDiagnostics(tolerances, size, extent, policy)), size, extent);
-    }
-
-    // PrepareModelWithRepaired under the standard policy.
-    PrepareModelRepaired(raw: RawDecodedModel): DecodedModel
-        => raw.PrepareModelWithRepaired(DecodePolicy.StandardPolicy);
 }

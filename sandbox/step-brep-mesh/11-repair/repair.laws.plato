@@ -130,17 +130,19 @@ library BrepRepairLaws
     // # Projection onto StepRepair
 
     // Layer 3 repair k (wrapped): raw vertex raw MergedInto vertex v, raw
-    // edge raw DroppedZeroLengthEdge, or Skipped.
+    // edge raw DroppedZeroLengthEdge, raw edge raw MergedEdgeInto edge v, or
+    // Skipped.
     SampleStepRepair(k: Integer, v: Integer, raw: Integer): StepRepair
     {
-        var i = CatalogWrap(k, 3);
+        var i = CatalogWrap(k, 4);
         return i == 0 ? StepRepair.MergedInto(BrepVertexIndex(v), BrepVertexIndex(raw))
             : i == 1 ? StepRepair.DroppedZeroLengthEdge(BrepEdgeIndex(raw))
+            : i == 2 ? StepRepair.MergedEdgeInto(BrepEdgeIndex(v), BrepEdgeIndex(raw))
             : StepRepair.Skipped;
     }
 
     // A decoder repair record, read as an action and projected back, is its
-    // own StepRepair, for each of the three cases: the record holds what was
+    // own StepRepair, for each of the four cases: the record holds what was
     // removed, so the projection loses nothing.
     Law_StepRepairRoundTrips(k: Integer, v: Integer, raw: Integer, instance: Integer): Boolean
         => ToStepRepair(ToRepairAction(

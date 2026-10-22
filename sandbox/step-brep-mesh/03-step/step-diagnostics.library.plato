@@ -71,6 +71,10 @@ library StepDiagnostics
             NestedOrientedEdge => Diagnostic(Severity.Warning, "STEP-NESTED-ORIENTED-EDGE", "An oriented_edge names another oriented_edge (WR1); the senses were composed.", where, measure);
             TwoOuterBounds => Diagnostic(Severity.Warning, "STEP-TWO-OUTER-BOUNDS", "A face has more than one face_outer_bound (face WR2); no bound of it is marked outer.", where, measure);
             ClosedShellHasFreeEdges => Diagnostic(Severity.Warning, "STEP-OPEN-CLOSED-SHELL", "A closed_shell has edges used once; it is kept as declared closed. Measure is the count of such edges.", where, measure);
+            ShellVertexSewn => Diagnostic(Severity.Info, "STEP-SHELL-VERTEX-SEWN", "A vertex of a closed shell coincides with another vertex of the shell that no edge joins; it was merged into it. Measure is the distance between them.", where, measure);
+            ShellEdgeSewn => Diagnostic(Severity.Info, "STEP-SHELL-EDGE-SEWN", "An edge of a closed shell runs between the same two vertices along the same curve as another edge of the shell; it was merged into it, and the coedges citing it cite the kept edge. Measure is the kept edge's index.", where, measure);
+            ClosedShellOpen => Diagnostic(Severity.Warning, "STEP-CLOSED-SHELL-OPEN", "The file declares this shell closed, but after sewing within the shell some of its edges are cited by only one of its faces: the shell is open in the file. Measure is the number of such edges.", where, measure);
+            ClosedShellEdgeCitedOnce => Diagnostic(Severity.Warning, "STEP-CLOSED-SHELL-EDGE-CITED-ONCE", "Only one face of a shell the file declares closed cites this edge. Measure is the index of another shell whose edge lies at the same two positions, or unmeasured when there is none.", where, measure);
             OrientationFolded => Diagnostic(Severity.Info, "STEP-ORIENTATION-FOLDED", "An oriented_face or oriented shell with orientation .F. was folded into its faces' flags.", where, measure);
             FaceCitedTwice => Diagnostic(Severity.Warning, "STEP-FACE-CITED-TWICE", "A face is cited twice in one occurrence; the second citation reuses the first kernel face and its orientation.", where, measure);
             InstanceSkipped => Diagnostic(Severity.Error, "STEP-INSTANCE-SKIPPED", "A reached instance could not be decoded and has no kernel element.", where, measure);
@@ -139,6 +143,10 @@ library StepDiagnostics
             NestedOrientedEdge => StepFindingSubject.AboutInstance;
             TwoOuterBounds => StepFindingSubject.AboutInstance;
             ClosedShellHasFreeEdges => StepFindingSubject.AboutInstance;
+            ShellVertexSewn => StepFindingSubject.AboutInstance;
+            ShellEdgeSewn => StepFindingSubject.AboutInstance;
+            ClosedShellOpen => StepFindingSubject.AboutInstance;
+            ClosedShellEdgeCitedOnce => StepFindingSubject.AboutInstance;
             OrientationFolded => StepFindingSubject.AboutInstance;
             FaceCitedTwice => StepFindingSubject.AboutInstance;
             InstanceSkipped => StepFindingSubject.AboutInstance;

@@ -260,6 +260,7 @@ library BrepRepairIndexed
     FacesTouchedByIndexedCounted(m: BrepModel, ix: RepairIndex, a: RepairAction): Counted<Array<BrepFaceIndex>>
         => match (a) {
             MergeVertices(keep, drop) => m.FacesAtVertexIndexed(ix, drop);
+            MergeEdges(keep, drop) => m.FacesOfEdgeIndexed(ix, drop);
             SnapVertexToCurve(v, e) => m.FacesAtVertexIndexed(ix, v);
             ExtendEdgeToVertex(e, end) => m.FacesOfEdgeIndexed(ix, e);
             AddPcurveByProjection(e, f) => Untabled(m.OneFace(f));

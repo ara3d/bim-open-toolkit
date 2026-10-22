@@ -32,6 +32,7 @@
 // Removes: thirty ad hoc repairs with no common shape.
 type RepairAction
     = MergeVertices(Keep: BrepVertexIndex, Drop: BrepVertexIndex)
+    | MergeEdges(Keep: BrepEdgeIndex, Drop: BrepEdgeIndex)
     | SnapVertexToCurve(Vertex: BrepVertexIndex, Edge: BrepEdgeIndex)
     | ExtendEdgeToVertex(Edge: BrepEdgeIndex, End: EdgeEnd)
     | AddPcurveByProjection(Edge: BrepEdgeIndex, Face: BrepFaceIndex)

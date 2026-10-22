@@ -69,6 +69,10 @@ type StepDiagnosticCode
     | NestedOrientedEdge
     | TwoOuterBounds
     | ClosedShellHasFreeEdges
+    | ShellVertexSewn
+    | ShellEdgeSewn
+    | ClosedShellOpen
+    | ClosedShellEdgeCitedOnce
     | OrientationFolded
     | FaceCitedTwice
     | InstanceSkipped;

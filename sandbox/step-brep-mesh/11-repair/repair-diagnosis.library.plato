@@ -60,6 +60,7 @@ library BrepRepairDiagnosis
     FacesTouchedBy(m: BrepModel, a: RepairAction): Array<BrepFaceIndex>
         => match (a) {
             MergeVertices(keep, drop) => m.FacesAtVertex(drop);
+            MergeEdges(keep, drop) => m.FacesOfEdge(drop);
             SnapVertexToCurve(v, e) => m.FacesAtVertex(v);
             ExtendEdgeToVertex(e, end) => m.FacesOfEdge(e);
             AddPcurveByProjection(e, f) => m.OneFace(f);
@@ -91,6 +92,7 @@ library BrepRepairDiagnosis
     LocalityOf(a: RepairAction, faces: Array<BrepFaceIndex>): Locality
         => match (a) {
             MergeVertices(keep, drop) => LocalityOver(faces);
+            MergeEdges(keep, drop) => LocalityOver(faces);
             SnapVertexToCurve(v, e) => LocalityOver(faces);
             ExtendEdgeToVertex(e, end) => LocalityOver(faces);
             AddPcurveByProjection(e, f) => LocalityOver(faces);
@@ -123,6 +125,7 @@ library BrepRepairDiagnosis
     ToleranceGrowthOf(m: BrepModel, a: RepairAction): Ratio
         => match (a) {
             MergeVertices(keep, drop) => Ratio(1.0);
+            MergeEdges(keep, drop) => Ratio(1.0);
             SnapVertexToCurve(v, e) => Ratio(1.0);
             ExtendEdgeToVertex(e, end) => Ratio(1.0);
             AddPcurveByProjection(e, f) => Ratio(1.0);
@@ -284,6 +287,7 @@ library BrepRepairDiagnosis
     ChangesTopology(a: RepairAction): Boolean
         => match (a) {
             MergeVertices(keep, drop) => true;
+            MergeEdges(keep, drop) => true;
             SnapVertexToCurve(v, e) => false;
             ExtendEdgeToVertex(e, end) => false;
             AddPcurveByProjection(e, f) => true;
@@ -310,6 +314,7 @@ library BrepRepairDiagnosis
     FlipsShell(a: RepairAction): Boolean
         => match (a) {
             MergeVertices(keep, drop) => false;
+            MergeEdges(keep, drop) => false;
             SnapVertexToCurve(v, e) => false;
             ExtendEdgeToVertex(e, end) => false;
             AddPcurveByProjection(e, f) => false;
@@ -344,7 +349,8 @@ library BrepRepairDiagnosis
     // # Projection onto StepRepair
 
     // The layer 3 StepRepair an action is, when it is one the decoder makes:
-    // MergeVertices is MergedInto its kept and dropped vertices, DropEdge is
+    // MergeVertices is MergedInto its kept and dropped vertices, MergeEdges is
+    // MergedEdgeInto its kept and dropped edges, DropEdge is
     // DroppedZeroLengthEdge of its edge, SkipInstance is Skipped. Any other action is
     // NotProjected with an Info diagnostic. Only the decoder's own entries are
     // meant to be projected: a DropEdge of an edge of positive extent also
@@ -352,6 +358,7 @@ library BrepRepairDiagnosis
     ToStepRepair(action: RepairAction): StepRepairProjection
         => match (action) {
             MergeVertices(keep, drop) => StepRepairProjection.Projected(StepRepair.MergedInto(keep, drop));
+            MergeEdges(keep, drop) => StepRepairProjection.Projected(StepRepair.MergedEdgeInto(keep, drop));
             SnapVertexToCurve(v, e) => NotADecodeRepair(action);
             ExtendEdgeToVertex(e, end) => NotADecodeRepair(action);
             AddPcurveByProjection(e, f) => NotADecodeRepair(action);
@@ -384,13 +391,15 @@ library BrepRepairDiagnosis
             Number.Unmeasured));
 
     // The action a decoder repair record stands for: MergedInto is
-    // MergeVertices of the kept and the dropped vertex, DroppedZeroLengthEdge
+    // MergeVertices of the kept and the dropped vertex, MergedEdgeInto is
+    // MergeEdges of the kept and the dropped edge, DroppedZeroLengthEdge
     // is DropEdge of the dropped edge, Skipped is SkipInstance of the
     // record's instance.
     ToRepairAction(r: RepairRecord): RepairAction
         => match (r.Repair) {
             MergedInto(v, raw) => RepairAction.MergeVertices(v, raw);
             DroppedZeroLengthEdge(e) => RepairAction.DropEdge(e);
+            MergedEdgeInto(keep, raw) => RepairAction.MergeEdges(keep, raw);
             Skipped => RepairAction.SkipInstance(r.Source.Instance);
         };
 
