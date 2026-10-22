@@ -1096,14 +1096,11 @@ library UvRegions
 
     // Whether side k of the four-sided outer loop is one carrier: every point strictly between
     // its two corners is a sample of one edge, a point of one seam-cut copy, or a point of one
-    // pole segment. A side of one segment has no such point and is one coedge or one cut step.
+    // pole segment, or a closed edge's own vertex flanked by samples of that edge (a band cut
+    // that starts at a sample point passes it; SideIsOneCarrierV1, face-meshing-v1-axle.library.plato,
+    // TKT-430). A side of one segment has no such point and is one coedge or one cut step.
     SideIsOneCarrier(r: UvRegion, corners: Array<VertexIndex>, k: Integer): Boolean
-    {
-        var start = corners[k % 4].Value;
-        var count = r.SideSegmentCount(corners, k);
-        var inner = (count - 1).MapRange(i => r.Outer.Sources.AtModulo(start + 1 + i));
-        return inner.Count == 0 ? true : inner.All(s => s.SameCarrier(inner[0]));
-    }
+        => r.SideIsOneCarrierV1(corners, k);
 
     // Whether two sources lie on one carrier: samples of one edge, points of one seam-cut copy,
     // or points of one pole segment. A vertex or an interior point is no carrier's.

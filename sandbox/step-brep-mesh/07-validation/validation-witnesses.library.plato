@@ -324,6 +324,28 @@ library BrepWitnesses
             Tolerances.Witness_Tolerances,
             LengthUnit.Metre);
 
+    // The side face of the cylinder of radius r and height h bounded by its two rim circles, the
+    // top circle closed at (-r, 0, h), half a turn from the bottom circle's vertex (r, 0, 0), as the
+    // axle's are: Witness_CylinderBand with the top circle's frame turned by pi. Loops [E0+] and
+    // [E1-] bound the side face. Only face meshing reads it (one face, the shell stated closed).
+    Witness_CylinderBandTurned(_: BrepModel, r: Number, h: Number): BrepModel
+        => BrepModel(
+            GeometrySet(
+                [BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r),
+                 BrepCurve.Circle(FrameAt(Point3D(0.0, 0.0, h), Vector3D(-1.0, 0.0, 0.0), Vector3D(0.0, -1.0, 0.0), Vector3D(0.0, 0.0, 1.0)), r)],
+                [],
+                [],
+                [BrepSurface.Cylinder(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)], []),
+            [BrepVertex(Point3D(r, 0.0, 0.0)), BrepVertex(Point3D(0.0 - r, 0.0, h))],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true),
+             BrepEdge(BrepVertexIndex(1), BrepVertexIndex(1), CurveIndex(1), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(0, true)]), BrepLoop.EdgeLoop([CoedgeOf(1, false)])],
+            [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, false), FaceBound(BrepLoopIndex(1), true, false)])],
+            [ClosedShellOf([0])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
     // A sector of the solid cylinder over u in [0, sweep], 0 < sweep < 2 pi:
     // prism topology. Vertices A0 (0,0,0), B0 (r,0,0), C0 (r cos s, r sin s, 0)
     // and A1, B1, C1 above them at height h; edges e0 A0B0, e1 the bottom arc
