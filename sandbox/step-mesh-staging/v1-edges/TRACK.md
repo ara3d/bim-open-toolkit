@@ -1,7 +1,7 @@
 # v1-edges: edge discretization, edge identity, and the assembled mesh's watertightness
 
 Ticket: TKT-413, TKT-419, TKT-414, TKT-400
-Status: ready: E3, E1, E2, E4a, E4b | next: E5
+Status: ready: E3, E1, E2, E4a, E4b | working: E5a
 
 ## Chunks
 
@@ -11,7 +11,9 @@ Status: ready: E3, E1, E2, E4a, E4b | next: E5
 | E2 | TKT-414 | NINA-B222-W1x2's edges that do not return named, and made to finish or report undecided | 2 h |
 | E4a | TKT-468, TKT-462 (mesher half) | The constrained Delaunay seed by insertion, with its laws and corpus witnesses | 1 day |
 | E4b | TKT-468 | The seed wired in place of the ear-clipped seed; the corpus check | 0.5 day |
-| E5 | (supervisor, 2026-10-22) | Weakly simple regions: points within tolerance merged, overlapping collinear pieces one side, touching and overlap accepted, a cusp's forced triangle with FACE-CUSP; V1G-6's keyhole rule folded in | after E4b |
+| E5a | TKT-468 (fallback), V1G-6 | The seed over repeated points: points within rounding (1e-12 of the face's size) one vertex, a vertex that close to a side splits it inside the seed, a side traversed both ways cancels in the fill, each corner back on the copy whose wedge holds the triangle; the E4b fallback removed | 1 day |
+| E5b | (supervisor, 2026-10-22) | The simplicity test: exact touches and overlaps accepted, proper crossings refused; V1G-6's keyhole rule folded in; FACE-CUSP on a face with a triangle thinner than its tolerance | 0.5 day |
+| E5c | (supervisor, 2026-10-22, option 1) | `RefinementReason.SplitAt(Parameter)`: a blocking request that splits a shared edge at the point where a vertex of the face touches it, kept through later refinement; VOCABULARY.md's contract changes; witnesses ELLA-W1 304 and ODIN-W260 2613 on a scratch regeneration (both faces mesh, neighbours share the point, shells closed) | 1 day |
 | E3 | TKT-400 | Implicit edge use keys that cannot collide at any 32-bit poly point count | 1 h |
 
 ## Done
@@ -111,6 +113,8 @@ E4b (TKT-468), after E4a:
 
 ## Findings
 
+- E5 (profiling, 2026-10-22, probe over the host's oriented regions with the host's tolerance in chart units): all 8 faces are unmeshed today with FACE-LOOP-NOT-SIMPLE. ELLA-W1 304/305 (tolerance 1e-7): each comb spike's tip lies on the next spike's side, 1e-18 off (30 such touches, 2 of them rounding-level crossings). ODIN-W260 2613 (0.001): a rectangle with a zero-width tail, its last side running back over its first, 4e-16 off. ODIN-W260 2615/2616: a needle of width about the tolerance. c211 81/84/88 (0.005 x 0.01): a needle that crosses itself: point 12 lies 0.00095 on the wrong side of side 10-11. LENA-R8 258 (0.01): loop 121 retraces itself (30 collinear overlaps), loop 9 touches itself at shared ends (28 pairs).
+- E5 prototype (Python, `e5_seed.py` in the session scratchpad): points within a merge distance are one vertex; a vertex within it of a side splits the side; each geometric side is constrained once; a side traversed both ways cancels (winding number), so it is a constraint but seeds no fill (without that, ODIN 2613's tail seeds the outside); each corner goes back on the copy whose wedge holds the triangle. With the merge distance at the face's tolerance, needles fold away and their sides, model edges shared with neighbours, lose their triangles (c211 loses 0.0019 of area, ODIN 2615 0.0008). With it at rounding level (1e-12 of the face's size): ELLA-W1 304 and 305 272 triangles each and ODIN 2613 2, exact covers; ODIN 2615 and 2616 4 each, exact, 2 of them thinner than the tolerance (FACE-CUSP); c211 still crosses (one side unrecovered).
 - E4 (TKT-468): ear clipping stops early because hole bridging makes the ring weakly simple. On CEL/LARA F742, 7 vertices carry 3 or 4 bridges, and bridges collinear with pad sides give 116 straight angles out of 604 positions. The first bad cut is step 213: the ear (26, 27, 340), where vertex 27 appears 3 times. Another copy of 27 has a side that leaves through the ear's new diagonal, and IsEar, which tests only for points in the triangle, accepts the ear; the remainder is not simple, and clipping sticks 56 triangles short. Prototypes (C# and Python over the dumped rings): a stricter ear test (area floor 2·area ≥ 1e-9·longest², diagonal crossing, points on the diagonal, local insideness at both ends), an earcut-style split at a valid diagonal, bridging that avoids hub vertices, and removing straight-angle points to put them back by side splits. None reaches n + 2h - 2; the best is 595 of 602 on F742. Options A (a constrained Delaunay seed by insertion and flips, no bridges), B (an earcut port) and C (a diagnostic only) are with the supervisor; A recommended.
 - Boundary classification of the 2026-10-22 corpus (bim-open-data 97495d8 adds it to the harness summary): open shells 25,912 edges, cited once in closed shells 4,170 (TKT-467), beside unmeshed faces 5,094, gaps 1,749 and inside faces 1,152 (both TKT-468); per file in the side-session notes.
 
