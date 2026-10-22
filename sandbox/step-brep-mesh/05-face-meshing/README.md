@@ -23,6 +23,7 @@ Algorithms were deferred by the design pass, every one with a contract in `face-
 | `triangulation-refine.library.plato` | library `TriangulationRefine` (TKT-343): the angle bound, lifted angles, off-centres and the placing and splitting of a point |
 | `triangulation-fast.library.plato` | library `TriangulationFast` (TKT-351): `RefineToSurfaceByInsertion`, one point at a time with local flips, its surface and angle passes, the incremental neighbour table |
 | `triangulation-requests.library.plato` | library `TriangulationRequests` (TKT-343): `QualitySegmentRequestsCdt`, not wired (it adds boundary segments; waits for an angle bound in `FaceMeshingCriteria`) |
+| `face-meshing-v1-plane.library.plato` | library `V1Plane` (TKT-349, TKT-418): `IsPlaneFace`, `RefineToSurfaceV1` (a plane face keeps its constrained triangulation, no refinement; every other face is refined by insertion), `IsInteriorSource`, `PlaneMeshIsBoundaryOnly`, `MeshedTriangulationOf`; `RefineToSurface` calls `RefineToSurfaceV1` |
 | `triangulation.laws.plato` | library `TriangulationLaws` (TKT-343): 16 laws of the two functions over six sample models |
 | `face-meshing.laws.plato` | library `FaceMeshingLaws`: 46 laws and their guards |
 | `face-meshing.spec.plato` | invariants of 7 types, contracts of 15 functions (chunk B added `ExpandedPoles` and `CutWholePeriods`), 3 theorems |

@@ -45,16 +45,16 @@ library TriangulatedWitnessLaws
             && a.Triangles.Count == b.Triangles.Count && a.Triangles.Count.Range.All(i => a.Triangles[i] == b.Triangles[i])
             && a.Quads.Count == b.Quads.Count && a.Quads.Count.Range.All(i => a.Quads[i] == b.Quads[i]);
 
-    // The witness's refined triangulation is FaceTriangulation's, field for field: the sample
-    // criteria do not prefer quads, so the laws of face-meshing.laws.plato over FaceTriangulation
-    // are stated on Refined.
+    // The triangulation MeshFace lifts (MeshedTriangulationOf) is FaceTriangulation's, field for
+    // field: the sample criteria do not prefer quads, so the laws of face-meshing.laws.plato over
+    // FaceTriangulation are stated on it.
     Law_RefinedIsFaceTriangulation(w: TriangulatedWitness): Boolean
-        => SameTriangulation(w.Refined, w.Model.FaceTriangulation(w.Face, w.Discretizations, TriCriteria(0)));
+        => SameTriangulation(w.MeshedTriangulationOf, w.Model.FaceTriangulation(w.Face, w.Discretizations, TriCriteria(0)));
 
-    // The witness's MeshFace outcome holds Refined lifted: the laws over MeshFace's mesh and over
-    // Lift read one face mesh.
+    // The witness's MeshFace outcome holds the triangulation MeshFace lifts (MeshedTriangulationOf)
+    // lifted: the laws over MeshFace's mesh and over Lift read one face mesh.
     Law_OutcomeLiftsRefined(w: TriangulatedWitness): Boolean
-        => SameFaceMesh(w.Outcome.Mesh, w.Model.Lift(w.Face, w.Discretizations, w.Refined));
+        => SameFaceMesh(w.Outcome.Mesh, w.Model.Lift(w.Face, w.Discretizations, w.MeshedTriangulationOf));
 
     // One witness per face of each sample model, in TriSampleModel's order.
     Witness_UnitBoxFace0Triangulated(_: TriangulatedWitness): TriangulatedWitness
@@ -203,7 +203,7 @@ library TriangulatedWitnessLaws
 
     // Law_LiftKeepsPoints at every point of the face's triangulation and its lift.
     Law_LiftKeepsPointsOnSamples(w: TriangulatedWitness): Boolean
-        => w.Refined.LiftKeepsPointsOn(w.Outcome.Mesh);
+        => w.MeshedTriangulationOf.LiftKeepsPointsOn(w.Outcome.Mesh);
 
     // Law_LocalVertexInRange at every point of MeshFace's mesh.
     Law_LocalVertexInRangeOnSamples(w: TriangulatedWitness): Boolean

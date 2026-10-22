@@ -1,0 +1,58 @@
+//==
+// # Version 1: plane faces are not refined (TKT-349, TKT-418)
+//
+// The version 1 mesh contract (sandbox/step-brep-mesh/README.md) triangulates a plane face from
+// its boundary and holes with no refinement. On a plane the surface pass never asks for a point
+// (the chordal deviation is zero and the normal does not turn), so the only points refinement
+// added there were the angle pass's off-centres, which serve element quality, a later pass. The
+// constrained triangulation already meets every postcondition of RefineToSurface on a plane: it
+// keeps the boundary, adds no point, and every element is positive in the chart, which on a plane
+// (an affine lift) is the same as facing the face normal.
+//
+// Sections, in order:
+//  - Refinement
+//  - Claims
+
+library V1Plane
+{
+    //==
+    // # Refinement
+
+    // Whether face f lies on a plane record.
+    IsPlaneFace(m: BrepModel, f: BrepFaceIndex): Boolean
+        => m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord;
+
+    // RefineToSurface under the version 1 contract: on a plane face, triangulation t as given (the
+    // region's constrained triangulation); on any other face, the refinement by insertion against
+    // the surface and the angle bound.
+    RefineToSurfaceV1(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
+        => m.IsPlaneFace(f) ? t : m.RefineToSurfaceByInsertion(f, r, chart, t, c);
+
+    //==
+    // # Claims
+
+    // True when s is an interior point: one a triangulation or a grid added, not a boundary source.
+    IsInteriorSource(s: UvPointSource): Boolean
+        => match (s) {
+            FromVertex(v) => false;
+            FromEdge(e, k) => false;
+            SeamCut(side, k) => false;
+            Pole(side, k) => false;
+            Interior => true;
+        };
+
+    // True when face mesh fm of a plane face, meshed with triangles only, holds no interior point:
+    // it is its boundary's triangulation. A face meshed by the quad grid is not claimed (the grid
+    // places points inside a four-sided face on purpose); nor is a face on any other surface.
+    PlaneMeshIsBoundaryOnly(m: BrepModel, fm: FaceMesh): Boolean
+        => (m.IsPlaneFace(fm.Face) && fm.Quads.Count == 0)
+            ? fm.Sources.All(s => s.IsInteriorSource.Not)
+            : true;
+
+    // The triangulation MeshFace lifts for witness w's face under the sample criteria (no quads):
+    // under RefineToSurfaceV1, the constrained triangulation on a plane face and the refined one on
+    // any other. The witness's Refined stays the insertion refinement's result on every face, so
+    // the refinement laws keep testing it.
+    MeshedTriangulationOf(w: TriangulatedWitness): UvTriangulation
+        => w.Model.IsPlaneFace(w.Face) ? w.Cdt : w.Refined;
+}

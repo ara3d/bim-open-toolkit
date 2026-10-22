@@ -187,12 +187,13 @@ library FaceMeshing
         return at < 0 ? triangles : triangles.Take(at).Concatenate(split).Concatenate(triangles.Skip(at + 1));
     }
 
-    // Refinement against the surface and the smallest-angle bound, by insertion
-    // and flips (RefineToSurfaceByInsertion, triangulation-fast.library.plato).
+    // Refinement under the version 1 contract (RefineToSurfaceV1): none on a plane face;
+    // elsewhere against the surface and the smallest-angle bound, by insertion and flips
+    // (RefineToSurfaceByInsertion, triangulation-fast.library.plato).
     // Boundary points are never added, moved or removed, and every element stays
     // positive in the chart.
     RefineToSurface(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
-        => m.RefineToSurfaceByInsertion(f, r, chart, t, c);
+        => m.RefineToSurfaceV1(f, r, chart, t, c);
 
     // Whether the surface record is a plane.
     IsPlanarRecord(surface: BrepSurface): Boolean

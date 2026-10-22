@@ -23,7 +23,7 @@ library RefinementAttainableLaws
     // constrained Delaunay triangulation by the library's refinement (RefineToSurfaceByInsertionReference,
     // the reference, which stays reachable after the merge) and by the attainable one,
     // each lifted and assembled as MeshModel does; capped when the cap binds on some arc. Also
-    // every face lifted from the wired RefineToSurfaceByInsertion, and MeshFace's meshes.
+    // every face lifted from the wired RefineToSurface, and MeshFace's meshes.
     CappedAt(m: BrepModel, name: String, capped: Boolean, chordal: Number): CappedWitness
     {
         var c = DefaultMeshingOptions(chordal).Face;
@@ -39,7 +39,7 @@ library RefinementAttainableLaws
         return CappedWitness(name, m, capped, c, d, regions, charts, cdt, reference, attainable,
             m.AssembleModelMesh(referenceFaces, m.NumberMeshVertices(d, referenceFaces)),
             m.AssembleModelMesh(attainableFaces, m.NumberMeshVertices(d, attainableFaces)),
-            n.MapRange(f => m.Lift(BrepFaceIndex(f), d, m.RefineToSurfaceByInsertion(BrepFaceIndex(f), regions[f], charts[f], cdt[f], c))),
+            n.MapRange(f => m.Lift(BrepFaceIndex(f), d, m.RefineToSurface(BrepFaceIndex(f), regions[f], charts[f], cdt[f], c))),
             n.MapRange(f => m.MeshFace(BrepFaceIndex(f), d, c).Mesh));
     }
 
