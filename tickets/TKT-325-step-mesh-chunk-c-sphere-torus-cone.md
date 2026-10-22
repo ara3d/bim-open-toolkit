@@ -3,8 +3,8 @@ id: TKT-325
 title: STEP mesher in Plato, step C: mesh the sphere, torus and cone (poles, surfaces closed in two directions, the cone's tip)
 status: claimed
 depends_on: []
-owner: session 81f546ae
-session: 81f546ae-4c48-48bb-aa18-dfabd21e83ad
+owner: session cab91351
+session: cab91351-5bf8-4a98-95e5-92d43c79efbf
 fence: [sandbox/step-brep-mesh/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-324, TKT-315]
@@ -29,3 +29,16 @@ Part of the epic TKT-323 (the STEP mesher in Plato). Owner approval 2026-10-18. 
 - Criterion 1: the bodies are written in Plato and staged; no C# body. The deferred counts in the layer 01 and 05 READMEs change at merge (one fewer in layer 01, two fewer in layer 05), as the merge instructions say.
 - Criterion 2: the seamed sphere, the sphere bounded by its pole vertices, the torus and the cone mesh closed and consistently oriented with the right Euler characteristic and volume (gpu32, before the wave 1 merges). The negative witness meshes as the seamed sphere does; whether it fails exactly its named layer 02 laws is unchanged by this track.
 - Criterion 3 is not met. The torus has Euler characteristic 0 and its volume oracle holds; Gauss-Bonnet holds under cpu64 (gaps below 1e-10) but not under gpu32 (layer 07's float sum). Open: one sphere element of 1,913 that refinement flags but cannot split; the torus face checks fail for a reason not yet found; whole-model laws exceed the budget on the merged library; the C# backend half.
+- 2026-10-22, session cab91351 (track E, L3). Both backends on the library exported at toolkit cd33c998 (layers last changed in c47db0b3), stdlib from Plato e37c032f without `brep.*`, CLI `C:/Users/cdigg/.plato-cli/e37c032f`, cpu64: compiled C# with `--budget=2 --parallel=6`, interpreter with `--budget=120`; laws matched as Block.Law, overloads joined. Columns: law, interpreter, compiled C#.
+  4 of 9 agree. `Law_PoleGaussBonnet` passes compiled and runs out of time in the interpreter (1,557 s), the expected kind of difference. The five face-check laws fail compiled; the interpreter runs out of time on four and fails the cone. A probe over the compiled library printed the failing checks: sphere face 0 `Law_ElementNormalAgreesWithSurface`; pole-loop sphere face 0 `Law_ElementFacesFaceNormal` and `Law_ElementNormalAgreesWithSurface`; cone face 0 `Law_ElementFacesFaceNormal` and `Law_SurfaceEdgeNormalTurnWithinSurfaceAngular` (face 1 clean); torus and pinned torus face 0 `Law_ElementNormalAgreesWithSurface`. The two angular checks are quality under the version 1 contract and move out of the gate with TKT-418 (v1-gate). `Law_ElementFacesFaceNormal` is a folded element, which the contract forbids: the pole-loop sphere and the cone are not oriented, so box 2 and box 3 stay open on TKT-399 (v1-gate, the curved-face check laws).
+  | Law | Interpreter | Compiled |
+  |---|---|---|
+  | `PolesLaws.Law_SphereFaceChecksHold` | error | fail |
+  | `PolesLaws.Law_SphereByPoleLoopsFaceChecksHold` | error | fail |
+  | `PolesLaws.Law_TorusFaceChecksHold` | error | fail |
+  | `PolesLaws.Law_TorusAtVertexFaceChecksHold` | error | fail |
+  | `PolesLaws.Law_ConeFaceChecksHold` | fail | fail |
+  | `BrepWitnessesLaws.Law_RedundantPoleLoopsFailExactlyTwoLaws` | pass | pass |
+  | `BrepOraclesOnceLaws.Law_DivergenceEqualsTorusVolume` | pass | pass |
+  | `PolesWitnessLaws.Law_PoleGaussBonnet` | error | pass |
+  | `ModelMeshMeasuresLaws.Law_AngleDefectSumIsTwoPiTimesEuler` | pass | pass |

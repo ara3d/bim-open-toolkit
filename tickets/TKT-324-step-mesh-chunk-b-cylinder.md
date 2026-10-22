@@ -3,8 +3,8 @@ id: TKT-324
 title: STEP mesher in Plato, step B: mesh the cylinder (circles, curved faces, the seam cut, refinement to tolerance, quad meshes)
 status: claimed
 depends_on: []
-owner: session 81f546ae
-session: 81f546ae-4c48-48bb-aa18-dfabd21e83ad
+owner: session cab91351
+session: cab91351-5bf8-4a98-95e5-92d43c79efbf
 fence: [sandbox/step-brep-mesh/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-316, TKT-314, TKT-315]
@@ -63,3 +63,14 @@ Dependencies changed 2026-10-18 (plan docs/plans/step-mesher-parallel.md): step 
   - Under 93907bd7, layer 4's `Law_SeedsAreSampled` fails on a generated discretization with one parameter and four points. The law needs a guard on its own input; left for the supervisor.
 - 2026-10-18, F-54 for layers 4 and 5, at the supervisor's request, with the fence widened for one commit to layer 7's `validation-checks-discretization.library.plato` and `validation-checks-face-meshing.library.plato`. Before (warm server): of layers 4 and 5's 82 laws, 21 failed and 2 errored on generated values. After: 81 pass. The one failure is `Law_SegmentFloorMet`, left for a follow-up: layer 8's `pipeline.laws.plato:324` calls it, and the topology session has open edits in that file. Layer 8's spec still names `Law_DiscretizationsIndexedByEdge`, `Law_DiscretizationsCoverEdges`, `Law_BlockingRequestMeansEmptyMesh`, `Law_RequestHasDiagnostic` and `Law_ProvenanceMatchesSource` with value arguments; those should become the predicate names, in the same follow-up. Layer 7's `BrepWitnessesLaws` gives 28 pass, 7 obligations, 1 fail. The failure, `Law_WitnessGreenAreaMatchesFacts` at k = 4 (the cone), fails identically on HEAD without this change.
 - 2026-10-19, closer (supervisor of docs/plans/step-mesher-v2.md): stays open. Box 3 unmet: no C# backend run of its laws exists, so agreement law by law cannot be checked; `Law_RequestsNameEdgesOfTheirFace` is still not in the library (layer 5's `Law_RequestsNameFaceEdges` states it); the step laws are vacuous on the cylinders. Waits on a C# run of these laws: the library's layers regenerated to C# under cpu64 (TKT-313, track E, blocked by TKT-347, the C# writer dropping List-first functions) and its laws run over the C# backend.
+- 2026-10-22, session cab91351 (track E, L2). Both backends on the library exported at toolkit cd33c998 (layers last changed in c47db0b3), stdlib from Plato e37c032f without `brep.*`, CLI `C:/Users/cdigg/.plato-cli/e37c032f`, cpu64: compiled C# with `--budget=2 --parallel=6`, interpreter with `--budget=120`; laws matched as Block.Law, overloads joined. Columns: law, interpreter, compiled C#.
+  The six named laws agree and pass on both backends (`StepToMeshLaws.Law_TighterChordalStaysWithinLooserBound` 25 cases). The B-spline variant `BsplinePipelineLaws.Law_TighterChordalStaysWithinLooserBound` runs out of time on both (interpreter 120 s at case 15, compiled abandoned at 128 s). Box 3 also asks that every step A law still passes: two step A laws exceed the compiled budget (TKT-314 log, TKT-356). Stays open on TKT-356.
+  | Law | Interpreter | Compiled |
+  |---|---|---|
+  | `StepToMeshLoopRunLaws.Law_StepDecreasesMeasure` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_RefinementNeverCoarsens` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_OnlyFacesOfChangedEdgesAreRemeshed` | pass | pass |
+  | `Law_RequestsNameEdgesOfTheirFace (no such law)` | - | - |
+  | `StepToMeshLaws.Law_PendingRequestIsInSomeOutcome` | pass | pass |
+  | `BsplinePipelineLaws.Law_TighterChordalStaysWithinLooserBound` | error | error |
+  | `StepToMeshLaws.Law_TighterChordalStaysWithinLooserBound` | pass | pass |

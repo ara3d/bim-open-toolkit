@@ -1,19 +1,21 @@
 ---
 id: TKT-314
 title: Implement chunk A of the STEP B-rep mesh library: the unit cube through every layer on witnesses
-status: open
+status: claimed
 depends_on: [TKT-299]
-owner: topology fa587ba3-0ab9-4cde-8228-0725081e9a92
+owner: session cab91351
+session: cab91351-5bf8-4a98-95e5-92d43c79efbf
 fence: [sandbox/step-brep-mesh/**]
 workflow: [W3, W4]
 confidence: high
 created: 2026-10-17
+claimed: 2026-10-22
 ---
 
 ## Acceptance criteria
 
 - [x] every function TASKS.md chunk A lists has a body, and the deferred-body count in each layer README is updated
-- [ ] layer 2's laws pass on the ten positive witnesses and fail exactly as stated on the three negative ones, through the Plato law runner over the C# backend
+- [x] layer 2's laws pass on the ten positive witnesses and fail exactly as stated on the three negative ones, through the Plato law runner over the C# backend
 - [ ] Witness_UnitBox meshes through MeshModel to 8 vertices and 12 triangles, closed, oriented, reduced Euler characteristic 2, signed volume 1, Rounds 0, Ok true, and every law TASKS.md chunk A lists passes
 - [x] the gate stays at PASS with zero errors in scope, and the mechanical items of reviews/FINDINGS.md F-48 (1, 2, 4, 5) and F-47.4 are applied in the first commit
 
@@ -45,3 +47,45 @@ Log 2026-10-18, box 3 on the interpreter (Plato 93907bd7, the TKT-332 call cache
 - Left for box 3: the C# backend run (TKT-315), and the ten general laws over the curved witnesses, which wait for steps B and F.
 
 2026-10-19, closer (supervisor of docs/plans/step-mesher-v2.md): stays open. Boxes 2 and 3 unmet. Box 2: no C# backend run of layer 2's laws exists, and `Law_WitnessIsStructurallyClean` and `Law_WitnessValidatesClean` are still obligations on witness 7 (`ProjectBySearch`, chunk F, TKT-327) in reviews/verdicts-cpu64.tsv. Box 3: on the interpreter the box meshes as stated (`Law_UnitBoxMeshesAsStated` pass) and every chunk A law passes on the box, but ten of the listed layer 8 laws are obligations in the verdict file over the curved witnesses (`ExpandedPoles`, TKT-325; `ProjectBySearch`, TKT-327), and C# (TKT-313) meshes the cube through `StepMesher.Mesh` without layer 8's `MeshModel` (no `Rounds` or `Ok`). Waits on TKT-325, TKT-327 and a C# run of these laws: the library's layers regenerated to C# under cpu64 (TKT-313, track E, blocked by TKT-347, the C# writer dropping List-first functions) and its laws run over the C# backend.
+- 2026-10-22, session cab91351 (track E, L1). Both backends on the library exported at toolkit cd33c998 (layers last changed in c47db0b3), stdlib from Plato e37c032f without `brep.*`, CLI `C:/Users/cdigg/.plato-cli/e37c032f`, cpu64: compiled C# with `--budget=2 --parallel=6`, interpreter with `--budget=120`; laws matched as Block.Law, overloads joined. Columns: law, interpreter, compiled C#.
+  Box 2, layer 2 on the witnesses: 17 of 17 agree, every one pass on both, witness 7 (`Witness_BSplinePatchSolid`) included now that chunk F has bodies. Ticked.
+  | Law | Interpreter | Compiled |
+  |---|---|---|
+  | `BrepWitnessesLaws.Law_WitnessHasStatedCounts` | pass | pass |
+  | `BrepWitnessesLaws.Law_WitnessStatedCountsImplyStatedGenus` | pass | pass |
+  | `BrepWitnessesLaws.Law_WitnessEulerIsTwoMinusTwiceGenus` | pass | pass |
+  | `BrepWitnessesLaws.Law_WitnessOracleEulerMatchesLayerTwo` | pass | pass |
+  | `BrepWitnessesLaws.Law_WitnessHasStatedShellCount` | pass | pass |
+  | `BrepWitnessesLaws.Law_WitnessHasStatedFaceCount` | pass | pass |
+  | `BrepWitnessesLaws.Law_WitnessIsStructurallyClean` | pass | pass |
+  | `BrepWitnessesLaws.Law_WitnessValidatesClean` | pass | pass |
+  | `BrepWitnessesLaws.Law_RedundantPoleLoopsAreRedundant` | pass | pass |
+  | `BrepWitnessesLaws.Law_RedundantPoleLoopVertexIsNotIsolated` | pass | pass |
+  | `BrepWitnessesLaws.Law_RedundantPoleLoopsFailExactlyTwoLaws` | pass | pass |
+  | `BrepWitnessesLaws.Law_RedundantPoleLoopsReduceToSphere` | pass | pass |
+  | `BrepWitnessesLaws.Law_FlippedFaceBreaksWinding` | pass | pass |
+  | `BrepWitnessesLaws.Law_FlippedFaceFailsExactlyOneLaw` | pass | pass |
+  | `BrepWitnessesLaws.Law_SharedCornerBreaksEuler` | pass | pass |
+  | `BrepWitnessesLaws.Law_SharedCornerBreaksVertexLink` | pass | pass |
+  | `BrepWitnessesLaws.Law_SharedCornerFailsExactlyTwoLaws` | pass | pass |
+  Box 3, the box through MeshModel: 16 of 18 agree, all pass. `Law_EdgeReversalPreservesMesh` (4.8 s over 4 cases) and `Law_ValidationIsIdempotent` (10.1 s over 25 cases) pass in the interpreter and exceed the 2 s compiled budget, which TKT-354 counts as a defect. Box 3 stays open on those two, ranked in TKT-356 (no version 1 track holds it).
+  | Law | Interpreter | Compiled |
+  |---|---|---|
+  | `StepToMeshMeshedWitnessesLaws.Law_UnitBoxMeshesAsStated` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_MeshModelIsDeterministic` | pass | pass |
+  | `StepToMeshOutcomeMeshedLaws.Law_OkExactlyWhenClean` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_RoundsWithinLimit` | pass | pass |
+  | `StepToMeshOutcomeMeshedLaws.Law_EveryDiagnosticIsLocated` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_LoopEndsTerminal` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_MeasureIsNeverNegative` | pass | pass |
+  | `StepToMeshLaws.Law_OutcomeIsOfItsFace` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_OutcomesAreCurrent` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_EmptyDiscretizationExactlyWhenEdgeUnusable` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_FinalDiscretizationsMeetFloors` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_ClosedWhenEveryShellClosedAndNoFaceEmpty` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_OrientedWhenEveryShellClosedAndNoFaceEmpty` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_EdgeReversalPreservesMesh` | pass | error |
+  | `StepToMeshLoopRunLaws.Law_ShellReversalNegatesVolume` | pass | pass |
+  | `StepToMeshLaws.Law_ValidationIsIdempotent` | pass | error |
+  | `StepToMeshLoopRunLaws.Law_EmptyFaceIsDiagnosed` | pass | pass |
+  | `StepToMeshLoopRunLaws.Law_FailedFaceLeavesOthersUnchanged` | pass | pass |

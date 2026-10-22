@@ -3,8 +3,8 @@ id: TKT-326
 title: STEP mesher in Plato, step D: PrepareModel, the Plato half of reading a file (closure, mirrored parts, tolerances, repairs)
 status: claimed
 depends_on: []
-owner: session 0e4f63ff
-session: 0e4f63ff-c9b9-4b15-94b8-0d538d7cb10d
+owner: session cab91351
+session: cab91351-5bf8-4a98-95e5-92d43c79efbf
 fence: [sandbox/step-brep-mesh/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-312, TKT-314, TKT-315]
@@ -40,3 +40,24 @@ Dependencies changed 2026-10-18 (plan docs/plans/step-mesher-parallel.md): step 
   - The `plato-navigation` server indexes only Plato's stdlib, so `plato_check` cannot check the sandbox. The law run's compile served as the type check. Compiles took 15 s at the baseline run and 340 to 650 s later under the machine's load.
   - The witness laws run slowly in the interpreter: 11 to 14 s for each witness law, and up to 51 s for a fold law over 25 cases.
 - 2026-10-19, closer (supervisor of docs/plans/step-mesher-v2.md): stays open. Box 2's interpreter half is met (log above; reviews/verdicts-cpu64.tsv); its C# backend half is not: no C# run of these laws exists. Waits on a C# run of these laws: the library's layers regenerated to C# under cpu64 (TKT-313, track E, blocked by TKT-347, the C# writer dropping List-first functions) and its laws run over the C# backend.
+- 2026-10-22, session cab91351 (track E, L4). Both backends on the library exported at toolkit cd33c998 (layers last changed in c47db0b3), stdlib from Plato e37c032f without `brep.*`, CLI `C:/Users/cdigg/.plato-cli/e37c032f`, cpu64: compiled C# with `--budget=2 --parallel=6`, interpreter with `--budget=120`; laws matched as Block.Law, overloads joined. Columns: law, interpreter, compiled C#.
+  17 of 17 agree. Every named law passes on both backends through its `RawDecodedModel` overload; the `Part21File` overloads of eight laws, and `Law_FoldRecordsNameFalseFlags`, which has only that form, are host obligations on both because they call `DecodeRaw`, which is C# since the boundary decision of 2026-10-17 (TASKS.md chunk D; decoder tests 14 pass). Box 2 is unticked only for that: whether a host obligation on the C# side counts as passing is the supervisor's call; nothing in the library blocks it.
+  | Law | Interpreter | Compiled |
+  |---|---|---|
+  | `StepReadingLaws.Law_PrepareIsIdempotent` | pass | pass |
+  | `StepReadingLaws.Law_PrepareKeepsPointSet` | pass | pass |
+  | `StepReadingLaws.Law_RawHasNoClosures` | pass | pass |
+  | `StepReadingLaws.Law_RawHasNoClosedPeriodicity` | pass | pass |
+  | `StepReadingLaws.Law_UnitsFactorsAgree` | pass | pass |
+  | `StepReadingLaws.Law_CurveClosureDecidedByEnds` | obligation+pass | obligation+pass |
+  | `StepReadingLaws.Law_SurfaceClosureDecidedBySides` | obligation+pass | obligation+pass |
+  | `StepReadingLaws.Law_ClosureMarksAreTheDecisions` | obligation+pass | obligation+pass |
+  | `StepReadingLaws.Law_FoldFlipsExactlyRecorded` | obligation+pass | obligation+pass |
+  | `StepReadingLaws.Law_FoldPreservesInteriorSide` | obligation+pass | obligation+pass |
+  | `StepReadingLaws.Law_FoldRecordsNameFalseFlags` | obligation | obligation |
+  | `ShellOrientationLaws.Law_FoldParityAgreesOnRawWitnesses` | pass | pass |
+  | `ShellOrientationLaws.Law_FoldParityMarksFoldedFaces` | pass | pass |
+  | `StepReadingLaws.Law_MirrorFoldRecordedOnce` | obligation+pass | obligation+pass |
+  | `StepReadingLaws.Law_LeftHandedSurfacesAreFolded` | obligation+pass | obligation+pass |
+  | `StepRawWitnessesLaws.Law_RawUnitCubePreparesToUnitBox` | pass | pass |
+  | `StepRawWitnessesLaws.Law_RawTwoCubesPreparesToTwoBodies` | pass | pass |
