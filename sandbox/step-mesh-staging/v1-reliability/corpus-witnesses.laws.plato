@@ -1,0 +1,21 @@
+// Laws over faces extracted from corpus files (TKT-439). Each witness beside this file was written by
+// `step-corpus-harness extract <file> <faces> <out.plato>` from a face that breaks the version 1 contract in a
+// corpus run, so the corpus failure is a law that fails until the face is fixed, and passes after. A law here states
+// the contract, not today's behaviour.
+library V1ReliabilityCorpusWitnessLaws
+{
+    // POS/ANN-MB2.step face 349, a B-spline face bounded by three edges of one segment each, takes the not-simple
+    // branch and is left unmeshed in the corpus run of 2026-10-22 (with faces 946, 1035 and 1654 of the same file;
+    // v1-faces owns the cause). Its surface spans 1.2e-5 of u, a sliver about 0.012 mm wide, and the library reports
+    // FACE-ZERO-WIDTH. The contract asks for a mesh or a reason a person accepts: this law fails today, and its
+    // measure counts the FACE-ZERO-WIDTH diagnostics.
+    Law_V1Reliability_AnnMb2Face349IsMeshed(_: Integer): Boolean
+    {
+        var o = BrepModel.Witness_AnnMb2Face349.MeshModel(HostMeshingOptions(1.0));
+        return o.Mesh.Triangles.Count + o.Mesh.Quads.Count > 0;
+    }
+
+    Measure_V1Reliability_AnnMb2Face349IsMeshed(_: Integer): Integer
+        => BrepModel.Witness_AnnMb2Face349.MeshModel(HostMeshingOptions(1.0)).Report.Diagnostics
+            .Reduce(0, (n, d) => d.Code == "FACE-ZERO-WIDTH" ? n + 1 : n);
+}

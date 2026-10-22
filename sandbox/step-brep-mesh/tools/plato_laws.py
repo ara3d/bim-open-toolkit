@@ -199,8 +199,8 @@ def compile_errors(data):
     """The compilation's own errors: parse and symbol-resolution failures, which the server reports as ok false with
     an errors list and 0 type errors (TKT-337, F-60). Read only typeErrors, a run that did not compile looks clean:
     that is how the V1G-1 merge's 12 unresolved symbols passed its check."""
-    errors = [e if isinstance(e, str) else json.dumps(e) for e in data.get("errors", [])]
-    return errors or (["the server answered ok false with no errors listed"] if data.get("ok") is False else [])
+    # Only a listed error counts: the server also answers ok false when a law fails.
+    return [e if isinstance(e, str) else json.dumps(e) for e in data.get("errors", [])]
 
 
 def check_shipped(library_root, profile):

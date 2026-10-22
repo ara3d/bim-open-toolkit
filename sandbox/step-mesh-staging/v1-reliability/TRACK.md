@@ -1,7 +1,7 @@
 # v1-reliability: why defects slip past the specs and laws, and checks that close the gaps
 
 Ticket: TKT-432, TKT-433, TKT-434, TKT-440 (built); TKT-436, TKT-437, TKT-438, TKT-439, TKT-441 (filed)
-Status: ready: R1, R2, R3, R5 (nothing to merge into the library: all four are tools)
+Status: ready: R1, R2, R3, R5, R6, R4 (R4 stages one witness and one law; the rest are tools)
 
 Report: `docs/plans/step-mesher-reliability-2026-10-22.md` (the defect tables, the classes with counts, the verdict).
 
@@ -18,7 +18,8 @@ Fence: `sandbox/step-brep-mesh/tools/**`, `sandbox/step-brep-mesh/09-tooling/**`
 | R2 | TKT-433 | a stub check over the generated C# | 30 min | about 10 min |
 | R3 | TKT-434 | `plato_laws.py`: skipped laws fail, budget errors rerun alone, coverage table | 1 h | about 15 min |
 | R5 | TKT-440 | a lint for guards that do not guard and staged comparisons | 1 h | about 15 min |
-| R4 | TKT-439 | a failing corpus face extracted as a Plato witness | 2 h | not started |
+| R6 | TKT-434 | the shipped program type-checked before every law run; compile errors read (class J) | 1 h | about 40 min |
+| R4 | TKT-439 | a failing corpus face extracted as a Plato witness | 2 h | about 1.5 h |
 
 ## Done
 
@@ -29,10 +30,22 @@ Fence: `sandbox/step-brep-mesh/tools/**`, `sandbox/step-brep-mesh/09-tooling/**`
 - R2, toolkit b6992ff4: `tools/check_generated.py`, `tools/generated-stubs.txt` (30 bodiless names at e646e28).
 - R3, toolkit f10d2d33: `tools/plato_laws.py`.
 - R5, toolkit 920e869a: `tools/law_lint.py`, 22 findings.
+- R6, toolkit b7f105ee, 4bc98ded, 7df23804: `tools/shipped-program.txt`, the shipped-program check, the server's
+  compile errors read, and the `vacuous` and `differs` verdicts (TKT-437, TKT-438).
+- R4, bim-open-data b96cf89: `step-corpus-harness extract` (`ExtractMode.cs`, `SubModel.cs`, `PlatoLiteral.cs`).
+  Staged here: `corpus-ann-mb2-face-349.library.plato` (`Witness_AnnMb2Face349`, POS/ANN-MB2.step face 349, ring 0,
+  written by the tool) and `corpus-witnesses.laws.plato` (`Law_V1Reliability_AnnMb2Face349IsMeshed`). The law fails
+  today with measure 1 (one FACE-ZERO-WIDTH diagnostic): the corpus failure, reproduced in the law runner. It passes
+  when v1-faces meshes the face. No type added.
 
 ## Merge instructions
 
-None into the library. For the supervisor:
+R4: move `corpus-ann-mb2-face-349.library.plato` to `08-pipeline/pipeline-corpus-witness-ann-mb2-349.library.plato`
+and `corpus-witnesses.laws.plato` to `08-pipeline/pipeline-corpus-witnesses.laws.plato` (the law reads layer 8's
+`HostMeshingOptions`), or keep them staged until v1-faces meshes the face, so the sweep does not carry a known fail.
+Later corpus witnesses go into the same two files, one library block per witness.
+
+Otherwise none into the library. For the supervisor:
 - Move the bim-open-data pin in `deps.json` to d8bb198 or later when it next moves, so a fresh `node deps.mjs` gets
   the harness's contract check.
 - After v1-faces F1 and v1-gate V1G-4 merge and the C# is regenerated, rerun
