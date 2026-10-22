@@ -49,10 +49,10 @@ library TriangulationCdtIndexedLaws
             && SameTriangles(ring.EarClipped(points), ring.EarClippedIndexedCounted(points, points.PointGridOf).Value);
     }
 
-    // The staged triangulation of r in chart is TriangulateRegionCdt's, field for field, and so
-    // are its ring and its seed.
+    // Whether the staged seed and ring are CdtSeedIndexedCounted's on region r. The triangulation
+    // is not compared: TriangulateRegionCdt is TriangulateRegionCdtIndexed, the same function.
     CdtIndexedAgreesOn(r: UvRegion, chart: FaceChart): Boolean
-        => r.CdtSeedAgreesOn(chart) && SameTriangulation(r.TriangulateRegionCdt(chart), r.TriangulateRegionCdtIndexed(chart));
+        => r.CdtSeedAgreesOn(chart);
 
     //==
     // # Plane stars
@@ -120,10 +120,10 @@ library TriangulationCdtIndexedLaws
     //==
     // # Agreement
 
-    // On every triangulated witness (each face of the triangulation laws' six sample models),
-    // the staged triangulation is the witness's Cdt, field for field, with its ring and seed.
+    // On every triangulated witness, the staged seed and ring are the library's. The triangulation is
+    // not compared: TriangulateRegionCdt is TriangulateRegionCdtIndexed, the same function.
     Law_TriangulateRegionCdtIndexedAgrees(w: TriangulatedWitness): Boolean
-        => w.Region.CdtSeedAgreesOn(w.Chart) && SameTriangulation(w.Cdt, w.Region.TriangulateRegionCdtIndexed(w.Chart));
+        => w.Region.CdtSeedAgreesOn(w.Chart);
 
     // On star case k, the staged triangulation, ring and seed are TriangulateRegionCdt's.
     Law_TriangulateRegionCdtIndexedAgreesOnStars(k: Integer): Boolean

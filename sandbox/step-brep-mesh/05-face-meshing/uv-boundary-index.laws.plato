@@ -188,30 +188,7 @@ library BoundaryIndexLaws
     }
 
     //==
-    // # Flips, split sides and refinement
-
-    // TriangulateRegionCdtIndexedCounted's triangulation with DelaunayedIndexed in place of
-    // Delaunayed: what TriangulateRegionCdt gives once the merge wires the table in.
-    CdtWithIndexedFlips(r: UvRegion, chart: FaceChart): UvTriangulation
-    {
-        var points = r.BoundaryPoints.Map(uv => chart.ChartPoint(uv));
-        var seed = r.CdtSeedIndexedCounted(points);
-        var pointHoles = r.Holes.Count.Range.FlatMap(h =>
-            r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : [h].Take(0));
-        var triangles = r.NextBoundaryTable.DelaunayedIndexed(points, pointHoles.Reduce(seed.Value, (ts, p) => ts.WithPointInserted(p, points)));
-        return UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0));
-    }
-
-    // On every triangulated witness, the flips with the table give the witness's constrained
-    // triangulation, field for field.
-    Law_DelaunayedIndexedAgrees(w: TriangulatedWitness): Boolean
-        => SameTriangulation(w.Cdt, w.Region.CdtWithIndexedFlips(w.Chart));
-
-    // On star case k and jagged case k, the flips with the table give TriangulateRegionCdt's
-    // triangulation.
-    Law_DelaunayedIndexedAgreesOnStars(k: Integer): Boolean
-        => SameTriangulation(StarCase(k).TriangulateRegionCdt(PlaneChart(0)), StarCase(k).CdtWithIndexedFlips(PlaneChart(0)))
-            && SameTriangulation(JaggedCase(k).TriangulateRegionCdt(PlaneChart(0)), JaggedCase(k).CdtWithIndexedFlips(PlaneChart(0)));
+    // # Split sides
 
     // For every triangle of t, SplitSideSlotIndexed is SplitSideSlot and SplitSideSlotOfIndexed
     // is SplitSideSlotOf.
@@ -231,43 +208,11 @@ library BoundaryIndexLaws
     Law_SplitSideSlotIndexedAgrees(w: TriangulatedWitness): Boolean
         => w.Region.SplitSidesAgreeOn(w.Chart, w.Cdt) && w.Region.SplitSidesAgreeOn(w.Chart, w.Refined);
 
-    // On every triangulated witness, the refinement over the indexed boundary is the witness's
-    // refined triangulation (RefineToSurfaceByInsertion's), point for point and triangle for
-    // triangle: the same insertions in the same order.
-    Law_RefineIndexedAgrees(w: TriangulatedWitness): Boolean
-        => SameTriangulation(w.Refined, w.Model.RefineToSurfaceByInsertionIndexed(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0)));
-
-    // On the unit box's plane face 0 with region r moved into the unit square, the refinement
-    // over the indexed boundary is RefineToSurfaceByInsertion's.
-    RefineIndexedAgreesOnPlane(r: UvRegion): Boolean
-    {
-        var m = BrepModel.Witness_UnitBox;
-        var f = BrepFaceIndex(0);
-        var q = UnitSquareRegion(r);
-        var chart = m.ChartOf(f, q);
-        var t = q.TriangulateRegionCdt(chart);
-        return SameTriangulation(m.RefineToSurfaceByInsertion(f, q, chart, t, TriCriteria(0)),
-            m.RefineToSurfaceByInsertionIndexed(f, q, chart, t, TriCriteria(0)));
-    }
-
-    // On star case k % 5 as a region of the unit box's plane face 0, the refinement over the
-    // indexed boundary is RefineToSurfaceByInsertion's. The angle pass tries points near every
-    // hole.
-    Law_RefineIndexedAgreesOnStars(k: Integer): Boolean
-        => RefineIndexedAgreesOnPlane(StarCase(k % 5));
-
     // The count witnesses' 13-hole region, built once: IsConstrainedIn agrees along its boundary
-    // and at its triangulation's sides, the flips with the table give TriangulateRegionCdt's
-    // triangulation, and on the unit box's plane face 0 the refinement over the indexed boundary
-    // is RefineToSurfaceByInsertion's.
+    // and at its triangulation's sides. The flips and the refinement on it are
+    // V1GateAgreementLaws' (insertion-live-agreement.laws.plato).
     Law_ThirteenHolesAgree(_: Integer): Boolean
-    {
-        var r = HolesRegion(13);
-        var t = r.TriangulateRegionCdt(PlaneChart(0));
-        return r.ConstrainedAgreesOn(t)
-            && SameTriangulation(t, r.CdtWithIndexedFlips(PlaneChart(0)))
-            && RefineIndexedAgreesOnPlane(r);
-    }
+        => HolesRegion(13).ConstrainedAgreesOn(HolesRegion(13).TriangulateRegionCdt(PlaneChart(0)));
 
     //==
     // # Count witnesses

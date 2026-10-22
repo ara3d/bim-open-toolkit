@@ -3,9 +3,9 @@
 //
 // The count witness for CollidingSegmentsCounted (Law_WorkIsWithinSlope, layer 00, reads it),
 // and the laws that tie the grid to the all-pairs functions it replaces: the flags equal
-// SegmentCollides's answers segment by segment, IsSimpleRegionIndexed equals IsSimpleRegion,
-// SelfIntersectionRequestsFrom equals SelfIntersectionRequests, and MeshRegionBody equals
-// MeshRegion. The shapes are built here, not as UvRegion witnesses, so the library's laws over
+// SegmentCollides's answers segment by segment and MeshRegionBody equals MeshRegion
+// (IsSimpleRegionIndexed and SelfIntersectionRequestsFrom are IsSimpleRegion and
+// SelfIntersectionRequests, the same functions, so they are not compared, TKT-456). The shapes are built here, not as UvRegion witnesses, so the library's laws over
 // a UvRegion do not run on regions that are not simple on purpose.
 //
 // Sections, in order:
@@ -108,8 +108,8 @@ library UvRegionCollisionLaws
             : false;
     }
 
-    // On every shape, CollidingSegments gives SegmentCollides's flags, IsSimpleRegionIndexed gives
-    // IsSimpleRegion's answer, and the answer is the one the shape was built to have.
+    // On every shape, CollidingSegments gives SegmentCollides's flags, and IsSimpleRegion's answer
+    // is the one the shape was built to have.
     Law_CollidingSegmentsAgrees(n: Integer): Boolean
     {
         var shapes = UvRegion.PerfCollideShapes;
@@ -119,20 +119,18 @@ library UvRegionCollisionLaws
         var simple = r.IsSimpleRegion(tol);
         var expected = UvRegion.PerfCollideShapesSimple[i];
         return r.FlagsAgree(tol, r.CollidingSegments(tol))
-            && r.IsSimpleRegionIndexed(tol) == simple
             && (expected < 0 ? true : simple == (expected == 1));
     }
 
     // On layer 07's catalog loops (the inputs of Law_SimpleUvLoopIffSimpleRegion) and catalog
     // region, at generated positions and tolerances, CollidingSegments gives SegmentCollides's
-    // flags and IsSimpleRegionIndexed gives IsSimpleRegion's answer.
+    // flags.
     Law_CollidingSegmentsAgreesOnCatalog(k: Integer, x: Number, y: Number, tol: UvTolerance): Boolean
     {
         var loop = UvRegion(CatalogLoopAt(k, x, y), [CatalogLoopAt(k, x, y)].Take(0));
         var region = CatalogRegionAt(x, y, 1.0);
         return (tol.U.Value > 0.0 && tol.V.Value > 0.0)
-            ? (loop.FlagsAgree(tol, loop.CollidingSegments(tol)) && loop.IsSimpleRegionIndexed(tol) == loop.IsSimpleRegion(tol)
-                && region.FlagsAgree(tol, region.CollidingSegments(tol)) && region.IsSimpleRegionIndexed(tol) == region.IsSimpleRegion(tol))
+            ? (loop.FlagsAgree(tol, loop.CollidingSegments(tol)) && region.FlagsAgree(tol, region.CollidingSegments(tol)))
             : true;
     }
 
@@ -145,12 +143,7 @@ library UvRegionCollisionLaws
     //==
     // # Agreement on models
 
-    // True when two request lists are equal, element by element.
-    SameRequests(a: Array<EdgeRefinementRequest>, b: Array<EdgeRefinementRequest>): Boolean
-        => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
-
-    // On face f's region: the flags equal SegmentCollides's, the simplicity test agrees, and the
-    // requests from the flags equal SelfIntersectionRequests's; when the region is not simple,
+    // On face f's region: the flags equal SegmentCollides's; when the region is not simple,
     // MeshRegionBody gives MeshRegion's outcome (a simple region reaches the same MeshedOutcome
     // call in both, so it is not meshed twice here).
     FaceCollisionsAgree(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
@@ -160,8 +153,6 @@ library UvRegionCollisionLaws
         var flags = r.CollidingSegments(tol);
         var simple = r.IsSimpleRegion(tol);
         return r.FlagsAgree(tol, flags)
-            && r.IsSimpleRegionIndexed(tol) == simple
-            && SameRequests(m.SelfIntersectionRequestsFrom(f, d, r, flags), m.SelfIntersectionRequests(f, d, r, tol))
             && (simple ? true : m.MeshRegionBody(f, d, c).SameFaceMeshOutcome(m.MeshRegion(f, d, c)));
     }
 
