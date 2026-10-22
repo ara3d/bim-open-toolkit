@@ -1,0 +1,33 @@
+# Functions the STEP mesher library declares without a body (host obligations), as the C# writer
+# emits them. check_generated.py fails on a bodiless stub not listed here. Regenerate with
+# --write-baseline only after deciding the new obligation is meant.
+AnisotropicConic
+BoundaryCycleListOf
+ClassificationDiagnostics
+ConformsTo
+ContextDimensionOf
+CurvatureBoundBySubdivision
+DecodeRaw
+DimensionalExponentsOf
+FindOccurrences
+FlatRecord
+InstancePosition
+IsItemInContext
+KernelOf
+MisorientedEdgesOf
+NameOctetsPrecede
+NonManifoldEdgesOf
+OffsetJet
+OffsetPartial
+OffsetSecondDerivative
+ParseStep
+PassesMsfCurveCheck
+PassesMsfSurfaceCheck
+PinchedVerticesOf
+PlacementChainOf
+PrintStep
+ReachableOfKind
+ReachesItself
+ResolveContexts
+SecondDerivative
+SlotOf
