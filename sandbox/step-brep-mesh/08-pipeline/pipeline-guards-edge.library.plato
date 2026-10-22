@@ -21,6 +21,6 @@ library PipelineEdgeGuards
         return m.Edges.Count.Range.FlatMap(i =>
             (inRange ? m.CanDiscretizeInRange(BrepEdgeIndex(i), o.Face.Discretization) : false)
                 ? Diagnostic.NoDiagnostics
-                : [UndiscretizedEdge(BrepEdgeIndex(i))]);
+                : [m.UndiscretizedEdge(BrepEdgeIndex(i))]);
     }
 }

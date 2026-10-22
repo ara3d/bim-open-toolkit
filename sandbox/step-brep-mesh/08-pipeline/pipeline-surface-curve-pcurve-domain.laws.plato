@@ -5,16 +5,17 @@
 // - CircleSplineEdge: NINA-B222's 2D B-spline circle (pcurve #1200 of edge 600, radius 0.6
 //   about (1.6, 1.75) in the plane z = 0, three rational quadratic arcs, outer knots -2 pi / 3
 //   and 8 pi / 3), from the spline's point at parameter a to its point at b; a = b is the closed
-//   edge. The library gives the closed edge [a, a] and the arc across the join a backward range;
-//   with the fix, one period and the arc's forward range.
+//   edge. Before TKT-414 the library gave the closed edge [a, a] and the arc across the join a
+//   backward range; now one period and the arc's forward range.
 // - ResidueLineEdge: v1-edges' surface-curve witness (a circle of radius 0.3 on a cylinder,
 //   mastered by the 2D line (0, 0.5) + t (1, w)) with w = 2.83e-16, the v residue NINA-B222's
-//   lines carry. The library gives no period and a range IsTractableRange refuses;
-//   with the fix, the arc's range [pi / 2, pi].
+//   lines carry. Before TKT-414 the library found no period and a range IsTractableRange
+//   refuses; now the arc's range [pi / 2, pi].
 // - LongLineEdge: a line edge of length 1,000, which the discretizer refuses at the host's
-//   criteria while layer 8's guard accepts it: the silent path; with the fix, reported.
-// On every positive witness and every edge of v1-edges' witness the fixed edge domain is the
-// library's, and the fixed edge diagnostics are the library's.
+//   criteria while layer 8's guard used to accept it: the silent path, now reported.
+// Merged in place (J5): the laws state the fixed side only; the clauses that compared the staged
+// copies with the library's functions, and Law_V1Jody_EdgeDomainV1Unchanged, went with the
+// copies. The positive witnesses' edge ranges are held by the laws of layers 2 and 4.
 //
 // Sections, in order:
 //  - Witnesses
@@ -95,98 +96,68 @@ library V1JodySurfaceCurvePcurveDomainLaws
     IsRange(r: NumberInterval, start: Number, end: Number, tol: Number): Boolean
         => (r.Start - start).Abs <= tol && (r.End - end).Abs <= tol;
 
-    // Whether every edge of m gets the library's edge range from EdgeDomainV1, exactly.
-    SameEdgeDomains(m: BrepModel): Boolean
-        => m.Edges.Count.Range.All(i =>
-            m.EdgeDomainV1(BrepEdgeIndex(i)).Range.Start == m.EdgeDomain(BrepEdgeIndex(i)).Range.Start
-            && m.EdgeDomainV1(BrepEdgeIndex(i)).Range.End == m.EdgeDomain(BrepEdgeIndex(i)).Range.End);
-
     //==
     // # Laws
 
     // A line along u whose v velocity is a rounding residue has the period of u over its speed,
-    // where the library finds none; an exactly axial line keeps its period, a slanted one keeps
-    // none.
+    // where the library found none before TKT-414; an exactly axial line has it too, a slanted one
+    // has none.
     Law_V1Jody_ResidueLineHasPeriod(_: Integer): Boolean
     {
         var d = BrepSurface.Cylinder(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), 0.3).Domain(GeometrySet([], [], [], [], []));
         var residue = BrepCurve2D.Line(UvCoordinate(0.0, 0.5), Vector2D(-1.0, 0.Residue));
         var axial = BrepCurve2D.Line(UvCoordinate(0.0, 0.5), Vector2D(-1.0, 0.0));
         var slanted = BrepCurve2D.Line(UvCoordinate(0.0, 0.5), Vector2D(-1.0, 0.001));
-        return residue.ParameterPeriodOn(d) == 0.0
-            && (residue.ParameterPeriodOnV1(d) - Number.Tau).Abs <= 1e-12
-            && axial.ParameterPeriodOnV1(d) == axial.ParameterPeriodOn(d)
-            && slanted.ParameterPeriodOnV1(d) == 0.0;
+        return (residue.ParameterPeriodOn(d) - Number.Tau).Abs <= 1e-12
+            && axial.ParameterPeriodOn(d) == Number.Tau
+            && slanted.ParameterPeriodOn(d) == 0.0;
     }
 
-    // The arc from pi / 2 to pi on the residue line: the library's range is not tractable; the
-    // fixed range is [pi / 2, pi] and is.
+    // The arc from pi / 2 to pi on the residue line: its range is [pi / 2, pi] and tractable (it
+    // was not before TKT-414).
     Law_V1Jody_ResidueLineEdgeRange(_: Integer): Boolean
     {
         var pi = Number.Pi;
         var m = BrepModel.ResidueLineEdge(pi / 2.0, pi, 1.0, 0.Residue);
         var e = BrepEdgeIndex(0);
         var c = DefaultCriteria(0.001);
-        var fixedRange = m.EdgeDomainV1(e).Range;
-        return m.IsTractableRange(e, c, m.EdgeDomain(e).Range).Not
-            && fixedRange.IsRange(pi / 2.0, pi, 1e-9)
+        var fixedRange = m.EdgeDomain(e).Range;
+        return fixedRange.IsRange(pi / 2.0, pi, 1e-9)
             && m.IsTractableRange(e, c, fixedRange);
     }
 
-    // The 2D B-spline circle closes by its record; the closed edge on it gets [a, a] from the
-    // library and one period, 2 pi, from the fix; the arc from 5.5 to 0.8 across the join gets
-    // a backward range from the library and [5.5, 0.8 + 2 pi] from the fix.
+    // The 2D B-spline circle closes by its record; the closed edge on it gets one period, 2 pi
+    // ([a, a] before TKT-414); the arc from 5.5 to 0.8 across the join gets [5.5, 0.8 + 2 pi]
+    // (a backward range before).
     Law_V1Jody_ClosedSplineMasterRanges(_: Integer): Boolean
     {
         var tau = Number.Tau;
         var closed = BrepModel.CircleSplineEdge(0.0, 0.0);
         var arc = BrepModel.CircleSplineEdge(5.5, 0.8);
         var e = BrepEdgeIndex(0);
-        var closedBefore = closed.EdgeDomain(e).Range;
-        var closedAfter = closed.EdgeDomainV1(e).Range;
-        var arcBefore = arc.EdgeDomain(e).Range;
+        var closedRange = closed.EdgeDomain(e).Range;
         return BrepCurve2D.BSpline(0.CircleSpline2D).IsClosedRecord
-            && closedBefore.Start == closedBefore.End
-            && ((closedAfter.End - closedAfter.Start) - tau).Abs <= 1e-9
-            && arcBefore.Start > arcBefore.End
-            && arc.EdgeDomainV1(e).Range.IsRange(5.5, 0.8 + tau, 1e-6);
-    }
-
-    // The fixed edge domain is the library's on every edge of the ten positive witnesses and of
-    // v1-edges' surface-curve witnesses, whose lines are exactly axial.
-    Law_V1Jody_EdgeDomainV1Unchanged(_: Integer): Boolean
-    {
-        var pi = Number.Pi;
-        return 10.Range.All(k => BrepModel.WitnessAt(k).SameEdgeDomains)
-            && BrepModel.SurfaceCurveEdge(pi / 2.0, pi, 1.0).SameEdgeDomains
-            && BrepModel.SurfaceCurveEdge(0.0 - pi / 4.0, pi / 4.0, 1.0).SameEdgeDomains
-            && BrepModel.SurfaceCurveEdge(pi / 2.0, pi, 2.0).SameEdgeDomains;
+            && ((closedRange.End - closedRange.Start) - tau).Abs <= 1e-9
+            && arc.EdgeDomain(e).Range.IsRange(5.5, 0.8 + tau, 1e-6);
     }
 
     // The silent 0, reported. At the host's criteria for a chordal bound of 0.001 the minimum
     // length is 1e-4, so IsTractableRange refuses a range longer than 2^20 of them, about 105:
-    // a line edge of length 1,000 is Undiscretized while the library's CanDiscretizeInRange
-    // accepts it, and layer 8 reports nothing, the path NINA-B222's long ranges took (edges
-    // 1498, 1500, 1507, 1510). The fixed guard refuses it, and the fixed diagnostics hold one
-    // PIPELINE-EDGE-UNDISCRETIZED whose measure is the range's span, 1,000. The residue-line
-    // arc, whose library range runs backwards, is reported by both. On every positive witness
-    // the fixed diagnostics are the library's (none).
+    // a line edge of length 1,000 is Undiscretized. Before TKT-414 CanDiscretizeInRange accepted
+    // it and layer 8 reported nothing, the path NINA-B222's long ranges took (edges 1498, 1500,
+    // 1507, 1510). The guard refuses it, and the diagnostics hold one PIPELINE-EDGE-UNDISCRETIZED
+    // whose measure is the range's span, 1,000. The positive witnesses have no edge diagnostic.
     Law_V1Jody_SilentUndiscretizedReported(_: Integer): Boolean
     {
         var o = HostMeshingOptions(0.001);
         var c = o.Face.Discretization;
         var e = BrepEdgeIndex(0);
         var m = BrepModel.LongLineEdge(1000.0);
-        var found = m.EdgeDiagnosticsInRangeV1(o);
-        var residue = BrepModel.ResidueLineEdge(Number.Pi / 2.0, Number.Pi, 1.0, 0.Residue);
+        var found = m.EdgeDiagnosticsInRange(o);
         return m.DiscretizeAllRanged(c, SegmentFloors.NoFloors).ByEdge[0].IsDiscretized.Not
-            && m.CanDiscretizeInRange(e, c)
-            && m.EdgeDiagnosticsInRange(o).Count == 0
-            && m.CanDiscretizeInRangeV1(e, c).Not
+            && m.CanDiscretizeInRange(e, c).Not
             && found.Count == 1
             && (found.Count == 1 ? found[0].Code == "PIPELINE-EDGE-UNDISCRETIZED" && (found[0].Measure - 1000.0).Abs <= 1e-9 : false)
-            && residue.EdgeDiagnosticsInRange(o).Count == 1
-            && residue.EdgeDiagnosticsInRangeV1(o).Count == 1
-            && 10.Range.All(k => BrepModel.WitnessAt(k).EdgeDiagnosticsInRangeV1(o).Count == BrepModel.WitnessAt(k).EdgeDiagnosticsInRange(o).Count);
+            && 10.Range.All(k => BrepModel.WitnessAt(k).EdgeDiagnosticsInRange(o).Count == 0);
     }
 }

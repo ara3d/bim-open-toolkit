@@ -110,12 +110,16 @@ library StepToMesh
             "The model has no face; the mesh is empty.",
             Provenance.WholeInput, 0.0);
 
-    // Edge e cannot be discretized: its curve cannot be evaluated or its
-    // domain is empty. Every face that cites it is left unmeshed.
-    UndiscretizedEdge(e: BrepEdgeIndex): Diagnostic
+    // Edge e of m cannot be discretized: its curve cannot be evaluated, or
+    // its range is one IsTractableRange refuses. Every face that cites it is
+    // left unmeshed. Measure: the range's span End - Start when the edge is
+    // evaluable (0 for an empty range, negative for a reversed one, huge or
+    // not finite for an absurd one), Unmeasured when it is not (TKT-414).
+    UndiscretizedEdge(m: BrepModel, e: BrepEdgeIndex): Diagnostic
         => Diagnostic(Severity.Error, "PIPELINE-EDGE-UNDISCRETIZED",
-            "This edge cannot be discretized (its curve cannot be evaluated or its domain is empty); no face that cites it is meshed.",
-            Provenance.KernelEdge(e), Number.Unmeasured);
+            "This edge cannot be discretized: its curve cannot be evaluated, or its parameter range is empty, reversed, not finite, or longer than 2^20 minimum segments; no face that cites it is meshed. Measure is the range's span (End - Start).",
+            Provenance.KernelEdge(e),
+            m.IsEdgeEvaluable(e) ? m.EdgeDomain(e).Range.End - m.EdgeDomain(e).Range.Start : Number.Unmeasured);
 
     // Face f still holds a blocking request when the loop stops: its loops
     // cross in parameter space after every refinement the loop could make.

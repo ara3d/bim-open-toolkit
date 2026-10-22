@@ -16,13 +16,14 @@ library EdgeGuards
     //==
     // # The per-edge guard
 
-    // CanDiscretize without its whole-model conjunct: the criteria are well formed and the edge
-    // is evaluable with a domain of positive extent. Precondition: m.Law_IndicesInRange, which
+    // CanDiscretize without its whole-model conjunct: the criteria are well formed, the edge is
+    // evaluable, and IsTractableRange accepts its range, exactly when DiscretizeEdgeRangedCounted
+    // discretizes it rather than return Undiscretized (TKT-414). Precondition: m.Law_IndicesInRange, which
     // the caller checks once per model. CanDiscretize(m, e, c) is
     // m.Law_IndicesInRange ? m.CanDiscretizeInRange(e, c) : false.
     CanDiscretizeInRange(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria): Boolean
         => (c.IsWellFormed && m.IsEdgeEvaluable(e))
-            ? m.EdgeDomain(e).Range.Start < m.EdgeDomain(e).Range.End
+            ? m.IsTractableRange(e, c, m.EdgeDomain(e).Range)
             : false;
 
     //==

@@ -64,16 +64,54 @@ library BrepGeometryCurves
 
     // The domain of a surface curve whose master is pcurve p: [0, T) with period T when p's space
     // point repeats with parameter period T (PcurveParameterPeriod) on a domain that has no seam,
-    // as a 2D line along a periodic direction does; p's own domain otherwise (TKT-414: the
-    // unbounded domain of such a line gave NINA-B222's arcs ranges near 1e30).
+    // as a 2D line along a periodic direction does (TKT-414: the unbounded domain of such a line
+    // gave NINA-B222's arcs ranges near 1e30); p's bounded domain made Closed when p's 2D record
+    // closes (IsClosedRecord: NINA-B222's 2D B-spline circles on a plane, whose closed edges got
+    // [a, a] and whose arcs across the join ran backwards, TKT-414); p's own domain otherwise.
     MasterPcurveDomain(g: GeometrySet, p: PcurveIndex): CurveDomain
     {
         var own = g.Domain(p);
         var period = g.PcurveParameterPeriod(p);
         return (period > 0.0 && own.HasSeam.Not)
             ? CurveDomain(NumberInterval(0.0, period), Periodicity.Periodic(period))
-            : own;
+            : ((own.HasSeam.Not && own.ParameterLength.IsFinite && own.ParameterLength > 0.0 && g.Curve2DAt(g.PcurveAt(p).Curve).IsClosedRecord)
+                ? CurveDomain(own.Range, Periodicity.Closed(own.ParameterLength))
+                : own);
     }
+
+    // Whether the knots at the ends of the domain, u_1 .. u_p and u_n .. u_{n+p-1} for n control
+    // points and degree p, are each one value: the curve's ends are then its first and last
+    // control points, whatever the outermost knots u_0 and u_{n+p} are (they weight no basis
+    // function on the domain). Clamped knots (HasClampedEnds) are the case where those outer
+    // knots repeat too. Precondition: the basis is well shaped for n control points.
+    HasInterpolatedEnds(b: SplineBasis, n: Integer): Boolean
+        => b.Degree.Range.All(i => b.Knots.KnotAt(i + 1) == b.Knots.KnotAt(b.Degree))
+            && b.Degree.Range.All(i => b.Knots.KnotAt(n + i) == b.Knots.KnotAt(n));
+
+    // Whether two parameter-plane points are the same, coordinate for coordinate.
+    SameUv(a: UvCoordinate, b: UvCoordinate): Boolean
+        => a.U == b.U && a.V == b.V;
+
+    // Whether the 2D record closes by its record alone: a B-spline with interpolated ends whose
+    // first and last control points are the same point, or a polyline whose first and last
+    // points are; false for every other record (a circle or ellipse already has a periodic
+    // domain). STEP's closed_curve flag is not kept, so the record's geometry decides.
+    IsClosedRecord(curve: BrepCurve2D): Boolean
+        => match (curve)
+        {
+            Line(origin, velocity) => false;
+            Circle(placement, radius) => false;
+            Ellipse(placement, semiAxis1, semiAxis2) => false;
+            Hyperbola(placement, semiAxis, semiImaginaryAxis) => false;
+            Parabola(placement, focalDistance) => false;
+            Polyline(points) => points.Count > 2 ? points.First.SameUv(points.Last) : false;
+            BSpline(data) => data.ControlPoints.Count > data.Basis.Degree
+                ? data.Basis.HasInterpolatedEnds(data.ControlPoints.Count) && data.ControlPoints.First.SameUv(data.ControlPoints.Last)
+                : false;
+            Trimmed(basis, range, sameSense) => false;
+            Composite(segments) => false;
+            Offset(basis, distance) => false;
+        };
 
     // The basis's parameter of a trimmed piece's parameter t, wrapped into
     // the basis's range when the basis is closed but not periodic: a trim may
@@ -840,8 +878,8 @@ library BrepGeometryCurves
     // repeats, or 0 when it never does: the 2D curve's own period when its
     // domain is periodic; on a 2D line whose velocity lies along a periodic
     // direction of the surface, that period over the velocity's component
-    // (the velocity is copied from the file, so the zero test of the other
-    // component is exact by construction); 0 for every other case.
+    // (ParameterPeriodOn: the other component may be a rounding residue
+    // written in the file); 0 for every other case.
     PcurveParameterPeriod(g: GeometrySet, p: PcurveIndex): Number
         => g.Domain(p).HasSeam
             ? g.Domain(p).Periodicity.PeriodOr(0.0)
@@ -849,13 +887,15 @@ library BrepGeometryCurves
 
     // The parameter period of a 2D curve lying in a surface of domain d: for
     // a line along u or v, that direction's period over the speed in it; 0
-    // otherwise.
+    // otherwise. A velocity component negligible beside the other counts as
+    // zero (IsNegligibleBeside): NINA-B222's lines along u on cylinders carry
+    // v components of 7e-17 to 6e-16 (TKT-414).
     ParameterPeriodOn(curve: BrepCurve2D, d: SurfaceDomain): Number
         => match (curve)
         {
-            Line(origin, velocity) => velocity.Y == 0.0 && velocity.X != 0.0
+            Line(origin, velocity) => velocity.X != 0.0 && velocity.Y.IsNegligibleBeside(velocity.X)
                 ? d.U.Periodicity.PeriodOr(0.0) / velocity.X.Abs
-                : (velocity.X == 0.0 && velocity.Y != 0.0 ? d.V.Periodicity.PeriodOr(0.0) / velocity.Y.Abs : 0.0);
+                : (velocity.Y != 0.0 && velocity.X.IsNegligibleBeside(velocity.Y) ? d.V.Periodicity.PeriodOr(0.0) / velocity.Y.Abs : 0.0);
             Circle(placement, radius) => 0.0;
             Ellipse(placement, semiAxis1, semiAxis2) => 0.0;
             Hyperbola(placement, semiAxis, semiImaginaryAxis) => 0.0;
@@ -866,6 +906,11 @@ library BrepGeometryCurves
             Composite(segments) => 0.0;
             Offset(basis, distance) => 0.0;
         };
+
+    // Whether x is zero beside y: within the arithmetic resolution at y's magnitude, as a
+    // velocity component written as a rounding residue of a direction along the other is.
+    IsNegligibleBeside(x: Number, y: Number): Boolean
+        => x.Abs <= ResolutionAt(y).Value;
 
     // The range of pcurve p that covers the points of space curve c over its
     // range r (an edge's range, or the curve's whole bounded domain): from
