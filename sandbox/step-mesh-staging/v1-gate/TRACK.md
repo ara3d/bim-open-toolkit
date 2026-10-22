@@ -23,6 +23,8 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-13 | TKT-428 | spheres and cones over-refined at their poles | 2 h |
 | V1G-14 | TKT-460, TKT-461 | bisect the regressions of bim-open-data 66577fc | 2 h |
 | V1G-15 | TKT-460 | ODIN-W160 and W161's fillet flaps | 2 h |
+| V1G-15w | TKT-460 | a law over a witness cut from ODIN-W160's fillet | 0.5 h |
+| V1G-16 | TKT-464 | c211 face 339's fans left over the chordal bound | 2 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -103,6 +105,8 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 
   - Laws, compiled, budget 120 s, the same two library copies: `FaceMeshingLaws`, `TriangulatedWitnessLaws`, `PolesWitnessLaws`, `V1PoleChecksLaws`, `FaceMeshingLiftIndexedLaws`, `RefinementAttainableLaws`, `V1GateLaws`, `V1PlaneLaws`, `V1GateSplitsLaws`, `V1KeepLaws`, `V1AxleLaws`, `V1BandLaws`, `FaceMeshingEdgeOnMarksLaws`, `FaceMeshingGridChordalLaws`: 106 laws, 106 pass on both.
   - Not done: TKT-460's first box, a law over a witness cut from the fillet (a mitred quarter-cylinder pair at 0.2 mm is a model to build by hand); the evidence is the harness's on ODIN-W160 and W161.
+- V1G-15w (TKT-460), about 0.5 h, the first box of TKT-460. `step-corpus-harness extract ODIN-W160.STEP 3364,3398 <out> --ring 1` (bim-open-data 8677dd0, on a regeneration of 4a30959f, the library before V1G-15) wrote `corpus-witness-odin-w160-fillet.library.plato`: 7 faces (3364, 3385, 3398, 3402, 3409, 3414, 3431), 50 edges, each fillet meshed as in the file (6 triangles). `Law_V1Gate_OdinW160FilletIsManifoldAndOriented` (`corpus-witness-odin-w160-fillet.laws.plato`): no non-manifold and no misoriented edge in the witness's mesh under `HostMeshingOptions(1.0)`; the measure counts non-manifold edges.
+  - Compiled, budget 120 s, on a `git archive` of 4a30959f with this folder's two files: fail, measure 8, as the corpus run's 8 non-manifold edges. Warm server on HEAD 612400ae (V1G-15 merged in 87ca2e47): pass, 15 s.
 
 ## Gate and quality: every law of layer 5
 
@@ -442,6 +446,9 @@ V1G-7 (TKT-399, second criterion):
 V1G-8 (TKT-429):
 - In `JoinedByCut` (05-face-meshing/uv-regions.library.plato): `var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);` => `var end = m.BandEndCopy(f, a, i, b, j);`, and the function's comment says the cut ends at "the copy of b's point nearest it on the face's side (BandEndCopy)".
 - Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
+
+V1G-15w (TKT-460):
+- Move `corpus-witness-odin-w160-fillet.library.plato` to `08-pipeline/pipeline-corpus-witness-odin-w160-fillet.library.plato`, beside ANN-MB2's, and its law into `08-pipeline/pipeline-corpus-witnesses.laws.plato` (or that folder as `pipeline-corpus-witness-odin-w160-fillet.laws.plato`, library `V1GateCorpusWitnessLaws`). Its run needs a budget of about 20 s.
 
 V1G-15 (TKT-460), on 05-face-meshing/face-meshing-v1-plane.library.plato as merged with V1G-13 and F4b:
 - In `RefinementRoundChordal`: `var surface = m.WithEdgeOnMarked(...);` => `var surface = m.WithOneEdgeFlapsMarked(s.Current, m.WithEdgeOnMarked(...));` (the existing expression, wrapped).
