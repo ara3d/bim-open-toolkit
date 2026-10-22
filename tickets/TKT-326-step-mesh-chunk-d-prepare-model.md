@@ -1,7 +1,7 @@
 ---
 id: TKT-326
 title: STEP mesher in Plato, step D: PrepareModel, the Plato half of reading a file (closure, mirrored parts, tolerances, repairs)
-status: claimed
+status: done
 depends_on: []
 owner: session cab91351
 session: cab91351-5bf8-4a98-95e5-92d43c79efbf
@@ -11,6 +11,7 @@ related: [TKT-323, TKT-312, TKT-314, TKT-315]
 confidence: high
 created: 2026-10-18
 claimed: 2026-10-18
+closed: 2026-10-22
 ---
 
 ## Acceptance criteria
@@ -61,3 +62,7 @@ Dependencies changed 2026-10-18 (plan docs/plans/step-mesher-parallel.md): step 
   | `StepReadingLaws.Law_LeftHandedSurfacesAreFolded` | obligation+pass | obligation+pass |
   | `StepRawWitnessesLaws.Law_RawUnitCubePreparesToUnitBox` | pass | pass |
   | `StepRawWitnessesLaws.Law_RawTwoCubesPreparesToTwoBodies` | pass | pass |
+
+## Closed with criteria unmet
+
+2026-10-22: Box 2's Part21File half: the Part21File overloads of eight laws, and Law_FoldRecordsNameFalseFlags, are host obligations by design because DecodeRaw is C# under the 2026-10-17 boundary decision (TASKS.md chunk D); the decoder's 14 tests and TKT-312's box 2 (the witness laws on decoded values, run from C#) test that side. Every RawDecodedModel overload passes on both backends (2026-10-22 table in the log, 17 of 17 agree). Supervisor decision, 2026-10-22.
