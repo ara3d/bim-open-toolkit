@@ -34,9 +34,15 @@ CSV_COLUMNS = [
     'file', 'status', 'outcome', 'process_ms', 'total_ms', 'parse_ms', 'decode_ms', 'prepare_ms', 'tables_ms',
     'edges_ms', 'faces_ms', 'refine_ms', 'assemble_ms', 'faces', 'faces_meshed', 'faces_threw', 'edges',
     'edges_threw', 'mesh_vertices', 'mesh_triangles', 'mesh_quads', 'hash', 'closed', 'oriented', 'boundary_edges',
-    'nonmanifold_edges', 'misoriented_edges', 'contract', 'over_chordal', 'flipped', 'degenerate', 'unexplained',
+    'nonmanifold_edges', 'misoriented_edges', 'closed_shells_closed', 'closed_shells', 'boundary_open_shell',
+    'boundary_edge_cited_once', 'boundary_beside_unmeshed_face', 'boundary_gap', 'boundary_inside_face', 'contract', 'over_chordal', 'flipped', 'degenerate', 'unexplained',
     'worst_excess', 'last_stage', 'cause', 'previous_outcome', 'previous_process_ms', 'previous_faces_meshed',
-    'previous_closed', 'previous_boundary_edges']
+    'previous_closed', 'previous_boundary_edges', 'previous_closed_shells_closed', 'previous_boundary_gap']
+# The harness's boundary causes (BoundaryCheck.cs, bim-open-data 97495d8) and their CSV columns: an open shell's
+# boundary and an edge the B-rep cites once are the file's; the rest are the mesher's.
+CAUSES = {'OpenShell': 'boundary_open_shell', 'EdgeCitedOnce': 'boundary_edge_cited_once',
+          'BesideUnmeshedFace': 'boundary_beside_unmeshed_face', 'GapBetweenMeshedFaces': 'boundary_gap',
+          'InsideFace': 'boundary_inside_face'}
 
 
 def meshed(face):
@@ -120,7 +126,8 @@ def per_file(files, previous):
         row = dict(file=r['file'], status=r['status'], outcome=outcome(r), process_ms=round(r['process_ms']),
                    last_stage=r['last_stage'], previous_outcome=o.get('outcome', ''),
                    previous_process_ms=o.get('process_ms', ''), previous_faces_meshed=o.get('faces_meshed', ''),
-                   previous_closed=o.get('closed', ''), previous_boundary_edges=o.get('boundary_edges', ''))
+                   previous_closed=o.get('closed', ''), previous_boundary_edges=o.get('boundary_edges', ''),
+                   previous_closed_shells_closed=o.get('closed_shells_closed', ''), previous_boundary_gap=o.get('boundary_gap', ''))
         if s:
             why = Counter({'undiscretized': 'edge not discretized', 'not-simple': 'not simple'}.get(f['path'], 'remeshed empty')
                           for f in r['faces'] if not meshed(f))
@@ -135,6 +142,9 @@ def per_file(files, previous):
                        flipped=field(r'flipped (\d+)', con, int), degenerate=field(r'degenerate (\d+)', con, int),
                        unexplained=field(r'unexplained (\d+)', con, int), worst_excess=field(r'worst-excess (\S+)', con),
                        cause='; '.join(f'{k} {v}' for k, v in sorted(why.items())),
+                       closed_shells_closed=s.get('ClosedShellsClosed', ''),
+                       closed_shells=field(r'closed shells (\d+/\d+)', s.get('Boundary')),
+                       **{col: field(cause + r' (\d+)', s.get('Boundary'), int) for cause, col in CAUSES.items()},
                        **{k[:-2].lower() + '_ms': round(s.get(k, 0)) for k in STAGES})
         rows.append(row)
     return rows
@@ -150,7 +160,10 @@ def summary(files, rows, previous):
            f" edges {total('edges'):,}, edges threw {total('edges_threw')}, faces threw {total('faces_threw')}.",
            f"- Mesh: {total('mesh_vertices'):,} vertices, {total('mesh_triangles'):,} triangles, {total('mesh_quads'):,} quads"
            f" ({total('mesh_triangles') + 2 * total('mesh_quads'):,} triangles once quads are split).",
-           f"- Closed {sum(r['closed'] is True for r in done)}, oriented {sum(r['oriented'] is True for r in done)} of {len(done)}.",
+           f"- Closed {sum(r['closed'] is True for r in done)}, oriented {sum(r['oriented'] is True for r in done)} of {len(done)};"
+           f" every closed shell closed in {sum(r['closed_shells_closed'] is True for r in done)}. Boundary edges by cause: "
+           + ', '.join(f"{col[9:].replace('_', ' ')} {total(col):,}" for col in CAUSES.values())
+           + " (open shell and edge cited once are the file's; the others are the mesher's).",
            f"- Process time {sum(r['process_ms'] for r in rows) / 1000:,.1f} s; warm stages (s): "
            + ', '.join(f"{k[:-2].lower()} {sum(r['summary'].get(k, 0) for r in files if r['summary']) / 1000:,.1f}" for k in STAGES)
            + f"; warm median {statistics.median([r['total_ms'] for r in done]) / 1000 if done else 0:.2f} s.",
@@ -181,7 +194,14 @@ def summary(files, rows, previous):
     out.append(f"- Fully meshed but not closed: {len(open_full)}: " + '; '.join(
         f"{r['file']} (boundary {r['boundary_edges']}, non-manifold {r['nonmanifold_edges']}, misoriented {r['misoriented_edges']})"
         for r in sorted(open_full, key=lambda r: -r['boundary_edges'])) + '.')
+    shells_open = [r for r in done if r['closed_shells_closed'] is False]
+    out.append(f"- A closed shell left open: {len(shells_open)}: " + '; '.join(
+        f"{r['file']} ({r['closed_shells']} closed; gap {r['boundary_gap']}, inside face {r['boundary_inside_face']},"
+        f" beside unmeshed {r['boundary_beside_unmeshed_face']}, non-manifold {r['nonmanifold_edges']})"
+        for r in sorted(shells_open, key=lambda r: -(r['boundary_gap'] or 0))) + '.')
     if previous:
+        shells_regressed = [r['file'] for r in done if r['previous_closed_shells_closed'] == 'True' and r['closed_shells_closed'] is False]
+        out.append(f"- Against the previous run: a closed shell open now that was closed then: {', '.join(shells_regressed) or 'none'}.")
         regressions = [r['file'] for r in done if r['previous_closed'] == 'True' and r['closed'] is False]
         rose = [f"{r['file']} {r['previous_boundary_edges']} -> {r['boundary_edges']}" for r in done
                 if r['previous_boundary_edges'] not in ('', None) and r['boundary_edges'] != ''
