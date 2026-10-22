@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f | ready: V1G-3, V1G-4, V1G-5 | working: V1G-6
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f | ready: V1G-3, V1G-4, V1G-5, V1G-6
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -36,6 +36,13 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
   - Checked on the V1G-2 wired copy with the lift-case edit below, compiled, budget 120 s, layer 5's law libraries plus `V1GateLaws`, `V1PlaneLaws`, `V1PoleChecksLaws`, `RefinementAttainableLaws`, `PolesWitnessLaws`: 160 laws, 154 pass, 6 fail, then the lift-case law passes after its edit. The 5 remaining fails are expected: four quality laws (`Law_V1Gate_PoleElementNormalAgreesWithSurface`, `Law_V1Gate_PoleSurfaceEdgeNormalTurnWithinSurfaceAngular`, `Law_MinAngleNoWorseThanLibrary`, `Law_RefinedInteriorMeetsMinAngle`) and the bump solid's quad split (TKT-415). All twelve gate checks of `V1PoleChecksLaws` pass on all eight pole witnesses: the cone's four apex slivers are gone. No witness threw (the pole-loop sphere's index error came from SurfaceAngular 180 in the whole criteria, which this path does not set). The whole batch ran in 4.2 s wall (laws 6.3 s summed, 91 witnesses 5.3 s) against minutes with the angle pass.
   - `Law_LiftCaseReachesItsBranches` failed on its CylinderRefined case: without the angular test a cylinder needs no interior point (it is ruled, so triangles along the height lie on it), so that case no longer reaches the interior-points branch. The case becomes SphereRefined (merge instructions); with it the law passes.
   - `Law_MinAngleNoWorseThanLibrary` (moving to `FaceQualityLaws`) compares the insertion refinement's smallest angle with `RefinedTriangulation`'s; under version 1 `RefinedTriangulation` is the chordal-only refinement, so the law fails by design. Delete it at merge, or restate it in the improvement pass against that pass's own refinement.
+- V1G-6 (TKT-412), this commit, about 1.5 h against 2 h. No type added. Library `V1Pinch` (v1-pinch.library.plato): `SegmentsSeparatedV1` (two non-consecutive segments of one loop that share exactly one end, with identical coordinates, are separated when each one's far end is more than one tolerance unit from the other), `IsSimpleRegionV1` (all pairs, for the staged laws), `IsKeyholePinch` and `RegionPinchesAreKeyholes` (at a vertex a loop passes twice, the smaller sub-loop winds opposite to the larger and lies inside it), `IsZeroWidthRegion` (chart area within `AreaTolerance`), `ZeroWidthOutcome` (FACE-ZERO-WIDTH, no requests), `MalformedPinchOutcome` (FACE-LOOP-NOT-SIMPLE), `MeshRegionOnceV1`, and `IsCornerOf` for the ear clippers. Witnesses (`V1PinchWitnesses`): LENA-R8 face 1349's region, copied from the polystrata spike's dump, and five synthetic regions. Laws (`V1PinchLaws`), 8.
+  - Face 1349 is one loop of 66 points through two vertices twice (positions 4 and 14, 0 and 62), not three loops: its two keyhole holes are inside the outer loop's own ring. So the change is to the collision rule and the ear clippers; no loop is split.
+  - The ear clippers stopped on any pinch: `IsEar` and the indexed clipper's blocker test skip the ear's own corners by index, so the pinch vertex's second index, which lies exactly on a corner, counted as inside and blocked every ear there (compiled probe, committed library: 44 of 64 triangles on face 1349, none on a one-loop keyhole square). With `IsCornerOf` in both skip tests, as earcut does, face 1349 and the keyhole square triangulate to covers of their area.
+  - Scope kept to one loop: two loops that touch at a vertex (a hole on the outer loop, two touching holes) stay not simple. `Law_CollidingSegmentsAgrees` pins two touching holes as not simple (PerfCollideShapes, shape 12) and failed when the rule also covered two loops, and the triangulator's hole bridging does not cover a touching hole (4 of 8 triangles on the synthetic case).
+  - The keyhole check stops MAYA-W260 face 1599 from being accepted: the rule alone made it simple (a 5-gon pinched to a disc wound the same way, outside it), the keyhole check refuses it with the not-simple diagnostic.
+  - Corpus effect, reproduced in Python over the spike's dumped regions (the rule and the keyhole check; the consecutive-segment fold test not reproduced): LENA-R8 1349 becomes simple and keyholed, so it meshes; ANNA-B4 491 and ODIN 2625 have no width and get FACE-ZERO-WIDTH, unmeshed with no requests; the other 42 faces, all 32 MAYA faces among them, keep their not-simple outcome. ODIN 2613 (the whisker), 2615 and 2616 (the one-tolerance strips) are not zero-width by area and stay not simple.
+  - Check, compiled, budget 120 s, on a copy of the library at 884466ac with the wiring edits below and this folder's pinch files: `V1PinchLaws` 8 pass; with `FaceMeshingLaws`, `FaceMeshingChartsLaws`, `TriangulationLaws`, `TriangulationCdtIndexedLaws`, `TriangulatedWitnessLaws`, `BoundaryIndexLaws`, `InsideOnGridLaws`, `UnwrapIndexedLaws`, `UvRegionCollisionLaws`, `FaceMeshingLiftIndexedLaws`, `FaceMeshingProofsLaws`, `ValidationProofsRegionsLaws`: 125 laws, 124 pass, 1 fail (`Law_RefinedInteriorMeetsMinAngle`, deleted by V1G-1). Not run: the whole sweep (the supervisor's merge sweep covers it) and the corpus (needs the regeneration).
 
 ## Gate and quality: every law of layer 5
 
@@ -357,6 +364,16 @@ V1G-3 and V1G-4 (TKT-399):
 - In `face-meshing-lift.laws.plato` (05), `Witness_CylinderRefinedLift` becomes `Witness_SphereRefinedLift(_: LiftCase): LiftCase => LiftCaseAt("SphereRefined", 2, 2, [LiftBranch.InteriorPoints, LiftBranch.IdentifiedPoints]);`, and the comment on `Law_LiftCaseReachesItsBranches` says "SphereRefined interior points" for "CylinderRefined interior points".
 - Delete `Law_MinAngleNoWorseThanLibrary` (see V1G-4 above), or keep it out of the version 1 run in `FaceQualityLaws` and expect it to fail.
 
+V1G-4, at its merge: the library holds V1G-2's (merged in e9d9586f) `05-face-meshing/face-meshing-v1-plane.library.plato` (library `V1Plane`); this folder's `v1-plane.library.plato` is the V1G-4 version of the same library. Replace the merged file's content with the staged file's, not both: they declare the same functions.
+
+V1G-6 (TKT-412), four in-place edits and three moves:
+- `SegmentsSeparated` (05-face-meshing/uv-regions.library.plato) => `r.SegmentsSeparatedV1(tol, k, i, q, j)`; its old body is the V1 body's fallback and can go.
+- `IsEar` (05-face-meshing/face-meshing.library.plato): the skip condition becomes `(x == p || x == q || x == s || points[x].IsCornerOf(points[p], points[q], points[s]))`.
+- `EarClippedIndexedCounted` (05-face-meshing/triangulation-cdt-indexed.library.plato), the blocker test: `if (copies.At(y) > 0 && y != p && y != q && y != s && points[y].IsCornerOf(points[p], points[q], points[s]).Not)`.
+- `MeshRegion` (05-face-meshing/face-meshing.library.plato) => `m.MeshRegionOnceV1(f, d, c)`.
+- Move `v1-pinch.library.plato` to `05-face-meshing/face-meshing-v1-pinch.library.plato`, `v1-pinch.witnesses.plato` to `05-face-meshing/face-meshing-v1-pinch-witnesses.library.plato`, and `v1-pinch.laws.plato` to `05-face-meshing/face-meshing-v1-pinch.laws.plato`; they read only layer 5.
+- The four edits were checked exactly as written above, on a copy of the library at 884466ac.
+
 V1G-5 (triage):
 - Delete the five `PolesLaws` face-check laws (`Law_SphereFaceChecksHold`, `Law_SphereByPoleLoopsFaceChecksHold`, `Law_TorusFaceChecksHold`, `Law_ConeFaceChecksHold`, `Law_TorusAtVertexFaceChecksHold`, 07-validation/poles.laws.plato) and `FaceCheckFailures` if nothing else calls it, when `V1PoleChecksLaws` merges: the per-check laws state the same checks, gate and quality apart.
 - No other move: none of the other 116 is a quality law.
@@ -365,6 +382,7 @@ V1G-5 (triage):
 
 ## Requests to other tracks
 - supervisor: decided 2026-10-22 (yes, chordal bound alone); staged as V1G-4.
+- polystrata spike (local_63fdab15, done): its dumped regions in sandbox/step-mesh-staging/polystrata-spike/regions are what V1G-6's witness and corpus reproduction read; the folder is not committed, so the witness file carries the copied coordinates.
 - v1-faces (TKT-411): `Witness_SphereByPoleLoops(1.0)` at chordal 0.05 and 0.01 with SurfaceAngular 180 degrees throws `ArgumentOutOfRangeException` while meshing (scratch copy, compiled); it may be a small witness for TKT-411's index error. Not blocking.
 - v1-faces (TKT-415): `Law_V1Gate_QuadSplitsWithinChordal` fails on `Witness_BumpSolidV1Gate` (the bump solid at 0.3): the quad grid keeps the top face as one flat quad. It is the law TKT-415's first criterion asks for, on the whole witness; the fix is yours. Not blocking V1G-1.
 - v1-faces (quad grid): the version 1 contract relaxes the grid's keep rule. Today a quad is kept only when planar within SurfaceChordal and strictly convex (`QuadGridIfRectangular`, "Quads" section of face-meshing.library.plato); the contract keeps any quad whose both diagonal splits are within the chordal bound and oriented (`QuadSplitsWithin`, `QuadSplitsOriented` in this folder's `v1-gate.library.plato`). Changing the keep rule is yours, since you own the grid functions; not blocking.
@@ -400,8 +418,15 @@ V1G-5 (triage):
 | V1G-4 check on the wired copy, compiled, budget 120 s | 1 min | 1 |
 | Lift-case fix and recheck | 5 min | 1 (front end recompiled after the library edit, 1.8 min) |
 | V1G-5: listing, reading the 37 failing laws, ticket search, 4 tickets, table | 35 min | 0 |
+| V1G-6: rule, witnesses from the spike's dump, laws | 25 min | 0 |
+| V1G-6: first compile of a new folder path | 6.8 min | 1 (cold: the cache is per folder path) |
+| V1G-6: compiled probe of the ear clipper on pinches | 5 min | 1 build, 1 run |
+| V1G-6: wired copy and three reruns, compiled | 1 to 1.3 min each | 3 |
+| V1G-6: Python reproduction over the 45 dumped regions | 10 min | 2 |
 
 ## Lessons
+- The compile cache follows the folder path: a fresh scratch folder cost 6.8 minutes, the same folder rerun about 1 minute. Keep one scratch folder per check.
+- The spike's dumped regions let a Python reproduction of the rule decide the corpus effect on all 45 faces in seconds, before any regeneration; it caught MAYA 1599, which the rule alone would have accepted.
 - Sixteen laws over the same eight witnesses at a 20 s budget made almost every law a budget error: the laws share the cores, so each law's wall time is the batch's. A larger budget gave the verdicts in 3 minutes.
 - A probe console project referencing the corpus harness's release folder reads the compiled library directly (witnesses included), which named the failing elements in minutes where a law could only say "fails".
 - A `find` over `artifacts/` took 2 minutes; the corpus report names the build folder, which is the place to look.
