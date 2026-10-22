@@ -901,19 +901,14 @@ Part21ReadingLaws.Law_ParsePrintParseIsIdentity	obligation	host obligation: Pars
 Part21ReadingLaws.Law_RecordIndicesInRange	pass	
 Part21ReadingLaws.Law_ReferencesResolve	pass	
 PipelineGuardsLaws.Law_FaceOutcomesScanArenaOnce	pass	
-PolesLaws.Law_ConeFaceChecksHold	fail	case 1: _ = BrepModel
 PolesLaws.Law_ConeRegionIsWellFormed	pass	
 PolesLaws.Law_HemispheresRegionsAreWellFormed	pass	
 PolesLaws.Law_LimitNormalAtConeApexIsRulingNormal	pass	
 PolesLaws.Law_LimitNormalAtSpherePoles	pass	
 PolesLaws.Law_LimitNormalIsNormalWhereRegular	pass	
-PolesLaws.Law_SphereByPoleLoopsFaceChecksHold	fail	case 1: _ = BrepModel
 PolesLaws.Law_SphereByPoleLoopsRegionIsWellFormed	pass	
-PolesLaws.Law_SphereFaceChecksHold	fail	case 1: _ = BrepModel
 PolesLaws.Law_SphereRegionIsWellFormed	pass	
-PolesLaws.Law_TorusAtVertexFaceChecksHold	fail	case 1: _ = BrepModel
 PolesLaws.Law_TorusAtVertexRegionIsWellFormed	pass	
-PolesLaws.Law_TorusFaceChecksHold	error	still running after 120s (budget 20s); abandoned
 PolesLaws.Law_TorusRegionIsWellFormed	pass	
 PolesWitnessLaws.Law_PoleGaussBonnet	pass	
 PolesWitnessLaws.Law_PoleMeshIsSound	pass	

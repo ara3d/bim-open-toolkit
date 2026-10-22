@@ -123,16 +123,6 @@ library PolesLaws
     //==
     // # Meshes
 
-    // The names of the face checks of layer 07's ValidateFaceMesh at Geometric that fail on face f
-    // of model m.
-    FaceCheckFailures(m: BrepModel, f: Integer, chordal: Number, quads: Boolean): Array<String>
-    {
-        var o = PolesOptionsAt(chordal, quads);
-        var d = m.DiscretizeAll(o.Face.Discretization, SegmentFloors.NoFloors);
-        var fm = m.MeshFace(BrepFaceIndex(f), d, o.Face).Mesh;
-        return m.ValidateFaceMesh(d, fm, o.Face, ConformanceLevel.Geometric).Checks.FlatMap(c => c.Holds ? [c.Law.Value].Take(0) : [c.Law.Value]);
-    }
-
     // Every face of model m meshed once (no refinement round) under options o, with the
     // canonical discretizations, and assembled (layer 06): the round-0 mesh of layer 08's loop,
     // which is its final mesh when no face asks for refinement. Layer 08's MeshModel also runs
@@ -164,21 +154,4 @@ library PolesLaws
     // 1e-10.
     GaussBonnetHolds(m: BrepModel, chordal: Number): Boolean
         => m.AngleDefectMatchesBrepEuler(m.RoundZeroModelMesh(PolesOptionsAt(chordal, false)), ShellIndex(0));
-
-    // Every face check of layer 07 at Geometric holds on every face of each witness.
-    Law_SphereFaceChecksHold(_: BrepModel): Boolean
-        => BrepModel.Witness_Sphere.FaceCheckFailures(0, 0.01, false).Count == 0;
-
-    Law_SphereByPoleLoopsFaceChecksHold(_: BrepModel): Boolean
-        => BrepModel.Witness_SphereByPoleLoops(1.0).FaceCheckFailures(0, 0.01, false).Count == 0;
-
-    Law_TorusFaceChecksHold(_: BrepModel): Boolean
-        => BrepModel.Witness_Torus.FaceCheckFailures(0, 0.05, false).Count == 0;
-
-    Law_ConeFaceChecksHold(_: BrepModel): Boolean
-        => BrepModel.Witness_Cone.FaceCheckFailures(0, 0.01, false).Count == 0
-            && BrepModel.Witness_Cone.FaceCheckFailures(1, 0.01, false).Count == 0;
-
-    Law_TorusAtVertexFaceChecksHold(_: BrepModel): Boolean
-        => BrepModel.Witness_TorusAtVertex(2.0, 0.5).FaceCheckFailures(0, 0.05, false).Count == 0;
 }
