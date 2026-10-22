@@ -1,0 +1,22 @@
+// TKT-475: layer 1 declares SecondDerivative(g, p: PcurveIndex, t) without a body, with a deferred note, so every
+// SURFACE_CURVE edge mastered by a pcurve (OnSurface's arm calls it) throws there: layer 7's
+// SecondDerivativeMatchesCentralDifference and PcurveSecondDerivativeMatchesCentralDifference, and their Hoisted
+// forms, threw NotImplementedException on SHO/ELLA-W1.STEP and SHO/NINA-B222-W1x2.STEP in the TKT-441 corpus run.
+//
+// The body is the note's chain rule to second order. A pcurve is its surface S over its 2D curve (u(t), v(t)), so
+// C'' = S_uu u'^2 + 2 S_uv u' v' + S_vv v'^2 + S_u u'' + S_v v'', with the surface's second partials from layer 1's
+// JetAt (closed form for every surface kind but Offset, whose JetWith arm is deferred: a pcurve on an offset surface
+// still stops there, and no corpus file has one).
+library V1ReliabilitySecondDerivative
+{
+    SecondDerivativeBody(g: GeometrySet, p: PcurveIndex, t: Number): Vector3D
+    {
+        var c = g.PcurveAt(p).Curve;
+        var uv = g.Eval(c, t);
+        var d = g.Derivative(c, t);
+        var dd = g.SecondDerivative(c, t);
+        var jet = g.JetAt(g.PcurveAt(p).Surface, uv.ToUvPoint);
+        return jet.DerivativeUU * (d.X * d.X) + jet.DerivativeUV * (2.0 * d.X * d.Y) + jet.DerivativeVV * (d.Y * d.Y)
+            + jet.DerivativeU * dd.X + jet.DerivativeV * dd.Y;
+    }
+}

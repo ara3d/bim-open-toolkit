@@ -22,6 +22,7 @@ Fence: `sandbox/step-brep-mesh/tools/**`, `sandbox/step-brep-mesh/09-tooling/**`
 | R4 | TKT-439 | a failing corpus face extracted as a Plato witness | 2 h | about 1.5 h |
 | R7 | TKT-441 | layer 7's checks on every corpus file's raw and prepared models | 2 h | about 2 h, plus the 80-minute corpus run |
 | R2A | TKT-465 | cause A: a closed direction evaluated at unwrapped parameters (JODY-W5/W6 faces 322, 444, 584) | 2 h | about 2 h |
+| R8 | TKT-475 | a body for SecondDerivative on a pcurve, so no check throws | 1 h | about 1 h |
 | R2B | TKT-465 | cause B: a surface curve's pcurve image off its surface (NINA-B222 face 678) | 2 h | about 40 min: J5 fixes it, witness and law staged |
 
 ## Done
@@ -73,6 +74,16 @@ J5 (29dd7411), passes on HEAD. Merge both into `08-pipeline` beside the ANN-MB2 
 (`pipeline-corpus-witness-nina-b222-678.library.plato`, and the law into `pipeline-corpus-witnesses.laws.plato`), with
 R2A, since the law reads R2A's `CornersOnSurface`.
 
+R8 (TKT-475): move `second-derivative.library.plato` to `01-geometry/geometry-second-derivative.library.plato`
+(library `V1ReliabilitySecondDerivative`); in `01-geometry/geometry-curves.library.plato` the bodiless
+`SecondDerivative(g: GeometrySet, p: PcurveIndex, t: Number): Vector3D;` gets the body `=> g.SecondDerivativeBody(p, t);`
+and its "deferred" comment becomes "the chain rule to second order, with the surface's second partials from JetAt";
+remove `SecondDerivative` from `tools/generated-stubs.txt` in the same commit (the stub check lists it as no longer a
+stub). `second-derivative.laws.plato` into `08-pipeline` (it reads the NINA-B222 witness). Checked: the law passes on
+the working tree plus staging (worst relative error 9.4e-10 against a central difference); on a scratch regeneration
+of HEAD with the body wired, layer 7's six derivative checks give verdicts on NINA-B222 (pass, one over budget) and
+ELLA-W1 (over budget, 20,684 surface-curve edges, TKT-476) where they threw NotImplementedException.
+
 Otherwise none into the library. For the supervisor:
 - Move the bim-open-data pin in `deps.json` to d8bb198 or later when it next moves, so a fresh `node deps.mjs` gets
   the harness's contract check.
@@ -94,6 +105,8 @@ None.
   comparisons it lists today are in v1-edges, v1-gate, v1-jody and v1-types.
 
 ## Findings
+
+- Plato resolver: `(x).IsFinite && x < c ? a : b` in an expression body halts resolution with "Circular expression" (no location); the same with a local variable compiles. Found writing R8's sampler.
 
 - 40 defects in the mesher since 2026-10-17: a law caught 9, 5 of them in time; the corpus and public samples found
   15. Classes and counts are in the report.
