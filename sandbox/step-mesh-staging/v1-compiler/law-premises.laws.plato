@@ -1,0 +1,20 @@
+//==
+// # Premises of guarded laws (TKT-437)
+//
+// The law runner evaluates a law's Premise_<Law> companion (same parameters, Boolean) on every
+// case and reports a law whose premise held on no case as vacuous, a failure. These are the
+// premises of the two guarded laws the reliability report (class A) found untested: each states
+// the guard of its law's `p ? q : true`. At merge each moves beside its law: the first to
+// 08-pipeline/pipeline.laws.plato, the second to 01-geometry/geometry-proofs.laws.plato.
+
+library LawPremisesV1Compiler
+{
+    // Law_PendingRequestIsInSomeOutcome says something only about a valid pending index.
+    Premise_PendingRequestIsInSomeOutcome(s: PipelineState, q: Integer): Boolean
+        => s.Pending.IsValidIndex(q);
+
+    // Law_RigidFrameIsOrthonormal says something only about a frame that is orthonormal within
+    // the tolerance.
+    Premise_RigidFrameIsOrthonormal(f: Frame3D, tol: AngleTolerance): Boolean
+        => f.IsOrthonormalWithin(tol);
+}

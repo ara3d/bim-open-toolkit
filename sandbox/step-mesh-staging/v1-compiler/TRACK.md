@@ -1,7 +1,7 @@
 # v1-compiler: Plato compiler defects that cost corpus faces or split the interpreter from compiled C#
 
 Ticket: TKT-410, TKT-355 (TKT-398 left: it blocks nothing in the corpus)
-Status: ready: C1, C2
+Status: ready: C1, C2, C4 | working: C5
 
 Fence: this folder, `tickets/TKT-410*`, `tickets/TKT-355*`, and the Plato repository
 (`C:\Users\cdigg\git\plato`: `writers/`, `src/`, `tests/`, `docs/interpreter.md`), committed there.
@@ -14,6 +14,8 @@ to merge into the library.
 |---|---|---|---|---|
 | C1 | TKT-410 | Why `BisectionCached.SagittaByHullBoundGiven` has no ground TIR; fix in the compiler | 2 h | about 2.5 h, most of it cold builds |
 | C2 | TKT-355 | Cause of the three interpreter/compiled divergences; fix with a regression test | 2 h | about 1 h |
+| C4 | TKT-437 | Premise_<Law> companions counted; a law whose premise never held is vacuous | 2 h | about 1 h |
+| C5 | TKT-438 | `plato run --laws --differential`: interpreter against compiled C#, every witness, laws under 2 s | 1.5 h | |
 | C3 | TKT-398 | Only if it blocks the corpus: it does not (both defects have library workarounds, and the regenerated library has no stub) | - | - |
 
 ## Done
@@ -39,6 +41,13 @@ to merge into the library.
 
 ## Merge instructions
 
+- C4: move `Premise_PendingRequestIsInSomeOutcome` into `08-pipeline/pipeline.laws.plato` and
+  `Premise_RigidFrameIsOrthonormal` into `01-geometry/geometry-proofs.laws.plato`, beside their laws
+  (from `law-premises.laws.plato`; delete the staged file). Both laws then report `vacuous`, a
+  failure, until a witness makes the premise hold: a pipeline state with a pending request, and an
+  orthonormal Frame3D witness. Needs a law runner from Plato `00610b70` or later (the warm server
+  too).
+
 - None in the library. Move the Plato pin: `deps/bim-open-data/tools/regen-step-brep.ps1`,
   `$PinnedPlato = 'c8c83c8b660760d4f79e3f42576703dc684b832a'` (contains both fixes and the
   `2847ef71` checker change after the current pin `e37c032f`), regenerate, and move the bim-open-data
@@ -49,6 +58,11 @@ to merge into the library.
 ## Contract requests
 
 ## Requests to other tracks
+
+- Whoever owns the uncommitted edits in `sandbox/step-brep-mesh/tools/plato_laws.py` (TKT-437
+  criterion 2, not blocking the Plato side): add `vacuous` to `RESULT` and `VERDICTS`, and count
+  `tally["vacuous"] > 0` as a failure beside fail and error. I did not edit the file because
+  another session has uncommitted changes in it.
 
 ## Findings
 
