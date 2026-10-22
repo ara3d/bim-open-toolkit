@@ -1,7 +1,7 @@
 # v1-edges: edge discretization, edge identity, and the assembled mesh's watertightness
 
 Ticket: TKT-413, TKT-419, TKT-414, TKT-400
-Status: ready: E3, E1, E2, E4a | working: E4b (the seed wired into TriangulateRegionCdtIndexedCounted, corpus check)
+Status: ready: E3, E1, E2, E4a, E4b | next: E5
 
 ## Chunks
 
@@ -49,6 +49,15 @@ Status: ready: E3, E1, E2, E4a | working: E4b (the seed wired into TriangulateRe
   - All 72 first-pass rings where ear clipping falls short (a Python port of the same algorithm over the dumped rings): 39 complete. The other 33 lie outside the seed's contract. 31 cross themselves, being first-pass rings of faces the host refines before it triangulates them (ANN-MB2, CAM, M2-MAYA, M2_JODY, NINA-B222 677, RCB-F9T's six small faces) or faces it reports not simple (ELLA-W1 304, c211 81, 84 and 88). LENA-R8 258 repeats points inside a loop, and ODIN-W260 2613 is a slit at the tolerance: E5's kinds.
   - The supervisor's single-loop witness, ELLA-W1 F304, is not simple (two crossings), and every single-loop face where ear clipping falls short is one of the not-simple kind; NORA-B100 2745 took its place, and the synthetic rectangles stand for one loop.
 
+- E4b (TKT-468), see the commit, about 4 h against 0.5 day. `CdtSeedOfRegion` replaces the seed in `TriangulateRegionCdtIndexedCounted` for every region (merge instructions below), with three changes to E4a's seed found by the checks:
+  - A point on a side shared by two triangles can come out a rounding error outside both (-3.7e-32 on M2-ZED-F9T-25B-00 face 1619), and the walk and the scan then found no triangle for it; the point and its segments were skipped and the flood covered the hole (LENA-R8: 62 non-manifold and 62 misoriented edges; M2-ZED-F9T-25B-00: 36 and 36, one closed shell opened). `SeedOutsideSide` counts a point outside a side only below -1e-12 |ab| |ap|.
+  - The generated code evaluates both operands of `&&`: `placed.At(next[a])` read index -1 on a point hole (shipped star cases with odd |k|). The test is nested.
+  - `CdtSeedOfRegion` uses the new seed only when it has `SeedCompleteCount` triangles (n + 2h - 2 plus one per point on no segment), else today's ear-clipped seed with point holes inserted. The new seed misses that count where a loop passes one point twice: it skips the second copy and loses its two segments (V1G-6's keyhole: 7 triangles where 6 cover, one over the hole). E5 merges such points and removes the fallback.
+  - Determinism: the insertion order is a stable counting sort of the points' grid cells, the flips and the recovery queue run in index order, and the flip test's 1e-12 margin leaves cocircular ties as inserted: the same points give the same triangles.
+  - Laws: the five of E4a plus `Law_V1Edges_SeedHoldsPointHoles` (star cases 1 and 3) and `Law_V1Edges_SeedFallsBackOnKeyhole`, 7 pass in 46 s (budget 120 s, against HEAD's library copy because another track's `step-shell-sewing.library.plato` did not parse at the time).
+  - Shipped laws, 11 blocks (60 laws), HEAD against HEAD with the wiring: 9 verdicts changed with E4a's seed; with these changes and `CdtWithIndexedFlips` on the same seed, 1 remains. `Law_AttainableRefinementNoLarger` fails on "Sphere 3": both refinements start from 66 triangles with other diagonals (the chart is full of cocircular points), and the reference refinement makes 224 (238 on HEAD) and the attainable 226 (222 on HEAD). The law's inequality held for one start triangulation and is not a guarantee of the two refinements; the shipped mesh (attainable) gains 4 triangles on that face. Supervisor's call: restate the law (for example, attainable no larger than the reference plus a slack, or only where the starts agree) or keep it failing as a finding.
+  - Corpus, harness `all` on the 88 files (scratch C# regenerated from HEAD 43dd439b plus the seed and wiring, 120 s, parallel, warm-up), against the 2026-10-22 baseline: 43 face meshes changed in 30 files. Every gap and inside-face boundary edge in the corpus is gone (gaps 1,749 to 0 on 28 files, inside faces 1,152 to 0 on 29), and 36 more declared closed shells are closed (RCB-F9T(AP214) 467 to 475 of 475, PAM 22 to 24 of 24, LARA, MPCI, the SARA, TOBY, LEA, NORA and ZOE families, MIA-M10Q 0 to 1 of 1). Non-manifold, misoriented, flipped, degenerate, over-chordal and faces meshed: no file worse. One count rose: THEO-P173's edges cited once, 3,895 to 3,930: its face 998 went from 121 triangles with a hole (2 inside-face edges) to 168 covering it, so 35 segments along model edges only that face cites are now meshed and counted as the B-rep's own boundary. c211 changed 4 faces with no count moving.
+
 ## Merge instructions
 
 E3, recommended form (contract request below): `ShellImplicitEdges` replaces `ShellPolyEdges`.
@@ -74,6 +83,18 @@ E2 (TKT-414):
 E4a (TKT-468):
 - `cdt-seed.library.plato` into `05-face-meshing` (block `V1EdgesCdtSeed`; it calls TwiceSignedArea, InCircleOfSorted, InCircleScale, NextBoundaryTable, IsConstrainedIn and layer 2's CountingSortBy). `cdt-seed.laws.plato` into `05-face-meshing`; `cdt-seed-witnesses.laws.plato` and the three `witness-*.library.plato` into `08-pipeline`, since they read HostMeshingOptions and the face pipeline. The witness laws build their regions and seeds from 100 to 660 points, slow for the 2 s sweep: put them on the sweep's long list.
 - The wiring is E4b's and comes in its own commit.
+
+E4b (TKT-468), after E4a:
+- In `05-face-meshing/triangulation-cdt-indexed.library.plato`, the body of `TriangulateRegionCdtIndexedCounted` becomes:
+  ```
+  var points = r.BoundaryPoints.Map(uv => chart.ChartPoint(uv));
+  var triangles = r.NextBoundaryTable.DelaunayedIndexed(points, r.CdtSeedOfRegion(points));
+  return Counted(UvTriangulation(r.BoundaryPoints, r.BoundarySources, triangles, [QuadFace(VertexIndex(0), VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0)), Insertions(points.Count));
+  ```
+  The point holes are inside the new seed (and inside its fallback), so the `pointHoles` fold goes. The work count becomes one insertion per point; the bridge and ear tests it counted are gone except on the fallback.
+- In `05-face-meshing/uv-boundary-index.laws.plato`, the law helper `CdtWithIndexedFlips` takes the same seed: its three lines building `seed`, `pointHoles` and the fold become `var triangles = r.NextBoundaryTable.DelaunayedIndexed(points, r.CdtSeedOfRegion(points));`. It stands for the wired path with unindexed flips; with the old seed it compares two seeds, and on a unit square (four cocircular corners) they pick different diagonals.
+- `Law_AttainableRefinementNoLarger` (`08-pipeline/pipeline-attainable.laws.plato`) fails on its "Sphere 3" case, see the E4b entry; the decision is the supervisor's.
+- `CdtSeedIndexedCounted` and the ear clipper stay: the fallback calls them until E5.
 
 ## Contract requests
 
@@ -115,6 +136,11 @@ E4a (TKT-468):
 | E3 design and staging | 30 min | |
 | E3 laws (server, budget 2 s and 60 s, cpu64 and gpu32) | 75 min | 22 runs |
 | Pinned CLI cold compile (parse check) | 6.3 min | 1 run |
+| E4a design, port and laws | 6 h | about 12 law runs |
+| E4b scratch regeneration (pinned compiler) plus incremental harness build | 1.5 to 2.5 min each | 3 |
+| E4b corpus (88 files, parallel) | 25 to 45 min each (slower while law runs share the CPU) | 2 full, 1 stopped |
+| E4b shipped-law comparison, 11 blocks, base and wired | 6 and 10 min | 2, then 2 reruns of 8 laws (4 min each) |
+| E4b probes (threshold laws for counts) | 1 to 2 min each | 5 |
 
 ## Lessons
 
@@ -124,4 +150,7 @@ E4a (TKT-468):
 - The law server on port 8768 stopped answering at about 01:15 on 2026-10-22 and was not running afterwards; the pinned CLI with `--backend=csharp` compiled the library plus this folder in under 80 s, close enough to the server for a chunk's laws.
 - A time box over `Parallel.For` cannot tell a stuck row from rows queued behind it; give each worker one row at a time (an index counter) when hunting for a row that does not return.
 - A mesh check alone would have accepted the wrong repair (coedge flips); read the file's geometry, and the other tracks' findings, before choosing between repairs that both pass the check.
+- Plato's generated code evaluates both operands of `&&` (and `||`): a guard and the read it guards must be nested ifs, not one condition.
+- `plato_laws.py` prints at most 200 verdicts; `--report FILE` has them all. With no evaluator in the CLI, a count is read by a family of `== x` laws in one compile.
+- A shared checkout's library can be mid-edit by another track and not parse; `--library <HEAD archive>` keeps a staging run independent of it.
 - The server reuses results and JIT between requests, so a law's time is honest only on the first run after a recompile; run a budget check twice and report both.

@@ -177,6 +177,14 @@ library V1EdgesCdtSeed
     //==
     // # Locating, inserting
 
+    // Whether point p lies outside the side from a to b by more than rounding: its orientation
+    // below -1e-12 times |ab| |ap|. A point on a side shared by two triangles can come out a
+    // rounding error outside both (-3.7e-32 on M2-ZED-F9T-25B-00's face 1619), and a strict test
+    // then finds no triangle for it; with the margin both hold it, the first is split, and the
+    // flat triangle left is flipped away.
+    SeedOutsideSide(points: Array<Point2D>, a: Integer, b: Integer, p: Integer): Boolean
+        => TwiceSignedArea(points[a], points[b], points[p]) < -1e-12 * points[a].Distance(points[b]) * points[a].Distance(points[p]);
+
     // A triangle of the state holding point p (on or inside its sides), found by walking from
     // triangle start across a side p lies strictly outside of, at most 4 cap + 10 steps; then a
     // scan of every triangle; -1 when none holds p.
@@ -193,7 +201,7 @@ library V1EdgesCdtSeed
             {
                 var a = s.SeedCorner(t, j);
                 var b = s.SeedCorner(t, j + 1);
-                if (TwiceSignedArea(points[a], points[b], points[p]) < 0.0 && s.SeedAcross(cap, t, j) >= 0)
+                if (SeedOutsideSide(points, a, b, p) && s.SeedAcross(cap, t, j) >= 0)
                 {
                     t = s.SeedAcross(cap, t, j);
                     moving = true;
@@ -212,9 +220,9 @@ library V1EdgesCdtSeed
         var t = 0;
         while (t < s.At(0) && found < 0)
         {
-            if (TwiceSignedArea(points[s.SeedCorner(t, 0)], points[s.SeedCorner(t, 1)], points[p]) >= 0.0
-                && TwiceSignedArea(points[s.SeedCorner(t, 1)], points[s.SeedCorner(t, 2)], points[p]) >= 0.0
-                && TwiceSignedArea(points[s.SeedCorner(t, 2)], points[s.SeedCorner(t, 0)], points[p]) >= 0.0)
+            if (SeedOutsideSide(points, s.SeedCorner(t, 0), s.SeedCorner(t, 1), p).Not
+                && SeedOutsideSide(points, s.SeedCorner(t, 1), s.SeedCorner(t, 2), p).Not
+                && SeedOutsideSide(points, s.SeedCorner(t, 2), s.SeedCorner(t, 0), p).Not)
             {
                 found = t;
             }
@@ -552,9 +560,14 @@ library V1EdgesCdtSeed
         var a = 0;
         while (a < n)
         {
-            if (next[a] >= 0 && placed.At(a) == a && placed.At(next[a]) == next[a])
+            if (next[a] >= 0)
             {
-                s = s.SeedWithSegment(cap, all, next, a, next[a]);
+                // Nested: the generated code evaluates both operands of &&, and next[a] is -1 on
+                // a point hole.
+                if (placed.At(a) == a && placed.At(next[a]) == next[a])
+                {
+                    s = s.SeedWithSegment(cap, all, next, a, next[a]);
+                }
             }
             a = a + 1;
         }
@@ -577,9 +590,28 @@ library V1EdgesCdtSeed
             : (points[c].X == points[p].X && points[c].Y == points[p].Y ? c : -1));
     }
 
+    // The number of triangles a complete seed of r has: n + 2 h - 2 over its n boundary points
+    // and its h loops of three or more points besides the outer one, plus one for each point on
+    // no boundary segment (a point hole's or a two-point loop's, each inside two more triangles
+    // and counted once in n).
+    SeedCompleteCount(r: UvRegion): Integer
+    {
+        var next = r.NextBoundaryTable;
+        var wide = r.Holes.Reduce(0, (h, l) => l.Points.Count >= 3 ? h + 1 : h);
+        return next.Count + 2 * wide - 2 + next.Reduce(0, (k, b) => b < 0 ? k + 1 : k);
+    }
+
     // The seed of region r in its chart: CdtSeedByInsertion over the region's chart points and
-    // its NextBoundaryTable. The replacement of CdtSeedIndexedCounted (no bridges, no ear
-    // clipping).
+    // its NextBoundaryTable when that seed is complete (SeedCompleteCount triangles), else
+    // today's ear-clipped seed with its point holes inserted. The new seed misses the count only where
+    // a point coincides with another (a loop through a pinch vertex twice, V1G-6's keyholes):
+    // track v1-edges' chunk E5 merges such points and removes the fallback.
     CdtSeedOfRegion(r: UvRegion, points: Array<Point2D>): Array<TriangleFace>
-        => points.CdtSeedByInsertion(r.NextBoundaryTable);
+    {
+        var seed = points.CdtSeedByInsertion(r.NextBoundaryTable);
+        var pointHoles = r.Holes.Count.Range.FlatMap(h =>
+            r.Holes[h].Points.Count < 3 ? r.HoleRing(h) : [h].Take(0));
+        return seed.Count == r.SeedCompleteCount ? seed
+            : pointHoles.Reduce(r.CdtSeedIndexedCounted(points).Value, (ts, p) => ts.WithPointInserted(p, points));
+    }
 }
