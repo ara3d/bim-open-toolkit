@@ -3,7 +3,7 @@ id: TKT-473
 title: STEP mesher: vertex 2376 of the two M2-JODY-W377 files has a link that is neither a cycle nor a path in its open shell after PrepareModel
 status: open
 depends_on: []
-owner:
+owner: v1-jody
 fence: [sandbox/step-brep-mesh/03-step/**]
 workflow: [W3]
 related: [TKT-441, TKT-431]
@@ -34,3 +34,9 @@ among the files' 6,544 boundary edges. In an open shell that is not a contract v
 Fix: sew the two coincident edges into one seam edge used twice. That is a preparation repair of the kind J6
 (sewing, v1-jody) builds, within one face rather than between faces. Witness: `step-corpus-harness extract
 SHO/M2-JODY-W377-00C_PCIE-UART.step 470 <out.plato>` reproduces the face (24 quads, same mesh).
+
+## Handed to v1-jody (supervisor, 2026-10-22)
+
+J6 sews duplicate edges between one vertex pair with agreeing curves, which may already cover this seam (two edges on
+identical line curves). If it does, J6 takes face 470 as an extra case, with the extract command above as its witness.
+If it does not, this ticket is deferred past version 1: an open shell meets the version 1 contract either way.
