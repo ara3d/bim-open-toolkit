@@ -1,0 +1,60 @@
+//==
+// # The seam cut between a pole and a band takes the shortest pair in parameters too (TKT-421)
+//
+// JoinedByCut joins two winding loops with a synthetic seam cut, straight in parameters, between
+// the pair of points nearest in space (NearestPair). When one loop is a pole segment (a cone
+// bounded by its base circle and a vertex loop at its apex), every pole point is the same point
+// in space, so every base point ties, and the first pair wins: on steptools-ap203
+// moon_buggy_asm.stp's cone faces 26, 76 and 132 the cut ran from the apex copy at u = -2 pi to
+// the base point at u = -5.50, a quarter of a radian off, a spiral on the cone instead of a
+// generator. Refinement then left slivers along it, 192 of each face's 7042 elements wound
+// against the face normal. When one loop is a pole, the pair is now the nearest in space with
+// ties within the length tolerance broken by the shorter step in parameters, so the cut follows a
+// generator.
+//
+// Sections, in order:
+//  - The pair
+
+library FaceMeshingCutPair
+{
+    //==
+    // # The pair
+
+    // NearestPair, with ties broken in parameters when one loop is a pole (every point one point
+    // in space, IsOnePoint): among the pairs (i in a, j in b, coded i * b.Count + j) whose surface
+    // points are within the length tolerance of the nearest distance, the one whose parameter step,
+    // from a's point to the copy of b's point nearest it, is shortest. Two loops that are not a
+    // pole keep NearestPair's first nearest pair: on a torus band the parameter tie-break chose a
+    // cut that left 4787 of face 33's elements of moon_buggy_asm.stp wound backwards.
+    NearestPairTied(m: BrepModel, f: BrepFaceIndex, a: UvLoop, b: UvLoop): Integer
+    {
+        var s = m.SurfaceOf(f);
+        var pa = a.Points.Map(uv => m.Geometry.Eval(s, uv));
+        var pb = b.Points.Map(uv => m.Geometry.Eval(s, uv));
+        return (m.IsOnePoint(pa) || m.IsOnePoint(pb)) ? m.NearestPairInParameters(f, a, b, pa, pb) : m.NearestPair(f, a, b);
+    }
+
+    // Whether the points ps all lie within the length tolerance of the first.
+    IsOnePoint(m: BrepModel, ps: Array<Point3D>): Boolean
+        => ps.All(p => p.Distance(ps[0]) <= m.Tolerances.Length.Value);
+
+    // The tie-break of NearestPairTied, the surface points of a and b given.
+    NearestPairInParameters(m: BrepModel, f: BrepFaceIndex, a: UvLoop, b: UvLoop, pa: Array<Point3D>, pb: Array<Point3D>): Integer
+    {
+        var dom = m.SurfaceDomainOf(f);
+        var nb = b.Points.Count;
+        var pairs = (a.Points.Count * nb).Range;
+        var nearest = pairs.Reduce(Number.MaxValue, (d, k) => d.Min(pa[k / nb].Distance(pb[k % nb])));
+        var tied = pairs.FlatMap(k => pa[k / nb].Distance(pb[k % nb]) <= nearest + m.Tolerances.Length.Value ? [k] : [k].Take(0));
+        return tied.Reduce(tied[0], (best, k) => m.ParameterStep(dom, a, b, k, nb) < m.ParameterStep(dom, a, b, best, nb) ? k : best);
+    }
+
+    // The parameter-plane length of the step from a's point k / nb to the copy of b's point
+    // k % nb nearest it.
+    ParameterStep(m: BrepModel, dom: SurfaceDomain, a: UvLoop, b: UvLoop, k: Integer, nb: Integer): Number
+    {
+        var p = a.Points[k / nb];
+        var q = dom.NearestUnwrapped(b.Points[k % nb], p);
+        return p.ToPoint2D.Distance(q.ToPoint2D);
+    }
+}

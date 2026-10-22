@@ -1,13 +1,15 @@
 ---
 id: TKT-421
 title: STEP mesher: refined meshes of needle cones and single-winding cylinder faces keep folded elements
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 0d8c417b
+session: 0d8c417b-f6aa-4828-ac07-a9d6f3b535c9
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3]
 related: [TKT-411, TKT-401]
 created: 2026-10-22
+claimed: 2026-10-22
 kind: defect
 ---
 

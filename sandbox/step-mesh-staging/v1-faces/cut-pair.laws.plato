@@ -1,0 +1,97 @@
+//==
+// # The seam cut between a pole and a band: laws (TKT-421)
+//
+// The witness is the cone of moon_buggy_asm.stp's faces 26, 76 and 132: its lateral face is
+// bounded by the base circle and a vertex loop at the apex, with no seam edge, so face meshing
+// cuts a seam itself between the apex's pole segment and the circle.
+//
+// Sections, in order:
+//  - The witness
+//  - The cut
+
+library FaceMeshingCutPairLaws
+{
+    //==
+    // # The witness
+
+    // A solid cone of base radius r at z = 0 and apex (0, 0, -h), as Witness_Cone, but its
+    // lateral face bounded by the base circle E0 (from P0 = (r, 0, 0), closed there) and a vertex
+    // loop at the apex A, and its base disk by E0 the other way. V = 2, E = 1, F = 2, L = 3.
+    Witness_ConeByApexLoop(_: BrepModel, r: Number, h: Number): BrepModel
+        => BrepModel(
+            GeometrySet(
+                [BrepCurve.Circle(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r)],
+                [],
+                [],
+                [BrepSurface.Cone(WorldFrameAt(Point3D(0.0, 0.0, 0.0)), r, (r / h).Atan),
+                 BrepSurface.Plane(PlaneFacing(Point3D(0.0, 0.0, 0.0), 1))], []),
+            [BrepVertex(Point3D(r, 0.0, 0.0)), BrepVertex(Point3D(0.0, 0.0, 0.0 - h))],
+            [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true)],
+            [BrepLoop.EdgeLoop([CoedgeOf(0, false)]),
+             BrepLoop.VertexLoop(BrepVertexIndex(1)),
+             BrepLoop.EdgeLoop([CoedgeOf(0, true)])],
+            [BrepFace(SurfaceIndex(0), true, [FaceBound(BrepLoopIndex(0), true, true), FaceBound(BrepLoopIndex(1), true, false)]),
+             SingleLoopFace(1, 2, true)],
+            [ClosedShellOf([0, 1])],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    Witness_ConeByApexLoopCase(_: ConeApexCase): ConeApexCase
+        => ConeApexCase(0.05);
+
+    // Whether case w is the witness's chordal bound. The law runner also draws bounds at random;
+    // the others hold vacuously.
+    IsConeApexChordal(w: ConeApexCase): Boolean
+        => w.Chordal == 0.05;
+
+    // The cone of base radius 1 and height 1 with the apex loop.
+    ConeByApexLoop(_: ConeApexCase): BrepModel
+        => BrepModel.Witness_ConeByApexLoop(1.0, 1.0);
+
+    // The default criteria at case w's chordal bound.
+    ConeApexCriteria(w: ConeApexCase): FaceMeshingCriteria
+        => DefaultMeshingOptions(w.Chordal).Face;
+
+    //==
+    // # The cut
+
+    // The lateral face's synthetic seam cut runs along one generator: every SeamCut point of the
+    // region has the same u, up to a whole period.
+    Law_V1Faces_ApexCutFollowsGenerator(w: ConeApexCase): Boolean
+        => w.IsConeApexChordal ? w.CutUsShareOneValue(w.ConeByApexLoop.CutUs(w.ConeApexCriteria)) : true;
+
+    // The u values of the SeamCut points of model m's face 0's region under criteria c.
+    CutUs(m: BrepModel, c: FaceMeshingCriteria): Array<Number>
+    {
+        var d = m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors);
+        var r = m.RegionOf(BrepFaceIndex(0), d, c);
+        return r.Outer.Points.Count.Range.FlatMap(i => r.Outer.Sources[i].IsSeamCutSource ? [r.Outer.Points[i].U] : [0.0].Take(0));
+    }
+
+    // Whether there are cut points and their u values agree modulo 2 pi within 1e-9.
+    CutUsShareOneValue(w: ConeApexCase, us: Array<Number>): Boolean
+        => us.Count == 0 ? false : us.All(u => ((u - us[0]) / (2.0 * Number.Pi) - ((u - us[0]) / (2.0 * Number.Pi) + 0.5).Floor).Abs <= 1e-9);
+
+    // Whether a parameter-space point's source is a seam-cut point.
+    IsSeamCutSource(s: UvPointSource): Boolean
+        => match (s) {
+            FromVertex(v) => false;
+            FromEdge(e, k) => false;
+            SeamCut(side, k) => true;
+            Pole(side, k) => false;
+            Interior => false;
+        };
+
+    // Every element of the lateral face's mesh winds with the face normal (WindingSign 1).
+    Law_V1Faces_ApexConeElementsFaceNormal(w: ConeApexCase): Boolean
+        => w.IsConeApexChordal ? w.LateralFacesNormal(w.ConeByApexLoop) : true;
+
+    // Law_V1Faces_ApexConeElementsFaceNormal on model m.
+    LateralFacesNormal(w: ConeApexCase, m: BrepModel): Boolean
+    {
+        var c = w.ConeApexCriteria;
+        var fm = m.MeshFace(BrepFaceIndex(0), m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors), c).Mesh;
+        return fm.ElementCount > 0 && fm.ElementCount.Range.All(k => m.WindingSign(fm, ElementIndex(k)) == 1);
+    }
+}

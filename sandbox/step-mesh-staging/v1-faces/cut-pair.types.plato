@@ -1,0 +1,8 @@
+//==
+// # The seam cut between a pole and a band: types (TKT-421)
+
+// Witness_ConeByApexLoop(1.0, 1.0) meshed at chordal bound Chordal.
+type ConeApexCase
+{
+    Chordal: Number;
+}

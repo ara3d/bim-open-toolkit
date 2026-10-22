@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1 in 1369e852 | ready: F3 (with its addendum F3b), F2 | next: F4
+Status: merged: F1 in 1369e852 | ready: F3 (with its addendum F3b), F2, F4a | working: F4b (waits on V1G-4 and F2/F3 on HEAD)
 
 ## Chunks
 
@@ -9,7 +9,8 @@ Status: merged: F1 in 1369e852 | ready: F3 (with its addendum F3b), F2 | next: F
 |---|---|---|---|
 | F1 | TKT-415 | keep a quad grid only when every element is within SurfaceChordal at refinement's samples; else the refined triangulation | 1.5 h |
 | F3 | TKT-411 | three-edge sphere, cone and cylinder faces that throw ArgumentOutOfRangeException while their region is built | 2 h |
-| F4 | TKT-421 | folded elements on needle cones and single-winding cylinder faces that F3 lets mesh | 2 h, after F2 |
+| F4a | TKT-421 | the seam cut between a pole and a band follows a generator (moon_buggy_asm.stp cones 26, 76, 132) | 1.5 h |
+| F4b | TKT-421 | folded elements on MAYA-W160's needle cones and MAYA-W260_REVC's single-winding cylinders | 2 h, against HEAD after V1G-4 |
 | F2 | TKT-401 | the bump solid's degenerate element at ElementIndex(1541) | 2 h |
 | F3b | TKT-411 | addendum to F3: a whole pole segment takes at least three steps (Witness_SphereByPoleLoops under chordal-only refinement) | 0.5 h |
 | F1b | TKT-415 follow-up | size a refused grid instead of dropping it: QuadCountMismatch floors from the measured deviation, so a doubly curved four-sided face (torus, sphere zone, B-spline) gets a finer grid in the next round instead of a full refinement | not started; supervisor's call |
@@ -45,6 +46,10 @@ F3 runs before F2: it loses faces in 7 corpus files, and F2 is one element on a 
 - Keep half of F1, asked by the supervisor after the F1 merge: `grid-keep.laws.plato`, `Law_V1Faces_GridKeptWhereCurvedAtMostOneWay`: on the unit box, the flat B-spline patch solid, both cylinders and the cone, every four-sided face keeps its quad grid and the lifted grid is within the chordal bound. Passes on the merged library (8 cases, 1.4 s).
 - v1-types' 6d654cba (the grid keep rule on the contract's triangles, `GridUnlessFoldedOrCoarseV1Types`) replaces F1's `GridUnlessFoldedOrCoarse` and, by its commit, decides the same on the eight grid witnesses; it does not touch what F2 or F3 stage. It also covers v1-gate's request about the quad keep rule (both diagonal splits), so that request is v1-types' now.
 
+- F4a (TKT-421), 1.5 h against 1.5 h: `cut-pair.library.plato` (`NearestPairTied`, `IsOnePoint`, `NearestPairInParameters`, `ParameterStep`), laws and the witness `Witness_ConeByApexLoop` in `cut-pair.laws.plato`, `ConeApexCase` in `cut-pair.types.plato`. Supervisor's evidence: steptools-ap203 moon_buggy_asm.stp's cone faces 26, 76 and 132 (base circle plus a vertex loop at the apex, no seam edge) had 192 of about 7042 elements wound against the face normal. Cause: `JoinedByCut` cuts between the pair `NearestPair` finds; every apex point is one point in space, so all base points tie and the first pair won, 0.785 rad apart in u: the cut was a spiral, and refinement left slivers along it. With one loop a pole, ties within the length tolerance now go to the shortest step in parameters, so the cut is a generator. Loops that are not a pole keep `NearestPair`: a tie-break for every band made torus face 33 of the same file worse (4787 elements backwards), so it is limited to poles.
+  - Laws: `Law_V1Faces_ApexCutFollowsGenerator` fails on HEAD b1790f51 and passes with F4a (wired F1+F3+F2+F3b copy); `Law_V1Faces_ApexConeElementsFaceNormal` passes on both (the small witness at chordal 0.05 grows no slivers; the moon buggy's large cones do).
+  - Harness on a scratch regeneration with F1+F3+F2+F3b+F4a, `--parallel`: moon_buggy_asm.stp cones 76 and 132 no flipped element, cone 26 4 of 5802 (before: 192, 192, 192); torus face 33 clean; its 180 misoriented edges, between faces 33/34/36, 65/66/68 and 127/128/130, are there on the committed C# too (not from these chunks; worth a ticket). CEL/LENA-R8.STEP, SHO/MAYA-W160.step and SHO/MAYA-W260_REVC.step: same digests as without F4a.
+
 ## Merge instructions
 
 - `05-face-meshing/face-meshing.library.plato`, `QuadGridOnSides`: replace `m.GridUnlessFolded(f, m.QuadGrid(f, r, corners, c))` with `m.GridUnlessFoldedOrCoarse(f, r, m.QuadGrid(f, r, corners, c), c)` (the body of `QuadGridOnSidesWithin`; delete `QuadGridOnSidesWithin` after, and `GridUnlessFolded` once nothing calls it).
@@ -67,8 +72,12 @@ F3 runs before F2: it loses faces in 7 corpus files, and F2 is one element on a 
 
 ## Considered and rejected
 
+- F4, the fold test read at the corners off the pole (`FoldTestUv` in LiftsFacingFaceNormal, WindingSign and refinement's CentroidNormalTest; scratch copy 44f40fa, never committed): MAYA-W160's needle-cone digests and folds did not change. Refinement on those needles runs because the needle (radius 1e-4, below the chordal bound) fails the normal tests; V1G-4 drops the angular test, so F4b re-tests on HEAD with V1G-4 first.
+
 - F2, ring-side clearance (scratch copy 79ccfb5, never committed): keep a point only when it is at least `least` from each boundary side of its ring. Bump 0.5 got worse, 4120 elements and 61 below 1e-6: the slivers are three interior points lined up beside the edge, with ordinary triangles between them and it, so no boundary side is in their ring.
 - F2, a thickness bound of `least` (the effective minimum length, scratch copy 519db69): bump 0.5 clean (634 elements), but CEL/LENA-R8.STEP lost points on 78 faces and went from 0 to 16 non-manifold and 32 misoriented edges: its polar lunes keep triangles with one corner on the expanded pole and two on one meridian, which have no area in space, and refinement may no longer split them. Ten tolerances alone left LENA the same; comparing with the replaced triangles fixed it.
+
+- F4a: move `cut-pair.*.plato` into `05-face-meshing`; in `uv-regions.library.plato`, `JoinedByCut`: `var pair = m.NearestPair(f, a, b);` becomes `var pair = m.NearestPairTied(f, a, b);`.
 
 ## Contract requests
 
