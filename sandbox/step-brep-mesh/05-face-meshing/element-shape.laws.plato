@@ -37,12 +37,6 @@ library V1TypesElementsLaws
     //==
     // # Splits
 
-    // SplitsOf names the four triangles the gate's QuadSplitTriangles builds by hand, in its
-    // order, so the gate can read SplitsOf at merge without a verdict changing.
-    Law_V1Types_SplitsMatchGateSplits(w: GridCase): Boolean
-        => w.FourSidedMeshes.All(fm => fm.Quads.Count.Range.All(q =>
-            4.Range.All(i => fm.Quads[q].SplitsOf.SplitTriangles[i].Vertices.Corresponds(fm.QuadSplitTriangles(q)[i], (a, b) => a == b))));
-
     // The both-splits distance is never below FlatElementDistance's, at every element's
     // parameter centroid lifted to the surface: a gap bound on it is at least as strict.
     Law_V1Types_BothSplitsNotNearer(w: GridCase): Boolean
@@ -56,44 +50,19 @@ library V1TypesElementsLaws
 
     // A twisted quad, three corners on z = 0 and the fourth raised by 0.2: the midpoint of its
     // diagonal A C lies on the split on A C, so the rule of the nearer triangle on the diagonal
-    // from corner 0 (FlatDistanceOf, FlatElementDistance) measures 0 there, while the split on
+    // from corner 0 (F1's first keep rule, and FlatElementDistance) measures 0 there, while the split on
     // B D, which a renderer may draw, passes 0.05 or more away. A keep rule with a chordal bound
     // of 0.05 accepts the quad by the first and refuses it by both splits.
     Law_V1Types_TwistedQuadNeedsBothSplits(_: Integer): Boolean
     {
         var ps = [Point3D(0.0, 0.0, 0.0), Point3D(1.0, 0.0, 0.0), Point3D(1.0, 1.0, 0.0), Point3D(0.0, 1.0, 0.2)];
         var p = Point3D(0.5, 0.5, 0.0);
-        return ps.FlatDistanceOf(p) <= 1e-12 ? ps.QuadDistanceBothSplits(p) > 0.05 : false;
+        var nearer = UnsignedDistanceToTriangle(p, ps[0], ps[1], ps[2]).Min(UnsignedDistanceToTriangle(p, ps[0], ps[2], ps[3]));
+        return nearer <= 1e-12 ? ps.QuadDistanceBothSplits(p) > 0.05 : false;
     }
 
     //==
     // # The grid decision
-
-    // The grid the library builds on face f of case w, when its region is four-sided with
-    // matching opposite counts: the decision's input.
-    GridDecisionOn(w: GridCase, f: BrepFaceIndex): Boolean
-    {
-        var m = w.Model;
-        var r = m.RegionOf(f, w.Discretizations, w.Criteria);
-        return match (m.QuadSidesOf(f, r)) {
-            NotFourSided => true;
-            FourSided(corners) => r.OppositeCountsMatch(corners)
-                ? w.DecisionAgreesWithLibrary(f, r, m.QuadGrid(f, r, corners, w.Criteria))
-                : true;
-        };
-    }
-
-    // Whether the both-splits decision on grid g keeps it exactly when the library's
-    // GridUnlessFoldedOrCoarse does.
-    DecisionAgreesWithLibrary(w: GridCase, f: BrepFaceIndex, r: UvRegion, g: UvTriangulation): Boolean
-        => w.Model.GridUnlessFoldedOrCoarseV1Types(f, r, g, w.Criteria).IsGridOutcome
-            == w.Model.GridUnlessFoldedOrCoarse(f, r, g, w.Criteria).IsGridOutcome;
-
-    // On every grid case the both-splits decision keeps the grids the library keeps and refuses
-    // the ones it refuses: the bump tops and the torus refused, the box, cylinders, sphere and
-    // cone kept. A failure names a grid the two rules decide differently.
-    Law_V1Types_DecisionAgreesWithLibrary(w: GridCase): Boolean
-        => w.FourSidedFaces.All(f => w.GridDecisionOn(f));
 
     // The early-exit decision keeps a grid exactly when every element is kept, which All, visiting
     // every element, decides.

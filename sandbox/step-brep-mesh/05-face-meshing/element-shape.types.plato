@@ -5,8 +5,8 @@
 // ElementIndex, and ElementCorners returns an Array<VertexIndex> whose Count says which kind it
 // was. Every reader then re-derives the arity (`ps.Count == 3 ? ... : ps[3]`) and reads corners by
 // position. Three readers measure a quad against the surface, each its own way:
-//   - the grid keep rule (GridUnlessFoldedOrCoarse, FlatDistanceOf): the nearer of the two
-//     triangles on the diagonal from corner 0;
+//   - F1's grid keep rule (GridElementWithinChordal, FlatDistanceOf, deleted at T1's merge):
+//     the nearer of the two triangles on the diagonal from corner 0;
 //   - the library's deviation measures (ElementCoverageGap, FlatElementDistance): the same;
 //   - the version 1 gate (QuadSplitsWithin): each of the four triangles of both diagonal splits.
 // The contract (README, "Version 1 mesh contract") is the third: a quad is within the chordal

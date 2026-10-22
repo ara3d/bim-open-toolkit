@@ -4,9 +4,10 @@
 // ElementShape and QuadSplits (element-shape.types.plato) in use: the grid keep rule decides on
 // the triangles a renderer may draw, both diagonal splits of every quad, which is the version 1
 // contract's rule and the gate's (QuadSplitsWithin), instead of the nearer triangle on the
-// diagonal from corner 0. Every test is guarded by a conditional, not `&&`: Plato's `&&`
-// evaluates both sides, so GridElementWithinChordal's "the surface-point tests come first"
-// ordering saved nothing.
+// diagonal from corner 0. GridUnlessFoldedOrCoarse (grid-chordal.library.plato) calls
+// DecideGridChordal. Every test is guarded by a conditional, not `&&`: Plato's `&&` evaluates
+// both sides, so F1's first rule (GridElementWithinChordal, deleted at this merge), which
+// ordered "the surface-point tests first", saved nothing.
 //
 // Sections, in order:
 //  - Shapes
@@ -192,10 +193,4 @@ library V1TypesElements
             GridWithinChordal(g, bound) => QuadGridOutcome.Grid(g);
             GridExceedsAt(k) => QuadGridOutcome.NoGrid;
         };
-
-    // GridUnlessFoldedOrCoarse under the contract's rule: the grid when every triangle of every
-    // element's renderings faces the face normal and is within the bound. The merge points the
-    // library's GridUnlessFoldedOrCoarse here.
-    GridUnlessFoldedOrCoarseV1Types(m: BrepModel, f: BrepFaceIndex, r: UvRegion, g: UvTriangulation, c: FaceMeshingCriteria): QuadGridOutcome
-        => m.DecideGridChordal(f, r, g, c).GridOutcomeOf;
 }

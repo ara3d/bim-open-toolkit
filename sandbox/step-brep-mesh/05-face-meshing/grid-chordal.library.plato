@@ -1,16 +1,17 @@
 //==
-// # The quad grid within the chordal bound (TKT-415)
+// # The quad grid within the chordal bound (TKT-415, TKT-435)
 //
 // QuadGrid sizes its rows and columns by the boundary's segment counts alone, so a four-sided
 // face curved only inside (the bump solid's B-spline top, whose four edges are lines) became
 // one flat quad through its corners: no boundary segment sees the bump. A grid is now kept
-// only when every element is within SurfaceChordal of the surface at the samples refinement
-// tests (TriangleNeedsRefinement, uv-delaunay.library.plato): the corner mean against the
-// surface, and the surface points at the parameter centroid and at the parameter midpoint of
-// each side that is not a boundary segment against the flat element. Otherwise no grid, and
-// the face gets the refined triangulation, which samples the interior. The bound is widened by
-// the model's length tolerance, so a cylinder's grid, whose cells deviate by exactly the
-// sagitta its boundary circles meet, stays a grid.
+// only when every triangle a renderer may draw of it, both diagonal splits of every quad (the
+// version 1 contract's rule and the gate's), faces the face normal and lies within
+// SurfaceChordal of the surface at the samples refinement tests (DecideGridChordal,
+// element-shape.library.plato). Otherwise no grid, and the face gets the refined triangulation,
+// which samples the interior. The bound is widened by the model's length tolerance, so a
+// cylinder's grid, whose cells deviate by exactly the sagitta its boundary circles meet, stays a
+// grid. F1's first rule measured a quad by the nearer triangle on the diagonal from corner 0,
+// which keeps a quad twisted along its other diagonal (Law_V1Types_TwistedQuadNeedsBothSplits).
 //
 // Sections, in order:
 //  - Keeping a grid
@@ -20,40 +21,10 @@ library FaceMeshingGridChordal
     //==
     // # Keeping a grid
 
-    // The grid, unless some element of it that does not collapse at a pole folds when lifted
-    // (LiftsFacingFaceNormal false) or strays from the surface by more than SurfaceChordal
-    // (GridElementWithinChordal); then no grid, and the face gets the refined triangulation,
-    // which splits folds and samples the interior.
+    // The grid, unless some element of it that does not collapse at a pole has a rendering
+    // triangle that folds when lifted or strays from the surface by more than SurfaceChordal;
+    // then no grid, and the face gets the refined triangulation, which splits folds and samples
+    // the interior. Decided element by element, stopping at the first refused.
     GridUnlessFoldedOrCoarse(m: BrepModel, f: BrepFaceIndex, r: UvRegion, g: UvTriangulation, c: FaceMeshingCriteria): QuadGridOutcome
-        => g.ElementCount.Range.All(k =>
-            (g.IsCollapsedElement(ElementIndex(k)) ? true : m.LiftsFacingFaceNormal(f, g, ElementIndex(k)))
-                && m.GridElementWithinChordal(f, r, g, ElementIndex(k), c))
-            ? QuadGridOutcome.Grid(g)
-            : QuadGridOutcome.NoGrid;
-
-    // Whether element k of grid g on region r of face f is within SurfaceChordal (widened by the
-    // length tolerance) of the surface: the surface points at its parameter centroid and at the
-    // parameter midpoints of its sides that are not boundary segments lie that close to the flat
-    // element, and its corner mean and those sides' chord midpoints lie that close to the
-    // surface. The surface-point tests come first: they evaluate, the others project.
-    GridElementWithinChordal(m: BrepModel, f: BrepFaceIndex, r: UvRegion, g: UvTriangulation, k: ElementIndex, c: FaceMeshingCriteria): Boolean
-    {
-        var s = m.SurfaceOf(f);
-        var cs = g.ElementCorners(k);
-        var uvs = cs.Map(v => g.Points[v]);
-        var ps = uvs.Map(uv => m.Geometry.Eval(s, uv));
-        var bound = c.SurfaceChordal + m.Tolerances.Length.Value;
-        var inner = cs.Count.Range.FlatMap(j => r.IsConstrained(cs[j].Value, cs.AtModulo(j + 1).Value) ? [j].Take(0) : [j]);
-        return ps.FlatDistanceOf(m.Geometry.Eval(s, g.ElementUvCentroid(k))) <= bound
-            && inner.All(j => ps.FlatDistanceOf(m.Geometry.Eval(s, uvs[j].UvMidpoint(uvs.AtModulo(j + 1)))) <= bound)
-            && m.SurfaceDistance(f, ps.AverageOfPoints) <= bound
-            && inner.All(j => m.SurfaceDistance(f, ps[j].HalfwayPoint(ps.AtModulo(j + 1))) <= bound);
-    }
-
-    // The distance from p to the flat element on corners ps: its triangle, or for a quad the
-    // nearer of the two triangles on the diagonal from corner 0 (FlatElementDistance's rule).
-    FlatDistanceOf(ps: Array<Point3D>, p: Point3D): Number
-        => ps.Count == 3
-            ? UnsignedDistanceToTriangle(p, ps[0], ps[1], ps[2])
-            : UnsignedDistanceToTriangle(p, ps[0], ps[1], ps[2]).Min(UnsignedDistanceToTriangle(p, ps[0], ps[2], ps[3]));
+        => m.DecideGridChordal(f, r, g, c).GridOutcomeOf;
 }

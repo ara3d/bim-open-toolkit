@@ -117,12 +117,9 @@ library V1Gate
 
     // The four triangles of quad q's two diagonal splits: on the diagonal from corner 0, (0 1 2)
     // and (0 2 3); on the diagonal from corner 1, (1 2 3) and (1 3 0). Each keeps the quad's
-    // winding.
+    // winding (SplitsOf, element-shape.library.plato, names them).
     QuadSplitTriangles(fm: FaceMesh, q: Integer): Array<Array<VertexIndex>>
-    {
-        var v = fm.Quads[q].Vertices;
-        return [[v[0], v[1], v[2]], [v[0], v[2], v[3]], [v[1], v[2], v[3]], [v[1], v[3], v[0]]];
-    }
+        => fm.Quads[q].SplitsOf.SplitTriangles.Map(t => t.Vertices);
 
     // True when every point of the triangle or quad on points cs is lifted (IsLiftedPoint), so it
     // may be measured.
