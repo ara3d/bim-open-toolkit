@@ -1,7 +1,7 @@
 //==
 // # Strictly inside, on the grid, without allocation: laws (complexity sweep, TKT-407)
 //
-// IsStrictlyInsideOnGridInPlace (inside-on-grid.library.plato) against the function it replaces,
+// IsStrictlyInsideOnGridInPlace (uv-boundary-index-inside.library.plato) against the function it replaces,
 // UvBoundaryIndex's IsStrictlyInsideOnGrid: the same Boolean at every probe, exactly, on every
 // triangulated witness (each face of the triangulation laws' six sample models, built once per
 // sweep), on the star, jagged and thirteen-hole plane regions, on a square whose long side is in
@@ -21,13 +21,13 @@ library InsideOnGridLaws
 
     // At every point of uvs, the in-place test on index x gives IsStrictlyInsideOnGrid's Boolean.
     InPlaceAgreesAt(x: BoundaryIndex, uvs: Array<UvCoordinate>): Boolean
-        => uvs.All(uv => x.IsStrictlyInsideOnGridInPlace(uv) == x.IsStrictlyInsideOnGrid(uv));
+        => uvs.All(uv => x.IsStrictlyInsideOnGridInPlace(uv) == x.IsStrictlyInsideOnGridReference(uv));
 
     // On every triangulated witness, under the face's region tolerance: at the constrained and
     // the refined triangulation's points, triangle centroids and side midpoints, and at the
     // points moved off every boundary point and segment midpoint by up to 1.5 tolerance units to
     // either side (BoundaryIndexLaws' InsideProbes and NearBoundary).
-    Law_Perf_InsideOnGridAgrees(w: TriangulatedWitness): Boolean
+    Law_InsideOnGridAgrees(w: TriangulatedWitness): Boolean
     {
         var tol = w.Model.RegionTolerance(w.Face, w.Chart);
         var x = w.Region.BoundaryIndexOf(tol);
@@ -40,7 +40,7 @@ library InsideOnGridLaws
     // under PlaneTolerance, at an 11 x 11 lattice over the region's box and beyond it and at the
     // points near the boundary; and on the thirteen-hole region at a 21 x 21 lattice, where a
     // ray crosses several holes and the parity settles each in turn.
-    Law_Perf_InsideOnGridAgreesOnStars(k: Integer): Boolean
+    Law_InsideOnGridAgreesOnStars(k: Integer): Boolean
     {
         var tol = PlaneTolerance(0);
         var star = StarCase(k % 5);
@@ -66,7 +66,7 @@ library InsideOnGridLaws
 
     // On the square with a long side of LongSideRegion(96), the long side in Everywhere: at a
     // 15 x 15 lattice over and beyond it and at the points near its boundary.
-    Law_Perf_InsideOnGridAgreesOnWideSegments(_: Integer): Boolean
+    Law_InsideOnGridAgreesOnWideSegments(_: Integer): Boolean
     {
         var tol = PlaneTolerance(0);
         var square = LongSideRegion(96);
@@ -77,7 +77,7 @@ library InsideOnGridLaws
 
     // On star case k % 3 under PlaneTolerance, at points of finite parameters whose tolerance
     // units overflow, so ItemsNear lists every segment: far along each axis both ways.
-    Law_Perf_InsideOnGridAgreesBeyondTheGrid(k: Integer): Boolean
+    Law_InsideOnGridAgreesBeyondTheGrid(k: Integer): Boolean
     {
         var far = Number.MaxValue * 0.5;
         return StarCase(k % 3).BoundaryIndexOf(PlaneTolerance(0)).InPlaceAgreesAt([

@@ -1,7 +1,7 @@
 # perf-inside: the inside test with no allocation per query (idea 31)
 
 Ticket: TKT-407
-Status: ready: TKT-407
+Status: merged: TKT-407 (2026-10-21, into 05-face-meshing/uv-boundary-index-inside.{types,library,laws}.plato; IsStrictlyInsideOnGrid delegates to IsStrictlyInsideOnGridInPlace, the old body kept as IsStrictlyInsideOnGridReference for the agreement laws, renamed Law_InsideOnGridAgrees*)
 
 ## Done
 - TKT-407, this commit, about 0.5 h against 1 h plus the law expected. Idea 31 of `docs/plans/step-mesher-ideas-evaluation.md`. Run E measured `IsStrictlyInsideOnGrid`'s gap part on ODIN-W160 at 313 ms (23% of refinement) and 1 GB allocated.

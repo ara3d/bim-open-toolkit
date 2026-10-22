@@ -141,13 +141,19 @@ library UvBoundaryIndex
             ? x.IsStrictlyInsideOnGrid(uv)
             : x.Region.IsStrictlyInside(uv, x.Tolerance);
 
+    // IsStrictlyInside on the grid: parity first, then the gap, with no allocation per query
+    // (UvBoundaryIndexInside, TKT-407). The same Boolean as IsStrictlyInsideOnGridReference below,
+    // which keeps the first form as the agreement laws' reference.
+    IsStrictlyInsideOnGrid(x: BoundaryIndex, uv: UvCoordinate): Boolean
+        => x.IsStrictlyInsideOnGridInPlace(uv);
+
     // IsStrictlyInside on the grid. The gap is measured only to the segments listed near uv's
     // cell (a segment within one unit has its grown box there); each loop's crossings are counted
     // only among the segments in uv's grid row from the column before uv's onward, each segment
     // once, at the first of those cells it is listed in, and in Everywhere (a segment crossed by
     // the ray covers uv's row and reaches past uv). Inside when the outer loop is crossed an odd
     // number of times, every hole an even number, and every gap exceeds one unit.
-    IsStrictlyInsideOnGrid(x: BoundaryIndex, uv: UvCoordinate): Boolean
+    IsStrictlyInsideOnGridReference(x: BoundaryIndex, uv: UvCoordinate): Boolean
     {
         var p = uv.ToPoint2D;
         var u = uv.InToleranceUnits(x.Tolerance);
