@@ -121,7 +121,7 @@ library ModelMeshElements
     // The restriction of mesh to faces: the elements whose ElementFace is one of them, in order.
     SliceOf(mesh: ModelMesh, faces: Array<BrepFaceIndex>): MeshSlice
         => MeshSlice(faces, mesh.ElementCount.Range
-            .FlatMap(k => IsOneOf(mesh.ElementFaceAt(k), faces) ? [ElementIndex(k)] : mesh.ElementCount.Range.Take(0).Map(i => ElementIndex(i))));
+            .FlatMap(k => IsOneOf(mesh.ElementFaceAt(k), faces) ? [ElementIndex(k)] : Integer.NoIndices.Map(i => ElementIndex(i))));
 
     // The mesh vertices that are a corner of some element on face f, in increasing order.
     VerticesOnFace(mesh: ModelMesh, f: BrepFaceIndex): Array<VertexIndex>

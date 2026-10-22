@@ -6,8 +6,8 @@
 // rejects allocates an array of all n vertices or all E edges first: O(V^2 + 2E^2) per model.
 // On the corpus, prepare time over E^2 is about constant on the large files (SHO/ELLA-W1.STEP
 // 9.9 s and RCB-F9T 9.6 s at about 20,000 edges each), and prepare is the largest serial stage.
-// Here each empty is `[k].Take(0)`, the idiom of chunk F4 (perf-refine-flat): one element,
-// then none. The result is Reduced's, element for element. ChangedSensePositions in
+// Here each empty is `Integer.NoIndices` (layer 0, chunk J4): one element built,
+// none kept. The result is Reduced's, element for element. ChangedSensePositions in
 // step-loop-chaining.library.plato has the same pattern per loop; its copy is below.
 //
 // Sections, in order:
@@ -19,7 +19,7 @@ library V1JodyReducedFlat
     //==
     // # Reduced
 
-    // Layer 3's Reduced with each filter's empty case `[k].Take(0)`; otherwise line for line.
+    // Layer 3's Reduced with each filter's empty case `Integer.NoIndices`; otherwise line for line.
     ReducedFlat(raw: RawDecodedModel): RawDecodedModel
     {
         var m = raw.Model;
@@ -55,9 +55,9 @@ library V1JodyReducedFlat
             j = j + 1;
         }
         var joinedByClosedEdge = closedJoin.Freeze();
-        var merged = n.Range.FlatMap(k => roots[k] == k ? [k].Take(0) : [k]);
-        var drops = m.Edges.Count.Range.FlatMap(k => dropped[k] ? [k] : [k].Take(0));
-        var unsettled = m.Edges.Count.Range.FlatMap(k => undecided[k] ? [k] : [k].Take(0));
+        var merged = n.Range.FlatMap(k => roots[k] == k ? Integer.NoIndices : [k]);
+        var drops = m.Edges.Count.Range.FlatMap(k => dropped[k] ? [k] : Integer.NoIndices);
+        var unsettled = m.Edges.Count.Range.FlatMap(k => undecided[k] ? [k] : Integer.NoIndices);
         var mergeRepairs = merged.Map(k => RepairRecord(raw.Sources.Vertices[k], StepRepair.MergedInto(BrepVertexIndex(vertexAt[roots[k]]), BrepVertexIndex(k))));
         var dropRepairs = drops.Map(k => RepairRecord(raw.Sources.Edges[k], StepRepair.DroppedZeroLengthEdge(BrepEdgeIndex(k))));
         var mergeFindings = merged.Map(k => Diagnose(
@@ -98,13 +98,13 @@ library V1JodyReducedFlat
     //==
     // # Loop chaining
 
-    // Layer 3's ChangedSensePositions with each empty `[i].Take(0)`.
+    // Layer 3's ChangedSensePositions with each empty `Integer.NoIndices`.
     ChangedSensePositionsFlat(a: BrepLoop, b: BrepLoop): Array<Integer>
     {
         var before = a.CoedgesOf;
         var after = b.CoedgesOf;
         return before.Count == after.Count
-            ? before.Count.Range.FlatMap(i => before[i].IsForward == after[i].IsForward ? [i].Take(0) : [i])
-            : [0].Take(0);
+            ? before.Count.Range.FlatMap(i => before[i].IsForward == after[i].IsForward ? Integer.NoIndices : [i])
+            : Integer.NoIndices;
     }
 }

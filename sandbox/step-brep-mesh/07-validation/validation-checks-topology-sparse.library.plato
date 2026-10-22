@@ -131,7 +131,7 @@ library BrepCheckingTopologySparse
     {
         var n = corners.Count;
         var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
-            (i < j ? m.CornersShareEnd(corners[i], corners[j]) : false) ? [i * n + j] : n.Range.Take(0)));
+            (i < j ? m.CornersShareEnd(corners[i], corners[j]) : false) ? [i * n + j] : Integer.NoIndices));
         return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n)).ClassCount;
     }
 

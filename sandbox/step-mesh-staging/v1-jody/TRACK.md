@@ -1,7 +1,7 @@
 # v1-jody: small closed B-spline loops of the M2-JODY-W377 files discretized and meshed
 
 Ticket: TKT-431, TKT-453
-Status: ready: J1, J2, J3
+Status: ready: J1, J2, J3; J4 committed in place (supervisor's instruction)
 
 ## Chunks
 
@@ -9,6 +9,7 @@ Status: ready: J1, J2, J3
 |---|---|---|---|
 | J1 | TKT-431 | The 24 one-edge plane loops of the two M2-JODY-W377 files discretized: a B-spline written unclamped in periodic form is decided closed from its record | 2 h |
 | J2 | TKT-453 | A closed span whose ends coincide fails the segment test, so small closed loops are not meshed as triangles | 1 h |
+| J4 | (supervisor's performance finding) | The other `Count.Range.Take(0)` empties replaced by one layer-0 helper, `Integer.NoIndices`, in place in the library | 1 h |
 | J3 | (supervisor's performance finding) | Reduced and ChangedSensePositions build a filter's empty case as `[k].Take(0)`, not an eagerly built `n.Range.Take(0)`: prepare no longer O(V^2 + E^2) | 1 h |
 
 ## Done
@@ -25,6 +26,24 @@ Status: ready: J1, J2, J3
 
   About 3.3 to 4.4 s saved per large file on this machine, a factor of 10 to 15 on prepare; the corpus figure the finding quoted (9.9 s on ELLA-W1) was measured under other load. No type added.
 
+- J4, see the commit, about 1 h against 1 h. Layer 0 gains `NoIndices(_: Integer): Array<Integer> => [0].Take(0)` (foundation.library.plato, beside `Corresponds`), the one place the idiom lives; nine library sites use it, edited in place on the supervisor's instruction, and the staged J3 copies use it too. Sites, with whether the host's meshing path reaches them (a name-level call graph over layers 00 to 08 from the functions StepPlatoMesher and StepPlatoTables call):
+
+  | Site | Function | Size of the range built per rejected element | Meshing path |
+  |---|---|---|---|
+  | 02-topology/topology-faceted.library.plato:55 | CoincidenceRootsByGridCounted | n points | no |
+  | 02-topology/topology-shell-tables.library.plato:261 | IndexedBoundaryCycleCountIndexed | n, per pair (cubic) | no |
+  | 02-topology/topology.library.plato:849 | CornersAroundVertex | n corners | no |
+  | 02-topology/topology.library.plato:994 | CoincidenceRootsPairwise | n, per pair (cubic) | no |
+  | 05-face-meshing/triangulation-refine.library.plato:131 | PlaceInTriangle | 3 | yes (chordal refinement) |
+  | 06-mesh/mesh-coincident-gridded.library.plato:75 | CoincidentVertexPairsGriddedCounted | n vertices | no |
+  | 06-mesh/mesh-conversions.library.plato:62 | ToSplitTriangleMesh3D | count | no |
+  | 06-mesh/mesh-elements.library.plato:124 | SliceOf | element count | no |
+  | 06-mesh/mesh-incidence.library.plato:270 | CountsOfComponentIndexed | edge count | no |
+  | 07-validation/validation-checks-topology-sparse.library.plato:134 | LinkComponentCountOf | n, per pair (cubic) | no |
+  | 05-face-meshing/face-meshing.library.plato:363, 365 | CollapsedToTriangle | 4 | yes (Lift); not edited: the file holds another session's uncommitted edits. Two lines for the merge: `4.Range.Take(0)` => `Integer.NoIndices` |
+
+  The quadratic and cubic sites are all in laws, checks and validation; the two on the meshing path build 3 or 4 elements. Laws: the 53 law blocks of layers 02, 05, 06 and 07 with J3's and the prepare laws, 462 pass, 0 fail, 6 skipped (function-typed parameters, unrelated). ELLA-W1, C# regenerated from HEAD ad646aa6 without and with J4 (0 degraded bodies each), three alternating warm runs: faces 350, 232, 318 ms without and 295, 254, 218 with, edges 586, 497, 508 and 584, 522, 503, digest 7FC34C435864049C in all six: no difference beyond noise, as the 3- and 4-element sites predict. (Prepare is still 3.2 to 4.3 s there: J3 is not in ad646aa6.)
+
 ## Merge instructions
 
 J1 (TKT-431):
@@ -37,9 +56,9 @@ J2 (TKT-453):
 - `closed-span.laws.plato` (block `V1JodyClosedSpanLaws`) into `08-pipeline` beside the J1 laws (it reads `JodyEdge` and the records there). After the rewire `LibraryBisection` and `ClosedSpanBisection` are one function: `Law_V1Jody_ClosedSpanSplits` keeps its closure, count and angular clauses and drops `LibraryBisection(...) == 1`; `Law_V1Jody_OpenSpansUnchanged` and `Law_V1Jody_NearlyClosedSpanUnchanged` then compare a function with itself and go.
 
 J3:
-- `03-step/step.library.plato`, `Reduced`: in `merged`, `n.Range.Take(0)` => `[k].Take(0)`; in `drops` and `unsettled`, `m.Edges.Count.Range.Take(0)` => `[k].Take(0)` (the body of `ReducedFlat`).
-- `03-step/step-loop-chaining.library.plato`, `ChangedSensePositions`: `before.Count.Range.Take(0)` => `[i].Take(0)` in the filter and `[0].Take(0)` in the count-mismatch branch (the body of `ChangedSensePositionsFlat`).
-- Then delete `reduced-flat.library.plato` and `reduced-flat.laws.plato`: after the edit both laws compare a function with itself; `Law_PrepareIsIdempotent` and `Law_PrepareKeepsPointSet` keep the check. Thirteen more `Count.Range.Take(0)` empties remain in the library outside 03-step (`grep -rn "Range.Take(0)" --include=*.plato`), not measured here.
+- `03-step/step.library.plato`, `Reduced`: in `merged`, `drops` and `unsettled`, the `Count.Range.Take(0)` empty => `Integer.NoIndices` (the body of `ReducedFlat`; layer 0's helper from J4).
+- `03-step/step-loop-chaining.library.plato`, `ChangedSensePositions`: both `before.Count.Range.Take(0)` => `Integer.NoIndices` (the body of `ChangedSensePositionsFlat`).
+- Then delete `reduced-flat.library.plato` and `reduced-flat.laws.plato`: after the edit both laws compare a function with itself; `Law_PrepareIsIdempotent` and `Law_PrepareKeepsPointSet` keep the check. The other empties are J4's.
 
 ## Contract requests
 
@@ -62,6 +81,8 @@ J3:
 | Trace J2's cause (probe laws, C# probe over the decoded model) | 20 | 4 law runs, 1 probe |
 | J3: staging and laws | 10 | 3 law runs |
 | J3: regeneration (one failed on a newer bim-open-data script) and timing | 15 | 2 regenerations, 1 build, 12 timed meshings |
+| J4: edits, call graph, laws | 15 | 2 law runs (one 100 s sweep) |
+| J4: regenerations and timing | 12 | 2 regenerations, 2 builds, 6 timed meshings |
 
 ## Lessons
 

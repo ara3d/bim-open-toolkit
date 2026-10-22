@@ -59,7 +59,7 @@ library ModelMeshConversions
     {
         var count = mesh.CornerCount;
         var firstOf = count.MapRange(c => mesh.FirstMatchingCorner(c));
-        var reps = count.Range.FlatMap(c => firstOf[c] == c ? [c] : count.Range.Take(0))
+        var reps = count.Range.FlatMap(c => firstOf[c] == c ? [c] : Integer.NoIndices)
             .Sort((a, b) => mesh.CornerVertex(CornerIndex(a)).Value < mesh.CornerVertex(CornerIndex(b)).Value
                 || (mesh.CornerVertex(CornerIndex(a)).Value == mesh.CornerVertex(CornerIndex(b)).Value && a <= b));
         var splitOf = count.MapRange(c => reps.PositionOfItem(firstOf[c]));
