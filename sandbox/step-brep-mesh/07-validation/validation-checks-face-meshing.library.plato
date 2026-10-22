@@ -37,17 +37,18 @@ library BrepCheckingFaceMeshing
     Check_LocalVertexInRange(fm: FaceMesh): Check
         => fm.CheckPoints("Law_LocalVertexInRange", i => LocalVertexInRange(fm, i));
 
-    // Law_LocalVertexSurjective at every local vertex. Structure: Error.
+    // Law_LocalVertexSurjective at every local vertex, by one marking pass
+    // (Check_LocalVertexSurjectiveIndexed, validation-checks-fibres.library.plato; the scan per
+    // local vertex is Check_LocalVertexSurjectiveReference). Structure: Error.
     Check_LocalVertexSurjective(fm: FaceMesh): Check
-        => CheckAll("Law_LocalVertexSurjective", fm.Positions.Count, v => LocalVertexSurjective(fm, VertexIndex(v)), v => Provenance.KernelFace(fm.Face));
+        => fm.Check_LocalVertexSurjectiveIndexed;
 
-    // Law_LocalVertexFibresAreIdentifications at every pair of
-    // parameter-space points (quadratic as written; an implementation groups
-    // the points by local vertex and by source in one pass). Structure: Error.
+    // Law_LocalVertexFibresAreIdentifications at every pair of parameter-space
+    // points, decided in n log n from two sorts, by local vertex and by source key
+    // (Check_LocalVertexFibresAreIdentificationsIndexed, validation-checks-fibres.library.plato;
+    // the quadratic form is Check_LocalVertexFibresAreIdentificationsReference). Structure: Error.
     Check_LocalVertexFibresAreIdentifications(fm: FaceMesh): Check
-        => CheckGrid("Law_LocalVertexFibresAreIdentifications", fm.UvPoints.Count, fm.UvPoints.Count,
-            (i, j) => Law_LocalVertexFibresAreIdentifications(fm, VertexIndex(i), VertexIndex(j)),
-            (i, j) => Provenance.KernelFace(fm.Face));
+        => fm.Check_LocalVertexFibresAreIdentificationsIndexed;
 
     // Law_SharedPositionIsCopied at every parameter-space point. Structure
     // (copied, exact): Error.

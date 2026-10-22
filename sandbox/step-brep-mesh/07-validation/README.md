@@ -20,6 +20,7 @@ mathematics, on hand-written witnesses, and on public files.
 | `validation-checks-where.library.plato` | `BrepCheckingWhere` | 110 checks, one per WHERE rule law of layer 3, generated from `step-where.laws.plato`; `WhereRulesReport` |
 | `validation-checks-discretization.library.plato` | `BrepCheckingDiscretization` | 36 checks: layer 4 |
 | `validation-checks-face-meshing.library.plato` | `BrepCheckingFaceMeshing` | 45 checks: layer 5 |
+| `validation-checks-fibres.library.plato`, `validation-checks-fibres.laws.plato` | `V1Fibres`, `V1FibresLaws` | the fibre and surjectivity checks in n log n (`Check_LocalVertexFibresAreIdentificationsIndexed`, `Check_LocalVertexSurjectiveIndexed`), which the two `Check_` functions call, with the quadratic `...Reference` forms kept; 12 laws: agreement with the references over every pole witness and two mutations of each, and eight `ValidateFaceMesh` timing laws (TKT-399) |
 | `validation-checks-mesh.library.plato` | `BrepCheckingMesh` | 123 checks: layer 6 |
 | `validation-checks-cross.library.plato` | `BrepCrossChecking` | 17 cross checks of a mesh against its model; `CrossReport`, `ModelOracleReport` |
 | `validation-checks-reports.library.plato` | `BrepCheckingReports` | one report per layer and input, split by `CheckFamily`; generated (see "Implementation notes") |
