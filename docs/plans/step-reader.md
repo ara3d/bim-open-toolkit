@@ -87,6 +87,36 @@ stopped before it committed anything. The kernel fixes TKT-308 and TKT-309 stay:
 mesher, which remains in C#. First risk to retire: TKT-311, whether Plato's C# writer compiles the
 library's constructs today.
 
+## Corpus by surface kind
+
+Faces of the 88 u-blox files by the surface the decoder gave them, from the latest corpus run
+(2026-10-21: `docs/plans/step-mesher-corpus-2026-10-21.md`, per-file results in the `.csv` beside it).
+"Edge not discretized": an edge of the face did not discretize, so the face was not meshed; on
+2026-10-21 every such face lost its edge to the compiler's throwing stub for `SagittaByHullBoundGiven`
+(TKT-410). "Stubbed": the face itself threw `NotImplementedException`, a bodiless library function.
+"Threw": any other exception on the face (TKT-411). "Not simple": layer 5 found the face's UV region
+self-intersecting (TKT-412).
+
+Regenerate after a corpus run with
+`python scripts/step-corpus-table.py <harness out folder> --write docs/plans/step-reader.md`, where the
+out folder is the one `step-corpus-harness all` wrote (`deps/bim-open-data/tools/step-corpus-harness/README.md`).
+
+<!-- step-corpus-table:begin -->
+| Surface | Faces | Meshed | Edge not discretized | Stubbed | Threw | Not simple | Other unmeshed | Share meshed |
+|---|---|---|---|---|---|---|---|---|
+| plane | 159,066 | 147,731 | 11,290 | 0 | 0 | 45 | 0 | 92.9% |
+| B-spline | 15,580 | 6,530 | 9,050 | 0 | 0 | 0 | 0 | 41.9% |
+| cylinder | 13,595 | 11,972 | 1,618 | 0 | 5 | 0 | 0 | 88.1% |
+| sphere | 1,347 | 1,312 | 17 | 0 | 18 | 0 | 0 | 97.4% |
+| torus | 1,218 | 1,127 | 91 | 0 | 0 | 0 | 0 | 92.5% |
+| cone | 367 | 248 | 112 | 0 | 7 | 0 | 0 | 67.6% |
+| surface of linear extrusion | 261 | 29 | 232 | 0 | 0 | 0 | 0 | 11.1% |
+| surface of revolution | 16 | 16 | 0 | 0 | 0 | 0 | 0 | 100.0% |
+| **all** | **191,450** | **168,965** | **22,410** | **0** | **30** | **45** | **0** | **88.3%** |
+
+88 files: 14 meshed fully, 73 partly, 1 timeout. Process time 1,065 s over the run (each file meshed twice with `--warmup`); warm meshing 384.3 s over the 87 finished files, median 3.0 s, slowest 22.8 s (POS/RCB-F9T(AP214).STEP).
+<!-- step-corpus-table:end -->
+
 ## Build log
 
 - 2026-10-17: plan and tickets written.
