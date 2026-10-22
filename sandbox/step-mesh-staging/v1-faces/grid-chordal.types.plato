@@ -1,0 +1,14 @@
+//==
+// # The quad grid within the chordal bound: types (TKT-415)
+
+// One witness model meshed face by face under grid-preferring criteria, for the laws of
+// grid-chordal.laws.plato: its edges discretized once under Criteria, with no floors. Bump is
+// the B-spline top's bump for the bump solids and 0 for every other model.
+type GridCase
+{
+    Name: String;
+    Model: BrepModel;
+    Bump: Number;
+    Criteria: FaceMeshingCriteria;
+    Discretizations: EdgeDiscretizations;
+}

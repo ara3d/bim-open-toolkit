@@ -1,13 +1,15 @@
 ---
 id: TKT-415
 title: STEP mesher: the quad grid meshes the bump solid's B-spline top face as one flat quad, so a 0.3 bump vanishes (the mesh equals the unit box's)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 0d8c417b
+session: 0d8c417b-f6aa-4828-ac07-a9d6f3b535c9
 fence: [sandbox/step-brep-mesh/05-face-meshing/**, sandbox/step-brep-mesh/reviews/**]
 workflow: [W3]
 related: [TKT-401, TKT-405, TKT-327]
 created: 2026-10-21
+claimed: 2026-10-21
 kind: defect
 ---
 
