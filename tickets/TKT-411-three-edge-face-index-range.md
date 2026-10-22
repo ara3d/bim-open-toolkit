@@ -1,13 +1,15 @@
 ---
 id: TKT-411
 title: STEP mesher: 30 three-edge sphere, cone and cylinder faces throw ArgumentOutOfRangeException in face meshing (index out of range)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 0d8c417b
+session: 0d8c417b-f6aa-4828-ac07-a9d6f3b535c9
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3]
 related: [TKT-313, TKT-325]
 created: 2026-10-21
+claimed: 2026-10-22
 kind: defect
 ---
 
