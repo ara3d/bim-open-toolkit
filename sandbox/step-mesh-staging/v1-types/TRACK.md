@@ -1,7 +1,7 @@
 # v1-types: types that make the version 1 algorithms correct by construction
 
 Ticket: TKT-435
-Status: ready: T1
+Status: merged: T1 in a5855daa
 
 The review behind this track is `docs/plans/step-mesher-types-review-2026-10-22.md`. This folder
 stages only the changes that fit one chunk and touch few call sites; wide renames are tickets,
