@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: ready: V1G-1 | working: V1G-2
+Status: ready: V1G-1, V1G-2 | working: V1G-3
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -18,6 +18,12 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
   - Warm server (`plato_laws.py "V1GateLaws" --staging ...`): 5 pass, 1 fail.
   - Compiled (pinned CLI e37c032f, `--backend=csharp --profile=cpu64 --budget=2 --filter=V1GateLaws`): 5 pass, 1 fail; `Law_V1Gate_QuadSplitsWithinChordal` fails on the bump solid only (TKT-415: the top face is one flat quad; owned by v1-faces), 2.22 s over its 4 cases with the failing case's shrink; the other five 0.02 to 0.28 s. Witnesses 19.9 s (unit box 7.4 s, the first one built, so JIT is in it; cylinder 5.9 s). Total 620 s, of which front end 143 s, C# emit 176 s, C# compile 269 s.
   - Laws before and after, layer 5: 126 laws, 125 pass and 1 fail (`Law_RefinedInteriorMeetsMinAngle`) in `reviews/verdicts-cpu64.tsv`; after the merge instructions, 125 laws in layer 5 and `FaceQualityLaws` together (the fail deleted), and 6 new gate laws, 5 passing until TKT-415 is fixed.
+- V1G-2 (TKT-349, TKT-412), this commit, about 2 h against 2 h. No type added: the plane path is one function over the existing triangulation. Library `V1Plane` (v1-plane.library.plato, for layer 5): `IsPlaneFace`, `RefineToSurfaceV1` (a plane face keeps its constrained triangulation; every other face is refined as before), `IsInteriorSource`, `PlaneMeshIsBoundaryOnly`, `MeshedTriangulationOf` (the triangulation MeshFace lifts for a `TriangulatedWitness`). Library `V1PlaneLaws`, 2 laws: `Law_V1Gate_PlaneFacesAreBoundaryOnly` (every plane face meshed with triangles holds no interior point, on the four gate witnesses) and `Law_V1Gate_FineDisksAreBoundaryOnly` (the cylinder's two disks at chordal 1e-4, over 200 boundary segments each, mesh as a polygon's triangulation). `PlaneFaceMeshesAt` sits in `V1Gate`, since it reads layer 08's options.
+  - Before the wiring (committed library, compiled): both plane laws fail on the cylinder, whose disks get the angle pass's points; the fine disks take 1.88 s. After (a copy of the committed library with the merge instructions below applied, compiled): both pass; the fine disks take 0.04 s.
+  - Merge check, compiled at a 2 s budget, the whole library plus this folder on both copies: base 1344 laws, 1191 pass, 38 fail, 17 error, 84 obligation, 14 skipped; wired 1195 pass, 37 fail, 14 error. Changed verdicts: the two plane laws, fail to pass; `Law_CappedPathIsMeshFace`, pass to fail, mended by the fourth edit below; seven laws flipping between pass and a budget error in both directions at 2.0 to 2.5 s with 22 threads busy (`Law_ScriptInverseUndoesFromFive`, `Law_ScriptInverseUndoesOnCylinder`, `Law_BumpSolidMeshAgainstModelLaws`, `Law_PoleMeshIsSound`, `Law_AttainableMeshesClosed`, `Law_ValidationIsIdempotent`, `Law_EdgeReversalPreservesMesh`). Rerun alone on the wired copy with all four edits (`RefinementAttainableLaws`, `TriangulatedWitnessLaws`, `V1GateLaws`, `V1PlaneLaws`, `Law_InsideOnGridAgreesOnStars` and the flipped laws): 43 laws, 41 pass, 2 fail, both known (`Law_RefinedInteriorMeetsMinAngle`, deleted by V1G-1; `Law_V1Gate_QuadSplitsWithinChordal` on the bump solid, TKT-415).
+  - Before the witness edits, three `TriangulatedWitnessLaws` failed on the cylinder's disk (`Law_RefinedIsFaceTriangulation`, `Law_OutcomeLiftsRefined`, `Law_LiftKeepsPointsOnSamples`): the witness's `Refined` is the insertion refinement, which MeshFace no longer lifts on a plane. They are restated on `MeshedTriangulationOf`; `Refined` keeps its meaning, so the refinement agreement laws still test the refinement.
+  - TKT-349: in the corpus run of 2026-10-21 the 80 to 212 edge plane faces already took 76 to 80 ms sequentially (0.8 to 1.5 s with 22 rows sharing the cores), after TKT-351's incremental refinement; with this path they skip refinement. The corpus faces are timed again only after the supervisor regenerates the C#; the witness timing above is the evidence until then.
+  - TKT-412: the 27 twelve-edge plane faces (three MAYA REVC files, 9 each) are a file defect, not a false collision. In SHO/MAYA-W260_REVC.step loop #39396, edge #39442 (an arc of radius 0.15) is written with its vertices against the loop's vertex chain, so read literally it runs 350.4 degrees instead of 9.6, and the loop crosses itself through three of its own vertices. Layer 5's FACE-NOT-SIMPLE diagnostic is correct and kept; the evidence and the repair are TKT-419 (filed). The other 18 faces (ODIN-W260 4, LENA-R8 1, ANN-MB2 2, CAM, ANNA-B4, and the 54-edge MAYA faces) have no broken vertex chain; each keeps its located FACE-NOT-SIMPLE diagnostic with edge requests, and its cause is not yet named.
 
 ## Gate and quality: every law of layer 5
 
@@ -196,6 +202,13 @@ V1G-1 (TKT-418, TKT-416):
 - Move this folder's `v1-gate.types.plato`, `v1-gate.library.plato` and `v1-gate.laws.plato` to `08-pipeline/` (the witnesses mesh through layer 08's loop), as `pipeline-v1-gate.{types,library,laws}.plato`; the law names keep `Law_V1Gate_` (unique already).
 - Add the gate/quality table above to `05-face-meshing/README.md` under "Laws", and the version 1 run's filter line.
 
+V1G-2 (TKT-349, TKT-412):
+- `RefineToSurface` (05-face-meshing/face-meshing.library.plato) => `m.RefineToSurfaceV1(f, r, chart, t, c)`; its comment becomes "Refinement under the version 1 contract (RefineToSurfaceV1): none on a plane face; elsewhere against the surface and the smallest-angle bound, by insertion and flips (RefineToSurfaceByInsertion, triangulation-fast.library.plato)."
+- Move `v1-plane.library.plato` to `05-face-meshing/face-meshing-v1-plane.library.plato` (library `V1Plane`), and `v1-plane.laws.plato` to `08-pipeline/pipeline-v1-plane.laws.plato` (library `V1PlaneLaws`; it reads the gate witnesses).
+- In `TriangulatedWitnessLaws` (05-face-meshing/triangulation-witness.laws.plato), read `w.MeshedTriangulationOf` in place of `w.Refined` in exactly three bodies: `Law_RefinedIsFaceTriangulation` (the first argument of `SameTriangulation`), `Law_OutcomeLiftsRefined` (the argument of `Lift`), `Law_LiftKeepsPointsOnSamples` (the receiver of `LiftKeepsPointsOn`); in their comments, "the triangulation MeshFace lifts (MeshedTriangulationOf)" for "the witness's refined triangulation".
+- In `CappedAt` (08-pipeline/pipeline-attainable.laws.plato), the `Wired` field lifts `m.RefineToSurface(...)` in place of `m.RefineToSurfaceByInsertion(...)`, so `Law_CappedPathIsMeshFace` compares MeshFace with the live refinement.
+- The wired copy these edits were checked on: `git archive HEAD sandbox/step-brep-mesh` at 884466ac with exactly these four edits.
+
 ## Contract requests
 
 ## Requests to other tracks
@@ -203,6 +216,9 @@ V1G-1 (TKT-418, TKT-416):
 - v1-faces (quad grid): the version 1 contract relaxes the grid's keep rule. Today a quad is kept only when planar within SurfaceChordal and strictly convex (`QuadGridIfRectangular`, "Quads" section of face-meshing.library.plato); the contract keeps any quad whose both diagonal splits are within the chordal bound and oriented (`QuadSplitsWithin`, `QuadSplitsOriented` in this folder's `v1-gate.library.plato`). Changing the keep rule is yours, since you own the grid functions; not blocking.
 
 ## Findings
+- `SameUvPoints` (face-meshing-lift.laws.plato) guards with `a.Count == b.Count && ...`, but both sides of `&&` are evaluated (as the library already notes of `||`), so two triangulations of different sizes make `Law_RefinedIsFaceTriangulation` throw, reported as an error, instead of fail. Every `Same*` helper written this way has the defect; a conditional guards it.
+- The host (`StepPlatoMesher.MeshFile`) runs no refinement loop, so a face's blocking edge requests (FACE-NOT-SIMPLE's "refine this edge") are never acted on in the corpus. Finer edges would not have helped the MAYA family (TKT-419): at chordal 0.01 and 0.001 mm the gallery mode reports the same 13 not-simple faces in MAYA-W260_REVC.
+- Quad grids on four-sided plane faces still place interior grid points; the contract's "no refinement" is read here as applying to triangulated plane faces. Whether a plane face should skip the grid is open (v1-faces owns the grid).
 - Layer 5's element laws over a `FaceMesh` parameter (`Law_ElementDeviationWithinSurfaceChordal`, `Law_SurfaceWithinSurfaceChordalOfElement`, `Law_ElementFacesFaceNormal`, `Law_QuadConvex` and the like) pass on "25 cases" the runner generates; a generated `FaceMesh` is not one MeshFace built, so these verdicts say little. `V1GateLaws` states the same claims on four real meshes from layer 08's loop.
 
 ## Durations
@@ -213,5 +229,15 @@ V1G-1 (TKT-418, TKT-416):
 | Gate laws, first run on the warm server | 4 min | 1 (recompile 113 s, laws 15 s) |
 | Gate laws, compiled | 10 min, in the background | 1 (front end 143 s, emit 176 s, C# compile 269 s, witnesses 20 s, laws 26 s wall) |
 | Gate/quality list and TRACK.md | 20 min | 0 |
+| V1G-2: plane path and its laws | 20 min | 0 |
+| Plane laws before, compiled | 3.3 min, background | 1 (cached front end; emit 26 s, compile 21 s) |
+| Layer 5 and gate laws on the wired copy, compiled | 3.1 min, background | 1 |
+| Full sweep, base then wired, compiled | 11.5 min, background | 2 (6.1 and 5.4 min) |
+| Recheck of changed laws on the wired copy | 1 min | 1 |
+| TKT-412: harness time and gallery runs on MAYA-W260_REVC | 9 min | 4 (two gallery runs at 3.5 min each while the sweep held the cores) |
+| TKT-412: probe against the compiled library, STEP entity reading, chain script | 25 min | 3 builds, 4 runs |
+| TKT-419 and TRACK.md | 15 min | 0 |
 
 ## Lessons
+- A `find` over `artifacts/` took 2 minutes; the corpus report names the build folder, which is the place to look.
+- The full sweep on a pristine and on a wired `git archive` copy, one after the other, gave a clean before and after in 12 minutes; a budget error that flips both ways is load, and a rerun alone settles it.

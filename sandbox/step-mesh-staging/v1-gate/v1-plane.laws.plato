@@ -1,0 +1,29 @@
+//==
+// # Version 1: plane faces are not refined, laws (TKT-349, TKT-418)
+//
+// Laws of v1-plane.library.plato over the gate witnesses (V1GateWitness): a plane face meshed
+// with triangles is its boundary's triangulation, at the gate's chordal bound and at a bound fine
+// enough that the cylinder's disks have about 220 boundary segments each.
+//
+// Sections, in order:
+//  - Plane faces
+
+library V1PlaneLaws
+{
+    //==
+    // # Plane faces
+
+    // Every plane face of the witness meshed with triangles holds no interior point: it is
+    // triangulated from its boundary and holes with no refinement.
+    Law_V1Gate_PlaneFacesAreBoundaryOnly(w: V1GateWitness): Boolean
+        => w.V1GateMeshes.All(fm => w.Model.PlaneMeshIsBoundaryOnly(fm));
+
+    // On the cylinder at chordal 1e-4 the two disks, over 200 boundary segments each, mesh with
+    // no interior point and each with two triangles fewer than its points (a polygon's
+    // triangulation). The law's time is the time of meshing the two disks, the case of TKT-349.
+    Law_V1Gate_FineDisksAreBoundaryOnly(w: V1GateWitness): Boolean
+        => w.Name == "Cylinder"
+            ? w.Model.PlaneFaceMeshesAt(1.0e-4).All(fm => w.Model.IsPlaneFace(fm.Face).Not
+                || (w.Model.PlaneMeshIsBoundaryOnly(fm) && fm.UvPoints.Count > 200 && fm.Triangles.Count == fm.UvPoints.Count - 2))
+            : true;
+}

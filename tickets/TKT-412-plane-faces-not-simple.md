@@ -1,13 +1,15 @@
 ---
 id: TKT-412
 title: STEP mesher: 45 plane faces in 8 corpus files are reported not simple (colliding UV segments) and left unmeshed
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 5135435e
+session: 5135435e-eb61-4194-b168-7b93c64dd2fe
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3]
 related: [TKT-313, TKT-343]
 created: 2026-10-21
+claimed: 2026-10-22
 kind: defect
 ---
 

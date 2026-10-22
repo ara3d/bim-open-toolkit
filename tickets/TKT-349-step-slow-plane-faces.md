@@ -1,13 +1,15 @@
 ---
 id: TKT-349
 title: STEP mesher: meshing one plane face with 80 to 212 boundary edges takes 86 s to over 8 minutes in the compiled library
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 5135435e
+session: 5135435e-eb61-4194-b168-7b93c64dd2fe
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3, W4]
 related: [TKT-323, TKT-313, TKT-335, TKT-343, TKT-346]
 created: 2026-10-19
+claimed: 2026-10-22
 kind: defect
 ---
 
