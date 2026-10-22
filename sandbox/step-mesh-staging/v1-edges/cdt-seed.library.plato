@@ -605,7 +605,8 @@ library V1EdgesCdtSeed
     // its NextBoundaryTable when that seed is complete (SeedCompleteCount triangles), else
     // today's ear-clipped seed with its point holes inserted. The new seed misses the count only where
     // a point coincides with another (a loop through a pinch vertex twice, V1G-6's keyholes):
-    // track v1-edges' chunk E5 merges such points and removes the fallback.
+    // the supervisor accepted this fallback until track v1-edges' chunk E5, which merges such
+    // points and removes it (2026-10-22, TKT-468).
     CdtSeedOfRegion(r: UvRegion, points: Array<Point2D>): Array<TriangleFace>
     {
         var seed = points.CdtSeedByInsertion(r.NextBoundaryTable);
