@@ -607,18 +607,9 @@ library FaceMeshing
         => match (sides) {
             NotFourSided => QuadGridOutcome.NoGrid;
             FourSided(corners) => r.OppositeCountsMatch(corners)
-                ? m.GridUnlessFolded(f, m.QuadGrid(f, r, corners, c))
+                ? m.GridUnlessFoldedOrCoarse(f, r, m.QuadGrid(f, r, corners, c), c)
                 : QuadGridOutcome.CountsDiffer(m.MatchingFloors(f, d, r, corners));
         };
-
-    // The grid, unless some element of it that does not collapse at a pole folds when lifted
-    // (LiftsFacingFaceNormal false); then no grid, and the face gets the refined triangulation,
-    // which splits folds.
-    GridUnlessFolded(m: BrepModel, f: BrepFaceIndex, g: UvTriangulation): QuadGridOutcome
-        => g.ElementCount.Range.All(k =>
-            g.IsCollapsedElement(ElementIndex(k)) ? true : m.LiftsFacingFaceNormal(f, g, ElementIndex(k)))
-            ? QuadGridOutcome.Grid(g)
-            : QuadGridOutcome.NoGrid;
 
     // Chunk B body, from the contract QuadGrid and its deferred note. Grid
     // node (i, j), 0 <= i <= n0 along side 0 and 0 <= j <= n1 along side 1

@@ -373,7 +373,7 @@ spec MeshFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMes
 // the face normal: its height (1e-4) is below the sagitta of its long edge (3.8e-3). The
 // conclusion is now a postcondition: RefineToSurface splits folded elements
 // (Law_ElementLiftsFacingFaceNormal), QuadGridIfRectangular drops a grid with one
-// (GridUnlessFolded), and MeshFace ensures Law_ElementFacesFaceNormal.
+// (GridUnlessFoldedOrCoarse), and MeshFace ensures Law_ElementFacesFaceNormal.
 
 // Both faces of an edge hold bitwise the same boundary positions, so the assembled mesh is
 // watertight along model edges with no welding.

@@ -24,6 +24,7 @@ Algorithms were deferred by the design pass, every one with a contract in `face-
 | `triangulation-fast.library.plato` | library `TriangulationFast` (TKT-351): `RefineToSurfaceByInsertion`, one point at a time with local flips, its surface and angle passes, the incremental neighbour table |
 | `triangulation-requests.library.plato` | library `TriangulationRequests` (TKT-343): `QualitySegmentRequestsCdt`, not wired (it adds boundary segments; waits for an angle bound in `FaceMeshingCriteria`) |
 | `face-meshing-v1-plane.library.plato` | library `V1Plane` (TKT-349, TKT-418): `IsPlaneFace`, `RefineToSurfaceV1` (a plane face keeps its constrained triangulation, no refinement; every other face is refined by insertion), `IsInteriorSource`, `PlaneMeshIsBoundaryOnly`, `MeshedTriangulationOf`; `RefineToSurface` calls `RefineToSurfaceV1` |
+| `grid-chordal.{types,library,laws}.plato` | `GridCase`; library `FaceMeshingGridChordal` (TKT-415): `GridUnlessFoldedOrCoarse` (a quad grid is kept only when no element folds and every element is within SurfaceChordal at the samples refinement uses; else the face takes the refined triangulation), `GridElementWithinChordal`, `FlatDistanceOf`; library `FaceMeshingGridChordalLaws`: 3 laws over eight grid-case witnesses |
 | `triangulation.laws.plato` | library `TriangulationLaws` (TKT-343): 16 laws of the two functions over six sample models |
 | `face-meshing.laws.plato` | library `FaceMeshingLaws`: 46 laws and their guards |
 | `face-meshing.spec.plato` | invariants of 7 types, contracts of 15 functions (chunk B added `ExpandedPoles` and `CutWholePeriods`), 3 theorems |
@@ -111,7 +112,7 @@ the unit sphere the parameter triangle `(0, 0.5)`, `(0.2, 0.5)`, `(0.1, 0.5001)`
 chart, yet lifts 117 degrees off the face normal, because its height is below the sagitta of its long
 edge. So the lifted sign is enforced, not derived: refinement splits an element that folds when
 lifted (`Law_ElementLiftsFacingFaceNormal`), a quad grid with a folded element is not used
-(`GridUnlessFolded`), and `MeshFace` ensures `Law_ElementFacesFaceNormal`.
+(`GridUnlessFoldedOrCoarse`), and `MeshFace` ensures `Law_ElementFacesFaceNormal`.
 
 ## Decisions and reasons
 
@@ -534,7 +535,7 @@ knots); offset and rectangular-trimmed last.
 | `Unwrap`: every point by continuity | the second use of every seam segment by the left rule, every other point by continuity; ensures `Law_SeamUsesOnOppositeCopies` | Continuity puts both uses on one copy when they meet at a pole or an apex (review F1) |
 | `AddMissingSeamsAndPoles`: requires every step below half a period | requires `IsUnwrappedStep` (a step touching a collapsed line may jump) and the left rule; ensures the left rule on its loops; pole segments run from the arriving to the leaving free parameter, windings counted after | The free parameter at a pole passes from one seam copy to the other |
 | `AddMissingSeamsAndPoles(m, f, loops, c)`: one loop per bound | one loop per bound of `MeshedBounds(m, f)` | Layer 02's vertex-loop reduction (review C6) |
-| theorem `ChartWindingIsFaceWinding` | dropped; `RefineToSurface` ensures `Law_ElementLiftsFacingFaceNormal`, `QuadGridIfRectangular` gives no grid when an element folds (`GridUnlessFolded`); new `ElementUvCentroid(t, k)`, `LiftedVectorArea`, `LiftsFacingFaceNormal` | The theorem is false for slivers (review H5) |
+| theorem `ChartWindingIsFaceWinding` | dropped; `RefineToSurface` ensures `Law_ElementLiftsFacingFaceNormal`, `QuadGridIfRectangular` gives no grid when an element folds (`GridUnlessFoldedOrCoarse`); new `ElementUvCentroid(t, k)`, `LiftedVectorArea`, `LiftsFacingFaceNormal` | The theorem is false for slivers (review H5) |
 | `IsPoleCollapsed(m, f, t, k)`, `PoleCollapsedTriangleCount`, `PoleCollapsedQuadCount`, `ShareCollapsedLine`: corners on one collapsed line | `IsCollapsedElement(t, k)`, `CollapsedTriangleCount(t)`, `CollapsedQuadCount(t)`: two corners with identified sources; `IsSurfaceEdge` compares local vertices; `ShareCollapsedLine` removed | The drop test agrees with Lift's identification (review M7) |
 | conjecture `ElementsTileRegion` | a theorem, assuming the region is simple and the two side laws; `TriangulateRegion`, `RefineToSurface`, `QuadGrid` ensure `Law_BoundarySegmentIsElementSide` and `Law_InteriorSideIsShared`; new `LoopOffset`, `LoopOfBoundaryPoint`, `NextBoundaryPoint`, `IsBoundarySegment`, `ElementHasSide`, `SideCount` | Keeping the boundary points does not make a tiling (review M5, H6); layer 08's watertightness theorem no longer rests on a conjecture |
 | `IsDiscretizedFace`, `IsDiscretizedBound`, `HasSample` in `FaceMeshingLaws` | in `FaceMeshing`, same signatures | `MeshFace`'s precondition, which layer 08 evaluates, is a definition of the layer, not a law guard (layer 08 finding 3) |

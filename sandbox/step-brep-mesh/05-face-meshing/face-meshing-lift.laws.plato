@@ -23,10 +23,12 @@ library FaceMeshingLiftIndexedLaws
     // # Lift cases
 
     // The face criteria the cases are meshed with: the witness options' (layer 8), with quad
-    // grids preferred or not.
+    // grids preferred or not. A grid case's surface chordal bound is one model unit, so the grid
+    // test (GridUnlessFoldedOrCoarse) keeps the grids of doubly curved faces, whose cells exceed
+    // the witness bound: these cases test Lift on collapsed quads, not the bound.
     LiftCaseCriteria(quads: Boolean): FaceMeshingCriteria
         => FaceMeshingCriteria(MeshingOptions.WitnessOptions.Face.Discretization,
-            MeshingOptions.WitnessOptions.Face.SurfaceChordal,
+            quads ? 1.0 : MeshingOptions.WitnessOptions.Face.SurfaceChordal,
             MeshingOptions.WitnessOptions.Face.SurfaceAngular,
             quads);
 

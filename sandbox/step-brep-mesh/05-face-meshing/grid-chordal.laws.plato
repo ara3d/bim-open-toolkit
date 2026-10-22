@@ -5,11 +5,13 @@
 // box, cylinders, the sphere, the cone, the torus), meshed under the default criteria at a
 // chordal bound of 0.01 with quads preferred, as the host meshes them (TKT-405). The bump solid
 // of bump 0.5 is left out: its top's refinement at this bound exceeds a law's budget (TKT-351).
+// The first law is TKT-415's criterion on the library's meshes; the last states which grids the
+// test refuses.
 //
 // Sections, in order:
 //  - Cases
 //  - The library's meshes
-//  - The staged grid
+//  - The grid test
 
 library FaceMeshingGridChordalLaws
 {
@@ -109,23 +111,19 @@ library FaceMeshingGridChordalLaws
         };
 
     //==
-    // # The staged grid
+    // # The grid test
 
-    // The staged grid test drops a grid only where a cell is curved both ways: each bump solid's
-    // top and every torus face get none (the library's torus grid exceeds the chordal bound: a
-    // cell deviates by about the sum of its two sagittas, and the boundary bounds each alone);
-    // every other four-sided face (planes, cylinders, the cone, the sphere) keeps the grid the
-    // library builds (QuadGridOnSides).
-    Law_V1Faces_GridKeptUnlessCurvedBothWays(w: GridCase): Boolean
-        => w.FourSidedFaces.All(f => w.StagedGridAgrees(f, w.Model.RegionOf(f, w.Discretizations, w.Criteria)));
+    // The grid test (GridUnlessFoldedOrCoarse) drops a grid where a cell is curved both ways:
+    // each bump solid's top and every torus face get none (a cell deviates by about the sum of
+    // its two sagittas, and the boundary bounds each alone).
+    Law_V1Faces_GridRefusedWhereCurvedBothWays(w: GridCase): Boolean
+        => w.FourSidedFaces.All(f => w.GridDecisionHolds(f, w.Model.RegionOf(f, w.Discretizations, w.Criteria)));
 
-    // Law_V1Faces_GridKeptUnlessCurvedBothWays on face f of case w, its region r.
-    StagedGridAgrees(w: GridCase, f: BrepFaceIndex, r: UvRegion): Boolean
+    // Law_V1Faces_GridRefusedWhereCurvedBothWays on face f of case w, its region r.
+    GridDecisionHolds(w: GridCase, f: BrepFaceIndex, r: UvRegion): Boolean
     {
         var m = w.Model;
-        var sides = m.QuadSidesOf(f, r);
-        var before = m.QuadGridOnSides(f, w.Discretizations, r, w.Criteria, sides).IsGridOutcome;
-        var after = m.QuadGridOnSidesWithin(f, w.Discretizations, r, w.Criteria, sides).IsGridOutcome;
-        return ((w.Bump > 0.0 && f == BrepFaceIndex(1)) || w.Name == "Torus") ? after.Not : after == before;
+        var grid = m.QuadGridOnSides(f, w.Discretizations, r, w.Criteria, m.QuadSidesOf(f, r)).IsGridOutcome;
+        return ((w.Bump > 0.0 && f == BrepFaceIndex(1)) || w.Name == "Torus") ? grid.Not : true;
     }
 }
