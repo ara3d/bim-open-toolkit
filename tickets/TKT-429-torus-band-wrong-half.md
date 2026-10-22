@@ -1,14 +1,16 @@
 ---
 id: TKT-429
 title: STEP mesher: a torus band bounded by two full circles is meshed on the wrong half of the tube, 180 misoriented edges on moon_buggy_asm.stp (faces 33, 65, 127)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 5135435e
+session: 5135435e-eb61-4194-b168-7b93c64dd2fe
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3]
 related: [TKT-323, TKT-413, TKT-410, TKT-325]
 confidence: medium
 created: 2026-10-22
+claimed: 2026-10-22
 kind: defect
 ---
 

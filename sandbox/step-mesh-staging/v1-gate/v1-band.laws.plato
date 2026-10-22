@@ -1,0 +1,50 @@
+//==
+// # Version 1: a band's seam cut goes to the side the face lies on, laws (TKT-429)
+//
+// The torus band witnesses of v1-band.library.plato meshed by MeshFace at chordal 0.05 (layer
+// 08's defaults, triangles): the outer half's mesh lies on the outer half of the tube and the
+// inner half's on the inner, each with the area of its half within 2 percent.
+//
+// Sections, in order:
+//  - Torus bands
+
+library V1BandLaws
+{
+    //==
+    // # Torus bands
+
+    // The mesh of face 0 of model m at chordal 0.05, its edges discretized canonically.
+    BandMesh(m: BrepModel): FaceMesh
+    {
+        var c = PolesOptionsAt(0.05, false).Face;
+        return m.MeshFace(BrepFaceIndex(0), m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors), c).Mesh;
+    }
+
+    // The distance of p from the z axis.
+    AxisDistance(p: Point3D): Number
+        => (p.X * p.X + p.Y * p.Y).Sqrt;
+
+    // The area of face mesh fm: its elements' vector areas' lengths summed.
+    MeshArea(fm: FaceMesh): Number
+        => SumOf(fm.ElementCount.MapRange(k => fm.ElementVectorArea(ElementIndex(k)).Length));
+
+    // True when the band of the torus (2, 0.5) on the given side meshes, every point lies on that
+    // half (within 0.06 of the major radius, the chordal bound and rounding), and its area is
+    // within 2 percent of the half's.
+    BandMeshesOnItsHalf(outer: Boolean): Boolean
+    {
+        var fm = BrepModel.Witness_TorusBand(2.0, 0.5, outer).BandMesh;
+        var expected = 2.0 * Number.Pi * 0.5 * (Number.Pi * 2.0 + (outer ? 1.0 : -1.0) * 2.0 * 0.5);
+        return fm.IsEmptyFaceMesh.Not
+            && fm.Positions.All(p => outer ? p.AxisDistance >= 2.0 - 0.06 : p.AxisDistance <= 2.0 + 0.06)
+            && (fm.MeshArea - expected).Abs <= 0.02 * expected;
+    }
+
+    // The outer band, whose loops leave the outer half on their left, meshes on the outer half.
+    Law_V1Gate_OuterTorusBandMeshesOutside(_: Integer): Boolean
+        => BandMeshesOnItsHalf(true);
+
+    // The inner band meshes on the inner half.
+    Law_V1Gate_InnerTorusBandMeshesInside(_: Integer): Boolean
+        => BandMeshesOnItsHalf(false);
+}

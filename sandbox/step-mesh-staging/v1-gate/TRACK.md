@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f | ready: V1G-3, V1G-4, V1G-5, V1G-6, V1G-7
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f | ready: V1G-3, V1G-4, V1G-5, V1G-6, V1G-7, V1G-8
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -15,6 +15,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-5 | TKT-418 | triage of the non-passing laws outside layer 5: gate or quality, ticket, fence | 2 h |
 | V1G-6 | TKT-412 | pinched plane faces: weakly simple loops split into outer and holes; zero-width faces | 2 h |
 | V1G-7 | TKT-399 | ValidateFaceMesh under 2 s on a built curved mesh: the two quadratic identification checks in n log n | 2 h |
+| V1G-8 | TKT-429 | a torus band bounded by two full circles meshed on the half of the tube its loops bound | 2 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -59,6 +60,10 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | SphereByPoleLoopsFine (0.01) | over 120 s | 8.82 s | 0.55 s | 0.27 s |
 
   - Reading: with V1G-4 merged, ValidateFaceMesh is under 2 s on all eight witnesses with either form, because chordal-only refinement makes the curved meshes small; the criterion is met by V1G-4. The indexed checks are what keeps it linear-ish on a large face: on HEAD's meshes (angle pass, thousands of points) the reference checks alone pass the 120 s cap, the indexed form finishes in 2.5 to 35 s, and what remains there is the geometry checks (a surface projection per element sample), linear in the elements. The two forms agree on every mesh and mutation (both agreement laws pass on both V1G-4 copies; on HEAD's meshes the fibre agreement law times out on its reference side, the surjectivity one passes).
+- V1G-8 (TKT-429), this commit, about 1.3 h against 2 h. No type added. Cause: `JoinedByCut` (05-face-meshing/uv-regions.library.plato) joins a band's two circles by a cut to `NearestUnwrapped`'s copy of the second circle's point. On a torus band between two v-circles the cross direction is periodic, so the second circle has a copy on each side; for the tube's top and bottom circles (half a turn apart) both are equally near, and the tie chose the inner half where moon_buggy's face #34380 bounds the outer. Fix: `BandEndCopy` (v1-band.library.plato, library `V1Band`) takes, among that copy and its copies one period either way across, the nearest one strictly to the left of the first circle's step at the cut's start (`IsLeftOfStep`, which follows the chart's mirroring), since the face lies to the left of its loops; with no period across (a cylinder band) it is `NearestUnwrapped`'s copy as before. Witness `Witness_TorusBand(major, minor, outer)` (same file): the torus (2, 0.5) between its bottom and top circles, the outer or the inner half by the loops' direction. Laws (`V1BandLaws`, v1-band.laws.plato), 2: `Law_V1Gate_OuterTorusBandMeshesOutside`, `Law_V1Gate_InnerTorusBandMeshesInside` (every point on its half, area within 2 percent of 2 pi r (pi R +- 2 r)).
+  - Compiled, budget 120 s, copies of HEAD at dc2ccca4 with V1G-4's refinement: before the edit the outer band fails (meshed inside) and the inner passes (the tie happened to fall its way); after, both pass. The laws over the band, pole and gate witnesses (`BrepWitnessesLaws`, `PolesWitnessLaws`, `PolesLaws`, `FaceMeshingLaws`, `TriangulatedWitnessLaws`, `UnwrapIndexedLaws`, `FaceMeshingLiftIndexedLaws`, `StepToMeshWitnessesLaws`, `RefinementAttainableLaws`, `V1GateLaws`): 127 laws, the same verdicts before and after (126 pass; the one fail is the CylinderRefined lift case, which V1G-4's merge instructions replace).
+  - moon_buggy_asm.stp through the harness, on scratch regenerations of the same library with and without the edit (regen-step-brep.ps1 into a scratch copy of bim-open-data at 3f1ad1b, Plato c8c83c8b; harness built with -p:DepsRoot pointing at the toolkit's deps): without, 162 of 162 faces meshed, closed, not oriented, 180 misoriented edges; with, closed and oriented, 0 boundary, 0 non-manifold, 0 misoriented. Faces 33, 65 and 127 lie 176 to 193 mm from an axis fitted to their own points (the outer half, 177.8 to 190.5 mm, within the fitted axis's error; before, 165 to 178 mm). The harness's contract check gives the same five failing faces with and without the edit (cones 26, 76, 132 with flipped elements; B-spline faces 41, 117 over the chordal bound), so none comes from this chunk.
+  - Not run: the corpus rerun (TKT-429's third box; it needs the merged regeneration).
 
 ## Gate and quality: every law of layer 5
 
@@ -395,6 +400,10 @@ V1G-7 (TKT-399, second criterion):
 - `Check_LocalVertexFibresAreIdentifications` (07-validation/validation-checks-face-meshing.library.plato) => `fm.Check_LocalVertexFibresAreIdentificationsIndexed`; `Check_LocalVertexSurjective` => `fm.Check_LocalVertexSurjectiveIndexed`. Their old bodies are the staged `...Reference` functions already, so nothing else moves; update the fibre check's comment ("quadratic as written; an implementation groups...") to name the indexed form.
 - The eight `Law_V1Gate_ValidateFaceMeshOn<Witness>` laws are timing probes; keep them in the merge sweep if the 2 s budget should guard TKT-399's criterion, or drop them after the first sweep.
 
+V1G-8 (TKT-429):
+- In `JoinedByCut` (05-face-meshing/uv-regions.library.plato): `var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);` => `var end = m.BandEndCopy(f, a, i, b, j);`, and the function's comment says the cut ends at "the copy of b's point nearest it on the face's side (BandEndCopy)".
+- Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
+
 V1G-5 (triage):
 - Delete the five `PolesLaws` face-check laws (`Law_SphereFaceChecksHold`, `Law_SphereByPoleLoopsFaceChecksHold`, `Law_TorusFaceChecksHold`, `Law_ConeFaceChecksHold`, `Law_TorusAtVertexFaceChecksHold`, 07-validation/poles.laws.plato) and `FaceCheckFailures` if nothing else calls it, when `V1PoleChecksLaws` merges: the per-check laws state the same checks, gate and quality apart.
 - No other move: none of the other 116 is a quality law.
@@ -409,6 +418,7 @@ V1G-5 (triage):
 - v1-faces (quad grid): the version 1 contract relaxes the grid's keep rule. Today a quad is kept only when planar within SurfaceChordal and strictly convex (`QuadGridIfRectangular`, "Quads" section of face-meshing.library.plato); the contract keeps any quad whose both diagonal splits are within the chordal bound and oriented (`QuadSplitsWithin`, `QuadSplitsOriented` in this folder's `v1-gate.library.plato`). Changing the keep rule is yours, since you own the grid functions; not blocking.
 
 ## Findings
+- moon_buggy_asm.stp, at HEAD with V1G-4's refinement and with or without V1G-8: the harness's contract check reports three cone faces (26, 76, 132) with 195, 195 and 4 flipped elements, marked explained, and two B-spline faces (41, 117) at 3.8 times the chordal bound. Orientation is a gate property, so the cones' flips are worth a ticket if "explained" does not mean apex-collapsed elements the contract allows.
 - `SameUvPoints` (face-meshing-lift.laws.plato) guards with `a.Count == b.Count && ...`, but both sides of `&&` are evaluated (as the library already notes of `||`), so two triangulations of different sizes make `Law_RefinedIsFaceTriangulation` throw, reported as an error, instead of fail. Every `Same*` helper written this way has the defect; a conditional guards it.
 - The host (`StepPlatoMesher.MeshFile`) runs no refinement loop, so a face's blocking edge requests (FACE-NOT-SIMPLE's "refine this edge") are never acted on in the corpus. Finer edges would not have helped the MAYA family (TKT-419): at chordal 0.01 and 0.001 mm the gallery mode reports the same 13 not-simple faces in MAYA-W260_REVC.
 - Quad grids on four-sided plane faces still place interior grid points; the contract's "no refinement" is read here as applying to triangulated plane faces. Whether a plane face should skip the grid is open (v1-faces owns the grid).
@@ -447,6 +457,11 @@ V1G-5 (triage):
 | V1G-7: reading the checks, indexed forms, laws | 30 min | 0 |
 | V1G-7: HEAD with and without the wiring, compiled, budget 600 s | 8.5 min, background | 2 (cold compile of new folders) |
 | V1G-7: the same with V1G-4's refinement | 3 min, background | 2 |
+| V1G-8: reading the band cut, fix, witness, laws | 30 min | 0 |
+| V1G-8: laws before and after, compiled | 3 min, background | 2 |
+| V1G-8: regression laws before and after | 3.5 min, background | 2 |
+| V1G-8: two scratch regenerations and harness builds | 2 and 2.5 min, background | 2 (regeneration 1.5 min each) |
+| V1G-8: moon_buggy gallery runs and the axis distances | 6 min | 5 |
 
 ## Lessons
 - The compile cache follows the folder path: a fresh scratch folder cost 6.8 minutes, the same folder rerun about 1 minute. Keep one scratch folder per check.
