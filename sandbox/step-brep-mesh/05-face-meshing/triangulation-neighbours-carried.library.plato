@@ -9,8 +9,8 @@
 // library built it three times per round on a curved face and twice on a plane. A pass sets
 // triangles in place or appends them (WithTriangles) and never removes or reorders one, so a
 // slot index means the same side after the pass. Every table read is the one NeighbourSlots
-// would give (Law_Perf_CarriedTableIsNeighbourSlots), so the insertions are the same, in the
-// same order (Law_Perf_RefineCarriedAgrees).
+// would give (Law_CarriedTableIsNeighbourSlots), so the insertions are the same, in the
+// same order.
 //
 // Sections, in order:
 //  - The carried table

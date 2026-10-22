@@ -17,7 +17,7 @@
 // A positioned triangulation and its neighbour table: Neighbours[3 t + j] is the triangle that
 // holds side j of triangle t the other way round, or -1 (a boundary side).
 // Invariant: Neighbours is NeighbourSlots(Positioned.Triangulation.Triangles,
-// Positioned.Triangulation.Points.Count) slot for slot (Law_Perf_CarriedTableIsNeighbourSlots).
+// Positioned.Triangulation.Points.Count) slot for slot (Law_CarriedTableIsNeighbourSlots).
 // Removes: the NeighbourSlots sort at the start of every pass and of every refinement test.
 type PositionedTriangulationWithNeighbours
 {

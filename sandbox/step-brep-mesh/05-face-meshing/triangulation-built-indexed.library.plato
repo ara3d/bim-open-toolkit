@@ -148,41 +148,8 @@ library TriangulationBuiltIndexed
     // elements the kept trials write.
     SurfacePassIndexedCounted(m: BrepModel, f: BrepFaceIndex, x: BoundaryIndex, chart: FaceChart, least: Number, t: PositionedTriangulation, surface: Array<Boolean>): Counted<PositionedTriangulation>
     {
-        var u0 = t.Triangulation;
-        var pts = new List<UvCoordinate>().AddRange(u0.Points);
-        var points = new List<Point2D>().AddRange(u0.Points.Map(z => chart.ChartPoint(z)));
-        var pos = new List<Point3D>().AddRange(t.Positions);
-        var tris = new List<TriangleFace>().AddRange(u0.Triangles);
-        var nb = new List<Integer>().AddRange(NeighbourSlots(u0.Triangles, u0.Points.Count));
-        var evaluations = 0;
-        var written = 0;
-        var k = 0;
-        while (k < u0.Triangles.Count)
-        {
-            if (surface[k] ? tris.At(k) == u0.Triangles[k] : false)
-            {
-                var centre = chart.Circumcentre(ChartCornersIn(tris.At(k), points), TriangleOf(0, 1, 2));
-                var first = m.TryInsertionIndexed(f, x, chart, least, false, k, centre, points, pos, tris, nb);
-                var uv = first.Kept ? centre : x.Next.SurfaceFallbackIndexed(k, pts, points, tris, nb);
-                var next = first.Kept ? first : m.TryInsertionIndexed(f, x, chart, least, false, k, uv, points, pos, tris, nb);
-                evaluations = evaluations + first.Evaluations + (first.Kept ? 0 : next.Evaluations);
-                if (next.Kept)
-                {
-                    pts = pts.Add(next.Point);
-                    points = points.Add(next.Chart);
-                    pos = pos.Add(next.Position);
-                    tris = next.WithTriangles(tris);
-                    nb = next.WithNeighbours(nb);
-                    written = written + next.Written;
-                }
-            }
-            k = k + 1;
-        }
-        var added = pts.Count - u0.Points.Count;
-        var value = PositionedTriangulation(
-            UvTriangulation(pts.Freeze(), u0.Sources.Concatenate(added.MapRange(i => UvPointSource.Interior)), tris.Freeze(), u0.Quads),
-            pos.Freeze());
-        return Counted(value, Evaluations(evaluations).Add(Insertions(written)));
+        var p = m.SurfacePassCarriedCounted(f, x, chart, least, t.WithNeighbourTable, surface);
+        return Counted(p.Value.Positioned, p.Work);
     }
 
     // SurfacePassIndexedCounted's triangulation.
@@ -193,47 +160,8 @@ library TriangulationBuiltIndexed
     // counted.
     AnglePassIndexedCounted(m: BrepModel, f: BrepFaceIndex, x: BoundaryIndex, chart: FaceChart, least: Number, t: PositionedTriangulation, bad: Array<Integer>): Counted<PositionedTriangulation>
     {
-        var u0 = t.Triangulation;
-        var pts = new List<UvCoordinate>().AddRange(u0.Points);
-        var points = new List<Point2D>().AddRange(u0.Points.Map(z => chart.ChartPoint(z)));
-        var pos = new List<Point3D>().AddRange(t.Positions);
-        var tris = new List<TriangleFace>().AddRange(u0.Triangles);
-        var nb = new List<Integer>().AddRange(NeighbourSlots(u0.Triangles, u0.Points.Count));
-        var evaluations = 0;
-        var written = 0;
-        var i = 0;
-        while (i < bad.Count)
-        {
-            var k = bad[i];
-            if (tris.At(k) == u0.Triangles[k])
-            {
-                var tri = tris.At(k);
-                var candidates = chart.AngleCandidates(ChartCornersIn(tri, points), UvCornersIn(tri, pts), TriangleOf(0, 1, 2));
-                var n = 0;
-                while (n < candidates.Count)
-                {
-                    var next = m.TryInsertionIndexed(f, x, chart, least, true, k, candidates[n], points, pos, tris, nb);
-                    evaluations = evaluations + next.Evaluations;
-                    if (next.Kept)
-                    {
-                        pts = pts.Add(next.Point);
-                        points = points.Add(next.Chart);
-                        pos = pos.Add(next.Position);
-                        tris = next.WithTriangles(tris);
-                        nb = next.WithNeighbours(nb);
-                        written = written + next.Written;
-                        n = candidates.Count;
-                    }
-                    n = n + 1;
-                }
-            }
-            i = i + 1;
-        }
-        var added = pts.Count - u0.Points.Count;
-        var value = PositionedTriangulation(
-            UvTriangulation(pts.Freeze(), u0.Sources.Concatenate(added.MapRange(j => UvPointSource.Interior)), tris.Freeze(), u0.Quads),
-            pos.Freeze());
-        return Counted(value, Evaluations(evaluations).Add(Insertions(written)));
+        var p = m.AnglePassCarriedCounted(f, x, chart, least, t.WithNeighbourTable, bad);
+        return Counted(p.Value.Positioned, p.Work);
     }
 
     // AnglePassIndexedCounted's triangulation.
@@ -247,33 +175,5 @@ library TriangulationBuiltIndexed
     // once (BoundaryIndexOf under the region tolerance) and the passes over the index: the same
     // rounds, marks, stopping rule and insertions.
     RefineToSurfaceByInsertionIndexed(m: BrepModel, f: BrepFaceIndex, r: UvRegion, chart: FaceChart, t: UvTriangulation, c: FaceMeshingCriteria): UvTriangulation
-    {
-        var planar = m.Geometry.SurfaceAt(m.SurfaceOf(f)).IsPlanarRecord;
-        var x = r.BoundaryIndexOf(m.RegionTolerance(f, chart));
-        var least = c.Discretization.EffectiveMinLength(m.Tolerances);
-        var none = [0].Take(0);
-        var current = m.Positioned(f, t);
-        var known = t.Triangles.Map(z => false);
-        var refused = t.Triangles.Map(z => false);
-        var good = t.Triangles.Map(z => false);
-        var pass = 0;
-        var changed = true;
-        while (pass < 40 && changed)
-        {
-            var now = current.Triangulation;
-            var surface = planar ? now.Triangles.Map(z => false) : m.NeedsRefinementCached(f, r, current, known, c);
-            var mid = m.SurfacePassIndexed(f, x, chart, least, current, surface);
-            var carried = now.Triangles.CarriedMarks(refused, none, mid.Triangulation.Triangles);
-            var goodMid = now.Triangles.CarriedMarks(good, none, mid.Triangulation.Triangles);
-            var bad = m.BelowAngleKnown(f, mid.Triangulation, carried, goodMid);
-            var next = m.AnglePassIndexed(f, x, chart, least, mid, bad);
-            refused = mid.Triangulation.Triangles.CarriedMarks(carried, bad, next.Triangulation.Triangles);
-            good = mid.Triangulation.Triangles.CarriedMarks(mid.Triangulation.AngleGoodMarks(carried, bad), none, next.Triangulation.Triangles);
-            known = KnownGood(now, surface, next.Triangulation);
-            changed = next.Triangulation.Points.Count > now.Points.Count;
-            current = next;
-            pass = pass + 1;
-        }
-        return current.Triangulation;
-    }
+        => m.RefineToSurfaceByInsertionCarried(f, r, chart, t, c);
 }

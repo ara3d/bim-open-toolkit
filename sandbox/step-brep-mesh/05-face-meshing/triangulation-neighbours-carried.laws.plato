@@ -47,7 +47,7 @@ library NeighboursCarriedLaws
     // is NeighbourSlots of the triangulation it sits beside before the first round and after
     // every surface pass and every angle pass, and the last round leaves the witness's refined
     // triangulation.
-    Law_Perf_CarriedTableIsNeighbourSlots(w: TriangulatedWitness): Boolean
+    Law_CarriedTableIsNeighbourSlots(w: TriangulatedWitness): Boolean
     {
         var m = w.Model;
         var f = w.Face;
@@ -66,10 +66,4 @@ library NeighboursCarriedLaws
         }
         return ok && SameTriangulation(s.Current.Positioned.Triangulation, w.Refined);
     }
-
-    // The carried refinement of the witness's constrained Delaunay triangulation is the
-    // witness's refined triangulation (the library's RefineToSurfaceByInsertion) point for point
-    // and triangle for triangle: the same insertions in the same order.
-    Law_Perf_RefineCarriedAgrees(w: TriangulatedWitness): Boolean
-        => SameTriangulation(w.Model.RefineToSurfaceByInsertionCarried(w.Face, w.Region, w.Chart, w.Cdt, TriCriteria(0)), w.Refined);
 }

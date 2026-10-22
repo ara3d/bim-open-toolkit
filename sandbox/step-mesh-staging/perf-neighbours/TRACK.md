@@ -1,7 +1,7 @@
 # perf-neighbours: build the neighbour table once per refinement and carry it through the passes
 
 Ticket: TKT-408
-Status: ready: TKT-408
+Status: merged: TKT-408 (2026-10-21, into 05-face-meshing/triangulation-neighbours-carried.{types,library,laws}.plato; the four wiring edits of the merge instructions applied; Law_Perf_RefineCarriedAgrees deleted, Law_Perf_CarriedTableIsNeighbourSlots renamed Law_CarriedTableIsNeighbourSlots)
 
 ## Done
 - TKT-408, this commit, about 0.4 h against 2 to 3 h expected: idea 32 of `docs/plans/step-mesher-ideas-evaluation.md` (the rest of idea 6).
