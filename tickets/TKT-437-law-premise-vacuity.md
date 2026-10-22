@@ -1,7 +1,7 @@
 ---
 id: TKT-437
 title: Plato law runner: a law's premise is counted, and a law whose premise held on no case is reported vacuous, a failing verdict
-status: claimed
+status: done
 depends_on: []
 owner: session f58080da
 session: f58080da-237d-478d-a779-1bc570009dc2
@@ -11,6 +11,7 @@ related: [TKT-434]
 confidence: medium
 created: 2026-10-22
 claimed: 2026-10-22
+closed: 2026-10-22
 ---
 
 ## Acceptance criteria
