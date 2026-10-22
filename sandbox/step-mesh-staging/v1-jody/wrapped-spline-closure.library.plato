@@ -1,0 +1,106 @@
+//==
+// # The closure of a B-spline written in wrapped form (track v1-jody, TKT-431)
+//
+// Layer 3 decides a B-spline's closure from its record alone (TKT-348): a clamped spline's ends
+// are its first and last control points; every unclamped spline was Undecided, so it got no
+// Closed mark, its domain stayed Aperiodic, and a closed edge on it (Start == End) got the
+// degenerate edge domain [a, a], which DiscretizeEdgeRangedCounted returns as Undiscretized.
+// The 24 one-edge plane loops of the two M2-JODY-W377 corpus files are such edges: a cubic
+// B-spline with 19 control points, knots of multiplicity 1, and its last 3 control points equal
+// to its first 3, the periodic spline of ISO 10303-42 written as an unclamped one (the file says
+// closed_curve .T., which the decoder does not keep).
+//
+// Such a record is closed by its record too. With n control points, degree p and knots
+// u_0 .. u_{n+p}, the curve's start C(u_p) is a combination of P_0 .. P_{p-1} whose
+// coefficients depend only on u_0 .. u_{2p}, and its end C(u_n) the combination of
+// P_{n-p} .. P_{n-1} whose coefficients depend on u_{n-p} .. u_{n+p} in the same way. When the
+// spacings u_{n-p+j+1} - u_{n-p+j} equal u_{j+1} - u_j for j in 0 .. 2p - 1, the end's basis is
+// the start's translated, the coefficients are equal, non-negative and sum to 1, and with equal
+// weights and P_{n-p+i} within tol of P_i the two ends lie within tol of each other: closed,
+// decided without evaluating the spline.
+//
+// The file writes knots to about 13 digits, so the spacings of a wrapped record may differ by
+// a few units in the last digit (2e-14 in the corpus's radius-0.2 records). A spacing changed
+// by delta moves a coefficient by about p delta / h, h the smallest spacing involved, so the end
+// moves by about p delta / h times the spread of the control points it combines. The record
+// counts as wrapped when that first-order estimate, plus the largest distance between paired
+// control points, is within tol; the laws check the answer against evaluation on both corpus
+// records. Any other unclamped record stays Undecided.
+//
+// Sections, in order:
+//  - The wrapped form
+//  - The decision
+
+library V1JodyWrappedSplineClosure
+{
+    //==
+    // # The wrapped form
+
+    // Spacing j of the basis's knots, u_{j+1} - u_j. Precondition: j + 1 < b.Knots.Count.
+    KnotSpacing(b: SplineBasis, j: Integer): Number
+        => b.Knots.KnotAt(j + 1) - b.Knots.KnotAt(j);
+
+    // The largest difference between the spacings at the end of the basis, u_{n-p+j+1} -
+    // u_{n-p+j}, and those at its start, u_{j+1} - u_j, for j in 0 .. 2p - 1. Precondition: the
+    // basis is well shaped for n control points and n >= 2p.
+    WrappedSpacingMismatch(b: SplineBasis, n: Integer): Number
+        => (2 * b.Degree).Range.Reduce(0.0, (worst, j) =>
+            worst.Max((b.KnotSpacing(n - b.Degree + j) - b.KnotSpacing(j)).Abs));
+
+    // The smallest spacing among the start's 2p spacings, those the start's coefficients read.
+    // Precondition: as WrappedSpacingMismatch.
+    SmallestStartSpacing(b: SplineBasis): Number
+        => (2 * b.Degree).Range.Reduce(b.KnotSpacing(0), (least, j) => least.Min(b.KnotSpacing(j)));
+
+    // The largest distance between a control point P_{n-p+i} and its pair P_i, i < p.
+    PairedPointGap(d: BSplineCurveData): Number
+    {
+        var p = d.Basis.Degree;
+        var n = d.ControlPoints.Count;
+        return p.Range.Reduce(0.0, (worst, i) => worst.Max(d.ControlPoints[n - p + i].Distance(d.ControlPoints[i])));
+    }
+
+    // Twice the largest distance from P_0 to P_i, i < p: a bound on the spread of the start's
+    // control points.
+    StartSpread(d: BSplineCurveData): Number
+        => 2.0 * d.Basis.Degree.Range.Reduce(0.0, (worst, i) => worst.Max(d.ControlPoints[i].Distance(d.ControlPoints[0])));
+
+    // How far the record's two ends may lie apart, to first order: the paired points' gap plus
+    // p times the spacing mismatch over the smallest start spacing times the start's spread;
+    // Number.MaxValue when the smallest start spacing is not positive and the spacings differ.
+    // Precondition: as IsWrappedForm, with the paired weights equal.
+    WrappedEndGapEstimate(d: BSplineCurveData): Number
+    {
+        var b = d.Basis;
+        var n = d.ControlPoints.Count;
+        var mismatch = b.WrappedSpacingMismatch(n);
+        var h = b.SmallestStartSpacing;
+        var spacing = mismatch == 0.0
+            ? 0.0
+            : (h > 0.0 ? b.Degree.ToNumber * mismatch / h * d.StartSpread : Number.MaxValue);
+        return d.PairedPointGap + spacing;
+    }
+
+    // True when the record is a periodic B-spline written unclamped: at least 2p control points,
+    // the paired weights equal, and the estimate of its end gap within tol. Precondition:
+    // d.IsWellShaped.
+    IsWrappedForm(d: BSplineCurveData, tol: LengthTolerance): Boolean
+    {
+        var p = d.Basis.Degree;
+        var n = d.ControlPoints.Count;
+        return n >= 2 * p
+            && p.Range.All(i => d.Weights[n - p + i] == d.Weights[i])
+            && d.WrappedEndGapEstimate <= tol.Value;
+    }
+
+    //==
+    // # The decision
+
+    // Layer 3's EndsClosure with the wrapped form decided: a clamped record as there; an
+    // unclamped one in wrapped form is closed; any other unclamped record is Undecided.
+    // Precondition: d.IsWellShaped.
+    EndsClosureWrapped(d: BSplineCurveData, tol: LengthTolerance): DecidedClosure
+        => d.Basis.HasClampedEnds
+            ? DecidedClosure.Decided(d.ControlPoints.First.Coincident(d.ControlPoints.Last, tol))
+            : (d.IsWrappedForm(tol) ? DecidedClosure.Decided(true) : DecidedClosure.UndecidedSplineClosure);
+}
