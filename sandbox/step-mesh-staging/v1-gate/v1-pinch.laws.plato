@@ -1,0 +1,83 @@
+//==
+// # Version 1: pinched and zero-width plane regions, laws (TKT-412)
+//
+// Laws of v1-pinch.library.plato over the witnesses of v1-pinch.witnesses.plato: LENA-R8 face
+// 1349 and a square with a keyhole, each one loop through a vertex twice, are simple under
+// SegmentsSeparatedV1 and triangulate to a cover of their area; a hole that touches the outer loop
+// stays not simple; a pinch that runs on within the tolerance still collides; away from pinches the new rule is the library's; a strip thinner than
+// the tolerance has no width.
+//
+// Sections, in order:
+//  - Pinches
+//  - Zero width
+
+library V1PinchLaws
+{
+    //==
+    // # Pinches
+
+    // True when triangulation t of region r in chart keeps the boundary and every boundary
+    // segment, is conforming and positive, and its chart areas sum to the region's within the
+    // region's area tolerance.
+    CoversRegion(r: UvRegion, chart: FaceChart, tol: UvTolerance, t: UvTriangulation): Boolean
+    {
+        var points = t.Points.Map(uv => chart.ChartPoint(uv));
+        var area = SumOf(t.Triangles.Map(x => TwiceSignedArea(points[x.A], points[x.B], points[x.C]) * 0.5));
+        return r.CdtKeepsBoundaryOn(t) && r.KeepsEverySegmentOn(t) && r.CdtIsConformingOn(t) && r.CdtPositiveOn(chart, t)
+            && (area - r.ChartSignedArea(false)).Abs <= r.AreaTolerance(tol);
+    }
+
+    // LENA-R8 face 1349's region is simple under SegmentsSeparatedV1: its two pinch vertices are
+    // shared exactly and nothing else comes within the tolerance.
+    Law_V1Gate_LenaR8Face1349IsSimple(_: Integer): Boolean
+        => LenaR8Face1349Region(0).IsSimpleRegionV1(LenaR8Face1349Tolerance(0));
+
+    // LENA-R8 face 1349's region triangulates to a cover of it, the loop as it is (the
+    // triangulator's ring passes the pinch vertices twice, as a bridged hole does).
+    Law_V1Gate_LenaR8Face1349Triangulates(_: Integer): Boolean
+    {
+        var r = LenaR8Face1349Region(0);
+        var chart = PlaneChart(0);
+        return r.CoversRegion(chart, LenaR8Face1349Tolerance(0), r.TriangulateRegionCdt(chart));
+    }
+
+    // A hole touching the outer loop at one shared vertex stays not simple: the pinch rule is for
+    // one loop through a vertex twice.
+    Law_V1Gate_TouchingLoopsStayNotSimple(_: Integer): Boolean
+        => PinchedHoleRegion(0).IsSimpleRegionV1(PinchTolerance(0)).Not;
+
+    // The same keyhole written as one loop through (1.5, 0) twice is simple and triangulates to a
+    // cover.
+    Law_V1Gate_KeyholeLoopTriangulates(_: Integer): Boolean
+    {
+        var r = KeyholeLoopRegion(0);
+        var chart = PlaneChart(0);
+        return r.IsSimpleRegionV1(PinchTolerance(0)) && r.RegionPinchesAreKeyholes
+            && r.CoversRegion(chart, PinchTolerance(0), r.TriangulateRegionCdt(chart));
+    }
+
+    // A keyhole that returns to its pinch along the outer side within the tolerance is not simple:
+    // the pinch rule accepts a touch at a point, not a fold.
+    Law_V1Gate_FoldAtPinchStillCollides(_: Integer): Boolean
+        => FoldAtPinchRegion(0).IsSimpleRegionV1(PinchTolerance(0)).Not;
+
+    // On star case k and jagged case k, whose loops share no vertex, SegmentsSeparatedV1 decides
+    // simplicity as the library does.
+    Law_V1Gate_PinchRuleAgreesAwayFromPinches(k: Integer): Boolean
+        => StarCase(k).IsSimpleRegionV1(PlaneTolerance(0)) == StarCase(k).IsSimpleRegion(PlaneTolerance(0))
+            && JaggedCase(k).IsSimpleRegionV1(PlaneTolerance(0)) == JaggedCase(k).IsSimpleRegion(PlaneTolerance(0));
+
+    // LENA-R8 face 1349's two pinches are keyholes; a square pinched to a triangle outside it,
+    // wound the same way (the shape of MAYA face 1599), is not.
+    Law_V1Gate_KeyholesAreAcceptedAndOutsidePinchesAreNot(_: Integer): Boolean
+        => LenaR8Face1349Region(0).RegionPinchesAreKeyholes
+            && OutsidePinchRegion(0).RegionPinchesAreKeyholes.Not;
+
+    //==
+    // # Zero width
+
+    // A 2 x 0.01 strip under a tolerance of 0.01 has no width; a 2 x 0.5 rectangle has.
+    Law_V1Gate_StripHasNoWidth(_: Integer): Boolean
+        => RectangleRegion(0.01).IsZeroWidthRegion(PinchTolerance(0))
+            && RectangleRegion(0.5).IsZeroWidthRegion(PinchTolerance(0)).Not;
+}
