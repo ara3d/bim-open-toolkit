@@ -6,7 +6,7 @@
 set -e
 LIB="$(cd "$(dirname "$0")/.." && pwd)"
 W="${1:-${TMPDIR:-/tmp}/compile-layers-00-08}"
-CLI="${2:-C:/Users/cdigg/.plato-cli/e37c032f/Plato.CLI.dll}"
+CLI="${2:-C:/Users/cdigg/.plato-cli/c8c83c8b/Plato.CLI.dll}"
 PLATO=/c/Users/cdigg/git/plato
 rm -rf "$W"; mkdir -p "$W/in/foundation" "$W/in/geometry" "$W/in/library" "$W/out"
 for t in foundation geometry; do
