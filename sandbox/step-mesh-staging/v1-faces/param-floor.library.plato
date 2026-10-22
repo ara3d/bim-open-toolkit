@@ -1,0 +1,62 @@
+//==
+// # A B-spline surface parameter's floor (TKT-459)
+//
+// ParameterFloorAlong (01-geometry/geometry-surfaces.library.plato) gives every parameter that is
+// not an angle the length floor, Tolerances.LengthParameter: the resolvable length over the speed
+// of a unit-speed parameterization. A B-spline surface's parameters have no unit speed; on
+// SHO/c211_case_with_odin_v1.step they move 13 to 25 mm per unit, so the floor of 0.01 parameter
+// units is 0.13 to 0.25 mm in space and swamps the speed-based tolerance UvToleranceAt computes
+// (0.01 / (2 x 24) = 2e-4): 0.2 mm strips read as FACE-ZERO-WIDTH and segments 0.2 mm apart as
+// colliding. ParameterFloorAlongBody gives a B-spline parameter (directly, or through a trim or an
+// offset of a B-spline surface) the arithmetic resolution of its domain's values instead, so the
+// speed decides; every other parameter keeps its floor, bit for bit.
+//
+// Sections, in order:
+//  - Spline parameters
+//  - The floor
+
+library GeometryParameterFloor
+{
+    //==
+    // # Spline parameters
+
+    // Whether the surface's given parameter is a B-spline surface's own: a B-spline surface's two,
+    // and a trim's or an offset's of such a surface. Every other parameter is an angle or a length
+    // of a unit-speed (or near unit-speed) parameterization.
+    IsSplineParameter(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter): Boolean
+        => g.SurfaceAt(s).IsSplineParameter(g, which);
+
+    // IsSplineParameter for one record of the arena g, which holds the entries it references.
+    IsSplineParameter(surface: BrepSurface, g: GeometrySet, which: SurfaceParameter): Boolean
+        => match (surface)
+        {
+            Plane(placement) => false;
+            Cylinder(placement, radius) => false;
+            Cone(placement, radius, semiAngle) => false;
+            Sphere(placement, radius) => false;
+            Torus(placement, major, minor, part) => false;
+            Revolution(profile, axis) => false;
+            LinearExtrusion(profile, extrusion) => false;
+            BSpline(data) => true;
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => g.IsSplineParameter(basis, which);
+            Offset(basis, distance) => g.IsSplineParameter(basis, which);
+        };
+
+    //==
+    // # The floor
+
+    // The resolution of the values of the surface's given parameter: layer 0's ResolutionAt at the
+    // larger magnitude of its domain's ends.
+    SplineParameterFloor(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter): ParameterTolerance
+    {
+        var r = g.Domain(s).DomainAlong(which).Range;
+        return ParameterTolerance(ResolutionAt(r.Start.Abs.Max(r.End.Abs)).Value);
+    }
+
+    // Body of ParameterFloorAlong(g, s, which, tol): the angle floor for an angle, the resolution
+    // of its values for a B-spline parameter, the length floor otherwise.
+    ParameterFloorAlongBody(g: GeometrySet, s: SurfaceIndex, which: SurfaceParameter, tol: Tolerances): ParameterTolerance
+        => g.IsAngleParameter(s, which)
+            ? tol.AngleParameter
+            : (g.IsSplineParameter(s, which) ? g.SplineParameterFloor(s, which) : tol.LengthParameter);
+}

@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1, F3, F3b, F2 | dropped: F4a | merged: F4b in aac39758
+Status: merged: F1, F3, F3b, F2, F4b | dropped: F4a | ready: P1 (TKT-459, closes TKT-461 too) | next: P2 (folds in the newly meshed c211 strips), then cause 5, then cause 4
 
 ## Chunks
 
@@ -56,6 +56,21 @@ F3 runs before F2: it loses faces in 7 corpus files, and F2 is one element on a 
   - Regression, the 26 law libraries of layer 5 and 07-validation/poles*, `V1GateLaws` and F4b's own (167 laws, budget 120 s): HEAD ab3ed3ed with V1G-13, 166 pass and 1 error (`Law_V1Types_EarlyExitAgreesWithAll`, v1-types); with V1G-13 and F4b, the same 166 and 1. No verdict changed.
   - Harness, scratch regeneration of HEAD ab3ed3ed with V1G-13 and F4b, `--parallel`: SHO/MAYA-W160.step, SHO/MAYA-W260_REVC.step, CEL/LENA-R8.STEP and steptools-ap203 moon_buggy_asm.stp each with 0 non-manifold and 0 misoriented edges and no face with an element against the face normal (HEAD: MAYA-W160 4 and 8, moon_buggy cones 2 elements each against the normal; HEAD with V1G-13 alone: LENA-R8 16 and 32).
 
+## Corpus run of 2026-10-22: the 53 unmeshed faces
+
+Grouping (corpus-1022, library 43dd439b; reasons from the gallery JSON of the e5-p4 harness, region numbers from a probe harness on deps' committed C#):
+1. NINA-B222's 16 "on-surface" edges discretize to 0 segments: 27 faces. TKT-414, the v1-jody session (J5).
+2. A B-spline parameter's floor is the length tolerance in parameter units: c211 B-splines 32, 82, 92, 94 (FACE-ZERO-WIDTH) and 45, 259, 260, 262, 263 (not simple). TKT-459, this track (P1).
+3. ANN-MB2 349, 946, 1035, 1654: micro-faces (12 x 3 micrometres, u speed 1010, tolerance 1e-5) whose collapsed corner F3 (edb4ae49) now expands into a pole segment; the strip that leaves is 1.24e-5 wide in u against a floor of 1e-5. Same cause as 2. TKT-461, fixed by P1.
+4. Planes: LENA-R8 258, ELLA-W1 304 and 305, ANNA-B4 491, ODIN-W260 2613, 2615, 2616, 2625. TKT-412.
+5. Cylinders: c211 81, 84, 88 (a cusp: two edges leave a vertex at a near-zero angle, 0.05 mm apart against a 0.01 tolerance) and NINA 601, 677 (not diagnosed). TKT-412.
+
+- P1 (TKT-459, TKT-461), about 3 h: `param-floor.library.plato` (`IsSplineParameter`, `SplineParameterFloor`, `ParameterFloorAlongBody`), laws and the strip witness in `param-floor.laws.plato`, `StripCase` in `param-floor.types.plato`. A B-spline surface parameter (directly, or through a trim or an offset of one) takes the arithmetic resolution of its domain's values as floor, so the speed-based tolerance decides; angle and length parameters keep today's floor bit for bit.
+  - Laws, HEAD 6ebccf81 with the files staged: `Law_V1Faces_BSplineStripMeshes` fails (a planar B-spline patch moving 10 and 24 mm per unit, a strip 10 mm by 0.2 mm, tolerance 0.01 mm: FACE-ZERO-WIDTH); `Law_V1Faces_FloorKeptOffSplines` passes (every non-B-spline parameter of layer 7's ten witnesses keeps exactly ParameterFloorAlong's floor, a B-spline's is no coarser; 14 cases). Wired copy: both pass.
+  - Regression, the 43 law libraries of 01-geometry, 05-face-meshing and 07-validation/poles* (364 laws), budget 120 s: HEAD 341 pass, 15 fail, 8 skipped; wired 342 pass, 14 fail, 8 skipped. Only changes: the strip law fail to pass, and `Law_ScaledSurfacePointIsScaled` listed (pass) only in the wired run. The 14 failures are the same on both (B-spline record validity laws on random records, two placement laws).
+  - Harness, gallery mode, HEAD (deps' C#, generated from bf3ac6c0 by Plato c8c83c8b) against a scratch regeneration of HEAD with P1 (same Plato), on twelve files: c211 527 to 536 faces meshed (the nine of cause 2), boundary edges 2171 to 69; ANN-MB2 2084 to 2088, closed again; RCB-F9T(AP214), M2-MAYA-W271, LARA, LEXI, CAM, LENA-R8, MAYA-W160, MAYA-W260_REVC, ODIN-W260: the same faces meshed, the same edge check, the same contract verdict.
+  - Not clean, P2: c211's newly meshed strips keep 21 elements wound against the face normal (contract "flipped": face 45 1 of 29, 82 9 of 43, 92 5 of 27, 259 2 of 679, 262 4 of 888; the harness marks them explained); the edge check stays oriented, so these are folds inside the 0.2 mm strips. Before P1 these faces were holes with FACE-ZERO-WIDTH or not-simple diagnostics.
+
 ## Open after the merges (2026-10-22, everything of this track merged by aac39758)
 
 The four tickets stay claimed until the corpus run on the regenerated library; each box and what closes it:
@@ -105,6 +120,8 @@ Scratch state that is not in the repository: the regenerated C# and probe harnes
 - F4a: move `cut-pair.*.plato` into `05-face-meshing`; in `uv-regions.library.plato`, `JoinedByCut`: `var pair = m.NearestPair(f, a, b);` becomes `var pair = m.NearestPairTied(f, a, b);`.
 
 - F4b, after V1G-13 (it wraps V1G-13's line): move `edge-on-marks.*.plato` into `05-face-meshing`; in `RefinementRoundChordal` (05-face-meshing/face-meshing-v1-plane.library.plato), V1G-13's `var surface = s.Current.Positioned.Triangulation.WithoutCollapsedMarks(m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least));` becomes `var surface = m.WithEdgeOnMarked(f, s.Current.Positioned, s.Current.Positioned.Triangulation.WithoutCollapsedMarks(m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least)));`. Without V1G-13 it is not needed.
+
+- P1: move `param-floor.library.plato` into `01-geometry` and `param-floor.laws.plato`, `param-floor.types.plato` beside it (or the laws to 05-face-meshing, since the strip law meshes); in `01-geometry/geometry-surfaces.library.plato`, `ParameterFloorAlong`: `=> g.IsAngleParameter(s, which) ? tol.AngleParameter : tol.LengthParameter;` becomes `=> g.ParameterFloorAlongBody(s, which, tol);`. The curve floors (`ParameterFloorOf` in geometry-curves.library.plato) have the same shape for B-spline curves; not changed, not measured.
 
 ## Contract requests
 

@@ -1,13 +1,15 @@
 ---
 id: TKT-461
 title: STEP mesher: F3's pole expansion turns three-sided B-spline slivers into not-simple regions (POS/ANN-MB2.step faces 349, 946, 1035, 1654)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 0d8c417b
+session: 0d8c417b-f6aa-4828-ac07-a9d6f3b535c9
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3]
 related: [TKT-411, TKT-412]
 created: 2026-10-22
+claimed: 2026-10-22
 kind: defect
 ---
 

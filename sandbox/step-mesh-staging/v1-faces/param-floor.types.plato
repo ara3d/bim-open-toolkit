@@ -1,0 +1,8 @@
+//==
+// # A B-spline surface parameter's floor: types (TKT-459)
+
+// Witness_BSplineStrip(Width) meshed at chordal 0.05 mm.
+type StripCase
+{
+    Width: Number;
+}
