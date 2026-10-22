@@ -1,14 +1,16 @@
 ---
 id: TKT-416
 title: STEP mesher: remove Law_RefinedInteriorMeetsMinAngle; a 30 degree minimum angle is not a version 1 goal
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 5135435e
+session: 5135435e-eb61-4194-b168-7b93c64dd2fe
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3, W4]
 related: [TKT-343, TKT-323]
 confidence: high
 created: 2026-10-21
+claimed: 2026-10-21
 ---
 
 ## Acceptance criteria

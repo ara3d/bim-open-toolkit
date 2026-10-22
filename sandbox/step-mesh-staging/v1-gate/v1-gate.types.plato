@@ -1,0 +1,19 @@
+//==
+// # Version 1 gate witnesses (TKT-418)
+//
+// A model meshed once per sweep through the refinement loop, with quads preferred, so the gate
+// laws of the version 1 mesh contract (sandbox/step-brep-mesh/README.md, "Version 1 mesh
+// contract") read real face meshes: closed, oriented, covering, within the chordal tolerance.
+// The law runner builds every Witness_* of this type once and exhausts the list; the type is not
+// generatable, since it holds a BrepModel.
+
+// Model, named Name, meshed under Options to the final state of layer 08's refinement loop with
+// every face chosen and no validation.
+// Invariants: State is Model.FinalState(Options, Model.AllFaces); Options.Face.PreferQuads.
+type V1GateWitness
+{
+    Name: String;
+    Model: BrepModel;
+    Options: MeshingOptions;
+    State: PipelineState;
+}

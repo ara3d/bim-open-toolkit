@@ -1,0 +1,160 @@
+//==
+// # Version 1 gate: the witnesses and the claims on one element (TKT-418)
+//
+// The version 1 mesh contract (sandbox/step-brep-mesh/README.md) counts a quad as within the
+// chordal tolerance, and as oriented, only if both of its diagonal splits are, so a renderer may
+// split it either way. The claims here state that on the triangles of a split, and state the same
+// two properties on every triangle of a face mesh, with the measures layer 05 already uses
+// (SurfaceDistance, IsSurfaceEdge, FaceNormalAt): the mesh-to-surface deviation at the centroid
+// and at the midpoint of every surface edge, the surface-to-mesh gap at the parameter centroid and
+// at the parameter midpoint of every surface edge, and the sign of the vector area against the
+// face normal at the parameter centroid. A quad's diagonal is never a model-edge segment, so it
+// is always sampled.
+//
+// Sections, in order:
+//  - Building a witness
+//  - Triangles given by their corners
+//  - Elements and quads
+
+library V1Gate
+{
+    //==
+    // # Building a witness
+
+    // The gate options at chordal bound `chordal`: layer 08's defaults (15 degrees, Geometric
+    // level, five rounds) with quads preferred, as PolesLaws builds them.
+    V1GateOptions(chordal: Number): MeshingOptions
+        => PolesOptionsAt(chordal, true);
+
+    // Model m named name, meshed to the final state of the refinement loop under the gate options
+    // at chordal bound `chordal`, every face chosen, without validation.
+    V1GateWitnessOf(m: BrepModel, name: String, chordal: Number): V1GateWitness
+    {
+        var o = V1GateOptions(chordal);
+        return V1GateWitness(name, m, o, m.FinalState(o, m.AllFaces));
+    }
+
+    // The unit box: six plane faces, each one quad when quads are preferred.
+    Witness_UnitBoxV1Gate(_: V1GateWitness): V1GateWitness
+        => BrepModel.Witness_UnitBox.V1GateWitnessOf("UnitBox", 0.01);
+
+    // The unit cylinder: a quad grid on the side face, triangles on the two disks.
+    Witness_CylinderV1Gate(_: V1GateWitness): V1GateWitness
+        => BrepModel.Witness_Cylinder.V1GateWitnessOf("Cylinder", 0.01);
+
+    // The block with a square through hole: plane faces with a hole, and four-sided plane faces.
+    Witness_BlockWithThroughHoleV1Gate(_: V1GateWitness): V1GateWitness
+        => BrepModel.Witness_BlockWithThroughHole.V1GateWitnessOf("BlockWithThroughHole", 0.01);
+
+    // The bump solid: a unit box whose top is a B-spline patch raised 0.3 in the middle, the case
+    // of TKT-415 (the quad grid flattens the top to one quad).
+    Witness_BumpSolidV1Gate(_: V1GateWitness): V1GateWitness
+        => BrepModel.Witness_BSplinePatchSolid(0.3).V1GateWitnessOf("BumpSolid 0.3", 0.01);
+
+    // The bound every gate distance is held to: the face criteria's SurfaceChordal plus the
+    // model's length tolerance (a corner may itself lie that far from the surface), as
+    // Law_ElementDeviationWithinSurfaceChordal states it.
+    V1GateBound(w: V1GateWitness): Number
+        => w.Options.Face.SurfaceChordal + w.Model.Tolerances.Length.Value;
+
+    //==
+    // # Triangles given by their corners
+
+    // The corner positions of the triangle on points cs of face mesh fm.
+    CornerPositions(fm: FaceMesh, cs: Array<VertexIndex>): Array<Point3D>
+        => cs.Map(i => fm.PositionOf(i));
+
+    // The parameter centroid of the triangle on points cs.
+    CornerUvCentroid(fm: FaceMesh, cs: Array<VertexIndex>): UvCoordinate
+    {
+        var mean = cs.Map(i => fm.UvPoints[i].ToPoint2D).AverageOfPoints;
+        return UvCoordinate(mean.X, mean.Y);
+    }
+
+    // The deviation from the surface of the flat triangle on points cs: the largest surface
+    // distance at its centroid and at the midpoint of each of its surface edges
+    // (ElementChordalDeviation's samples, for corners given directly).
+    CornerTriangleDeviation(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, cs: Array<VertexIndex>): Number
+    {
+        var ps = fm.CornerPositions(cs);
+        return cs.Count.Range.Reduce(m.SurfaceDistance(fm.Face, ps.AverageOfPoints), (worst, j) =>
+            m.IsSurfaceEdge(d, fm, cs[j], cs.AtModulo(j + 1))
+                ? worst.Max(m.SurfaceDistance(fm.Face, ps[j].HalfwayPoint(ps.AtModulo(j + 1))))
+                : worst);
+    }
+
+    // How far the surface strays from the flat triangle on points cs: the largest distance from
+    // the surface point at its parameter centroid, and at the parameter midpoint of each surface
+    // edge, to the triangle (ElementCoverageGap's samples, for corners given directly).
+    CornerTriangleGap(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, cs: Array<VertexIndex>): Number
+    {
+        var ps = fm.CornerPositions(cs);
+        var s = m.SurfaceOf(fm.Face);
+        return cs.Count.Range.Reduce(
+            UnsignedDistanceToTriangle(m.Geometry.Eval(s, fm.CornerUvCentroid(cs)), ps[0], ps[1], ps[2]),
+            (worst, j) => m.IsSurfaceEdge(d, fm, cs[j], cs.AtModulo(j + 1))
+                ? worst.Max(UnsignedDistanceToTriangle(
+                    m.Geometry.Eval(s, fm.UvPoints[cs[j]].UvMidpoint(fm.UvPoints[cs.AtModulo(j + 1)])), ps[0], ps[1], ps[2]))
+                : worst);
+    }
+
+    // True when the triangle on points cs winds counter-clockwise about the face normal at its
+    // parameter centroid: its vector area has a positive dot product with it (FacesFaceNormal's
+    // sign test, for corners given directly; zero is a fold).
+    CornerTriangleFacesFaceNormal(m: BrepModel, fm: FaceMesh, cs: Array<VertexIndex>): Boolean
+    {
+        var area = fm.CornerPositions(cs).VectorArea;
+        return area.Dot(m.FaceNormalAt(fm.Face, fm.CornerUvCentroid(cs), area)) > 0.0;
+    }
+
+    // True when the triangle on points cs is within `bound` of the surface both ways.
+    CornerTriangleWithin(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, cs: Array<VertexIndex>, bound: Number): Boolean
+        => m.CornerTriangleDeviation(d, fm, cs) <= bound && m.CornerTriangleGap(d, fm, cs) <= bound;
+
+    //==
+    // # Elements and quads
+
+    // The four triangles of quad q's two diagonal splits: on the diagonal from corner 0, (0 1 2)
+    // and (0 2 3); on the diagonal from corner 1, (1 2 3) and (1 3 0). Each keeps the quad's
+    // winding.
+    QuadSplitTriangles(fm: FaceMesh, q: Integer): Array<Array<VertexIndex>>
+    {
+        var v = fm.Quads[q].Vertices;
+        return [[v[0], v[1], v[2]], [v[0], v[2], v[3]], [v[1], v[2], v[3]], [v[1], v[3], v[0]]];
+    }
+
+    // True when every point of the triangle or quad on points cs is lifted (IsLiftedPoint), so it
+    // may be measured.
+    CornersLifted(fm: FaceMesh, cs: Array<VertexIndex>): Boolean
+        => cs.All(i => fm.IsLiftedPoint(i));
+
+    // The quads of face mesh fm whose both diagonal splits are within `bound` of the surface: the
+    // gate's chordal claim on quads. A quad with a point not lifted is not measured.
+    QuadSplitsWithin(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, q: Integer, bound: Number): Boolean
+        => fm.CornersLifted(fm.Quads[q].Vertices)
+            ? fm.QuadSplitTriangles(q).All(cs => m.CornerTriangleWithin(d, fm, cs, bound))
+            : true;
+
+    // True when both diagonal splits of quad q are oriented: all four triangles face the face
+    // normal.
+    QuadSplitsOriented(m: BrepModel, fm: FaceMesh, q: Integer): Boolean
+        => fm.CornersLifted(fm.Quads[q].Vertices)
+            ? fm.QuadSplitTriangles(q).All(cs => m.CornerTriangleFacesFaceNormal(fm, cs))
+            : true;
+
+    // True when triangle k of face mesh fm is within `bound` of the surface both ways.
+    TriangleWithin(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, k: Integer, bound: Number): Boolean
+        => fm.CornersLifted(fm.Triangles[k].Vertices)
+            ? m.CornerTriangleWithin(d, fm, fm.Triangles[k].Vertices, bound)
+            : true;
+
+    // True when triangle k of face mesh fm faces the face normal.
+    TriangleOriented(m: BrepModel, fm: FaceMesh, k: Integer): Boolean
+        => fm.CornersLifted(fm.Triangles[k].Vertices)
+            ? m.CornerTriangleFacesFaceNormal(fm, fm.Triangles[k].Vertices)
+            : true;
+
+    // The face meshes of witness w's final state.
+    V1GateMeshes(w: V1GateWitness): Array<FaceMesh>
+        => w.State.Outcomes.Map(o => o.Mesh);
+}

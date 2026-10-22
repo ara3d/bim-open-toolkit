@@ -1,14 +1,16 @@
 ---
 id: TKT-418
 title: STEP mesher: split layer 5's face laws into the version 1 gate (watertight, oriented, covering, chordal) and the improvement pass (quality)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: session 5135435e
+session: 5135435e-eb61-4194-b168-7b93c64dd2fe
 fence: [sandbox/step-brep-mesh/05-face-meshing/**, sandbox/step-brep-mesh/10-editing/**, sandbox/step-brep-mesh/tools/**]
 workflow: [W3, W4]
 related: [TKT-356, TKT-349, TKT-352, TKT-416, TKT-417]
 confidence: high
 created: 2026-10-21
+claimed: 2026-10-21
 ---
 
 ## Acceptance criteria
