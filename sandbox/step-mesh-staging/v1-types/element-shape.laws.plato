@@ -1,0 +1,126 @@
+//==
+// # Elements by arity, quad splits, and the grid's chordal decision: laws (v1-types, chunk T1)
+//
+// The cases are FaceMeshingGridChordalLaws's grid cases (05-face-meshing/grid-chordal.laws.plato):
+// the witness models whose faces reach the grid branch, at chordal 0.01 with quads preferred.
+// The torus is left out where a law meshes faces, as that file leaves it out: its refinement at
+// this bound exceeds a law's budget.
+//
+// Sections, in order:
+//  - Shapes
+//  - Splits
+//  - The grid decision
+
+library V1TypesElementsLaws
+{
+    //==
+    // # Shapes
+
+    // The meshes of case w's four-sided faces, the torus's left out.
+    FourSidedMeshes(w: GridCase): Array<FaceMesh>
+        => w.Name == "Torus"
+            ? 0.MapRange(i => EmptyFaceMesh(BrepFaceIndex(i)))
+            : w.FourSidedFaces.Map(f => w.Model.MeshFace(f, w.Discretizations, w.Criteria).Mesh);
+
+    // Whether arrays a and b hold equal indices in order. The count test guards the elements by
+    // a conditional: `&&` would read b past its end when a is longer.
+    SameVertexIndices(a: Array<VertexIndex>, b: Array<VertexIndex>): Boolean
+        => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
+
+    // ShapeOf gives every element of every mesh the corners ElementCorners gives it.
+    Law_V1Types_ShapeAgreesWithCorners(w: GridCase): Boolean
+        => w.FourSidedMeshes.All(fm => fm.ElementCount.Range.All(k =>
+            SameVertexIndices(fm.ShapeOf(ElementIndex(k)).ShapeCorners, fm.ElementCorners(ElementIndex(k)))));
+
+    // ShapeOf is total: one past the last element and -1 are NoElement, not an index error.
+    Law_V1Types_ShapeOutOfRangeIsNoElement(w: GridCase): Boolean
+        => w.FourSidedMeshes.All(fm =>
+            fm.ShapeOf(ElementIndex(fm.ElementCount)).IsElementShape.Not
+                ? fm.ShapeOf(ElementIndex(-1)).IsElementShape.Not
+                : false);
+
+    //==
+    // # Splits
+
+    // SplitsOf names the four triangles the gate's QuadSplitTriangles builds by hand, in its
+    // order, so the gate can read SplitsOf at merge without a verdict changing.
+    Law_V1Types_SplitsMatchGateSplits(w: GridCase): Boolean
+        => w.FourSidedMeshes.All(fm => fm.Quads.Count.Range.All(q =>
+            4.Range.All(i => SameVertexIndices(fm.Quads[q].SplitsOf.SplitTriangles[i].Vertices, fm.QuadSplitTriangles(q)[i]))));
+
+    // The both-splits distance is never below FlatElementDistance's, at every element's
+    // parameter centroid lifted to the surface: a gap bound on it is at least as strict.
+    Law_V1Types_BothSplitsNotNearer(w: GridCase): Boolean
+        => w.FourSidedMeshes.All(fm => fm.ElementCount.Range.All(k =>
+            fm.FlatElementDistanceBothSplits(ElementIndex(k), w.SurfacePointAtCentroid(fm, ElementIndex(k)))
+                >= fm.FlatElementDistance(ElementIndex(k), w.SurfacePointAtCentroid(fm, ElementIndex(k)))));
+
+    // The surface point of face mesh fm's face at element k's parameter centroid.
+    SurfacePointAtCentroid(w: GridCase, fm: FaceMesh, k: ElementIndex): Point3D
+        => w.Model.Geometry.Eval(w.Model.SurfaceOf(fm.Face), fm.ElementUvCentroid(k));
+
+    // A twisted quad, three corners on z = 0 and the fourth raised by 0.2: the midpoint of its
+    // diagonal A C lies on the split on A C, so the rule of the nearer triangle on the diagonal
+    // from corner 0 (FlatDistanceOf, FlatElementDistance) measures 0 there, while the split on
+    // B D, which a renderer may draw, passes 0.05 or more away. A keep rule with a chordal bound
+    // of 0.05 accepts the quad by the first and refuses it by both splits.
+    Law_V1Types_TwistedQuadNeedsBothSplits(_: Integer): Boolean
+    {
+        var ps = [Point3D(0.0, 0.0, 0.0), Point3D(1.0, 0.0, 0.0), Point3D(1.0, 1.0, 0.0), Point3D(0.0, 1.0, 0.2)];
+        var p = Point3D(0.5, 0.5, 0.0);
+        return ps.FlatDistanceOf(p) <= 1e-12 ? ps.QuadDistanceBothSplits(p) > 0.05 : false;
+    }
+
+    //==
+    // # The grid decision
+
+    // The grid the library builds on face f of case w, when its region is four-sided with
+    // matching opposite counts: the decision's input.
+    GridDecisionOn(w: GridCase, f: BrepFaceIndex): Boolean
+    {
+        var m = w.Model;
+        var r = m.RegionOf(f, w.Discretizations, w.Criteria);
+        return match (m.QuadSidesOf(f, r)) {
+            NotFourSided => true;
+            FourSided(corners) => r.OppositeCountsMatch(corners)
+                ? w.DecisionAgreesWithLibrary(f, r, m.QuadGrid(f, r, corners, w.Criteria))
+                : true;
+        };
+    }
+
+    // Whether the both-splits decision on grid g keeps it exactly when the library's
+    // GridUnlessFoldedOrCoarse does.
+    DecisionAgreesWithLibrary(w: GridCase, f: BrepFaceIndex, r: UvRegion, g: UvTriangulation): Boolean
+        => w.Model.GridUnlessFoldedOrCoarseV1Types(f, r, g, w.Criteria).IsGridOutcome
+            == w.Model.GridUnlessFoldedOrCoarse(f, r, g, w.Criteria).IsGridOutcome;
+
+    // On every grid case the both-splits decision keeps the grids the library keeps and refuses
+    // the ones it refuses: the bump tops and the torus refused, the box, cylinders, sphere and
+    // cone kept. A failure names a grid the two rules decide differently.
+    Law_V1Types_DecisionAgreesWithLibrary(w: GridCase): Boolean
+        => w.FourSidedFaces.All(f => w.GridDecisionOn(f));
+
+    // The early-exit decision keeps a grid exactly when every element is kept, which All, visiting
+    // every element, decides.
+    Law_V1Types_EarlyExitAgreesWithAll(w: GridCase): Boolean
+        => w.FourSidedFaces.All(f => w.EarlyExitAgreesOn(f));
+
+    // Law_V1Types_EarlyExitAgreesWithAll on face f of case w.
+    EarlyExitAgreesOn(w: GridCase, f: BrepFaceIndex): Boolean
+    {
+        var m = w.Model;
+        var r = m.RegionOf(f, w.Discretizations, w.Criteria);
+        var bound = w.Criteria.SurfaceChordal + m.Tolerances.Length.Value;
+        return match (m.QuadSidesOf(f, r)) {
+            NotFourSided => true;
+            FourSided(corners) => r.OppositeCountsMatch(corners)
+                ? w.EarlyExitAgreesOnGrid(f, r, m.QuadGrid(f, r, corners, w.Criteria), bound)
+                : true;
+        };
+    }
+
+    // Law_V1Types_EarlyExitAgreesWithAll on grid g.
+    EarlyExitAgreesOnGrid(w: GridCase, f: BrepFaceIndex, r: UvRegion, g: UvTriangulation, bound: Number): Boolean
+        => w.Model.DecideGridChordal(f, r, g, w.Criteria).GridOutcomeOf.IsGridOutcome
+            == g.ElementCount.Range.All(k => w.Model.GridElementKept(f, r, g, ElementIndex(k), bound));
+}
