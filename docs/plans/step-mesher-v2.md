@@ -126,6 +126,7 @@ Owners are the sessions named in the wave 1 table, or `new`. Fence: `S/<folder>`
 | V1G-16 | Each written triangle reaches ThinBound or half its shortest side (at least two tolerances), in `CavityIsThick` and `ChangedAreThick`; c211 face 339 witness | TKT-464 | v1-gate | `L/05-face-meshing`, `L/08-pipeline` | the c211 law and F2's bump-top law pass; the 127 laws of the track's 21 classes pass | 2 h | V1G-15 |
 | V1G-17 | The live insertion passes against the Local reference; self-comparing agreement laws cut | TKT-456 | v1-gate | `L/05-face-meshing`, `L/08-pipeline` (laws only) | the 112 laws of 17 classes pass; no passing law fails | 2 h | V1G-16 |
 | V1G-18 | Self-comparing agreement laws cut in 19 law files | TKT-456 | v1-gate | law files of `L/00` to `L/11` | the 19 classes: 179 laws to 177, only the two deleted passing laws gone | 1 h | V1G-17 |
+| E4a, E4b | The constrained Delaunay seed by insertion, wired for every region with a fallback; the attainable law restated | TKT-468, TKT-462 | v1-edges | `L/05-face-meshing`, `L/08-pipeline` | the seed's 7 laws and the restated law pass; no other verdict worse | 2 h + 1 h | V1G-17 |
 | E3 | Implicit edge use keys that cannot collide at any 32-bit poly point count | TKT-400 | v1-edges | `L/02-topology`, `L/08-pipeline` | the large-polygon law (33,000 points) and the grid-root law pass | 1 h | |
 
 Not in the table, on purpose: TKT-337 waits on TKT-345 (Plato parse errors name a line, a Plato chunk of about 1.5 hours for the plato-law-runs session when it is free); TKT-300 (typed STEP entities) is a question, not planned work.
@@ -216,6 +217,7 @@ Wave 1 in total: 8 merges, 0 types added, 402 to 556 passing laws, one sweep of 
 | V1G-16 (TKT-464, thickness relative to the triangle) | 2 h | not recorded, with an addendum; 0.4 h merge (0.2 h of it a full compiled sweep) | 1450 compiled (60 s budget): no verdict worse but the load case | 0 | 0 | A chunk whose addendum was still uncommitted waited rather than merging twice |
 | V1G-17 (TKT-456, live agreement laws) | 2 h | not recorded; 0.3 h merge (0.05 h of it 112 compiled laws, the layer compile) | 112 compiled (60 s budget): 112 pass | 0 | 0 | The previous merge's full sweep served as the before state of a laws-only chunk; no separate run was needed |
 | V1G-18 (TKT-456, law cuts) | 1 h | not recorded; 0.3 h merge (the 19 classes before and after, the layer compile) | 179 to 177 compiled (60 s budget): no verdict changed | 0 | 0 | A patch read from the committed blob applied cleanly where a checkout's CRLF copy would not |
+| E4a + E4b (TKT-468, constrained Delaunay seed) | 3 h | not recorded; 1.2 h merge (0.4 h of it a full compiled sweep with reruns at 300 s, a bisection over two commits and a witness probe) | 1456 compiled (60 s budget): the restated law passes; one older witness-law mismatch exposed by E4a's witnesses | 0 | 0 | A merge that adds a witness changes every law that samples witnesses: run the full sweep, not only the chunk's laws |
 
 ### Rule changes
 
