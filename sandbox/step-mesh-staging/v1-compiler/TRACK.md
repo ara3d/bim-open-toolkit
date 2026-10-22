@@ -52,6 +52,14 @@ to merge into the library.
 
 ## Findings
 
+- Corpus after the fix (Plato c8c83c8b, library 83a5da13, 88 files): 0 edges throw, 67 full and
+  20 partial files (14 and 73 on 2026-10-21), 191,315 of 191,450 faces (99.9%, was 88.3%).
+  Remaining: 30 ArgumentOutOfRange faces (TKT-411); 24 one-edge plane faces in
+  SHO/M2-JODY-W377-00C_PCIE-UART and -01C_SDIO-UART whose B-spline edge (for example edges
+  4263 to 4265) now returns 0 segments without an exception, so the face is undiscretized (no
+  ticket yet: a library discretization question, not the compiler); NINA-B222-W1x2 over 120 s
+  (TKT-414).
+
 - A `match` subject's sum type depends on file order at resolution time; CHK304 from
   `SumTypeChecker` was never shown by `Plato.CLI`, so a non-sum subject degraded silently to a
   throwing stub. Fixed for calls; a `match` on a local whose initialiser calls a later file's
@@ -75,7 +83,8 @@ to merge into the library.
 | C2 diagnosis, fix, regression test (with the fix and at HEAD) | 30 min | 3 test runs |
 | C2 mesher laws on both backends | 3 min | 3 law runs |
 | Full PlatoTests and Interpreter tests | 5 min | 339 tests |
-| Corpus check (regen from commit, harness, two files) | see below | |
+| Corpus check: scratch clone, regen from commit c8c83c8b, harness build (one failed: DepsRoot) | 15 min | 2 regens, 2 builds |
+| Two example files, then all 88 files | 2 + 21 min | 1 corpus run |
 
 ## Lessons
 
