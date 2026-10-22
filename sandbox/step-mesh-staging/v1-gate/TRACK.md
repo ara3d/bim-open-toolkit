@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f | ready: V1G-3, V1G-4, V1G-5, V1G-6
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f | ready: V1G-3, V1G-4, V1G-5, V1G-6, V1G-7
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -14,6 +14,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-4 | TKT-399 | curved faces refined against the chordal bound alone (supervisor's decision, 2026-10-22) | 1 h |
 | V1G-5 | TKT-418 | triage of the non-passing laws outside layer 5: gate or quality, ticket, fence | 2 h |
 | V1G-6 | TKT-412 | pinched plane faces: weakly simple loops split into outer and holes; zero-width faces | 2 h |
+| V1G-7 | TKT-399 | ValidateFaceMesh under 2 s on a built curved mesh: the two quadratic identification checks in n log n | 2 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -43,6 +44,21 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
   - The keyhole check stops MAYA-W260 face 1599 from being accepted: the rule alone made it simple (a 5-gon pinched to a disc wound the same way, outside it), the keyhole check refuses it with the not-simple diagnostic.
   - Corpus effect, reproduced in Python over the spike's dumped regions (the rule and the keyhole check; the consecutive-segment fold test not reproduced): LENA-R8 1349 becomes simple and keyholed, so it meshes; ANNA-B4 491 and ODIN 2625 have no width and get FACE-ZERO-WIDTH, unmeshed with no requests; the other 42 faces, all 32 MAYA faces among them, keep their not-simple outcome. ODIN 2613 (the whisker), 2615 and 2616 (the one-tolerance strips) are not zero-width by area and stay not simple.
   - Check, compiled, budget 120 s, on a copy of the library at 884466ac with the wiring edits below and this folder's pinch files: `V1PinchLaws` 8 pass; with `FaceMeshingLaws`, `FaceMeshingChartsLaws`, `TriangulationLaws`, `TriangulationCdtIndexedLaws`, `TriangulatedWitnessLaws`, `BoundaryIndexLaws`, `InsideOnGridLaws`, `UnwrapIndexedLaws`, `UvRegionCollisionLaws`, `FaceMeshingLiftIndexedLaws`, `FaceMeshingProofsLaws`, `ValidationProofsRegionsLaws`: 125 laws, 124 pass, 1 fail (`Law_RefinedInteriorMeetsMinAngle`, deleted by V1G-1). Not run: the whole sweep (the supervisor's merge sweep covers it) and the corpus (needs the regeneration).
+- V1G-7 (TKT-399, second criterion), this commit, about 1.2 h against 2 h. No type added. Library `V1Fibres` (v1-fibres.library.plato): `Check_LocalVertexFibresAreIdentificationsIndexed` (two sorts: points by local vertex, keyed points by source key, neighbours compared; n log n against the reference's n^2 pairs), `Check_LocalVertexSurjectiveIndexed` (one marking pass against a scan of the points per local vertex), `ExactCheckOf` (the reference's fold reduced to its one Boolean: every sample of these exact laws is about the face, so WorstOf gives the same Check from one CheckExact, or the vacuous check with no sample), and the reference bodies under `...Reference` names. Laws (`V1FibresLaws`), 12: the two agreement laws over every PoleWitness face mesh and two mutations of each (two unrelated points merged; one point moved to a local vertex of its own), `Law_V1Gate_MutationsFail` (the mutations reach failing checks), `Law_V1Gate_IndexedChecksHold`, and eight timing laws, `Law_V1Gate_ValidateFaceMeshOn<Witness>`, each running ValidateFaceMesh at Geometric on one witness's face meshes.
+  - Compiled, budget 600 s (the runner stops a law at 120 s whatever the budget), all twelve laws together on a saturated machine, so a law's time includes waiting for cores. Four copies of HEAD at dc2ccca4: with and without the wiring below, each with and without V1G-4's staged refinement in place of the merged `face-meshing-v1-plane.library.plato`.
+
+| ValidateFaceMesh on | HEAD, reference checks | HEAD, indexed checks | with V1G-4, reference checks | with V1G-4, indexed checks |
+|---|---|---|---|---|
+| Sphere (0.05) | over 120 s | 3.00 s | 0.10 s | 0.17 s |
+| Torus (0.05) | over 120 s | 35.5 s | 0.34 s | 0.41 s |
+| Cone (0.01) | over 120 s | 8.41 s | 0.36 s | 0.41 s |
+| TorusAtVertex (0.05) | over 120 s | 35.1 s | 0.22 s | 0.31 s |
+| SphereByPoleLoops (0.05) | over 120 s | 2.49 s | 0.12 s | 0.09 s |
+| RedundantPoleLoops (0.05) | over 120 s | 3.41 s | 0.10 s | 0.09 s |
+| SphereFine (0.01) | over 120 s | 8.60 s | 0.61 s | 0.34 s |
+| SphereByPoleLoopsFine (0.01) | over 120 s | 8.82 s | 0.55 s | 0.27 s |
+
+  - Reading: with V1G-4 merged, ValidateFaceMesh is under 2 s on all eight witnesses with either form, because chordal-only refinement makes the curved meshes small; the criterion is met by V1G-4. The indexed checks are what keeps it linear-ish on a large face: on HEAD's meshes (angle pass, thousands of points) the reference checks alone pass the 120 s cap, the indexed form finishes in 2.5 to 35 s, and what remains there is the geometry checks (a surface projection per element sample), linear in the elements. The two forms agree on every mesh and mutation (both agreement laws pass on both V1G-4 copies; on HEAD's meshes the fibre agreement law times out on its reference side, the surjectivity one passes).
 
 ## Gate and quality: every law of layer 5
 
@@ -374,6 +390,11 @@ V1G-6 (TKT-412), four in-place edits and three moves:
 - Move `v1-pinch.library.plato` to `05-face-meshing/face-meshing-v1-pinch.library.plato`, `v1-pinch.witnesses.plato` to `05-face-meshing/face-meshing-v1-pinch-witnesses.library.plato`, and `v1-pinch.laws.plato` to `05-face-meshing/face-meshing-v1-pinch.laws.plato`; they read only layer 5.
 - The four edits were checked exactly as written above, on a copy of the library at 884466ac.
 
+V1G-7 (TKT-399, second criterion):
+- Move `v1-fibres.library.plato` to `07-validation/validation-checks-fibres.library.plato` (library `V1Fibres`) and `v1-fibres.laws.plato` to `07-validation/validation-checks-fibres.laws.plato` (library `V1FibresLaws`; it reads PoleWitness).
+- `Check_LocalVertexFibresAreIdentifications` (07-validation/validation-checks-face-meshing.library.plato) => `fm.Check_LocalVertexFibresAreIdentificationsIndexed`; `Check_LocalVertexSurjective` => `fm.Check_LocalVertexSurjectiveIndexed`. Their old bodies are the staged `...Reference` functions already, so nothing else moves; update the fibre check's comment ("quadratic as written; an implementation groups...") to name the indexed form.
+- The eight `Law_V1Gate_ValidateFaceMeshOn<Witness>` laws are timing probes; keep them in the merge sweep if the 2 s budget should guard TKT-399's criterion, or drop them after the first sweep.
+
 V1G-5 (triage):
 - Delete the five `PolesLaws` face-check laws (`Law_SphereFaceChecksHold`, `Law_SphereByPoleLoopsFaceChecksHold`, `Law_TorusFaceChecksHold`, `Law_ConeFaceChecksHold`, `Law_TorusAtVertexFaceChecksHold`, 07-validation/poles.laws.plato) and `FaceCheckFailures` if nothing else calls it, when `V1PoleChecksLaws` merges: the per-check laws state the same checks, gate and quality apart.
 - No other move: none of the other 116 is a quality law.
@@ -423,6 +444,9 @@ V1G-5 (triage):
 | V1G-6: compiled probe of the ear clipper on pinches | 5 min | 1 build, 1 run |
 | V1G-6: wired copy and three reruns, compiled | 1 to 1.3 min each | 3 |
 | V1G-6: Python reproduction over the 45 dumped regions | 10 min | 2 |
+| V1G-7: reading the checks, indexed forms, laws | 30 min | 0 |
+| V1G-7: HEAD with and without the wiring, compiled, budget 600 s | 8.5 min, background | 2 (cold compile of new folders) |
+| V1G-7: the same with V1G-4's refinement | 3 min, background | 2 |
 
 ## Lessons
 - The compile cache follows the folder path: a fresh scratch folder cost 6.8 minutes, the same folder rerun about 1 minute. Keep one scratch folder per check.

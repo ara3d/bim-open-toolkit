@@ -1,0 +1,113 @@
+//==
+// # Version 1: the face mesh's identification checks in n log n (TKT-399, second criterion)
+//
+// Two checks of ValidateFaceMesh compare every point with every point or every local vertex with
+// every point: Check_LocalVertexFibresAreIdentifications (n^2 pairs, 4 million on a 2,000-point
+// face) and Check_LocalVertexSurjective (one scan of the points per local vertex). Both are exact
+// laws whose every sample has the same provenance (the face), so the folded Check depends only on
+// whether some sample fails: WorstOf of one CheckExact with that answer is the reference's Check,
+// field for field, and the vacuous check when there is no sample. The answers come from two sorts
+// and one marking pass instead.
+//
+// The fibre law at a pair of distinct points i and j, both with a local vertex and a source, is:
+// same local vertex exactly when the sources are identified, which (Law_SourceKeyMatchesIdentification)
+// is: both keyed and the same key. It holds at every pair exactly when (a) within every run of
+// points sorted by local vertex, neighbours are both keyed with the same key, and (b) within every
+// run of keyed points sorted by key, neighbours have the same local vertex; both relations are
+// equivalences, so neighbours in sorted order suffice.
+//
+// Sections, in order:
+//  - Fibres
+//  - Surjectivity
+//  - The checks
+
+library V1Fibres
+{
+    //==
+    // # Fibres
+
+    // The points of fm the fibre law speaks about: those with a local vertex and a source.
+    FibrePointCount(fm: FaceMesh): Integer
+        => fm.UvPoints.Count.Min(fm.LocalVertex.Count).Min(fm.Sources.Count);
+
+    // True when consecutive points a and b of a run sorted by local vertex obey the law: a
+    // different local vertex, or both keyed with the same key.
+    LocalVertexNeighboursAgree(fm: FaceMesh, a: Integer, b: Integer): Boolean
+        => fm.LocalVertex[a] != fm.LocalVertex[b]
+            ? true
+            : (fm.Sources[a].SourceKeyOf.IsKeyed && fm.Sources[b].SourceKeyOf.IsKeyed
+                && fm.Sources[a].SourceKeyOf.SameKey(fm.Sources[b].SourceKeyOf));
+
+    // True when consecutive keyed points a and b of a run sorted by key obey the law: a
+    // different key, or the same local vertex.
+    KeyNeighboursAgree(fm: FaceMesh, a: Integer, b: Integer): Boolean
+        => fm.Sources[a].SourceKeyOf.SameKey(fm.Sources[b].SourceKeyOf)
+            ? fm.LocalVertex[a] == fm.LocalVertex[b]
+            : true;
+
+    // True when Law_LocalVertexFibresAreIdentifications holds at every pair of points of fm.
+    FibresAreIdentifications(fm: FaceMesh): Boolean
+    {
+        var n = fm.FibrePointCount;
+        var byVertex = n.Range.Sort((a, b) => fm.LocalVertex[a].Value <= fm.LocalVertex[b].Value);
+        var keyed = n.Range.FlatMap(i => fm.Sources[i].SourceKeyOf.IsKeyed ? [i] : [i].Take(0));
+        var byKey = keyed.Sort((a, b) => fm.Sources[a].SourceKeyOf.KeyAtMost(fm.Sources[b].SourceKeyOf));
+        return (n - 1).Max(0).Range.All(k => fm.LocalVertexNeighboursAgree(byVertex[k], byVertex[k + 1]))
+            && (byKey.Count - 1).Max(0).Range.All(k => fm.KeyNeighboursAgree(byKey[k], byKey[k + 1]));
+    }
+
+    //==
+    // # Surjectivity
+
+    // True when every local vertex of fm is the local vertex of some point: one pass marks the
+    // vertices the points hit.
+    EveryLocalVertexIsHit(fm: FaceMesh): Boolean
+    {
+        var hit = new Buffer<Boolean>(fm.Positions.Count);
+        var v = 0;
+        while (v < fm.Positions.Count)
+        {
+            hit = hit.Set(v, false);
+            v = v + 1;
+        }
+        var i = 0;
+        while (i < fm.LocalVertex.Count)
+        {
+            var w = fm.LocalVertex[i].Value;
+            if (w >= 0 && w < fm.Positions.Count)
+            {
+                hit = hit.Set(w, true);
+            }
+            i = i + 1;
+        }
+        return fm.Positions.Count.Range.All(x => hit.At(x));
+    }
+
+    //==
+    // # The checks
+
+    // The Check of an exact law with n samples, all about the face of fm, that all hold exactly
+    // when holds: the reference's fold (WorstOf over n CheckExact values) without the samples.
+    ExactCheckOf(fm: FaceMesh, law: String, n: Integer, holds: Boolean): Check
+        => WorstOf(law, n == 0 ? [NoSampleCheck(law)].Take(0) : [CheckExact(law, holds, Provenance.KernelFace(fm.Face))]);
+
+    // Check_LocalVertexFibresAreIdentifications from the two sorts: the same Check.
+    Check_LocalVertexFibresAreIdentificationsIndexed(fm: FaceMesh): Check
+        => fm.ExactCheckOf("Law_LocalVertexFibresAreIdentifications", fm.UvPoints.Count * fm.UvPoints.Count, fm.FibresAreIdentifications);
+
+    // Check_LocalVertexSurjective from the marking pass: the same Check.
+    Check_LocalVertexSurjectiveIndexed(fm: FaceMesh): Check
+        => fm.ExactCheckOf("Law_LocalVertexSurjective", fm.Positions.Count, fm.EveryLocalVertexIsHit);
+
+    // The reference fibre check, Check_LocalVertexFibresAreIdentifications's body before this
+    // chunk: the law at every pair of points (n^2).
+    Check_LocalVertexFibresAreIdentificationsReference(fm: FaceMesh): Check
+        => CheckGrid("Law_LocalVertexFibresAreIdentifications", fm.UvPoints.Count, fm.UvPoints.Count,
+            (i, j) => Law_LocalVertexFibresAreIdentifications(fm, VertexIndex(i), VertexIndex(j)),
+            (i, j) => Provenance.KernelFace(fm.Face));
+
+    // The reference surjectivity check, Check_LocalVertexSurjective's body before this chunk: one
+    // scan of the points per local vertex.
+    Check_LocalVertexSurjectiveReference(fm: FaceMesh): Check
+        => CheckAll("Law_LocalVertexSurjective", fm.Positions.Count, v => LocalVertexSurjective(fm, VertexIndex(v)), v => Provenance.KernelFace(fm.Face));
+}
