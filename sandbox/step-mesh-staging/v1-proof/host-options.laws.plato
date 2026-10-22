@@ -1,0 +1,79 @@
+//==
+// # Laws of the host's options and step (TKT-436, TKT-454, chunk P6)
+
+library V1ProofHostOptionsLaws
+{
+    // A chordal bound from a fixture: 1, 0.1, 0.01, 0.001.
+    HostChordal(k: Integer): Number
+        => (0.1).Pow(k.FixtureIndex(4).ToNumber);
+
+    // a and b mesh and validate alike: the same face criteria, level, round limit and quality
+    // thresholds. The decode policy is left out (DecodePolicy has no equality); every function
+    // here copies it from layer 8's defaults unchanged.
+    SameOptions(a: MeshingOptions, b: MeshingOptions): Boolean
+        => a.Face == b.Face && a.Level == b.Level && a.MaxRefinementRounds == b.MaxRefinementRounds && a.Quality == b.Quality;
+
+    // The host's options are layer 8's defaults with quads preferred and nothing else changed.
+    Law_V1Proof_HostOptionsAreDefaultsWithQuads(k: Integer): Boolean
+    {
+        var c = k.HostChordal;
+        var h = HostMeshingOptions(c);
+        var d = DefaultMeshingOptions(c);
+        return h.Face.PreferQuads
+            && h.Face.Discretization == d.Face.Discretization && h.Face.SurfaceChordal == d.Face.SurfaceChordal
+            && h.Face.SurfaceAngular == d.Face.SurfaceAngular && h.Level == d.Level
+            && h.MaxRefinementRounds == d.MaxRefinementRounds && h.Quality == d.Quality;
+    }
+
+    // Each replacement gives what the copy it replaces gives, so the merge changes no law's cases.
+    Law_V1Proof_ReplacementsAgree(k: Integer): Boolean
+    {
+        var c = k.HostChordal;
+        var any = HostMeshingOptions(1.0).Face;
+        return SameOptions(PolesOptionsAtHost(c, true), PolesOptionsAt(c, true))
+            && SameOptions(PolesOptionsAtHost(c, false), PolesOptionsAt(c, false))
+            && GridCaseCriteriaHost(any) == GridCaseCriteria(any)
+            && CatalogQuadCriteriaHost(c) == CatalogQuadCriteria(c)
+            && LiftCaseCriteriaHost(true) == LiftCaseCriteria(true)
+            && LiftCaseCriteriaHost(false) == LiftCaseCriteria(false)
+            && SameOptions(V1GateOptions(c), PolesOptionsAtHost(c, true));
+    }
+
+    // The With functions change their one field.
+    Law_V1Proof_WithChangesOneField(k: Integer): Boolean
+    {
+        var o = HostMeshingOptions(k.HostChordal);
+        var l = o.WithLevel(ConformanceLevel.Structural);
+        var r = o.WithRoundLimit(o.MaxRefinementRounds + 1);
+        var q = o.WithQuads(false);
+        return l.Level == ConformanceLevel.Structural && l.Face == o.Face && l.MaxRefinementRounds == o.MaxRefinementRounds
+            && r.MaxRefinementRounds == o.MaxRefinementRounds + 1 && r.Face == o.Face && r.Level == o.Level
+            && !q.Face.PreferQuads && q.Face.Discretization == o.Face.Discretization && q.Level == o.Level;
+    }
+
+    // The host's step on the cylinder: only blocking requests stay pending, every round, and the
+    // loop ends within the round limit.
+    Law_V1Proof_StepAnsweringBlockingLeavesOnlyBlocking(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_Cylinder;
+        var o = HostMeshingOptions(0.05);
+        var chosen = m.AllFaces;
+        var first = m.InitialState(o, chosen);
+        var s0 = BlockingStateOf(first.Discretizations, first.Outcomes, chosen);
+        var f = m.FinalStateAnsweringBlocking(o, chosen, s0);
+        return s0.Pending.All(q => q.Reason.IsBlocking)
+            && f.Pending.All(q => q.Reason.IsBlocking)
+            && f.Round <= o.MaxRefinementRounds;
+    }
+
+    // TKT-436 criterion 2: the witness laws mesh as the host does, the witness options differing
+    // from the host's only in the chordal bound and the validation level. Fails until the merge
+    // gives WitnessOptions the body HostMeshingOptions(0.01).WithLevel(ConformanceLevel.Oracle)
+    // (today the witness options mesh with triangles).
+    Law_V1Proof_WitnessOptionsMeshLikeTheHost(_: Integer): Boolean
+    {
+        var w = MeshingOptions.WitnessOptions;
+        var h = HostMeshingOptions(w.Face.SurfaceChordal);
+        return SameOptions(w, h.WithLevel(w.Level));
+    }
+}
