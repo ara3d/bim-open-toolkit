@@ -127,11 +127,11 @@ library V1Gate
         => cs.All(i => fm.IsLiftedPoint(i));
 
     // The quads of face mesh fm whose both diagonal splits are within `bound` of the surface: the
-    // gate's chordal claim on quads. A quad with a point not lifted is not measured.
+    // gate's chordal claim on quads, each split measured as a whole (QuadSplitsWithinV1,
+    // pipeline-v1-gate-splits.library.plato; TKT-455). A quad with a point not lifted is not
+    // measured.
     QuadSplitsWithin(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, q: Integer, bound: Number): Boolean
-        => fm.CornersLifted(fm.Quads[q].Vertices)
-            ? fm.QuadSplitTriangles(q).All(cs => m.CornerTriangleWithin(d, fm, cs, bound))
-            : true;
+        => m.QuadSplitsWithinV1(d, fm, q, bound);
 
     // True when both diagonal splits of quad q are oriented: all four triangles face the face
     // normal.
