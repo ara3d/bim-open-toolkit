@@ -18,4 +18,16 @@ library V1ReliabilityCorpusWitnessLaws
     Measure_V1Reliability_AnnMb2Face349IsMeshed(_: Integer): Integer
         => BrepModel.Witness_AnnMb2Face349.MeshModel(HostMeshingOptions(1.0)).Report.Diagnostics
             .Reduce(0, (n, d) => d.Code == "FACE-ZERO-WIDTH" ? n + 1 : n);
+
+    // SHO/NINA-B222-W1x2.STEP face 678 (TKT-465 cause B, pipeline-corpus-witness-nina-b222-678.library.plato), a
+    // cylinder bounded by four surface-curve edges mastered by 2D lines along u whose v velocity is a rounding
+    // residue. Before J5 (3cc7edb4) the closest-parameter search on those near-periodic lines landed whole turns away,
+    // so the edge samples' parameters sat up to 0.55 mm from their points and 1 of the face's 8 elements flipped; with
+    // J5 every corner lies on the cylinder. Witness face 3 is the corpus face; its four neighbours are the ring that
+    // discretizes its edges as in the file. CornersOnSurface is pipeline-closed-wrap.laws.plato's.
+    Law_V1Reliability_NinaB222Face678CornersOnSurface(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_NinaB222W1x2Face678;
+        return m.CornersOnSurface(m.FinalState(HostMeshingOptions(1.0), m.AllFaces), 3, 1e-4);
+    }
 }

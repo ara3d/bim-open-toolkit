@@ -6,8 +6,9 @@
 // 0.054 mm from the surface at v = 0.5, and along the face's circle edge the gap reaches 0.50 mm, so corners sit off
 // the surface at their parameters and 8 of the face's 19 elements read as flipped.
 //
-// The fix sits where the precondition lives: the index-level entry points of layer 1 evaluate a closed direction's
-// out-of-range coordinate at its copy in the range (IntoClosedRange). A coordinate in the range, and every periodic
+// The fix sits where the precondition lives: the index-level entry points of layer 1 (Eval, PartialU, PartialV,
+// NormalOr, AreaElement in geometry-surfaces.library.plato, LimitNormal in limit-normal.library.plato) evaluate at
+// EvaluatedAt, which moves a closed direction's out-of-range coordinate to its copy in the range (IntoClosedRange). A coordinate in the range, and every periodic
 // or aperiodic direction, is passed as given, so every evaluation that was right keeps its bits: an analytic
 // surface's formula is periodic already, and a closed direction's in-range seam value keeps its one-sided partials.
 library V1ReliabilityClosedWrap
@@ -43,31 +44,4 @@ library V1ReliabilityClosedWrap
     // natural domain with layer 3's closure marks).
     EvaluatedAt(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): UvCoordinate
         => g.DomainOnce(s).IntoClosedRange(uv);
-
-    // Bodies for the index-level entry points of layer 1 (merge instructions in TRACK.md): each evaluates the record
-    // at EvaluatedAt.
-    EvalWrapped(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Point3D
-        => g.SurfaceAt(s).Eval(g, g.EvaluatedAt(s, uv));
-
-    PartialUWrapped(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Vector3D
-        => g.SurfaceAt(s).PartialU(g, g.EvaluatedAt(s, uv));
-
-    PartialVWrapped(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Vector3D
-        => g.SurfaceAt(s).PartialV(g, g.EvaluatedAt(s, uv));
-
-    AreaElementWrapped(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Number
-        => g.SurfaceAt(s).AreaElement(g, g.EvaluatedAt(s, uv));
-
-    NormalOrWrapped(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, fallback: Direction3D): Direction3D
-        => g.SurfaceAt(s).NormalOr(g, g.EvaluatedAt(s, uv), fallback);
-
-    // LimitNormal's body (limit-normal.library.plato) at EvaluatedAt: once LimitNormal's own body reads the wrapped
-    // AreaElement and NormalOr, this is LimitNormal.
-    LimitNormalWrapped(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Direction3D
-    {
-        var at = g.EvaluatedAt(s, uv);
-        return g.SurfaceAt(s).AreaElement(g, at) > 0.0
-            ? g.SurfaceAt(s).NormalOr(g, at, g.SurfaceAt(s).CollapsedNormal(g, at))
-            : g.SurfaceAt(s).CollapsedNormal(g, at);
-    }
 }

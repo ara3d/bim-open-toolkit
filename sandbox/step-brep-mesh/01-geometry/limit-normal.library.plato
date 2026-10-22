@@ -17,10 +17,15 @@ library PolesLimitNormal
 
     // Body of LimitNormal(g, s, uv), from its contract and deferred note: NormalOr where the
     // area element is positive; on a collapsed line, the surface's limit there (CollapsedNormal).
+    // Evaluated where Eval evaluates uv: a closed direction's out-of-range coordinate at its copy
+    // in the range (EvaluatedAt, TKT-465).
     LimitNormal(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Direction3D
-        => g.AreaElement(s, uv) > 0.0
-            ? g.NormalOr(s, uv, g.SurfaceAt(s).CollapsedNormal(g, uv))
-            : g.SurfaceAt(s).CollapsedNormal(g, uv);
+    {
+        var at = g.EvaluatedAt(s, uv);
+        return g.SurfaceAt(s).AreaElement(g, at) > 0.0
+            ? g.SurfaceAt(s).NormalOr(g, at, g.SurfaceAt(s).CollapsedNormal(g, at))
+            : g.SurfaceAt(s).CollapsedNormal(g, at);
+    }
 
     //==
     // # Collapsed points

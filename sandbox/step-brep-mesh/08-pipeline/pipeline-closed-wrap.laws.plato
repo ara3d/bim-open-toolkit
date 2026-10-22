@@ -1,6 +1,6 @@
-// Laws for cause A of TKT-465 (closed-wrap.library.plato). They read the wrapped entry points, which become layer
-// 1's own index-level functions at merge, and compare against the record-level functions, which do not change, so
-// they keep their meaning after the merge.
+// Laws for cause A of TKT-465 (01-geometry/geometry-closed-wrap.library.plato). They read layer 1's index-level
+// entry points, which evaluate at EvaluatedAt, and compare against the record-level functions, which evaluate as
+// given.
 library V1ReliabilityClosedWrapLaws
 {
     // Nine parameters inside surface s's domain, at a quarter, a half and three quarters of each bounded direction's
@@ -27,10 +27,10 @@ library V1ReliabilityClosedWrapLaws
     SameAfterShift(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate, n: Number, tol: Number): Boolean
     {
         var moved = g.DomainOnce(s).ShiftedByPeriods(uv, n);
-        return (g.EvalWrapped(s, moved) - g.EvalWrapped(s, uv)).Length <= tol
-            && (g.PartialUWrapped(s, moved) - g.PartialUWrapped(s, uv)).Length <= tol * (1.0 + g.PartialUWrapped(s, uv).Length)
-            && (g.PartialVWrapped(s, moved) - g.PartialVWrapped(s, uv)).Length <= tol * (1.0 + g.PartialVWrapped(s, uv).Length)
-            && (g.LimitNormalWrapped(s, moved).Vector - g.LimitNormalWrapped(s, uv).Vector).Length <= tol;
+        return (g.Eval(s, moved) - g.Eval(s, uv)).Length <= tol
+            && (g.PartialU(s, moved) - g.PartialU(s, uv)).Length <= tol * (1.0 + g.PartialU(s, uv).Length)
+            && (g.PartialV(s, moved) - g.PartialV(s, uv)).Length <= tol * (1.0 + g.PartialV(s, uv).Length)
+            && (g.LimitNormal(s, moved).Vector - g.LimitNormal(s, uv).Vector).Length <= tol;
     }
 
     // Surface s, when it has a closed direction, evaluates periodically at every sample, one period either way.
@@ -39,34 +39,34 @@ library V1ReliabilityClosedWrapLaws
             || g.ClosedWrapSamples(s).All(uv => g.SameAfterShift(s, uv, -1.0, tol) && g.SameAfterShift(s, uv, 1.0, tol));
 
     // The JODY witness's surfaces, among them the closed B-splines of faces 322, 444 and 584, evaluate periodically
-    // along their closed directions. On the library's unwrapped Eval this fails: 0.054 mm at v = -0.5 on face 322.
+    // along their closed directions. On Eval before TKT-465 this failed: 0.054 mm at v = -0.5 on face 322.
     Law_V1Reliability_ClosedDirectionIsPeriodic(_: Integer): Boolean
     {
         var g = BrepModel.Witness_JodyW5W6Faces322And444And584.Geometry;
         return g.Surfaces.Count.Range.All(k => g.PeriodicAt(SurfaceIndex(k), 1e-6));
     }
 
-    // At uv in the range, the wrapped entry points of surface s give exactly what its record gives.
+    // At uv in the range, the index-level entry points of surface s give exactly what its record gives.
     UnchangedAt(g: GeometrySet, s: SurfaceIndex, uv: UvCoordinate): Boolean
-        => g.EvalWrapped(s, uv) == g.SurfaceAt(s).Eval(g, uv)
-            && g.PartialUWrapped(s, uv) == g.SurfaceAt(s).PartialU(g, uv)
-            && g.PartialVWrapped(s, uv) == g.SurfaceAt(s).PartialV(g, uv);
+        => g.Eval(s, uv) == g.SurfaceAt(s).Eval(g, uv)
+            && g.PartialU(s, uv) == g.SurfaceAt(s).PartialU(g, uv)
+            && g.PartialV(s, uv) == g.SurfaceAt(s).PartialV(g, uv);
 
     InRangeUnchanged(g: GeometrySet): Boolean
         => g.Surfaces.Count.Range.All(k => g.ClosedWrapSamples(SurfaceIndex(k)).All(uv => g.UnchangedAt(SurfaceIndex(k), uv)));
 
-    // No evaluation that was right changes: in the range the wrapped entry points equal the record bit for bit, on
+    // No evaluation that was right changes: in the range the index-level entry points equal the record bit for bit, on
     // every positive witness (analytic surfaces, the B-spline patch solid) and on the JODY witness.
     Law_V1Reliability_InRangeEvaluationUnchanged(k: Integer): Boolean
         => BrepModel.WitnessAt(k).Geometry.InRangeUnchanged
             && BrepModel.Witness_JodyW5W6Faces322And444And584.Geometry.InRangeUnchanged;
 
     // Every corner of face f of the meshed state lies within bound of its surface at its parameters, read through
-    // the wrapped Eval.
+    // Eval.
     CornersOnSurface(m: BrepModel, state: PipelineState, f: Integer, bound: Number): Boolean
         => state.Outcomes[BrepFaceIndex(f)].Mesh.UvPoints.Count.Range.All(i =>
             (state.Outcomes[BrepFaceIndex(f)].Mesh.Positions[state.Outcomes[BrepFaceIndex(f)].Mesh.LocalVertex[i].Value]
-                - m.Geometry.EvalWrapped(m.SurfaceOf(BrepFaceIndex(f)), state.Outcomes[BrepFaceIndex(f)].Mesh.UvPoints[i])).Length <= bound);
+                - m.Geometry.Eval(m.SurfaceOf(BrepFaceIndex(f)), state.Outcomes[BrepFaceIndex(f)].Mesh.UvPoints[i])).Length <= bound);
 
     // The corners of the JODY witness's faces 2, 4 and 5 (corpus faces 322, 444, 584), meshed the host's way, lie
     // within 1e-4 mm of their surface at their parameters. Before the fix the corners on the circle edge sat 0.45 to
