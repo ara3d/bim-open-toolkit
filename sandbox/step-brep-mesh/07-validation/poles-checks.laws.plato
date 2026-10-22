@@ -4,8 +4,8 @@
 // Layer 07's ValidateFaceMesh at Geometric runs sixteen checks on a face mesh; the six
 // *FaceChecksHold laws state them all at once, so a failure never named its check. Here each
 // check is its own law over every face of every PoleWitness (07-validation/poles-witness), so
-// the verdict file says which check fails on which witness. Each law's comment gives its kind
-// under the version 1 contract (gate or quality, as in TRACK.md).
+// the verdict file says which check fails on which witness. These are the twelve gate checks;
+// the four quality checks' laws are in FaceQualityLaws (10-editing/face-quality.laws.plato).
 //
 // Sections, in order:
 //  - Checks
@@ -62,20 +62,4 @@ library V1PoleChecksLaws
     // SurfaceWithinSurfaceChordalOfElement holds on every face of the witness (gate: chordal).
     Law_V1Gate_PoleSurfaceWithinSurfaceChordalOfElement(w: PoleWitness): Boolean
         => w.FaceMeshes.All(fm => w.Model.Check_SurfaceWithinSurfaceChordalOfElement(w.Discretizations, fm, w.Options.Face).Holds);
-
-    // QuadConvex holds on every face of the witness (quality).
-    Law_V1Gate_PoleQuadConvex(w: PoleWitness): Boolean
-        => w.FaceMeshes.All(fm => fm.Check_QuadConvex.Holds);
-
-    // QuadPlanarWithinSurfaceChordal holds on every face of the witness (quality).
-    Law_V1Gate_PoleQuadPlanarWithinSurfaceChordal(w: PoleWitness): Boolean
-        => w.FaceMeshes.All(fm => fm.Check_QuadPlanarWithinSurfaceChordal(w.Options.Face).Holds);
-
-    // ElementNormalAgreesWithSurface holds on every face of the witness (quality).
-    Law_V1Gate_PoleElementNormalAgreesWithSurface(w: PoleWitness): Boolean
-        => w.FaceMeshes.All(fm => w.Model.Check_ElementNormalAgreesWithSurface(fm, w.Options.Face).Holds);
-
-    // SurfaceEdgeNormalTurnWithinSurfaceAngular holds on every face of the witness (quality).
-    Law_V1Gate_PoleSurfaceEdgeNormalTurnWithinSurfaceAngular(w: PoleWitness): Boolean
-        => w.FaceMeshes.All(fm => w.Model.Check_SurfaceEdgeNormalTurnWithinSurfaceAngular(w.Discretizations, fm, w.Options.Face).Holds);
 }
