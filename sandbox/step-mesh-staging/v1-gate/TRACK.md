@@ -425,6 +425,7 @@ V1G-8 (TKT-429):
 V1G-13 (TKT-428):
 - In `RefinementRoundChordal` (05-face-meshing/face-meshing-v1-plane.library.plato, merged with V1G-4): `var surface = m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least);` => `var surface = s.Current.Positioned.Triangulation.WithoutCollapsedMarks(m.NeedsRefinementCarried(f, r, s.Current, s.Known, c, least));`.
 - Move `v1-poles-refine.library.plato` to `05-face-meshing/face-meshing-v1-poles-refine.library.plato` (library `V1PoleRefine`).
+- Merge together with v1-faces' F4b (3dac3a60, v1-faces/edge-on-marks.library.plato), not before it: v1-faces found that V1G-13 alone, on HEAD ab3ed3ed, takes CEL/LENA-R8.STEP from 0 to 16 non-manifold and 32 misoriented edges, because in its polar lunes (faces 198 to 201, 212 to 215, 226 to 229, 245 to 248) a drawn triangle joining a pole copy to two points of one meridian is edge-on to the sphere, within the chordal bound, and no longer refined. F4b wraps the same `RefinementRoundChordal` line with `WithEdgeOnMarked` (marks drawn triangles more than 80 degrees from the face normal); with both, LENA-R8, MAYA-W160, MAYA-W260_REVC and moon_buggy are clean (v1-faces' report). The merged line is then F4b's wrapping of this one.
 
 V1G-12 (TKT-430):
 - `SideIsOneCarrier` (05-face-meshing/uv-regions.library.plato) => `r.SideIsOneCarrierV1(corners, k)` (its only caller is `QuadSidesIn`, face-meshing-chart-speeds.library.plato; the edit was checked at that call site).
