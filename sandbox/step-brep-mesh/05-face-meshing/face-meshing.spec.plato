@@ -88,7 +88,6 @@ spec FaceMesh
             Law_LocalVertexFibresAreIdentifications(self, VertexIndex(i), VertexIndex(j));
     invariant forall (k: Integer) in self.ElementCount.Range:
         self.ElementCorners(ElementIndex(k)).All(i => self.UvPoints.IsValidIndex(i));
-    invariant forall (q: Integer) in self.Quads.Count.Range: Law_QuadConvex(self, FaceIndex(q));
     constructor Lift;
     constructor EmptyFaceMesh;
 }
@@ -330,7 +329,9 @@ spec Lift(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, t: UvTriangula
 
 // MeshFace promises the structural laws outright and the surface criteria unless refinement
 // stopped at MinLength: refinement inserts no point within MinLength of an existing one, so an
-// element it could not improve has an edge shorter than twice MinLength.
+// element it could not improve has an edge shorter than twice MinLength. Element quality (normal
+// agreement, normal turn, quad planarity and convexity) is not promised here: under the version 1
+// mesh contract (README.md) it is the improvement pass's, in 10-editing.
 spec MeshFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): FaceMeshOutcome
 {
     requires m.IsDiscretizedFace(f, d);
@@ -350,15 +351,6 @@ spec MeshFace(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMes
     ensures forall (k: Integer) in result.Mesh.ElementCount.Range:
         Law_SurfaceWithinSurfaceChordalOfElement(m, d, result.Mesh, c, ElementIndex(k))
         || result.Mesh.ShortestEdgeLength(ElementIndex(k)) < 2.0 * c.Discretization.MinLength;
-    ensures forall (k: Integer) in result.Mesh.ElementCount.Range:
-        forall (j: Integer) in 4.Range:
-            Law_SurfaceEdgeNormalTurnWithinSurfaceAngular(m, d, result.Mesh, c, ElementIndex(k), j)
-            || result.Mesh.ShortestEdgeLength(ElementIndex(k)) < 2.0 * c.Discretization.MinLength;
-    ensures forall (k: Integer) in result.Mesh.ElementCount.Range:
-        Law_ElementNormalAgreesWithSurface(m, result.Mesh, c, ElementIndex(k))
-        || result.Mesh.ShortestEdgeLength(ElementIndex(k)) < 2.0 * c.Discretization.MinLength;
-    ensures forall (q: Integer) in result.Mesh.Quads.Count.Range: Law_QuadPlanarWithinSurfaceChordal(result.Mesh, c, FaceIndex(q));
-    ensures forall (q: Integer) in result.Mesh.Quads.Count.Range: Law_QuadConvex(result.Mesh, FaceIndex(q));
     measure result.Mesh.UvPoints.Count + result.Mesh.ElementCount;
 }
 
@@ -433,5 +425,6 @@ theorem ElementsTileRegion
 // parameter triangle (0, 0.5), (0.2, 0.5), (0.1, 0.5001) turns by 0.175, 0.088 and 0.088 rad
 // along its edges, yet its flat normal is 2.05 rad from the face normal at its centroid, and its
 // largest distance from the sphere is 3.8e-3. The flat normal of a sliver does not lie in the cone
-// of its corner normals. Law_ElementNormalAgreesWithSurface is therefore its own criterion, which
-// RefineToSurface enforces.
+// of its corner normals. Law_ElementNormalAgreesWithSurface is therefore its own criterion; under
+// the version 1 mesh contract (README.md) it is a quality law of the improvement pass (10-editing),
+// not a promise of this layer.
