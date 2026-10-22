@@ -1,7 +1,7 @@
 # v1-edges: edge discretization, edge identity, and the assembled mesh's watertightness
 
 Ticket: TKT-413, TKT-419, TKT-414, TKT-400
-Status: merged: E3 in d02f0f52 | ready: E1, E2 | waiting: E2's check on the merged library once v1-close regenerates (supervisor, 2026-10-22)
+Status: merged: E3 in d02f0f52, E1 in 367d9dfb | ready: E2 | waiting: E2's check on the merged library once v1-close regenerates (supervisor, 2026-10-22)
 
 ## Chunks
 
