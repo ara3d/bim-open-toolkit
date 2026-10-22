@@ -68,7 +68,6 @@ type StepDiagnosticCode
     | EdgeReversedToChain
     | NestedOrientedEdge
     | TwoOuterBounds
-    | ClosedShellHasFreeEdges
     | ShellVertexSewn
     | ShellEdgeSewn
     | ClosedShellOpen

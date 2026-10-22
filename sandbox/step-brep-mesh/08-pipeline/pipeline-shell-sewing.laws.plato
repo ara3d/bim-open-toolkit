@@ -203,7 +203,7 @@ library V1JodyShellSewingLaws
         var after = 0.OpenBoxCube.PrepareModel;
         var open = after.Diagnostics.WithCode("STEP-CLOSED-SHELL-OPEN");
         var edges = after.Diagnostics.WithCode("STEP-CLOSED-SHELL-EDGE-CITED-ONCE");
-        return open.Count == 1 && open[0].Measure == 4.0
+        return (open.Count == 1 ? open[0].Measure == 4.0 : false)
             && edges.Count == 4 && edges.All(d => d.Measure.IsFinite.Not || d.Measure < 0.0 || d.Measure != d.Measure)
             && after.Diagnostics.CountOf("STEP-SHELL-VERTEX-SEWN") == 0;
     }

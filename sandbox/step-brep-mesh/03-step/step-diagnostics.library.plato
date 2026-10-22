@@ -70,7 +70,6 @@ library StepDiagnostics
             EdgeReversedToChain => Diagnostic(Severity.Warning, "STEP-EDGE-REVERSED", "This edge's two vertices run against every loop that cites it; it was read with its vertices the other way round, which makes its arc the complementary one. Measure is the number of loop citations mended.", where, measure);
             NestedOrientedEdge => Diagnostic(Severity.Warning, "STEP-NESTED-ORIENTED-EDGE", "An oriented_edge names another oriented_edge (WR1); the senses were composed.", where, measure);
             TwoOuterBounds => Diagnostic(Severity.Warning, "STEP-TWO-OUTER-BOUNDS", "A face has more than one face_outer_bound (face WR2); no bound of it is marked outer.", where, measure);
-            ClosedShellHasFreeEdges => Diagnostic(Severity.Warning, "STEP-OPEN-CLOSED-SHELL", "A closed_shell has edges used once; it is kept as declared closed. Measure is the count of such edges.", where, measure);
             ShellVertexSewn => Diagnostic(Severity.Info, "STEP-SHELL-VERTEX-SEWN", "A vertex of a closed shell coincides with another vertex of the shell that no edge joins; it was merged into it. Measure is the distance between them.", where, measure);
             ShellEdgeSewn => Diagnostic(Severity.Info, "STEP-SHELL-EDGE-SEWN", "An edge of a closed shell runs between the same two vertices along the same curve as another edge of the shell; it was merged into it, and the coedges citing it cite the kept edge. Measure is the kept edge's index.", where, measure);
             ClosedShellOpen => Diagnostic(Severity.Warning, "STEP-CLOSED-SHELL-OPEN", "The file declares this shell closed, but after sewing within the shell some of its edges are cited by only one of its faces: the shell is open in the file. Measure is the number of such edges.", where, measure);
@@ -144,7 +143,6 @@ library StepDiagnostics
             EdgeReversedToChain => StepFindingSubject.AboutInstance;
             NestedOrientedEdge => StepFindingSubject.AboutInstance;
             TwoOuterBounds => StepFindingSubject.AboutInstance;
-            ClosedShellHasFreeEdges => StepFindingSubject.AboutInstance;
             ShellVertexSewn => StepFindingSubject.AboutInstance;
             ShellEdgeSewn => StepFindingSubject.AboutInstance;
             ClosedShellOpen => StepFindingSubject.AboutInstance;

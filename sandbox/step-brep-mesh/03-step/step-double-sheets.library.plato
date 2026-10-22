@@ -135,14 +135,28 @@ library V1JodyDoubleSheets
         var sets = faces.Map(f => m.FaceEdgeIndices(f));
         var order = faces.Count.Range.Sort((x, y) => IndicesAtMost(sets[x], faces[x], sets[y], faces[y]));
         var n = order.Count;
-        return (n - 1).Max(0).Range.FlatMap(q =>
-            (sets[order[q]].Count > 0
-                && SameIndices(sets[order[q]], sets[order[q + 1]])
-                && (q == 0 ? true : SameIndices(sets[order[q - 1]], sets[order[q]]).Not)
-                && (q + 2 >= n ? true : SameIndices(sets[order[q + 1]], sets[order[q + 2]]).Not)
-                && m.IsOppositeCoplanar(faces[order[q]], faces[order[q + 1]], folded))
-                ? [[faces[order[q]].Min(faces[order[q + 1]]), faces[order[q]].Max(faces[order[q + 1]])]]
-                : [[0, 0]].Take(0));
+        return (n - 1).Max(0).Range.FlatMap(q => m.IsSheetPairAt(faces, sets, order, q, folded)
+            ? [[faces[order[q]].Min(faces[order[q + 1]]), faces[order[q]].Max(faces[order[q + 1]])]]
+            : [[0, 0]].Take(0));
+    }
+
+    // Whether the faces at sorted positions q and q + 1 form a sheet pair: q + 1 is a position,
+    // their edge set is nonempty and theirs alone (the positions before q and after q + 1 hold
+    // other sets), and IsOppositeCoplanar holds. Each read is behind the test of its index
+    // (Plato's && evaluates both sides).
+    IsSheetPairAt(m: BrepModel, faces: Array<Integer>, sets: Array<Array<Integer>>, order: Array<Integer>, q: Integer, folded: Array<Boolean>): Boolean
+    {
+        if (q < 0 || q + 1 >= order.Count)
+        {
+            return false;
+        }
+        var a = sets[order[q]];
+        var b = sets[order[q + 1]];
+        var alone = (q == 0 ? true : SameIndices(sets[order[q - 1]], a).Not)
+            && (q + 2 >= order.Count ? true : SameIndices(b, sets[order[q + 2]]).Not);
+        return (a.Count > 0 && SameIndices(a, b) && alone)
+            ? m.IsOppositeCoplanar(faces[order[q]], faces[order[q + 1]], folded)
+            : false;
     }
 
     // Every sheet pair of every shell, in shell order. folded is the fold parity per face.

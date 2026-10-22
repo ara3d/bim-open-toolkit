@@ -103,11 +103,9 @@ library V1JodyDoubleSheetsLaws
         var removed = after.Diagnostics.WithCode("STEP-ZERO-THICKNESS-SHEET-REMOVED");
         return raw.Model.Faces.Count == 8
             && after.Model.Faces.Count == 6
-            && after.Model.Shells[0].Faces.Count == 6
+            && (after.Model.Shells.Count > 0 ? after.Model.Shells[0].Faces.Count == 6 && after.Model.EveryEdgeCitedTwice(0) : false)
             && after.Model.Loops.Count == raw.Model.Loops.Count - 2
-            && after.Model.EveryEdgeCitedTwice(0)
-            && removed.Count == 2
-            && removed[0].Measure == 7.0 && removed[1].Measure == 6.0
+            && (removed.Count == 2 ? removed[0].Measure == 7.0 && removed[1].Measure == 6.0 : false)
             && after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-KEPT") == 0;
     }
 
