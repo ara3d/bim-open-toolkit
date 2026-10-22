@@ -1,4 +1,5 @@
-// Laws of V1Thick (TKT-464): the c211 face 339 witness (corpus-witness-c211-339.library.plato, extracted with
+// Laws of ThinBoundOf (insertion-clearance.library.plato, TKT-464): the c211 face 339 witness
+// (08-pipeline/pipeline-corpus-witness-c211-339.library.plato, extracted with
 // `step-corpus-harness extract c211_case_with_odin_v1.step 339 <out> --ring 0`) meshes within its chordal bound, and
 // the per-triangle thickness bound never admits a degenerate triangle.
 library V1ThickLaws
@@ -24,7 +25,7 @@ library V1ThickLaws
     }
 
     // u-blox SHO/c211_case_with_odin_v1.step face 339, a quarter cylinder of radius 6 with a 0.05 mm boundary
-    // segment, meshes within the chordal bound plus the length tolerance. Without V1Thick every insertion that would
+    // segment, meshes within the chordal bound plus the length tolerance. Before TKT-464 every insertion that would
     // split its 1.3 rad fans is refused by CavityIsThick and the worst triangle is 1.324 from the surface.
     Law_V1Gate_C211Face339WithinChordal(_: Integer): Boolean
         => C211Face339Deviation(0) <= 1.0 + BrepModel.Witness_C211CaseWithOdinV1Face339.Tolerances.Length.Value;

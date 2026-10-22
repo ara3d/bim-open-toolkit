@@ -10,8 +10,13 @@
 // triangles, 15 of them with an altitude below the length tolerance (ElementIsNotDegenerate,
 // the Error TKT-401 reports; smallest 3.6e-7), most of them three interior points lined up
 // beside the edge, so no test of the boundary side alone sees them. A point is now kept only
-// when every triangle its insertion writes (the cavity after its flips) has its smallest
-// altitude at least ThinBound, or more than the triangles it replaces. The version 1 contract (README, "Version 1 mesh contract") does
+// when every triangle its insertion writes (the cavity after its flips) reaches ThinBound or half
+// its shortest side, whichever is less, and at least two tolerances (ThinBoundOf, TKT-464), or
+// the cavity is thicker than the triangles it replaces. Half the shortest side: a triangle's
+// altitude is never more than its shortest side, so a triangle on a boundary segment shorter than
+// ThinBound could never reach it, and on u-blox SHO/c211_case_with_odin_v1.step face 339 (a 0.05 mm
+// segment) every insertion that would split its 1.3 rad fans was refused, leaving them 1.324 from
+// the surface against a 1 mm bound. The version 1 contract (README, "Version 1 mesh contract") does
 // not require the normal bound, so a triangle that stops short of it is a quality matter for
 // the later pass, while a degenerate one breaks the contract.
 //
@@ -41,6 +46,22 @@ library FaceMeshingInsertionClearance
         return shortest <= t ? Number.MaxValue : (b - a).Cross(c - a).Length / longest;
     }
 
+    // The altitude triangle (a, b, c) must reach to count as thick: ThinBound, or half its shortest
+    // side when that is less, and at least two length tolerances, so a kept triangle is never
+    // degenerate (ElementIsNotDegenerate rejects an altitude of one tolerance or less).
+    ThinBoundOf(m: BrepModel, a: Point3D, b: Point3D, c: Point3D): Number
+        => m.ThinBound.Min(0.5 * a.Distance(b).Min(b.Distance(c)).Min(c.Distance(a))).Max(2.0 * m.Tolerances.Length.Value);
+
+    // Whether triangle t, its corners placed by `at` for the new point (index pi) and pos for the
+    // others, is thick: its AltitudeUnlessCollapsed reaches ThinBoundOf.
+    IsThickTriangle(m: BrepModel, t: TriangleFace, pi: Integer, at: Point3D, pos: List<Point3D>): Boolean
+    {
+        var a = t.A.Value == pi ? at : pos.At(t.A.Value);
+        var b = t.B.Value == pi ? at : pos.At(t.B.Value);
+        var c = t.C.Value == pi ? at : pos.At(t.C.Value);
+        return AltitudeUnlessCollapsed(a, b, c, m.Tolerances.Length.Value) >= m.ThinBoundOf(a, b, c);
+    }
+
     // The thinnest of triangles ts by AltitudeUnlessCollapsed, their corners' positions given by
     // `at` for the new point (index pi) and pos for the others.
     ThinnestOf(m: BrepModel, ts: Array<TriangleFace>, pi: Integer, at: Point3D, pos: List<Point3D>): Number
@@ -49,15 +70,15 @@ library FaceMeshingInsertionClearance
             t.B.Value == pi ? at : pos.At(t.B.Value),
             t.C.Value == pi ? at : pos.At(t.C.Value), m.Tolerances.Length.Value)));
 
-    // Whether the triangles cavity c writes are thick enough: their thinnest reaches ThinBound,
-    // or is thicker than the thinnest of the triangles it replaces (the slots below tris.Count),
-    // so an insertion that splits a triangle with no area in space is kept, as the angle guard
-    // keeps one that improves the smallest angle.
+    // Whether the triangles cavity c writes are thick enough: each is thick (IsThickTriangle), or
+    // their thinnest is thicker than the thinnest of the triangles it replaces (the slots below
+    // tris.Count), so an insertion that splits a triangle with no area in space is kept, as the
+    // angle guard keeps one that improves the smallest angle.
     CavityIsThick(m: BrepModel, c: TriangleWrites, pi: Integer, at: Point3D, pos: List<Point3D>, tris: List<TriangleFace>): Boolean
     {
-        var after = m.ThinnestOf(c.Triangles, pi, at, pos);
         var replaced = c.Slots.FlatMap(s => s < tris.Count ? [tris.At(s)] : [tris.At(0)].Take(0));
-        return after >= m.ThinBound || after > m.ThinnestOf(replaced, pi, at, pos);
+        return c.Triangles.All(t => m.IsThickTriangle(t, pi, at, pos))
+            || m.ThinnestOf(c.Triangles, pi, at, pos) > m.ThinnestOf(replaced, pi, at, pos);
     }
 
     // CavityIsThick for TriangulationFast's TryInsertion: the triangles of `after` at positions
@@ -67,8 +88,8 @@ library FaceMeshingInsertionClearance
     {
         var pos = new List<Point3D>().AddRange(pts.Map(uv => m.Geometry.Eval(m.SurfaceOf(f), uv)));
         var pi = pts.Count - 1;
-        var now = m.ThinnestOf(changed.Map(k => after[k]), pi, pos.At(pi), pos);
-        var was = m.ThinnestOf(changed.FlatMap(k => k < before.Count ? [before[k]] : [before[0]].Take(0)), pi, pos.At(pi), pos);
-        return now >= m.ThinBound || now > was;
+        return changed.All(k => m.IsThickTriangle(after[k], pi, pos.At(pi), pos))
+            || m.ThinnestOf(changed.Map(k => after[k]), pi, pos.At(pi), pos)
+                > m.ThinnestOf(changed.FlatMap(k => k < before.Count ? [before[k]] : [before[0]].Take(0)), pi, pos.At(pi), pos);
     }
 }
