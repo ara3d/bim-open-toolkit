@@ -131,16 +131,12 @@ library PolesSegments
         var arriving = l.Points[(i + n - 1) % n].Coordinate(which);
         var leaving = l.Points[(i + 1) % n].Coordinate(which);
         var expands = (n >= 2 ? m.IsOnCollapsedLine(f, uv) : false)
-            ? (leaving - arriving).Abs > m.PointToleranceAlong(f, uv, which)
+            ? (leaving - arriving).Abs > m.PoleGapTolerance(f, which)
             : false;
         return expands
             ? uv.PoleSegmentSamples(which, arriving, leaving, l.Sources[i], c)
             : [UvSample(uv, l.Sources[i])];
     }
-
-    // The parameter tolerance at uv of face f in direction `which`.
-    PointToleranceAlong(m: BrepModel, f: BrepFaceIndex, uv: UvCoordinate, which: SurfaceParameter): Number
-        => which.Along(m.PointTolerance(f, uv).U.Value, m.PointTolerance(f, uv).V.Value);
 
     //==
     // # A vertex loop on a collapsed line
@@ -160,7 +156,7 @@ library PolesSegments
         var extent = period > 0.0 ? period : d.Range.End - d.Range.Start;
         var from = period > 0.0 ? uv.Coordinate(which) : d.Range.Start;
         var to = from + extent * m.PoleTraversal(f, loops, k, which);
-        var samples = uv.PoleSegmentSamples(which, from, to, loops[k].Sources[0], c);
+        var samples = uv.PoleSegmentSamplesAtLeast(which, from, to, loops[k].Sources[0], c, 3);
         return samples.Take(samples.Count - 1).ToUvLoop;
     }
 

@@ -197,6 +197,6 @@ library UvRegionsIndexed
             probes = probes + twin.Work.Insertions;
             i = i + 1;
         }
-        return Counted(UvLoop(placed.Freeze(), l.Sources), Insertions(n + steps.Count + probes));
+        return Counted(m.ClosedAtPole(f, dom, UvLoop(placed.Freeze(), l.Sources)), Insertions(n + steps.Count + probes));
     }
 }

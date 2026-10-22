@@ -75,21 +75,10 @@ library FaceMeshingPoleClosureLaws
             && k.IsLuneRegion(m.AddMissingSeamsAndPoles(f, [closed], k.LuneCriteria));
     }
 
-    // The library's unwrap alone gives the lune's region too. Fails or throws before TKT-411 on
-    // the half and three-quarter turns, where the unwrapped loop winds.
-    Law_V1Faces_LuneRegionFromUnwrap(k: PoleLune): Boolean
-        => k.IsLune ? k.LuneRegionFromUnwrap : true;
-
-    // Law_V1Faces_LuneRegionFromUnwrap on a lune.
-    LuneRegionFromUnwrap(k: PoleLune): Boolean
-    {
-        var m = k.LuneModel;
-        var f = BrepFaceIndex(0);
-        return k.IsLuneRegion(m.AddMissingSeamsAndPoles(f, [m.UnwrapIndexedIn(f, m.SurfaceDomainOf(f), k.LuneLoop)], k.LuneCriteria));
-    }
-
-    // A loop that winds alone, not a band, is no band pair: IsBandPairGuarded is false where
-    // IsBandPair throws (the half-turn lune's unwrapped loop, before ClosedAtPole).
+    // A loop that winds alone, not a band, is no band pair: the parallel at lune k's rim, one loop
+    // winding once round u, has one winding loop and IsBandPair is false, where before TKT-411
+    // IsBandPair read a second winding entry and threw. (Staged on the half-turn lune's unwrapped
+    // loop; since the merge Unwrap closes that loop at its pole, so it no longer winds.)
     Law_V1Faces_SingleWindingLoopIsNoBandPair(k: PoleLune): Boolean
     {
         if (k.IsLune.Not)
@@ -98,7 +87,10 @@ library FaceMeshingPoleClosureLaws
         }
         var m = k.LuneModel;
         var f = BrepFaceIndex(0);
-        var loops = [m.UnwrapIndexedIn(f, m.SurfaceDomainOf(f), k.LuneLoop)];
-        return m.IsBandPairGuarded(f, loops, m.WindingLoops(f, loops)).Not;
+        var dom = m.SurfaceDomainOf(f);
+        var points = 8.MapRange(j => dom.Wrap(UvCoordinate(2.0 * Number.Pi * j.ToNumber / 8.0, k.Rim)));
+        var loops = [m.UnwrapIndexedIn(f, dom, UvLoop(points, points.Map(uv => UvPointSource.Interior)))];
+        var winding = m.WindingLoops(f, loops);
+        return winding.Count == 1 && m.IsBandPair(f, loops, winding).Not;
     }
 }

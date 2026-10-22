@@ -13,10 +13,10 @@
 // leaving value is the copy that leaves the loop unwound: every point after the first interior
 // pole point moves by the whole periods the loop would wind once its poles are expanded.
 //
-// The loop that winds then reached IsBandPair, whose `&&` chain indexes winding[1] when only one
-// loop winds (the operator does not guard what follows it); IsBandPairGuarded tests the count
-// before it reads a second entry, so a single winding loop that is no band reaches
-// CutWholePeriods instead of throwing.
+// The loop that winds then reached IsBandPair, whose `&&` chain indexed winding[1] when only one
+// loop winds (the operator does not guard what follows it); IsBandPair (uv-regions.library.plato)
+// now tests the count before it reads a second entry, so a single winding loop that is no band
+// reaches CutWholePeriods instead of throwing.
 //
 // ExpandedPoint expands a pole only when the arriving and leaving values differ by more than the
 // point tolerance along the free parameter. At a pole that tolerance is its cap, half the period,
@@ -27,7 +27,6 @@
 //
 // Sections, in order:
 //  - Closing at a pole
-//  - Band pairs
 //  - Expanding a pole
 
 library FaceMeshingPoleClosure
@@ -75,18 +74,6 @@ library FaceMeshingPoleClosure
         => UvLoop(l.Points.Count.MapRange(i => i > p ? l.Points[i].ShiftedBy(by) : l.Points[i]), l.Sources);
 
     //==
-    // # Band pairs
-
-    // IsBandPair with the count tested before any entry is read: exactly two loops wind, once each
-    // round one direction and the opposite way.
-    IsBandPairGuarded(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, winding: Array<Integer>): Boolean
-        => winding.Count != 2
-            ? false
-            : m.UWinding(f, loops[winding[0]]).Abs + m.VWinding(f, loops[winding[0]]).Abs == 1
-                && m.UWinding(f, loops[winding[0]]) + m.UWinding(f, loops[winding[1]]) == 0
-                && m.VWinding(f, loops[winding[0]]) + m.VWinding(f, loops[winding[1]]) == 0;
-
-    //==
     // # Expanding a pole
 
     // The least difference in free parameter `which` between where a loop arrives at a collapsed
@@ -95,20 +82,4 @@ library FaceMeshingPoleClosure
     // cap at a pole.
     PoleGapTolerance(m: BrepModel, f: BrepFaceIndex, which: SurfaceParameter): Number
         => m.Geometry.ParameterFloorAlong(m.SurfaceOf(f), which, m.Tolerances).Value;
-
-    // ExpandedPoint with the gap measured against PoleGapTolerance.
-    ExpandedPointAtPole(m: BrepModel, f: BrepFaceIndex, l: UvLoop, i: Integer, c: FaceMeshingCriteria): Array<UvSample>
-    {
-        var n = l.Points.Count;
-        var uv = l.Points[i];
-        var which = m.FreeParameterAt(f, uv);
-        var arriving = l.Points[(i + n - 1) % n].Coordinate(which);
-        var leaving = l.Points[(i + 1) % n].Coordinate(which);
-        var expands = (n >= 2 ? m.IsOnCollapsedLine(f, uv) : false)
-            ? (leaving - arriving).Abs > m.PoleGapTolerance(f, which)
-            : false;
-        return expands
-            ? uv.PoleSegmentSamples(which, arriving, leaving, l.Sources[i], c)
-            : [UvSample(uv, l.Sources[i])];
-    }
 }

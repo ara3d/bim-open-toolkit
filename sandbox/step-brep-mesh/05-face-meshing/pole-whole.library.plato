@@ -6,7 +6,7 @@
 // winds once. With version 1's chordal-only refinement (SurfaceAngular 180 degrees) a period
 // takes two steps, the loop's last point lies exactly half a period from its first, and the
 // winding rounds that tie to +1 one way and to 0 the other: Witness_SphereByPoleLoops(1.0) then
-// has one winding loop instead of a band pair, and before IsBandPairGuarded it threw (v1-gate's
+// has one winding loop instead of a band pair, and before IsBandPair tested its count it threw (v1-gate's
 // finding). Three steps put the last point two thirds of a period on, so each pole loop winds
 // once, in opposite senses, as a closed edge takes at least three segments (DefaultCriteria).
 //

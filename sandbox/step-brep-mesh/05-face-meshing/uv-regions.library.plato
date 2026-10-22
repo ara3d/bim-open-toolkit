@@ -383,12 +383,15 @@ library UvRegions
         => loops.Count.Range.FlatMap(k => m.IsWindingLoop(f, loops[k]) ? [k] : [k].Take(0));
 
     // Whether exactly two loops wind, once each round one direction and the
-    // opposite way: the two boundary circles of a band.
+    // opposite way: the two boundary circles of a band. The count is tested
+    // before any entry is read, by a conditional: `&&` evaluates both sides,
+    // so it read winding[1] when one loop wound (TKT-411).
     IsBandPair(m: BrepModel, f: BrepFaceIndex, loops: Array<UvLoop>, winding: Array<Integer>): Boolean
-        => winding.Count == 2
-            && m.UWinding(f, loops[winding[0]]).Abs + m.VWinding(f, loops[winding[0]]).Abs == 1
-            && m.UWinding(f, loops[winding[0]]) + m.UWinding(f, loops[winding[1]]) == 0
-            && m.VWinding(f, loops[winding[0]]) + m.VWinding(f, loops[winding[1]]) == 0;
+        => winding.Count != 2
+            ? false
+            : m.UWinding(f, loops[winding[0]]).Abs + m.VWinding(f, loops[winding[0]]).Abs == 1
+                && m.UWinding(f, loops[winding[0]]) + m.UWinding(f, loops[winding[1]]) == 0
+                && m.VWinding(f, loops[winding[0]]) + m.VWinding(f, loops[winding[1]]) == 0;
 
     // The loops with the band pair, when there is one, replaced by one loop
     // joined along a synthetic seam cut (JoinedByCut), first; unchanged when
