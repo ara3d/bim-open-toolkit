@@ -1,13 +1,14 @@
 ---
 id: TKT-300
 title: Generate the typed STEP entity layer from the EXPRESS schemas and restate the WHERE laws over it, removing string typing from 03-step
-status: open
+status: done
 depends_on: [TKT-299]
 owner:
 fence: [sandbox/step-brep-mesh/03-step/**, sandbox/step-brep-mesh/tools/**, sandbox/step-brep-mesh/VOCABULARY.md]
 workflow: [W3, W4]
 confidence: low
 created: 2026-10-17
+closed: 2026-10-21
 kind: question
 ---
 
@@ -25,3 +26,11 @@ Phase 3 finding F-1 of the TKT-299 design pass, raised by the owner on 2026-10-1
 2026-10-17, session 5da41e98: The owner said on 2026-10-17 that this ticket is not to be tackled. It stays as the record of Phase 3 finding F-1 (sandbox/step-brep-mesh/reviews/FINDINGS.md). Default if nobody answers: leave it unworked; do not claim it.
 
 Was a task; answer here, then run `ticket.py promote`.
+
+## Answer, 2026-10-21
+
+The owner: close as superseded. TKT-306 moved the boundary to BrepModel: C# parses and types STEP (Ara3D.IO.StepParser, Ara3D.StepTypes) and decodes into the Plato library's BrepModel (TKT-312), so Plato no longer reads entities by string name. Finding F-1 is answered by TKT-306 and TKT-312.
+
+## Closed with criteria unmet
+
+2026-10-21: Superseded by TKT-306 and TKT-312: Plato receives a typed BrepModel from C#, so no typed STEP entity layer is generated in Plato (owner, 2026-10-21)
