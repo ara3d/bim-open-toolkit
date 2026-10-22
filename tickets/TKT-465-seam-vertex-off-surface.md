@@ -3,7 +3,7 @@ id: TKT-465
 title: Seam vertices on periodic faces sit 0.5 mm from the surface at their parameters, and their elements read as flipped
 status: open
 depends_on: []
-owner: v1-close
+owner: v1-reliability
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3]
 related: [TKT-323]

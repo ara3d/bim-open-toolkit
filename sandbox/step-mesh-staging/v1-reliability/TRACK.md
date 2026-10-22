@@ -20,6 +20,9 @@ Fence: `sandbox/step-brep-mesh/tools/**`, `sandbox/step-brep-mesh/09-tooling/**`
 | R5 | TKT-440 | a lint for guards that do not guard and staged comparisons | 1 h | about 15 min |
 | R6 | TKT-434 | the shipped program type-checked before every law run; compile errors read (class J) | 1 h | about 40 min |
 | R4 | TKT-439 | a failing corpus face extracted as a Plato witness | 2 h | about 1.5 h |
+| R7 | TKT-441 | layer 7's checks on every corpus file's raw and prepared models | 2 h | about 1.5 h, corpus run going |
+| R2A | TKT-465 | cause A: a closed direction evaluated at unwrapped parameters (JODY-W5/W6 faces 322, 444, 584) | 2 h | about 2 h |
+| R2B | TKT-465 | cause B: a surface curve's pcurve image off its surface (NINA-B222 face 678) | 2 h | waiting for J5's merge |
 
 ## Done
 
@@ -44,6 +47,22 @@ R4: move `corpus-ann-mb2-face-349.library.plato` to `08-pipeline/pipeline-corpus
 and `corpus-witnesses.laws.plato` to `08-pipeline/pipeline-corpus-witnesses.laws.plato` (the law reads layer 8's
 `HostMeshingOptions`), or keep them staged until v1-faces meshes the face, so the sweep does not carry a known fail.
 Later corpus witnesses go into the same two files, one library block per witness.
+
+R2A (TKT-465 cause A). Laws `V1ReliabilityClosedWrapLaws`, server, cpu64: on HEAD plus staging 2 pass and
+`Law_V1Reliability_JodyCornersOnSurface` fails (the mesher still evaluates unwrapped); on the wired copy all 3 pass.
+Scratch regenerations (Plato c8c83c8b) of toolkit 0f6a4710's library, unwired and wired, harness `all --parallel` on
+five files: JODY-W5/W6 contract broken (3 faces with flipped elements) -> holds, 0 flipped (digest EE2F7B2B ->
+664791FC, 2,442 -> 2,454 triangles; its 108 non-manifold edges are the double sheets of J7, unchanged); NINA-B400,
+LENA-R8, MAYA-W160, ODIN-W160 digests identical. Merge, on a `git archive` copy of HEAD:
+- Move `closed-wrap.library.plato` to `01-geometry/geometry-closed-wrap.library.plato` (library `V1ReliabilityClosedWrap`).
+- `01-geometry/geometry-surfaces.library.plato`, the five index-level forms over `(g: GeometrySet, s: SurfaceIndex, uv)`:
+  `Eval` => `g.EvalWrapped(s, uv)`, `PartialU` => `g.PartialUWrapped(s, uv)`, `PartialV` => `g.PartialVWrapped(s, uv)`,
+  `NormalOr` => `g.NormalOrWrapped(s, uv, fallback)`, `AreaElement` => `g.AreaElementWrapped(s, uv)`; then the
+  comment above `Eval` says "any uv: a closed direction's out-of-range coordinate is evaluated at its copy in the range".
+- `01-geometry/limit-normal.library.plato`, `LimitNormal(g, s, uv)` => `g.LimitNormalWrapped(s, uv)`.
+- `closed-wrap.laws.plato` and `corpus-jody-w5-w6-faces-322-444-584.library.plato` into `08-pipeline` (the corner law
+  reads layer 8's `FinalState` and `HostMeshingOptions`), as `pipeline-closed-wrap.laws.plato` and
+  `pipeline-corpus-witness-jody-w5-w6.library.plato`.
 
 Otherwise none into the library. For the supervisor:
 - Move the bim-open-data pin in `deps.json` to d8bb198 or later when it next moves, so a fresh `node deps.mjs` gets
