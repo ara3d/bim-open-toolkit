@@ -48,7 +48,7 @@ library V1EdgesCdtSeedWitnessLaws
         var r = m.WitnessFaceRegion(k);
         var points = m.WitnessFacePoints(k, r);
         var next = r.NextBoundaryTable;
-        var tris = points.CdtSeedByInsertion(next);
+        var tris = points.CdtSeedOverCopies(next);
         var area = r.RegionArea(points);
         return tris.Count == points.Count + 2 * r.WideHoles - 2
             && next.Count.Range.All(a => next[a] < 0 ? true : tris.HasSideOnce(a, next[a]))

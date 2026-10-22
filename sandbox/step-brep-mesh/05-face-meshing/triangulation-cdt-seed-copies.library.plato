@@ -1,10 +1,11 @@
 //==
 // # The constrained Delaunay seed over repeated points (track v1-edges, chunk E5a, TKT-468)
 //
-// Layer 05-face-meshing, beside V1EdgesCdtSeed (triangulation-cdt-seed.library.plato), whose state, insertion,
-// flips and segment recovery it reuses. That seed skips a point that coincides with an earlier
-// one and its segments, so a loop through one point twice (V1G-6's keyholes, LENA-R8 face 1349)
-// comes out with a triangle over the hole, and E4b's CdtSeedOfRegion fell back to ear clipping there.
+// Layer 05-face-meshing: the mesher's seed, built on V1EdgesCdtSeed's state, insertion, flips
+// and segment recovery (triangulation-cdt-seed.library.plato). E4a's seed skipped a point that
+// coincides with an earlier one and its segments, so a loop through one point twice (V1G-6's
+// keyholes, LENA-R8 face 1349) came out with a triangle over the hole; this one replaced it (E5a)
+// and took in its entry point (E5a').
 // A weakly simple region touches itself without crossing: a loop passes one point twice, a
 // vertex lies on another side, a side is run along both ways (a slit, or a zero-width tail).
 // Here:
@@ -234,8 +235,13 @@ library V1EdgesCdtSeedCopies
     //==
     // # Removing slivers, keeping the region
 
-    // SeedWithoutSlivers with the protected sides those of the table: a sliver's longest side is
-    // never flipped when it is a piece.
+    // The state with every triangle below the area floor flipped across its longest side (the
+    // side opposite its middle corner) when both triangles the flip makes are positive and that
+    // side is no piece of the table (the first pass, before any segment is recovered, takes an
+    // empty table); passes over every triangle until one changes nothing, at most 8 n passes.
+    // A point inserted exactly on a side leaves a flat triangle whose middle point is the older
+    // point, which the insertion's flips never test: NORA-B100's big plane kept 15 of them,
+    // pads of different holes on one line (x = -2.7).
     SeedWithoutSliversOf(s0: List<Integer>, cap: Integer, points: Array<Point2D>, table: List<Integer>, n: Integer): List<Integer>
     {
         var s = s0;
@@ -476,7 +482,7 @@ library V1EdgesCdtSeedCopies
             k = k + 1;
         }
         var at = placed.Freeze();
-        s = s.SeedWithoutSlivers(cap, all, next, false, n);
+        s = s.SeedWithoutSliversOf(cap, all, [0].Take(0).SeedPieceTable(n + 3), n);
         var a = 0;
         while (a < n)
         {

@@ -1,5 +1,5 @@
 //==
-// # The constrained Delaunay seed by insertion (track v1-edges, chunk E4, TKT-468)
+// # The constrained Delaunay seed by insertion: its parts (track v1-edges, chunks E4 and E5a', TKT-468)
 //
 // Layer 05-face-meshing. TriangulateRegionCdt seeded its flips with ear clipping over one ring
 // that bridges every hole to the outer loop. With many holes the bridges meet at shared vertices
@@ -24,6 +24,12 @@
 // runs after the seed, so the seed need only be a valid triangulation; its insertion flips make
 // it close to Delaunay already.
 //
+// This library holds the state, the insertion, the flips, the segment recovery and the sliver
+// tests; the seed itself, its sliver pass and its region are V1EdgesCdtSeedCopies'
+// (triangulation-cdt-seed-copies.library.plato), which also takes repeated points (E5a). E4a's
+// own entry point, CdtSeedByInsertion, and the parts only it used were folded into that one
+// seed (E5a').
+//
 // The state is one List<Integer> laid out in blocks, capacity cap triangles (a triangulation of
 // m points in a triangle has at most 2 m - 5): entry 0 the triangle count; 1 + 3 t + j the corner
 // j of triangle t, counter-clockwise; 1 + 3 cap + 3 t + j the triangle across side j (corner j to
@@ -35,8 +41,7 @@
 //  - Locating, inserting
 //  - Recovering the boundary segments
 //  - Removing slivers
-//  - Keeping the region
-//  - The seed
+//  - Counting
 
 library V1EdgesCdtSeed
 {
@@ -400,195 +405,8 @@ library V1EdgesCdtSeed
         return d0 >= d1 && d0 >= d2 ? 0 : (d1 >= d2 ? 1 : 2);
     }
 
-    // The state with every triangle below the area floor flipped across its longest side (the
-    // side opposite its middle corner) when both triangles the flip makes are positive and, when
-    // protect is set, that side is not a boundary segment; passes over every triangle until one
-    // changes nothing, at most 8 n passes. A point inserted exactly on a side leaves a flat
-    // triangle whose middle point is the older point, which the insertion's flips never test:
-    // NORA-B100's big plane kept 15 of them, pads of different holes on one line (x = -2.7).
-    SeedWithoutSlivers(s0: List<Integer>, cap: Integer, points: Array<Point2D>, next: Array<Integer>, protect: Boolean, n: Integer): List<Integer>
-    {
-        var s = s0;
-        var changed = true;
-        var passes = 0;
-        while (changed && passes < 8 * n)
-        {
-            changed = false;
-            var t = 0;
-            while (t < s.At(0))
-            {
-                if (s.SeedIsSliver(points, t))
-                {
-                    var j = s.SeedLongestSide(points, t);
-                    var u = s.SeedAcross(cap, t, j);
-                    var a = s.SeedCorner(t, j);
-                    var b = s.SeedCorner(t, j + 1);
-                    var c = s.SeedCorner(t, j + 2);
-                    var free = protect ? next.IsConstrainedIn(a, b).Not : true;
-                    if (u >= 0 && free)
-                    {
-                        var d = s.SeedCorner(u, s.SeedSide(u, b, a) + 2);
-                        if (TwiceSignedArea(points[a], points[d], points[c]) > 0.0 && TwiceSignedArea(points[d], points[b], points[c]) > 0.0)
-                        {
-                            s = s.SeedFlipped(cap, t, j);
-                            changed = true;
-                        }
-                    }
-                }
-                t = t + 1;
-            }
-            passes = passes + 1;
-        }
-        return s;
-    }
-
     //==
-    // # Keeping the region
-
-    // Whether the side from a to b, in either direction, is a boundary segment.
-    SeedIsSegment(next: Array<Integer>, a: Integer, b: Integer): Boolean
-        => next.IsConstrainedIn(a, b);
-
-    // Per triangle of the state, whether it lies in the region: the triangles with a side running
-    // a to next[a] (the region is on the left of its loops), then every triangle reached from
-    // them across a side that is not a boundary segment.
-    SeedInside(s: List<Integer>, cap: Integer, next: Array<Integer>): Array<Boolean>
-    {
-        var count = s.At(0);
-        var inside = new Buffer<Boolean>(count);
-        var t = 0;
-        while (t < count)
-        {
-            inside = inside.Set(t, false);
-            t = t + 1;
-        }
-        var stack = new List<Integer>();
-        t = 0;
-        while (t < count)
-        {
-            var j = 0;
-            while (j < 3)
-            {
-                var a = s.SeedCorner(t, j);
-                if (a < next.Count && inside.At(t).Not)
-                {
-                    if (next[a] >= 0 && next[a] == s.SeedCorner(t, j + 1))
-                    {
-                        inside = inside.Set(t, true);
-                        stack = stack.Add(t);
-                    }
-                }
-                j = j + 1;
-            }
-            t = t + 1;
-        }
-        var top = stack.Count;
-        while (top > 0)
-        {
-            top = top - 1;
-            var x = stack.At(top);
-            var k = 0;
-            while (k < 3)
-            {
-                var u = s.SeedAcross(cap, x, k);
-                if (u >= 0)
-                {
-                    if (inside.At(u).Not && SeedIsSegment(next, s.SeedCorner(x, k), s.SeedCorner(x, k + 1)).Not)
-                    {
-                        inside = inside.Set(u, true);
-                        stack = stack.Pushed(top, u);
-                        top = top + 1;
-                    }
-                }
-                k = k + 1;
-            }
-        }
-        return inside.Freeze();
-    }
-
-    //==
-    // # The seed
-
-    // The constrained Delaunay seed of the region whose boundary points are points (in the
-    // chart) and whose boundary segments are next (NextBoundaryTable: next[a] follows a on its
-    // loop, -1 for a point of a point hole or a two-point loop). Points that coincide with an
-    // earlier one are not inserted and their segments are not recovered. Every boundary point is
-    // a corner otherwise; every boundary segment of three-point loops or longer a side; the
-    // region covered exactly. Triangles over the point indices 0 to n - 1, counter-clockwise.
-    CdtSeedByInsertion(points: Array<Point2D>, next: Array<Integer>): Array<TriangleFace>
-    {
-        var n = points.Count;
-        var cap = 2 * (n + 3);
-        var lowX = n.Range.Reduce(Number.MaxValue, (m, i) => m.Min(points[i].X));
-        var lowY = n.Range.Reduce(Number.MaxValue, (m, i) => m.Min(points[i].Y));
-        var highX = n.Range.Reduce(0.0 - Number.MaxValue, (m, i) => m.Max(points[i].X));
-        var highY = n.Range.Reduce(0.0 - Number.MaxValue, (m, i) => m.Max(points[i].Y));
-        var size = (highX - lowX).Max(highY - lowY).Max(Number.SmallestNormal);
-        var cx = (lowX + highX) * 0.5;
-        var cy = (lowY + highY) * 0.5;
-        var big = 64.0 * size;
-        var all = points.Concatenate([Point2D(cx - 2.0 * big, cy - big), Point2D(cx + 2.0 * big, cy - big), Point2D(cx, cy + 2.0 * big)]);
-        var s = EmptySeedState(n + 3, cap).Set(0, 1).WithSeedTriangle(cap, 0, n, n + 1, n + 2, -1, -1, -1);
-        var placed = new Buffer<Integer>(n);
-        var k = 0;
-        while (k < n)
-        {
-            placed = placed.Set(k, -1);
-            k = k + 1;
-        }
-        var order = all.SeedInsertionOrder(n);
-        var last = 0;
-        k = 0;
-        while (k < n)
-        {
-            var p = order[k];
-            var t = s.SeedLocate(cap, all, last, p);
-            var same = t < 0 ? -1 : s.SeedCoincidentCorner(all, t, p);
-            if (t >= 0 && same < 0)
-            {
-                s = s.SeedInserted(cap, all, t, p);
-                placed = placed.Set(p, p);
-                last = s.SeedAt(cap, p);
-            }
-            else
-            {
-                placed = placed.Set(p, same);
-            }
-            k = k + 1;
-        }
-        s = s.SeedWithoutSlivers(cap, all, next, false, n);
-        var a = 0;
-        while (a < n)
-        {
-            if (next[a] >= 0)
-            {
-                // Nested: the generated code evaluates both operands of &&, and next[a] is -1 on
-                // a point hole.
-                if (placed.At(a) == a && placed.At(next[a]) == next[a])
-                {
-                    s = s.SeedWithSegment(cap, all, next, a, next[a]);
-                }
-            }
-            a = a + 1;
-        }
-        s = s.SeedWithoutSlivers(cap, all, next, true, n);
-        var inside = s.SeedInside(cap, next);
-        return s.At(0).Range.FlatMap(t =>
-            (inside[t] && s.SeedCorner(t, 0) < n && s.SeedCorner(t, 1) < n && s.SeedCorner(t, 2) < n)
-                ? [TriangleOf(s.SeedCorner(t, 0), s.SeedCorner(t, 1), s.SeedCorner(t, 2))]
-                : [TriangleOf(0, 0, 0)].Take(0));
-    }
-
-    // The corner of triangle t at point p's position exactly; -1 when no corner is.
-    SeedCoincidentCorner(s: List<Integer>, points: Array<Point2D>, t: Integer, p: Integer): Integer
-    {
-        var a = s.SeedCorner(t, 0);
-        var b = s.SeedCorner(t, 1);
-        var c = s.SeedCorner(t, 2);
-        return points[a].X == points[p].X && points[a].Y == points[p].Y ? a
-            : (points[b].X == points[p].X && points[b].Y == points[p].Y ? b
-            : (points[c].X == points[p].X && points[c].Y == points[p].Y ? c : -1));
-    }
+    // # Counting
 
     // The number of triangles a complete seed of r has: n + 2 h - 2 over its n boundary points
     // and its h loops of three or more points besides the outer one, plus one for each point on

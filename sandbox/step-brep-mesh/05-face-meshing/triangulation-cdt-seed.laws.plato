@@ -87,15 +87,16 @@ library V1EdgesCdtSeedLaws
     HasSideOnce(tris: Array<TriangleFace>, a: Integer, b: Integer): Boolean
         => tris.Reduce(0, (n, t) => n + (t.SideSlot(a, b) >= 0 ? 1 : 0)) == 1;
 
-    // The four facts of the seed of r: n + 2h - 2 triangles, every boundary segment a side once,
+    // The four facts of the seed of r: SeedCompleteCount triangles (n + 2h - 2, plus one per
+    // point on no segment), every boundary segment a side once,
     // the region's area, every triangle above the floor.
     SeedFactsHold(r: UvRegion): Boolean
     {
         var points = r.PlainPoints;
         var next = r.NextBoundaryTable;
-        var tris = points.CdtSeedByInsertion(next);
+        var tris = points.CdtSeedOverCopies(next);
         var area = r.RegionArea(points);
-        return tris.Count == points.Count + 2 * r.WideHoles - 2
+        return tris.Count == r.SeedCompleteCount
             && next.Count.Range.All(a => next[a] < 0 ? true : tris.HasSideOnce(a, next[a]))
             && (tris.TrianglesArea(points) - area).Abs <= 1e-9 * area.Abs
             && tris.All(t => t.IsAboveAreaFloor(points));
@@ -128,16 +129,15 @@ library V1EdgesCdtSeedLaws
     // more), and the mesher's seed (CdtSeedOfRegionOverCopies, E5a) has that count. A failure here once was an index of -1: the
     // generated code evaluates both operands of &&.
     Law_V1Edges_SeedHoldsPointHoles(_: Integer): Boolean
-        => StarCase(1).PlainPoints.CdtSeedByInsertion(StarCase(1).NextBoundaryTable).Count == StarCase(1).SeedCompleteCount
-            && StarCase(3).PlainPoints.CdtSeedByInsertion(StarCase(3).NextBoundaryTable).Count == StarCase(3).SeedCompleteCount
-            && StarCase(1).CdtSeedOfRegionOverCopies(StarCase(1).PlainPoints).Count == StarCase(1).SeedCompleteCount;
+        => StarCase(1).CdtSeedOfRegionOverCopies(StarCase(1).PlainPoints).Count == StarCase(1).SeedCompleteCount
+            && StarCase(3).CdtSeedOfRegionOverCopies(StarCase(3).PlainPoints).Count == StarCase(3).SeedCompleteCount;
 
     // The new seed and today's have the same count and area on r.
     SeedAgrees(r: UvRegion): Boolean
     {
         var points = r.PlainPoints;
         var old = r.CdtSeedIndexedCounted(points).Value;
-        var seed = points.CdtSeedByInsertion(r.NextBoundaryTable);
+        var seed = points.CdtSeedOverCopies(r.NextBoundaryTable);
         return old.Count == points.Count + 2 * r.WideHoles - 2 && seed.Count == old.Count
             && (seed.TrianglesArea(points) - old.TrianglesArea(points)).Abs <= 1e-9 * old.TrianglesArea(points).Abs;
     }
