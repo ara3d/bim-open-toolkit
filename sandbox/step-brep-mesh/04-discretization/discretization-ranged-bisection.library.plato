@@ -243,13 +243,28 @@ library BisectionCached
     //==
     // # The segment test, cheapest criterion first
 
+    // True when the piece [a, b] runs from a point back to the same point, within the length
+    // tolerance, over two different parameters (TKT-453). Such a segment is no chord of the arc
+    // between them, so it fails, whatever the other criteria say: a closed edge with no interior
+    // breakpoint has one seed span, from a point back to itself, whose chord has zero length, so
+    // its tangent deviation reads 0 and a loop within the chordal bound kept one segment, and
+    // RaisedToCount gave it a triangle (the M2-JODY-W377 circles). The bisection keeps every
+    // other piece at least the effective minimum length, so only a seed span can be closed.
+    IsClosedSpan(m: BrepModel, a: BisectionEnd, b: BisectionEnd): Boolean
+        => a.Parameter != b.Parameter && a.Point.Distance(b.Point) <= m.Tolerances.Length.Value;
+
     // Termination's SegmentFailsOn(m, e, c, a.Parameter, b.Parameter, images) with the ends given,
-    // the criteria in order of cost and stopping at the first that fails: the length limit (one
-    // distance), the tangent deviation (three derivatives), the sagitta (a closed form, a hull
-    // certificate, or an estimate), the image chords (a seeded search and three surface
-    // evaluations per image on a surface without a closed-form inverse). The same Boolean.
+    // a closed span failing first at no cost (IsClosedSpan), then the criteria in order of cost and
+    // stopping at the first that fails: the length limit (one distance), the tangent deviation
+    // (three derivatives), the sagitta (a closed form, a hull certificate, or an estimate), the
+    // image chords (a seeded search and three surface evaluations per image on a surface without a
+    // closed-form inverse). The same Boolean on every span that is not closed.
     SegmentFailsCachedCounted(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: BisectionEnd, b: BisectionEnd, images: Array<EdgeImage>): Counted<Boolean>
     {
+        if (m.IsClosedSpan(a, b))
+        {
+            return Counted(true, Projections(0));
+        }
         var piece = EdgeDiscretization(e, [a.Parameter, b.Parameter], [a.Point, b.Point]);
         if (piece.SegmentLength(0).IsWithinLimit(c.MaxLength).Not)
         {
@@ -267,11 +282,14 @@ library BisectionCached
     }
 
     // Termination's SegmentFailsOn with each end evaluated once and the criteria cheapest first,
-    // for callers that hold parameters only (the findings' floor count): the same Boolean.
+    // for callers that hold parameters only (the findings' floor count), a closed span failing
+    // first as in SegmentFailsCachedCounted: the same Boolean on every span that is not closed.
     SegmentFailsOrderedOn(m: BrepModel, e: BrepEdgeIndex, c: DiscretizationCriteria, a: Number, b: Number, images: Array<EdgeImage>): Boolean
     {
         var piece = m.PieceOf(e, a, b);
-        return piece.SegmentLength(0).IsWithinLimit(c.MaxLength).Not
+        return (a != b && piece.Points[0].Distance(piece.Points[1]) <= m.Tolerances.Length.Value)
+            ? true
+            : piece.SegmentLength(0).IsWithinLimit(c.MaxLength).Not
             ? true
             : (m.TangentDeviation(piece, SamplePlan.DiscretizationPlan, 0) > c.EffectiveAngular * 0.5
                 ? true
