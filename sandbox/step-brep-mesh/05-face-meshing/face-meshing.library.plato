@@ -128,7 +128,8 @@ library FaceMeshing
         => TwiceSignedArea(a, b, p) >= 0.0 && TwiceSignedArea(b, c, p) >= 0.0 && TwiceSignedArea(c, a, p) >= 0.0;
 
     // Whether position i of the ring is an ear: positive area with its two
-    // neighbours, and no ring point other than the three (by index) inside
+    // neighbours, and no ring point other than the three (by index, or at
+    // one of their positions exactly: a pinch vertex's second copy) inside
     // or on the triangle.
     IsEar(ring: Array<Integer>, points: Array<Point2D>, i: Integer): Boolean
     {
@@ -136,7 +137,7 @@ library FaceMeshing
         var q = ring[i];
         var s = ring[(i + 1) % ring.Count];
         return TwiceSignedArea(points[p], points[q], points[s]) > 0.0
-            ? ring.All(x => (x == p || x == q || x == s) ? true : InClosedTriangle(points[x], points[p], points[q], points[s]).Not)
+            ? ring.All(x => (x == p || x == q || x == s || points[x].IsCornerOf(points[p], points[q], points[s])) ? true : InClosedTriangle(points[x], points[p], points[q], points[s]).Not)
             : false;
     }
 
@@ -888,9 +889,11 @@ library FaceMeshing
     }
 
     // Face f's region meshed, or refused: a region that is not simple gets an empty mesh and the
-    // blocking requests with their diagnostics, or one face error when no model edge is to blame.
+    // blocking requests with their diagnostics, or one face error when no model edge is to blame;
+    // a region with no width gets FACE-ZERO-WIDTH and no request, and a loop pinched other than as
+    // a keyhole FACE-LOOP-NOT-SIMPLE (MeshRegionOnceV1, face-meshing-v1-pinch.library.plato).
     MeshRegion(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): FaceMeshOutcome
-        => m.MeshRegionOnce(f, d, c);
+        => m.MeshRegionOnceV1(f, d, c);
 
     // Face f meshed under criteria c, its edges discretized as d: the layer's entry point. A face
     // with a poly loop is not meshed (version 1); otherwise MeshRegion.

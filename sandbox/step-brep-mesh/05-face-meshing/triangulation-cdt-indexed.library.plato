@@ -375,7 +375,7 @@ library TriangulationCdtIndexed
                         while (k < near.Count && blocker < 0)
                         {
                             var y = near[k];
-                            if (copies.At(y) > 0 && y != p && y != q && y != s)
+                            if (copies.At(y) > 0 && y != p && y != q && y != s && points[y].IsCornerOf(points[p], points[q], points[s]).Not)
                             {
                                 if (InClosedTriangle(points[y], points[p], points[q], points[s]))
                                 {

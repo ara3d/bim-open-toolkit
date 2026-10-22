@@ -864,17 +864,12 @@ library UvRegions
 
     // True when segments (k, i) and (q, j) are as far apart as a simple region needs: a segment
     // and itself always are; consecutive segments of one loop when neither folds back onto the
-    // other; any other pair when they are farther apart than the tolerance.
-    // Precondition: both segments exist.
+    // other; two non-consecutive segments of one loop that share exactly one end, with identical
+    // coordinates, when they meet only there (a pinch vertex, TKT-412); any other pair when they
+    // are farther apart than the tolerance. The rule is SegmentsSeparatedV1
+    // (face-meshing-v1-pinch.library.plato). Precondition: both segments exist.
     SegmentsSeparated(r: UvRegion, tol: UvTolerance, k: Integer, i: Integer, q: Integer, j: Integer): Boolean
-        => (k == q && i == j)
-            ? true
-            : ((k == q && r.Follows(k, i, j))
-                ? r.DoesNotFold(tol, k, i, j)
-                : ((k == q && r.Follows(k, j, i))
-                    ? r.DoesNotFold(tol, k, j, i)
-                    : SegmentGap(r.SegmentStart(k, i), r.SegmentEnd(k, i),
-                        r.SegmentStart(q, j), r.SegmentEnd(q, j), tol) > 1.0));
+        => r.SegmentsSeparatedV1(tol, k, i, q, j);
 
     // True when segment i of loop k comes too close to some other boundary segment.
     SegmentCollides(r: UvRegion, tol: UvTolerance, k: Integer, i: Integer): Boolean

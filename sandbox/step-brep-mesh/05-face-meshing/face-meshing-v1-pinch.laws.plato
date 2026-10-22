@@ -61,8 +61,10 @@ library V1PinchLaws
     Law_V1Gate_FoldAtPinchStillCollides(_: Integer): Boolean
         => FoldAtPinchRegion(0).IsSimpleRegionV1(PinchTolerance(0)).Not;
 
-    // On star case k and jagged case k, whose loops share no vertex, SegmentsSeparatedV1 decides
-    // simplicity as the library does.
+    // On star case k and jagged case k, whose loops share no vertex, every pair tested under
+    // SegmentsSeparatedV1 decides simplicity as the library's grid (IsSimpleRegion) does. Staged,
+    // this compared the pinch rule with the old one; since the merge SegmentsSeparated is the pinch
+    // rule, so it states that the grid and every pair agree under it.
     Law_V1Gate_PinchRuleAgreesAwayFromPinches(k: Integer): Boolean
         => StarCase(k).IsSimpleRegionV1(PlaneTolerance(0)) == StarCase(k).IsSimpleRegion(PlaneTolerance(0))
             && JaggedCase(k).IsSimpleRegionV1(PlaneTolerance(0)) == JaggedCase(k).IsSimpleRegion(PlaneTolerance(0));
