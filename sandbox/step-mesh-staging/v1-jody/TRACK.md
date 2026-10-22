@@ -1,7 +1,7 @@
 # v1-jody: small closed B-spline loops of the M2-JODY-W377 files discretized and meshed
 
 Ticket: TKT-431, TKT-453, TKT-414, TKT-467, TKT-470
-Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, J5 in 3cc7edb4, J6 in ca659dbc, J7 in a39a1ad4
+Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, J5 in 3cc7edb4, J6 in ca659dbc, J7 in a39a1ad4 | ready: J8
 
 ## Chunks
 
@@ -10,6 +10,7 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, 
 | J1 | TKT-431 | The 24 one-edge plane loops of the two M2-JODY-W377 files discretized: a B-spline written unclamped in periodic form is decided closed from its record | 2 h |
 | J2 | TKT-453 | A closed span whose ends coincide fails the segment test, so small closed loops are not meshed as triangles | 1 h |
 | J4 | (supervisor's performance finding) | The other `Count.Range.Take(0)` empties replaced by one layer-0 helper, `Integer.NoIndices` (J4.patch) | 1 h |
+| J8 | (supervisor's follow-up to J6, J7) | One open-closed-shell diagnostic instead of two, and no unguarded read after && in J6's and J7's merged files | 1 h |
 | J6 | TKT-467 | Sew vertices and edges within each declared-closed shell, and report every declared-closed shell left open (supervisor's option A) | 2 h |
 | J7 | TKT-470 | Remove zero-thickness double sheets (two coincident plane faces of opposite sense bounding the same edges, which no other face cites), report the ones kept | 2 h |
 | J5 | TKT-414 | NINA-B222's 16 surface-curve edges that give 0 segments discretize, and an edge the discretizer refuses is reported | 2 h |
@@ -58,6 +59,11 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, 
   - Laws (block `V1JodyDoubleSheetsLaws`, cpu64): 4 pass. A sheet glued into the unit cube is kept by the library (8 faces) and removed (6 faces, each edge of the shell cited twice, two diagnostics naming each other); the same with its planes 1e-4 apart; a face doubled on its plane, whose edges the side faces also cite, is kept and reported twice; no raw witness reports a sheet.
   - Corpus (the same runs as J6): M2_JODY-W5 and W6 CARD goes from 108 non-manifold and 216 misoriented edges and 195 of 197 shells closed to closed and oriented, 0 and 0, 197 of 197; its 6 sheet edges are cited by no face now; every other file is identical.
 
+- J8, see the commit, about 1 h against 1 h. Staged as `J8.patch` (6 hunks over 5 merged files; `git apply --check` passes on toolkit HEAD), since J6 and J7 are in the library now.
+  - (1) The decoder's `StepDiagnosticCode.ClosedShellHasFreeEdges` (STEP-OPEN-CLOSED-SHELL, "a closed_shell has edges used once", measure the count) states the same fact as J6's ClosedShellOpen, but nothing constructs it: no Plato file and no C# file in either repository names it outside its own case, its message arm in `Diagnose` and its arm in `SubjectOf`, and a census of the prepared THEO-P173 and MAYA-W260_REVC models on C# with J6 and J7 counts 0 STEP-OPEN-CLOSED-SHELL against 366 and 3 STEP-CLOSED-SHELL-OPEN. So only J6's is emitted, and the review note that both are is not borne out. The patch removes the dead case and its two arms; no reader names the code (the harness, the laws and the READMEs mention neither string; only reviews/FINDINGS.md does). It changes an existing sum type, so it waits for the wave if the merge rules require.
+  - (2) law_lint's three unguarded reads: `Law_V1Jody_SheetInBoxRemoved` (`Shells[0]`, `removed[0]`, `removed[1]`) and `Law_V1Jody_OpenBoxReported` (`open[0]`) read each behind a conditional on its count; `ShellSheetPairs`' reads move into `IsSheetPairAt`, which returns false before any read when q + 1 is not a position (the reads were in range by construction, but the lint cannot see that). law_lint on a copy of the library with the patch applied finds none in those files (12 findings left, all in other tracks' files).
+  - Laws on that copy (`--library`): the blocks of `pipeline-shell-sewing.laws.plato`, `pipeline-double-sheets.laws.plato` and `step.laws.plato`: 29 pass, 0 fail, 42 obligations (the laws over a Part21File, as before).
+
 ## Merge instructions
 
 J1 (TKT-431):
@@ -88,6 +94,9 @@ J6 and J7 (TKT-467, TKT-470):
 - `shell-sewing.library.plato` (block `V1JodyShellSewing`) and `double-sheets.library.plato` (block `V1JodyDoubleSheets`) into `03-step`. In `PrepareModelWith`, `.Reduced.LoopsChained` => `.Reduced.LoopsChained.Sewn.SheetsRemoved` (the body of the staged `PrepareModelWithRepaired`); then delete `PrepareModelWithRepaired` and `PrepareModelRepaired` and point the laws at `PrepareModel`.
 - With the contract requests below applied, each staged diagnostic constructor becomes `Diagnose(StepDiagnosticCode.<Case>, where, measure)` with its message moved into `Diagnose`: `ShellVertexSewnDiagnostic` => `ShellVertexSewn`, `ShellEdgeSewnDiagnostic` => `ShellEdgeSewn`, `ClosedShellOpenDiagnostic` => `ClosedShellOpen`, `OnceCitedEdgeDiagnostic` => `ClosedShellEdgeCitedOnce`, `SheetDroppedDiagnostic` => `ZeroThicknessSheetRemoved`, `SheetKeptDiagnostic` => `ZeroThicknessSheetKept`. The codes' strings stay as staged (v1-proof's harness reads them).
 - `shell-sewing.laws.plato` and `double-sheets.laws.plato` into `08-pipeline` (they read layer 7's `Witness_UnitBox` and layer 3's raw witnesses). `LoopFaces`, `FaceEdgeIndices` and `DistinctSorted` stay in the library blocks, which both law files use. After the rewire, `Law_V1Jody_SewingKeepsRawWitnesses`'s `SameModel` clause compares a function with itself: keep its diagnostic clauses only.
+
+J8:
+- `git apply sandbox/step-mesh-staging/v1-jody/J8.patch` (03-step/step-diagnostics.types.plato and .library.plato, 03-step/step-double-sheets.library.plato, 08-pipeline/pipeline-double-sheets.laws.plato, 08-pipeline/pipeline-shell-sewing.laws.plato), then delete J8.patch. Regenerate: the C# loses `ClosedShellHasFreeEdges`.
 
 ## Contract requests
 
@@ -124,6 +133,7 @@ J6 and J7 (TKT-467, TKT-470):
 | J6: probes (twins in other bodies, the corpus merges) | 50 | 5 probe builds |
 | J6 and J7: staging and laws | 90 | 12 law runs, 2 bisections of a circular-expression error |
 | J6 and J7: regenerations, builds and corpus runs | 120 | 5 regenerations, 6 builds, 4 whole-corpus runs, 1 diagnostics census |
+| J8: search for the old code, patch, laws and lint on a patched copy | 25 | 2 law runs, 2 lint runs, 1 probe |
 
 ## Lessons
 
