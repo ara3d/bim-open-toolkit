@@ -73,6 +73,8 @@ type StepDiagnosticCode
     | ShellEdgeSewn
     | ClosedShellOpen
     | ClosedShellEdgeCitedOnce
+    | ZeroThicknessSheetRemoved
+    | ZeroThicknessSheetKept
     | OrientationFolded
     | FaceCitedTwice
     | InstanceSkipped;

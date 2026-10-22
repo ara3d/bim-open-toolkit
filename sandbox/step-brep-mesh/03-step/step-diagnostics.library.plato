@@ -75,6 +75,8 @@ library StepDiagnostics
             ShellEdgeSewn => Diagnostic(Severity.Info, "STEP-SHELL-EDGE-SEWN", "An edge of a closed shell runs between the same two vertices along the same curve as another edge of the shell; it was merged into it, and the coedges citing it cite the kept edge. Measure is the kept edge's index.", where, measure);
             ClosedShellOpen => Diagnostic(Severity.Warning, "STEP-CLOSED-SHELL-OPEN", "The file declares this shell closed, but after sewing within the shell some of its edges are cited by only one of its faces: the shell is open in the file. Measure is the number of such edges.", where, measure);
             ClosedShellEdgeCitedOnce => Diagnostic(Severity.Warning, "STEP-CLOSED-SHELL-EDGE-CITED-ONCE", "Only one face of a shell the file declares closed cites this edge. Measure is the index of another shell whose edge lies at the same two positions, or unmeasured when there is none.", where, measure);
+            ZeroThicknessSheetRemoved => Diagnostic(Severity.Warning, "STEP-ZERO-THICKNESS-SHEET-REMOVED", "This face and another of its shell lie on the same plane facing opposite ways and bound the same edges, which no other face cites: a sheet of zero thickness. Both faces were removed. Measure is the other face's index in the raw model.", where, measure);
+            ZeroThicknessSheetKept => Diagnostic(Severity.Warning, "STEP-ZERO-THICKNESS-SHEET-KEPT", "This face and another of its shell lie on the same plane facing opposite ways and bound the same edges, but other faces also cite those edges, so both were kept. Measure is the other face's index in the raw model.", where, measure);
             OrientationFolded => Diagnostic(Severity.Info, "STEP-ORIENTATION-FOLDED", "An oriented_face or oriented shell with orientation .F. was folded into its faces' flags.", where, measure);
             FaceCitedTwice => Diagnostic(Severity.Warning, "STEP-FACE-CITED-TWICE", "A face is cited twice in one occurrence; the second citation reuses the first kernel face and its orientation.", where, measure);
             InstanceSkipped => Diagnostic(Severity.Error, "STEP-INSTANCE-SKIPPED", "A reached instance could not be decoded and has no kernel element.", where, measure);
@@ -147,6 +149,8 @@ library StepDiagnostics
             ShellEdgeSewn => StepFindingSubject.AboutInstance;
             ClosedShellOpen => StepFindingSubject.AboutInstance;
             ClosedShellEdgeCitedOnce => StepFindingSubject.AboutInstance;
+            ZeroThicknessSheetRemoved => StepFindingSubject.AboutInstance;
+            ZeroThicknessSheetKept => StepFindingSubject.AboutInstance;
             OrientationFolded => StepFindingSubject.AboutInstance;
             FaceCitedTwice => StepFindingSubject.AboutInstance;
             InstanceSkipped => StepFindingSubject.AboutInstance;

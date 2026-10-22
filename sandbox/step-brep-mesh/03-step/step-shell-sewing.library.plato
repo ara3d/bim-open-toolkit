@@ -27,7 +27,8 @@
 // before sewing, the reduced model's, not the decoder's) and a diagnostic; each edge merge a
 // RepairRecord (MergedEdgeInto, its RawEdge likewise the reduced model's index) and a
 // diagnostic. The kept vertex of every earlier MergedInto is moved to the sewn model's numbering.
-// PrepareModelWith (step.library.plato) calls Sewn after LoopsChained.
+// PrepareModelWith (step.library.plato) calls Sewn after LoopsChained, then SheetsRemoved
+// (step-double-sheets.library.plato).
 //
 // After sewing, a declared-closed shell some of whose edges its faces cite once is open in the
 // file. Supervisor's decision of 2026-10-22: no sewing across shells (that would merge touching

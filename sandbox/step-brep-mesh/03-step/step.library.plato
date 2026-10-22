@@ -90,7 +90,7 @@ library StepReading
         var size = raw.Model.ModelSize;
         var extent = raw.Model.CoordinateExtent;
         var tolerances = ModelTolerances(raw.Units.UsedContextsOf(raw.Occurrences), raw.Model.Unit, size, extent, policy);
-        var reduced = raw.WithModel(raw.Model.WithTolerances(tolerances)).Reduced.LoopsChained.Sewn;
+        var reduced = raw.WithModel(raw.Model.WithTolerances(tolerances)).Reduced.LoopsChained.Sewn.SheetsRemoved;
         var folds = reduced.Folds.Concatenate(reduced.MirrorFolds);
         var folded = reduced.Model.WithFacesReversedMarked(FoldParity(folds, reduced.Model.Faces.Count));
         var model = folded.WithGeometry(folded.Geometry.WithClosures(folded.Geometry.ClosureMarks(tolerances)));

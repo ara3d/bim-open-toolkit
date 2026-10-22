@@ -1,5 +1,5 @@
 //==
-// # Zero-thickness double sheets (track v1-jody, J7, TKT-470)
+// # Zero-thickness double sheets (TKT-470)
 //
 // SHO/M2_JODY-W5 and W6 CARD.STEP holds two zero-thickness sheets: faces 168 and 1085, and faces
 // 622 and 897, each pair two coincident planes at z = -1.292096 of opposite sense, bounded only by
@@ -17,8 +17,10 @@
 // Only faces and loops are removed; vertices and edges keep their rows (the pair's edges are then
 // cited by no face), so no repair record's vertex index moves.
 //
+// PrepareModelWith (step.library.plato) calls SheetsRemoved after Sewn. LoopFaces and
+// FaceEdgeIndices are in step-shell-sewing.library.plato.
+//
 // Sections, in order:
-//  - Diagnostics
 //  - Faces and their edges
 //  - Pairs
 //  - Removing faces
@@ -26,51 +28,7 @@
 library V1JodyDoubleSheets
 {
     //==
-    // # Diagnostics
-
-    // Face f and the face named by the measure were a zero-thickness sheet and were removed.
-    SheetDroppedDiagnostic(where: Provenance, other: Integer): Diagnostic
-        => Diagnostic(Severity.Warning, "STEP-ZERO-THICKNESS-SHEET-REMOVED",
-            "This face and another of its shell lie on the same plane facing opposite ways and bound the same edges, which no other face cites: a sheet of zero thickness. Both faces were removed. Measure is the other face's index in the raw model.",
-            where, other.ToNumber);
-
-    // Face f and the face named by the measure form a zero-thickness sheet whose edges other
-    // faces also cite; both were kept.
-    SheetKeptDiagnostic(where: Provenance, other: Integer): Diagnostic
-        => Diagnostic(Severity.Warning, "STEP-ZERO-THICKNESS-SHEET-KEPT",
-            "This face and another of its shell lie on the same plane facing opposite ways and bound the same edges, but other faces also cite those edges, so both were kept. Measure is the other face's index in the raw model.",
-            where, other.ToNumber);
-
-    //==
     // # Faces and their edges
-
-    // The face each loop bounds: the first face whose bounds name it, or -1.
-    LoopFaces(m: BrepModel): Array<Integer>
-    {
-        var owner = new Buffer<Integer>(m.Loops.Count);
-        var i = 0;
-        while (i < m.Loops.Count)
-        {
-            owner = owner.Set(i, -1);
-            i = i + 1;
-        }
-        var f = m.Faces.Count - 1;
-        while (f >= 0)
-        {
-            var b = 0;
-            while (b < m.Faces[f].Bounds.Count)
-            {
-                owner = owner.Set(m.Faces[f].Bounds[b].Loop.Value, f);
-                b = b + 1;
-            }
-            f = f - 1;
-        }
-        return owner.Freeze();
-    }
-
-    // The edges face f's loops cite, distinct and increasing.
-    FaceEdgeIndices(m: BrepModel, f: Integer): Array<Integer>
-        => DistinctSorted(m.Faces[f].Bounds.FlatMap(b => m.Loops[b.Loop.Value].CoedgesOf.Map(c => c.Edge.Value)));
 
     // Whether every bound of face f is an edge loop.
     HasOnlyEdgeLoops(m: BrepModel, f: Integer): Boolean
@@ -241,10 +199,10 @@ library V1JodyDoubleSheets
         var counts = m.EdgeFaceCounts;
         var loose = pairs.Map(p => m.IsLooseSheet(p, counts));
         var findings = pairs.Count.Range.FlatMap(i => [
-            loose[i] ? SheetDroppedDiagnostic(Provenance.AtInstance(raw.Sources.Faces[pairs[i][0]].Instance), pairs[i][1])
-                     : SheetKeptDiagnostic(Provenance.AtInstance(raw.Sources.Faces[pairs[i][0]].Instance), pairs[i][1]),
-            loose[i] ? SheetDroppedDiagnostic(Provenance.AtInstance(raw.Sources.Faces[pairs[i][1]].Instance), pairs[i][0])
-                     : SheetKeptDiagnostic(Provenance.AtInstance(raw.Sources.Faces[pairs[i][1]].Instance), pairs[i][0])]);
+            Diagnose(loose[i] ? StepDiagnosticCode.ZeroThicknessSheetRemoved : StepDiagnosticCode.ZeroThicknessSheetKept,
+                Provenance.AtInstance(raw.Sources.Faces[pairs[i][0]].Instance), pairs[i][1].ToNumber),
+            Diagnose(loose[i] ? StepDiagnosticCode.ZeroThicknessSheetRemoved : StepDiagnosticCode.ZeroThicknessSheetKept,
+                Provenance.AtInstance(raw.Sources.Faces[pairs[i][1]].Instance), pairs[i][0].ToNumber)]);
         var dropped = pairs.Count.Range.FlatMap(i => loose[i] ? pairs[i] : Integer.NoIndices);
         var drop = m.Faces.Count.MapRange(f => dropped.Any(d => d == f));
         var reported = RawDecodedModel(raw.Model, raw.Occurrences, raw.Sources, raw.Folds, raw.Repairs,

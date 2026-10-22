@@ -695,6 +695,12 @@ TYPE-CATALOG.md sections 13 and 15; the README lists the helpers. Blocks `BrepRe
 
 Format: date, layer, old name, new name, reason.
 
+- 2026-10-22, 3, `StepDiagnosticCode` gains `ZeroThicknessSheetRemoved`
+  (`STEP-ZERO-THICKNESS-SHEET-REMOVED`) and `ZeroThicknessSheetKept`
+  (`STEP-ZERO-THICKNESS-SHEET-KEPT`), both Warning, `AboutInstance`, Measure the other face's raw
+  index: `SheetsRemoved` (step-double-sheets.library.plato), run by `PrepareModelWith` after `Sewn`,
+  removes two faces of a shell that alone bound one edge set on one plane facing opposite ways,
+  and reports a pair whose edges other faces cite (TKT-470, J7).
 - 2026-10-22, 3, `StepDiagnosticCode` gains `ShellVertexSewn` (`STEP-SHELL-VERTEX-SEWN`, Info;
   Measure the distance merged), `ShellEdgeSewn` (`STEP-SHELL-EDGE-SEWN`, Info; Measure the kept
   edge's index), `ClosedShellOpen` (`STEP-CLOSED-SHELL-OPEN`, Warning; Measure the once-cited

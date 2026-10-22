@@ -1,5 +1,5 @@
 //==
-// # Zero-thickness double sheets: laws (track v1-jody, J7, TKT-470)
+// # Zero-thickness double sheets: laws (TKT-470)
 //
 // Witnesses, made from layer 3's raw unit cube (Witness_RawUnitCube, [0, 1]^3, one closed shell):
 // - SheetInBox: a square sheet [0.25, 0.75]^2 at z = 0.5 glued into the cube's shell as two faces
@@ -93,19 +93,18 @@ library V1JodyDoubleSheetsLaws
     //==
     // # Laws
 
-    // The sheet glued into the box: the library keeps 8 faces; the repair removes both sheet
+    // The sheet glued into the box: the raw model has 8 faces; the repair removes both sheet
     // faces and their loops, leaves the cube's 6 faces with every edge of its shell cited twice,
     // and reports each removed face once, naming the other.
     Law_V1Jody_SheetInBoxRemoved(_: Integer): Boolean
     {
         var raw = 0.SheetInBox;
-        var before = raw.PrepareModel;
-        var after = raw.PrepareModelRepaired;
+        var after = raw.PrepareModel;
         var removed = after.Diagnostics.WithCode("STEP-ZERO-THICKNESS-SHEET-REMOVED");
-        return before.Model.Faces.Count == 8
+        return raw.Model.Faces.Count == 8
             && after.Model.Faces.Count == 6
             && after.Model.Shells[0].Faces.Count == 6
-            && after.Model.Loops.Count == before.Model.Loops.Count - 2
+            && after.Model.Loops.Count == raw.Model.Loops.Count - 2
             && after.Model.EveryEdgeCitedTwice(0)
             && removed.Count == 2
             && removed[0].Measure == 7.0 && removed[1].Measure == 6.0
@@ -116,7 +115,7 @@ library V1JodyDoubleSheetsLaws
     // millimetre model, is removed too: its faces bound the same edges.
     Law_V1Jody_SheetApartRemoved(_: Integer): Boolean
     {
-        var after = 0.0001.SheetInBoxApart.PrepareModelRepaired;
+        var after = 0.0001.SheetInBoxApart.PrepareModel;
         return after.Model.Faces.Count == 6
             && after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-REMOVED") == 2;
     }
@@ -125,7 +124,7 @@ library V1JodyDoubleSheetsLaws
     // cite: kept (7 faces) and reported twice.
     Law_V1Jody_DoubledFaceKept(_: Integer): Boolean
     {
-        var after = 0.DoubledFace.PrepareModelRepaired;
+        var after = 0.DoubledFace.PrepareModel;
         return after.Model.Faces.Count == 7
             && after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-KEPT") == 2
             && after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-REMOVED") == 0;
@@ -134,7 +133,7 @@ library V1JodyDoubleSheetsLaws
     // On every raw witness, the repaired preparation reports no sheet.
     Law_V1Jody_NoSheetInRawWitnesses(raw: RawDecodedModel): Boolean
     {
-        var after = raw.PrepareModelRepaired;
+        var after = raw.PrepareModel;
         return after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-REMOVED") == 0
             && after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-KEPT") == 0;
     }
