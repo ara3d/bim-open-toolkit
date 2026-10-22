@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1, F3, F3b, F2, F4b, P1 in 155609e6 | dropped: F4a | next: P2 (folds in the newly meshed c211 strips), then cause 5, then cause 4
+Status: merged: F1, F3, F3b, F2, F4b | dropped: F4a | ready: P1 (TKT-459, closes TKT-461 too) | blocked: P2, cusps, slits and touching holes (supervisor decisions, below)
 
 ## Chunks
 
@@ -70,6 +70,16 @@ Grouping (corpus-1022, library 43dd439b; reasons from the gallery JSON of the e5
   - Regression, the 43 law libraries of 01-geometry, 05-face-meshing and 07-validation/poles* (364 laws), budget 120 s: HEAD 341 pass, 15 fail, 8 skipped; wired 342 pass, 14 fail, 8 skipped. Only changes: the strip law fail to pass, and `Law_ScaledSurfacePointIsScaled` listed (pass) only in the wired run. The 14 failures are the same on both (B-spline record validity laws on random records, two placement laws).
   - Harness, gallery mode, HEAD (deps' C#, generated from bf3ac6c0 by Plato c8c83c8b) against a scratch regeneration of HEAD with P1 (same Plato), on twelve files: c211 527 to 536 faces meshed (the nine of cause 2), boundary edges 2171 to 69; ANN-MB2 2084 to 2088, closed again; RCB-F9T(AP214), M2-MAYA-W271, LARA, LEXI, CAM, LENA-R8, MAYA-W160, MAYA-W260_REVC, ODIN-W260: the same faces meshed, the same edge check, the same contract verdict.
   - Not clean, P2: c211's newly meshed strips keep 21 elements wound against the face normal (contract "flipped": face 45 1 of 29, 82 9 of 43, 92 5 of 27, 259 2 of 679, 262 4 of 888; the harness marks them explained); the edge check stays oriented, so these are folds inside the 0.2 mm strips. Before P1 these faces were holes with FACE-ZERO-WIDTH or not-simple diagnostics.
+
+### Diagnoses waiting on a decision (2026-10-22)
+
+All measured with a probe harness built on deps' committed C# (library bf3ac6c0; region tolerance, chart, colliding segments per face).
+- P2, c211's newly meshed strips (after P1): 21 elements wound against the face normal, all positive in the parameter plane and with Pu x Pv agreeing with the face normal at their corners. They are long thin triangles (two corners about 5 mm apart along one boundary edge, the third 0.2 mm across) on a strip that bends by more than its width under c211's 1 mm chordal bound. Refinement cannot split them (locked boundary segments; insertions must stay chordal/10 from corners). Proposed: a new RefinementReason asking for the boundary edge to be refined when a folded triangle has a boundary side.
+- Cause 5, c211 cylinders 81, 84, 88: a tangent cusp at one vertex (two edges leave it in nearly the same direction; the first sample of the second edge is 0.001 mm from the first edge's last segment, tolerance 0.01). Not simple within tolerance, correctly; any mesh of the tip has an element thinner than the tolerance. Options sent: accept the one degenerate cusp element, a FACE-CUSP diagnostic, or trim the tip.
+- Cause 5, NINA-B222 cylinders 601, 677: vertices beside "on-surface" edges (SURFACE_CURVE with pcurves) get u = 1.5e15 and 1.9e14 from LoopToUv, and those edges contribute one sample each where they have 64 and 96 segments. Same curve kind and file as cause 1; proposed for the v1-jody session (J5).
+- Cause 4, ANNA-B4 491 and ODIN-W260 2625: zero-width (0.0007 mm and 0.001 mm wide, tolerance 0.001); the library's MeshRegionOnceV1 gives FACE-ZERO-WIDTH, which is right. The corpus said "not simple" because the harness (bim-open-data tools/step-corpus-harness/FaceTiming.cs) restates the face stages with the pre-V1G-6 rules; face counts agree with MeshFile on ANNA-B4, ODIN-W260, LENA-R8 and ELLA-W1, so only the messages and stage timings drift.
+- Cause 4, LENA-R8 258: three pinches between two rectangular holes touching corner to corner (corners 9e-6 apart, tolerance 0.01); V1G-6 left touching loops not simple. Proposed: join two holes that touch within the tolerance into one loop through the shared point, so the keyhole rule applies.
+- Cause 4, ELLA-W1 304 and 305: a comb of about 30 zero-width notches (the boundary runs 0.0049 mm along u = 0 and straight back; tolerance 1e-7). ODIN-W260 2613, 2615, 2616: slits whose two sides lie 0.001 mm apart, the tolerance. Options sent: triangulate a slit as a cut with coincident sides, or a FACE-SLIT diagnostic.
 
 ## Open after the merges (2026-10-22, everything of this track merged by aac39758)
 
