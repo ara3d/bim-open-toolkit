@@ -124,3 +124,17 @@ Plan: docs/plans/step-reader.md, section 'Pivot: geometry in Plato' (owner decis
   over 600 s in edges). Durations: regeneration 200 s; cold Release build 127 s; test runs 104 and 109 s; harness
   builds 27 to 78 s; verification runs about 12 minutes; corpus 1,065 s plus a 600 s rerun of one file.
 
+- 2026-10-22, session cab91351 (track E, regeneration and bookkeeping), chunks E4, E1, E2. **E4**: `powershell -File
+  deps/bim-open-data/tools/regen-step-brep.ps1` reads every input from a commit: compiler, stdlib tiers and runtime from
+  Plato at the commit pinned in the script (`$PinnedPlato` = e37c032f; `-PlatoCommit` overrides), exported by `git
+  archive` with its parakeet submodule and built once per commit under `%TEMP%\regen-step-brep`; the layers from the
+  toolkit at `-LibraryCommit` (HEAD). The header now names the compiler's commit (it named 2847ef71, the last stdlib
+  commit, while e37c032f compiled); the last output line prints both full commits. Proof: fresh clones of bim-open-data
+  58f6fcb (GitHub), Plato e37c032f with parakeet, ara3d-sdk 82df732 and the toolkit library at cd33c998, with an empty
+  TEMP, regenerate with 0 changed files in the clone. The first fresh run caught 10 new generated files missing from
+  bim-open-data 24966a0 (fixed in 58f6fcb). **E1**: bim-open-data 24966a0 + 58f6fcb (08f5790 holds the description
+  24966a0's message lacks), pinned in toolkit 6d6b6b96; header `Plato e37c032f and bim-open-toolkit c47db0b3`, 1,419
+  generated and 13 runtime files, one DEGRADED body (TKT-410). Mesher tests 33 passed, 1 skipped (io1-tc-214 not
+  fetched); the cube is now 8 vertices and 6 quads (host prefers quads since TKT-405), so `PlatoCubeTests` expects that.
+  **E2**: decoder tests 14 passed. Durations: regeneration 20 min 27 s (10.5 min of it the one-time compiler build on a
+  saturated machine); fresh-clone reruns 109 s and 146 s; mesher tests 28 s then 18 s; decoder tests 43 s.
