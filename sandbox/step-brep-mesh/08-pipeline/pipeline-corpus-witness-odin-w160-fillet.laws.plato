@@ -1,4 +1,5 @@
-// The ODIN-W160 fillet witness's law (TKT-460). Its model, Witness_OdinW160Face3364And3398 beside this file, was
+// The ODIN-W160 fillet witness's law (TKT-460). Its model, Witness_OdinW160Face3364And3398
+// (pipeline-corpus-witness-odin-w160-fillet.library.plato) was
 // written by `step-corpus-harness extract ODIN-W160.STEP 3364,3398 <out> --ring 1` on a regeneration of 4a30959f,
 // the library before V1G-15, so the face counts in its header are the defect's: 6 triangles on each of faces 3364
 // and 3398.
