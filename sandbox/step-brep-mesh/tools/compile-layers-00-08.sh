@@ -25,6 +25,6 @@ dotnet "$CLI" "$(cygpath -m "$W")/in/foundation" "$(cygpath -m "$W")/in/geometry
   --out="$(cygpath -m "$W")/out" --profile=cpu64 > "$W/log.txt" 2>&1
 code=$?
 tail -3 "$W/log.txt"
-echo "error lines: $(grep -ciE '[Error]|RESOLVE' "$W/log.txt")"
+echo "error lines: $(grep -ciE '\[Error\]|RESOLVE' "$W/log.txt")"
 echo "exit $code"
 exit $code
