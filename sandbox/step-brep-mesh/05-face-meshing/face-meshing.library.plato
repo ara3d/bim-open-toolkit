@@ -360,9 +360,9 @@ library FaceMeshing
     CollapsedToTriangle(q: QuadFace, local: Array<VertexIndex>): Array<TriangleFace>
     {
         var cs = q.Vertices;
-        var same = 4.Range.FlatMap(i => local[cs[i]] == local[cs[(i + 1) % 4]] ? [i] : 4.Range.Take(0));
+        var same = 4.Range.FlatMap(i => local[cs[i]] == local[cs[(i + 1) % 4]] ? [i] : Integer.NoIndices);
         var drop = same.Count == 1 ? (same[0] + 1) % 4 : -1;
-        var kept = 4.Range.FlatMap(i => i == drop ? 4.Range.Take(0) : [i]);
+        var kept = 4.Range.FlatMap(i => i == drop ? Integer.NoIndices : [i]);
         return drop < 0
             ? [TriangleFace(VertexIndex(0), VertexIndex(0), VertexIndex(0))].Take(0)
             : [TriangleFace(cs[kept[0]], cs[kept[1]], cs[kept[2]])];

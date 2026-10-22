@@ -52,7 +52,7 @@ library BrepFacetedShells
     {
         var n = points.Count;
         var side = m.Tolerances.Length.CoincidenceCellSide;
-        var candidates = n.Range.FlatMap(k => points[k].IsFinitePoint ? [k] : n.Range.Take(0));
+        var candidates = n.Range.FlatMap(k => points[k].IsFinitePoint ? [k] : Integer.NoIndices);
         var cells = points.Map(p => p.CoincidenceCellOf(side));
         var exact = (side > 0.0 && side.IsFinite) ? candidates.All(k => cells[k].IsExactCoincidenceCell) : false;
         return exact

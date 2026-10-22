@@ -258,7 +258,7 @@ library BrepShellTables
         var free = shellEdges.FlatMap(e => (t.UseCountIn(e) == 1 ? m.CountsAsEdge(e) : false) ? [e] : shellEdges.Take(0));
         var n = free.Count;
         var joined = n.Range.FlatMap(i => n.Range.FlatMap(j =>
-            (i < j ? m.EdgesShareClass(free[i], free[j], roots) : false) ? [i * n + j] : n.Range.Take(0)));
+            (i < j ? m.EdgesShareClass(free[i], free[j], roots) : false) ? [i * n + j] : Integer.NoIndices));
         return ClassRoots(n, joined.Map(k => k / n), joined.Map(k => k % n)).ClassCount;
     }
 
