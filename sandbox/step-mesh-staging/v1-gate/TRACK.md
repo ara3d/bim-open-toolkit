@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d | ready: V1G-2, V1G-3, V1G-4, V1G-5 | working: V1G-6
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f | ready: V1G-3, V1G-4, V1G-5 | working: V1G-6
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
