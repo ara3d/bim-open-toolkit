@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1 in 1369e852, F3 and F3b in edb4ae49, F2 in 8e10a3f2 | ready: F4a | working: F4b (waits on V1G-4 and F2/F3 on HEAD)
+Status: merged: F1 in 1369e852, F3 and F3b in edb4ae49, F2 in 8e10a3f2 | F4a: not merged, a gate law regresses on HEAD (merger, see the note under Merge instructions) | working: F4b (waits on V1G-4 and F2/F3 on HEAD)
 
 ## Chunks
 
@@ -51,6 +51,11 @@ F3 runs before F2: it loses faces in 7 corpus files, and F2 is one element on a 
   - Harness on a scratch regeneration with F1+F3+F2+F3b+F4a, `--parallel`: moon_buggy_asm.stp cones 76 and 132 no flipped element, cone 26 4 of 5802 (before: 192, 192, 192); torus face 33 clean; its 180 misoriented edges, between faces 33/34/36, 65/66/68 and 127/128/130, are there on the committed C# too (not from these chunks; worth a ticket). CEL/LENA-R8.STEP, SHO/MAYA-W160.step and SHO/MAYA-W260_REVC.step: same digests as without F4a.
 
 ## Merge instructions
+
+- **F4a merge stopped (merger, 2026-10-22).** On HEAD e2a2eedf (after V1G-4's chordal-only refinement, F2, F3, T1 and V1G-8), the merge instruction applied (`JoinedByCut` calls `NearestPairTied`, below V1G-8's `BandEndCopy`; `cut-pair.*.plato` in 05-face-meshing), compiled laws on a `git archive` of HEAD plus only F4a's files (pinned CLI e37c032f, csharp, cpu64, 60 s budget):
+  - Without the wiring (HEAD plus the three cut-pair files): `Law_V1Faces_ApexCutFollowsGenerator` fails (case `ConeApexCase(0.05)`), `Law_V1Faces_ApexConeElementsFaceNormal` passes (25 cases).
+  - With the wiring: `Law_V1Faces_ApexCutFollowsGenerator` passes, `Law_V1Faces_ApexConeElementsFaceNormal` fails on `ConeApexCase(0.05)`: some element of `Witness_ConeByApexLoop(1.0, 1.0)`'s lateral face has `WindingSign` other than 1. The full sweep otherwise matched HEAD (1405 laws; V1G-8's two torus band laws pass, so the two edits do not collide).
+  - The track measured both laws passing with F4a on b1790f51, before V1G-4. So the generator cut and chordal-only refinement together leave a wrongly wound element on the apex cone, which the spiral cut did not. Back to the track: find the element (a probe on the chordal-only mesh), and restate or fix before the merge.
 
 - `05-face-meshing/face-meshing.library.plato`, `QuadGridOnSides`: replace `m.GridUnlessFolded(f, m.QuadGrid(f, r, corners, c))` with `m.GridUnlessFoldedOrCoarse(f, r, m.QuadGrid(f, r, corners, c), c)` (the body of `QuadGridOnSidesWithin`; delete `QuadGridOnSidesWithin` after, and `GridUnlessFolded` once nothing calls it).
 - `05-face-meshing/face-meshing-lift.laws.plato`, `LiftCaseCriteria`: the surface chordal argument becomes `quads ? 1.0 : MeshingOptions.WitnessOptions.Face.SurfaceChordal`, with the comment "A grid case's surface chordal bound is one model unit, so the grid test (GridUnlessFoldedOrCoarse) keeps the grids of doubly curved faces, whose cells exceed the witness bound: these cases test Lift on collapsed quads, not the bound." Without it `Law_LiftCaseReachesItsBranches` fails on `HemispheresQuads`, whose grid the test now refuses.
