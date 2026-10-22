@@ -1,0 +1,141 @@
+//==
+// # Zero-thickness double sheets: laws (track v1-jody, J7, TKT-470)
+//
+// Witnesses, made from layer 3's raw unit cube (Witness_RawUnitCube, [0, 1]^3, one closed shell):
+// - SheetInBox: a square sheet [0.25, 0.75]^2 at z = 0.5 glued into the cube's shell as two faces
+//   on one plane, one facing +z and one -z, bounded by the same four edges, which no other face
+//   cites (M2_JODY-W5 and W6 CARD's faces 168 and 1085 in miniature). The library keeps all 8
+//   faces; with the repair the model is the cube again (6 faces) and each sheet face has one
+//   STEP-ZERO-THICKNESS-SHEET-REMOVED diagnostic naming the other.
+// - DoubledFace: the cube with a second face on face 0's plane facing the other way, bounded by
+//   face 0's edges reversed. Those edges are also cited by four side faces, so the pair is kept
+//   and reported, two STEP-ZERO-THICKNESS-SHEET-KEPT diagnostics.
+// SheetInBoxApart(1e-4): the sheet's second plane 1e-4 above the first, as in the corpus file;
+// removed too. On every raw witness, the repaired preparation reports no sheet.
+//
+// Sections, in order:
+//  - Witnesses
+//  - Laws
+
+library V1JodyDoubleSheetsLaws
+{
+    //==
+    // # Witnesses
+
+    // The raw model with rows appended: vertices, curves, surfaces, edges, loops and faces, the
+    // new faces added to shell 0; each new row's source is the first source of its table.
+    WithAppended(raw: RawDecodedModel, vertices: Array<BrepVertex>, curves: Array<BrepCurve>, surfaces: Array<BrepSurface>,
+        edges: Array<BrepEdge>, loops: Array<BrepLoop>, faces: Array<BrepFace>): RawDecodedModel
+    {
+        var m = raw.Model;
+        var g = m.Geometry;
+        var s = raw.Sources;
+        var firstFace = m.Faces.Count;
+        var shells = m.Shells.Count.MapRange(k => k == 0
+            ? BrepShell(m.Shells[0].Faces.Concatenate(faces.Count.MapRange(i => BrepFaceIndex(firstFace + i))), m.Shells[0].DeclaredClosed)
+            : m.Shells[k]);
+        var model = BrepModel(
+            GeometrySet(g.Curves.Concatenate(curves), g.Curves2D, g.Pcurves, g.Surfaces.Concatenate(surfaces), g.Closures),
+            m.Vertices.Concatenate(vertices), m.Edges.Concatenate(edges), m.Loops.Concatenate(loops), m.Faces.Concatenate(faces),
+            shells, m.Bodies, m.Tolerances, m.Unit);
+        var sources = KernelSources(
+            s.Vertices.Concatenate(vertices.Map(v => s.Vertices[0])),
+            s.Edges.Concatenate(edges.Map(e => s.Edges[0])),
+            s.Loops.Concatenate(loops.Map(l => s.Loops[0])),
+            s.Faces.Concatenate(faces.Map(f => s.Faces[0])),
+            s.Shells, s.Bodies,
+            s.Curves.Concatenate(curves.Map(c => s.Curves[0])),
+            s.Curves2D, s.Pcurves,
+            s.Surfaces.Concatenate(surfaces.Map(x => s.Surfaces[0])));
+        return RawDecodedModel(model, raw.Occurrences, sources, raw.Folds, raw.Repairs, raw.Units, raw.LengthFactor, raw.AngleFactor, raw.Diagnostics);
+    }
+
+    // The raw cube with the square sheet [0.25, 0.75]^2 at z = 0.5 glued into its shell.
+    SheetInBox(_: Integer): RawDecodedModel
+        => 0.0.SheetInBoxApart;
+
+    // SheetInBox with the second face's plane gap above the first's (its boundary still the
+    // shared edges at z = 0.5), as M2_JODY-W5 and W6 CARD's pairs are 1e-4 mm apart.
+    SheetInBoxApart(gap: Number): RawDecodedModel
+    {
+        var raw = RawDecodedModel.Witness_RawUnitCube;
+        var m = raw.Model;
+        var v = m.Vertices.Count;
+        var e = m.Edges.Count;
+        var c = m.Geometry.Curves.Count;
+        var l = m.Loops.Count;
+        var corners = [Point3D(0.25, 0.25, 0.5), Point3D(0.75, 0.25, 0.5), Point3D(0.75, 0.75, 0.5), Point3D(0.25, 0.75, 0.5)];
+        var lines = 4.MapRange(i => BrepCurve.Line(corners[i], corners[(i + 1) % 4] - corners[i]));
+        var edges = 4.MapRange(i => BrepEdge(BrepVertexIndex(v + i), BrepVertexIndex(v + (i + 1) % 4), CurveIndex(c + i), true));
+        var up = BrepLoop.EdgeLoop(4.MapRange(i => Coedge(BrepEdgeIndex(e + i), EdgeOrientation.Forward)));
+        var down = BrepLoop.EdgeLoop(4.MapRange(i => Coedge(BrepEdgeIndex(e + 3 - i), EdgeOrientation.Reversed)));
+        var lower = BrepSurface.Plane(WorldFrameAt(Point3D(0.0, 0.0, 0.5)));
+        var upper = BrepSurface.Plane(WorldFrameAt(Point3D(0.0, 0.0, 0.5 + gap)));
+        var surface = SurfaceIndex(m.Geometry.Surfaces.Count);
+        return raw.WithAppended(corners.Map(p => BrepVertex(p)), lines, [lower, upper], edges, [up, down],
+            [BrepFace(surface, true, [FaceBound(BrepLoopIndex(l), true, true)]),
+             BrepFace(SurfaceIndex(surface.Value + 1), false, [FaceBound(BrepLoopIndex(l + 1), true, true)])]);
+    }
+
+    // The raw cube with a second face on face 0's surface, facing the other way, bounded by face
+    // 0's first loop reversed.
+    DoubledFace(_: Integer): RawDecodedModel
+    {
+        var raw = RawDecodedModel.Witness_RawUnitCube;
+        var m = raw.Model;
+        var face = m.Faces[0];
+        var coedges = m.Loops[face.Bounds[0].Loop.Value].CoedgesOf;
+        var reversed = BrepLoop.EdgeLoop(coedges.Count.MapRange(i => Coedge(coedges[coedges.Count - 1 - i].Edge, coedges[coedges.Count - 1 - i].Orientation.Opposite)));
+        return raw.WithAppended([], [], [], [], [reversed],
+            [BrepFace(face.Surface, !face.SameSense, [FaceBound(BrepLoopIndex(m.Loops.Count), face.Bounds[0].Orientation, true)])]);
+    }
+
+    //==
+    // # Laws
+
+    // The sheet glued into the box: the library keeps 8 faces; the repair removes both sheet
+    // faces and their loops, leaves the cube's 6 faces with every edge of its shell cited twice,
+    // and reports each removed face once, naming the other.
+    Law_V1Jody_SheetInBoxRemoved(_: Integer): Boolean
+    {
+        var raw = 0.SheetInBox;
+        var before = raw.PrepareModel;
+        var after = raw.PrepareModelRepaired;
+        var removed = after.Diagnostics.WithCode("STEP-ZERO-THICKNESS-SHEET-REMOVED");
+        return before.Model.Faces.Count == 8
+            && after.Model.Faces.Count == 6
+            && after.Model.Shells[0].Faces.Count == 6
+            && after.Model.Loops.Count == before.Model.Loops.Count - 2
+            && after.Model.EveryEdgeCitedTwice(0)
+            && removed.Count == 2
+            && removed[0].Measure == 7.0 && removed[1].Measure == 6.0
+            && after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-KEPT") == 0;
+    }
+
+    // The sheet whose two planes are 1e-4 apart, a hundred length tolerances of the cube's
+    // millimetre model, is removed too: its faces bound the same edges.
+    Law_V1Jody_SheetApartRemoved(_: Integer): Boolean
+    {
+        var after = 0.0001.SheetInBoxApart.PrepareModelRepaired;
+        return after.Model.Faces.Count == 6
+            && after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-REMOVED") == 2;
+    }
+
+    // A face doubled on its own plane facing the other way, whose edges the side faces also
+    // cite: kept (7 faces) and reported twice.
+    Law_V1Jody_DoubledFaceKept(_: Integer): Boolean
+    {
+        var after = 0.DoubledFace.PrepareModelRepaired;
+        return after.Model.Faces.Count == 7
+            && after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-KEPT") == 2
+            && after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-REMOVED") == 0;
+    }
+
+    // On every raw witness, the repaired preparation reports no sheet.
+    Law_V1Jody_NoSheetInRawWitnesses(raw: RawDecodedModel): Boolean
+    {
+        var after = raw.PrepareModelRepaired;
+        return after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-REMOVED") == 0
+            && after.Diagnostics.CountOf("STEP-ZERO-THICKNESS-SHEET-KEPT") == 0;
+    }
+}

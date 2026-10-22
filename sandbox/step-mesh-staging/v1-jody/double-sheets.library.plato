@@ -1,0 +1,254 @@
+//==
+// # Zero-thickness double sheets (track v1-jody, J7, TKT-470)
+//
+// SHO/M2_JODY-W5 and W6 CARD.STEP holds two zero-thickness sheets: faces 168 and 1085, and faces
+// 622 and 897, each pair two coincident planes at z = -1.292096 of opposite sense, bounded only by
+// the edges the two share with each other. Both faces of a pair triangulate the same polygon, so
+// every interior diagonal is used four times: 108 non-manifold and 216 misoriented edges.
+//
+// SheetsRemoved finds, within each shell, the pairs of faces that bound the same set of edges
+// (edge loops only), lie on parallel planes, and face opposite ways once the decoder's folds
+// are counted (the shared boundary makes the planes coincide to within its own precision). When no other face cites any of those edges, the pair encloses nothing and is a
+// sheet of zero thickness: both faces and their loops are removed, and each face gets a located
+// diagnostic naming the other. The shell stays closed, since the pair's edges were cited only by
+// the pair. A pair whose edges other faces also cite is kept and reported. Only planes are
+// compared: a pair on any other surface kind is left as it is.
+//
+// Only faces and loops are removed; vertices and edges keep their rows (the pair's edges are then
+// cited by no face), so no repair record's vertex index moves.
+//
+// Sections, in order:
+//  - Diagnostics
+//  - Faces and their edges
+//  - Pairs
+//  - Removing faces
+
+library V1JodyDoubleSheets
+{
+    //==
+    // # Diagnostics
+
+    // Face f and the face named by the measure were a zero-thickness sheet and were removed.
+    SheetDroppedDiagnostic(where: Provenance, other: Integer): Diagnostic
+        => Diagnostic(Severity.Warning, "STEP-ZERO-THICKNESS-SHEET-REMOVED",
+            "This face and another of its shell lie on the same plane facing opposite ways and bound the same edges, which no other face cites: a sheet of zero thickness. Both faces were removed. Measure is the other face's index in the raw model.",
+            where, other.ToNumber);
+
+    // Face f and the face named by the measure form a zero-thickness sheet whose edges other
+    // faces also cite; both were kept.
+    SheetKeptDiagnostic(where: Provenance, other: Integer): Diagnostic
+        => Diagnostic(Severity.Warning, "STEP-ZERO-THICKNESS-SHEET-KEPT",
+            "This face and another of its shell lie on the same plane facing opposite ways and bound the same edges, but other faces also cite those edges, so both were kept. Measure is the other face's index in the raw model.",
+            where, other.ToNumber);
+
+    //==
+    // # Faces and their edges
+
+    // The face each loop bounds: the first face whose bounds name it, or -1.
+    LoopFaces(m: BrepModel): Array<Integer>
+    {
+        var owner = new Buffer<Integer>(m.Loops.Count);
+        var i = 0;
+        while (i < m.Loops.Count)
+        {
+            owner = owner.Set(i, -1);
+            i = i + 1;
+        }
+        var f = m.Faces.Count - 1;
+        while (f >= 0)
+        {
+            var b = 0;
+            while (b < m.Faces[f].Bounds.Count)
+            {
+                owner = owner.Set(m.Faces[f].Bounds[b].Loop.Value, f);
+                b = b + 1;
+            }
+            f = f - 1;
+        }
+        return owner.Freeze();
+    }
+
+    // The edges face f's loops cite, distinct and increasing.
+    FaceEdgeIndices(m: BrepModel, f: Integer): Array<Integer>
+        => DistinctSorted(m.Faces[f].Bounds.FlatMap(b => m.Loops[b.Loop.Value].CoedgesOf.Map(c => c.Edge.Value)));
+
+    // Whether every bound of face f is an edge loop.
+    HasOnlyEdgeLoops(m: BrepModel, f: Integer): Boolean
+        => m.Faces[f].Bounds.All(b => m.Loops[b.Loop.Value].IsEdgeLoop);
+
+    // Whether the loop is an edge loop.
+    IsEdgeLoop(l: BrepLoop): Boolean
+        => match (l) {
+            EdgeLoop(coedges) => true;
+            VertexLoop(vertex) => false;
+            PolyLoop(points) => false;
+        };
+
+    // For every edge, how many faces cite it.
+    EdgeFaceCounts(m: BrepModel): Array<Integer>
+    {
+        var counts = new Buffer<Integer>(m.Edges.Count);
+        var i = 0;
+        while (i < m.Edges.Count)
+        {
+            counts = counts.Set(i, 0);
+            i = i + 1;
+        }
+        var cited = m.Faces.Count.Range.FlatMap(f => m.FaceEdgeIndices(f)).Sort((a, b) => a <= b);
+        var k = 0;
+        while (k < cited.Count)
+        {
+            var e = cited[k];
+            var n = 0;
+            while (k < cited.Count ? cited[k] == e : false)
+            {
+                n = n + 1;
+                k = k + 1;
+            }
+            counts = counts.Set(e, n);
+        }
+        return counts.Freeze();
+    }
+
+    // Whether the two arrays hold the same values in the same order.
+    SameIndices(a: Array<Integer>, b: Array<Integer>): Boolean
+        => a.Count == b.Count ? a.Count.Range.All(i => a[i] == b[i]) : false;
+
+    // Whether array a sorts at or before array b (shorter first, then value by value), then
+    // index i at or before j.
+    IndicesAtMost(a: Array<Integer>, i: Integer, b: Array<Integer>, j: Integer): Boolean
+        => a.Count != b.Count ? a.Count < b.Count : a.FirstDifferenceAtMost(b, i, j);
+
+    // For arrays of one length: the first position where they differ decides; equal arrays
+    // compare by i and j.
+    FirstDifferenceAtMost(a: Array<Integer>, b: Array<Integer>, i: Integer, j: Integer): Boolean
+    {
+        var k = 0;
+        while (k < a.Count ? a[k] == b[k] : false)
+        {
+            k = k + 1;
+        }
+        return k < a.Count ? a[k] < b[k] : i <= j;
+    }
+
+    //==
+    // # Pairs
+
+    // The unit normal face f points to on a plane, its sense counted, given whether a fold
+    // reverses it; the zero vector on any other surface.
+    PlaneFaceNormal(m: BrepModel, f: Integer, folded: Boolean): Vector3D
+        => m.Geometry.SurfaceAt(m.Faces[f].Surface).PlaneNormalOr0 * ((m.Faces[f].SameSense != folded) ? 1.0 : -1.0);
+
+    // A plane's normal; the zero vector for any other surface.
+    PlaneNormalOr0(s: BrepSurface): Vector3D
+        => match (s) {
+            Plane(placement) => placement.ZAxis.Vector;
+            Cylinder(placement, radius) => Vector3D(0.0, 0.0, 0.0);
+            Cone(placement, radius, semiAngle) => Vector3D(0.0, 0.0, 0.0);
+            Sphere(placement, radius) => Vector3D(0.0, 0.0, 0.0);
+            Torus(placement, majorRadius, minorRadius, part) => Vector3D(0.0, 0.0, 0.0);
+            Revolution(profile, axis) => Vector3D(0.0, 0.0, 0.0);
+            LinearExtrusion(profile, extrusion) => Vector3D(0.0, 0.0, 0.0);
+            BSpline(data) => Vector3D(0.0, 0.0, 0.0);
+            RectangularTrimmed(basis, uRange, vRange, uSense, vSense) => Vector3D(0.0, 0.0, 0.0);
+            Offset(basis, distance) => Vector3D(0.0, 0.0, 0.0);
+        };
+
+    // Whether faces a and b lie on parallel planes facing opposite ways: both planes, normals
+    // parallel within the angle tolerance and opposite once senses and folds are counted. The
+    // callers pair only faces bounded by the same edge records, so the two planes pass through
+    // one boundary and are coincident to within its points' distance from them, whatever their
+    // origins: in M2_JODY-W5 and W6 CARD the two planes of a pair are 1e-4 mm apart, far beyond
+    // the length tolerance, yet bound the same edges.
+    IsOppositeCoplanar(m: BrepModel, a: Integer, b: Integer, folded: Array<Boolean>): Boolean
+    {
+        var na = m.PlaneFaceNormal(a, folded[a]);
+        var nb = m.PlaneFaceNormal(b, folded[b]);
+        return na.LengthSquared > 0.0 && nb.LengthSquared > 0.0
+            && na.Cross(nb).Length <= m.Tolerances.Angle.Value.Radians
+            && na.Dot(nb) < 0.0;
+    }
+
+    // The sheet pairs of shell s, each [a, b] with a < b: two of the shell's faces with edge
+    // loops only that alone bound one nonempty set of edges, on opposite coplanar planes.
+    ShellSheetPairs(m: BrepModel, s: Integer, folded: Array<Boolean>): Array<Array<Integer>>
+    {
+        var faces = m.Shells[s].Faces.Map(f => f.Value).FlatMap(f => m.HasOnlyEdgeLoops(f) ? [f] : Integer.NoIndices);
+        var sets = faces.Map(f => m.FaceEdgeIndices(f));
+        var order = faces.Count.Range.Sort((x, y) => IndicesAtMost(sets[x], faces[x], sets[y], faces[y]));
+        var n = order.Count;
+        return (n - 1).Max(0).Range.FlatMap(q =>
+            (sets[order[q]].Count > 0
+                && SameIndices(sets[order[q]], sets[order[q + 1]])
+                && (q == 0 ? true : SameIndices(sets[order[q - 1]], sets[order[q]]).Not)
+                && (q + 2 >= n ? true : SameIndices(sets[order[q + 1]], sets[order[q + 2]]).Not)
+                && m.IsOppositeCoplanar(faces[order[q]], faces[order[q + 1]], folded))
+                ? [[faces[order[q]].Min(faces[order[q + 1]]), faces[order[q]].Max(faces[order[q + 1]])]]
+                : [[0, 0]].Take(0));
+    }
+
+    // Every sheet pair of every shell, in shell order. folded is the fold parity per face.
+    SheetPairs(m: BrepModel, folded: Array<Boolean>): Array<Array<Integer>>
+        => m.Shells.Count.Range.FlatMap(s => m.ShellSheetPairs(s, folded));
+
+    // Whether no face but the pair cites any edge of the pair.
+    IsLooseSheet(m: BrepModel, pair: Array<Integer>, counts: Array<Integer>): Boolean
+        => m.FaceEdgeIndices(pair[0]).All(e => counts[e] == 2);
+
+    //==
+    // # Removing faces
+
+    // The model and sources with the faces drop marks, and the loops they bound, removed; shells
+    // keep their rows with the remaining faces renumbered, and every fold record of a removed
+    // face is dropped and the others renumbered.
+    WithFacesRemoved(raw: RawDecodedModel, drop: Array<Boolean>): RawDecodedModel
+    {
+        var m = raw.Model;
+        var owner = m.LoopFaces;
+        var dropLoop = m.Loops.Count.MapRange(l => owner[l] >= 0 ? drop[owner[l]] : false);
+        var faceAt = drop.Map(d => !d).Renumbering;
+        var loopAt = dropLoop.Map(d => !d).Renumbering;
+        var faces = m.Faces.Count.Range.FlatMap(f => drop[f] ? m.Faces.Take(0)
+            : [BrepFace(m.Faces[f].Surface, m.Faces[f].SameSense,
+                m.Faces[f].Bounds.Map(b => FaceBound(BrepLoopIndex(loopAt[b.Loop.Value]), b.Orientation, b.IsOuter)))]);
+        var loops = m.Loops.Count.Range.FlatMap(l => dropLoop[l] ? m.Loops.Take(0) : [m.Loops[l]]);
+        var shells = m.Shells.Map(sh => BrepShell(
+            sh.Faces.FlatMap(f => drop[f.Value] ? sh.Faces.Take(0) : [BrepFaceIndex(faceAt[f.Value])]), sh.DeclaredClosed));
+        var s = raw.Sources;
+        var sources = KernelSources(s.Vertices, s.Edges,
+            m.Loops.Count.Range.FlatMap(l => dropLoop[l] ? s.Loops.Take(0) : [s.Loops[l]]),
+            m.Faces.Count.Range.FlatMap(f => drop[f] ? s.Faces.Take(0) : [s.Faces[f]]),
+            s.Shells, s.Bodies, s.Curves, s.Curves2D, s.Pcurves, s.Surfaces);
+        var folds = raw.Folds.FlatMap(r => drop[r.Face.Value] ? raw.Folds.Take(0) : [FoldRecord(BrepFaceIndex(faceAt[r.Face.Value]), r.Cause, r.Via)]);
+        return RawDecodedModel(
+            BrepModel(m.Geometry, m.Vertices, m.Edges, loops, faces, shells, m.Bodies, m.Tolerances, m.Unit),
+            raw.Occurrences, sources, folds, raw.Repairs, raw.Units, raw.LengthFactor, raw.AngleFactor, raw.Diagnostics);
+    }
+
+    // The raw model with every loose sheet removed and every sheet reported: for each pair in
+    // shell order, one diagnostic per face naming the other, SheetDropped when no other face
+    // cites the pair's edges (both faces then removed), SheetKept otherwise. The raw model
+    // unchanged when no shell has a sheet. Precondition: raw.Model.IsEveryIndexInRange.
+    SheetsRemoved(raw: RawDecodedModel): RawDecodedModel
+    {
+        var m = raw.Model;
+        var folded = FoldParity(raw.Folds.Concatenate(raw.MirrorFolds), m.Faces.Count);
+        var pairs = m.SheetPairs(folded);
+        if (pairs.Count == 0)
+        {
+            return raw;
+        }
+        var counts = m.EdgeFaceCounts;
+        var loose = pairs.Map(p => m.IsLooseSheet(p, counts));
+        var findings = pairs.Count.Range.FlatMap(i => [
+            loose[i] ? SheetDroppedDiagnostic(Provenance.AtInstance(raw.Sources.Faces[pairs[i][0]].Instance), pairs[i][1])
+                     : SheetKeptDiagnostic(Provenance.AtInstance(raw.Sources.Faces[pairs[i][0]].Instance), pairs[i][1]),
+            loose[i] ? SheetDroppedDiagnostic(Provenance.AtInstance(raw.Sources.Faces[pairs[i][1]].Instance), pairs[i][0])
+                     : SheetKeptDiagnostic(Provenance.AtInstance(raw.Sources.Faces[pairs[i][1]].Instance), pairs[i][0])]);
+        var dropped = pairs.Count.Range.FlatMap(i => loose[i] ? pairs[i] : Integer.NoIndices);
+        var drop = m.Faces.Count.MapRange(f => dropped.Any(d => d == f));
+        var reported = RawDecodedModel(raw.Model, raw.Occurrences, raw.Sources, raw.Folds, raw.Repairs,
+            raw.Units, raw.LengthFactor, raw.AngleFactor, raw.Diagnostics.Concatenate(findings));
+        return dropped.Count == 0 ? reported : reported.WithFacesRemoved(drop);
+    }
+}

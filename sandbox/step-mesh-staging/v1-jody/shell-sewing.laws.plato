@@ -1,0 +1,215 @@
+//==
+// # Sewing within a declared-closed shell: laws (v1-jody, J6, TKT-467)
+//
+// Witnesses, all made from layer 3's raw unit cube (Witness_RawUnitCube: 8 vertices, 12 edges,
+// 6 faces, one closed shell):
+// - UnsewnRaw: every face given vertex and edge records of its own (24 vertices, 24 edges), as
+//   THEO-P173 and the MAYA REVC files write their faces. Prepared by the library, every edge is
+//   cited once; sewn, it is the cube again (8 vertices, 12 edges, each cited twice), with 16
+//   vertex merges and 12 edge merges recorded and no shell reported open.
+// - FaceShellsRaw: UnsewnRaw with every face a one-face shell declared closed, as THEO-P173
+//   writes them. Nothing is sewn across shells; each of the 6 shells is reported open with its 4
+//   once-cited edges, and each edge names a shell that holds its twin.
+// - OpenBoxRaw: the cube's shell without its first face, still declared closed: reported open
+//   with 4 once-cited edges and no twin.
+// StarRoots merges three points 0.6 tolerances apart in a row as the first two only, not the
+// third (1.2 tolerances from the first), though all three are one coincidence class. On every
+// raw witness, preparing with sewing gives the library's model and no sewing diagnostic.
+//
+// Sections, in order:
+//  - Witnesses
+//  - Counting
+//  - Laws
+
+library V1JodyShellSewingLaws
+{
+    //==
+    // # Witnesses
+
+    // The vertices face f's edges reach, distinct and increasing (LoopFaces and FaceEdgeIndices
+    // are in double-sheets.library.plato).
+    FaceVertexIndices(m: BrepModel, f: Integer): Array<Integer>
+        => DistinctSorted(m.FaceEdgeIndices(f).FlatMap(e => [m.Edges[e].Start.Value, m.Edges[e].End.Value]));
+
+    // The position of x in the increasing array xs. Precondition: xs holds x.
+    PositionIn(xs: Array<Integer>, x: Integer): Integer
+        => xs.Count.Range.Reduce(-1, (found, i) => xs[i] == x ? i : found);
+
+    // Running sums: offsets[i] is the sum of counts before i.
+    Offsets(counts: Array<Integer>): Array<Integer>
+        => counts.Count.MapRange(i => i.Range.Reduce(0, (n, j) => n + counts[j]));
+
+    // The raw model with every face given vertex and edge records of its own: for face f in
+    // order, a copy of each vertex and edge it reaches, in increasing index order, with the
+    // original's source; each loop's coedges cite its face's copies. Faces, shells, bodies,
+    // the arena and every other source keep their rows.
+    UnsewnRaw(raw: RawDecodedModel): RawDecodedModel
+    {
+        var m = raw.Model;
+        var faceVertices = m.Faces.Count.MapRange(f => m.FaceVertexIndices(f));
+        var faceEdges = m.Faces.Count.MapRange(f => m.FaceEdgeIndices(f));
+        var vertexBase = Offsets(faceVertices.Map(vs => vs.Count));
+        var edgeBase = Offsets(faceEdges.Map(es => es.Count));
+        var owner = m.LoopFaces;
+        var vertices = m.Faces.Count.Range.FlatMap(f => faceVertices[f].Map(v => m.Vertices[v]));
+        var edges = m.Faces.Count.Range.FlatMap(f => faceEdges[f].Map(e => BrepEdge(
+            BrepVertexIndex(vertexBase[f] + faceVertices[f].PositionIn(m.Edges[e].Start.Value)),
+            BrepVertexIndex(vertexBase[f] + faceVertices[f].PositionIn(m.Edges[e].End.Value)),
+            m.Edges[e].Curve, m.Edges[e].SameSense)));
+        var loops = m.Loops.Count.MapRange(l => owner[l] < 0 ? m.Loops[l] : m.Loops[l].CopiedFor(faceEdges[owner[l]], edgeBase[owner[l]]));
+        var s = raw.Sources;
+        var sources = KernelSources(
+            m.Faces.Count.Range.FlatMap(f => faceVertices[f].Map(v => s.Vertices[v])),
+            m.Faces.Count.Range.FlatMap(f => faceEdges[f].Map(e => s.Edges[e])),
+            s.Loops, s.Faces, s.Shells, s.Bodies, s.Curves, s.Curves2D, s.Pcurves, s.Surfaces);
+        return RawDecodedModel(BrepModel(m.Geometry, vertices, edges, loops, m.Faces, m.Shells, m.Bodies, m.Tolerances, m.Unit),
+            raw.Occurrences, sources, raw.Folds, raw.Repairs, raw.Units, raw.LengthFactor, raw.AngleFactor, raw.Diagnostics);
+    }
+
+    // An edge loop whose coedges cite the copies of its face's edges (faceEdges, numbered from
+    // base); any other loop as it is.
+    CopiedFor(l: BrepLoop, faceEdges: Array<Integer>, base: Integer): BrepLoop
+        => match (l) {
+            EdgeLoop(coedges) => BrepLoop.EdgeLoop(coedges.Map(c => Coedge(BrepEdgeIndex(base + faceEdges.PositionIn(c.Edge.Value)), c.Orientation)));
+            VertexLoop(vertex) => l;
+            PolyLoop(points) => l;
+        };
+
+    // The raw model with its shells replaced: each the given faces, declared closed, one shell
+    // per array, all in one shell-set body; each shell and the body take the first original
+    // shell's and body's source.
+    WithShells(raw: RawDecodedModel, shells: Array<Array<Integer>>): RawDecodedModel
+    {
+        var m = raw.Model;
+        var s = raw.Sources;
+        var model = BrepModel(m.Geometry, m.Vertices, m.Edges, m.Loops, m.Faces,
+            shells.Map(fs => BrepShell(fs.Map(f => BrepFaceIndex(f)), true)),
+            [BrepBody.ShellSet(shells.Count.MapRange(i => ShellIndex(i)))],
+            m.Tolerances, m.Unit);
+        var sources = KernelSources(s.Vertices, s.Edges, s.Loops, s.Faces,
+            shells.Map(fs => s.Shells[0]), [s.Bodies[0]], s.Curves, s.Curves2D, s.Pcurves, s.Surfaces);
+        return RawDecodedModel(model, raw.Occurrences, sources, raw.Folds, raw.Repairs, raw.Units, raw.LengthFactor, raw.AngleFactor, raw.Diagnostics);
+    }
+
+    // The unsewn cube.
+    UnsewnCube(_: Integer): RawDecodedModel
+        => RawDecodedModel.Witness_RawUnitCube.UnsewnRaw;
+
+    // The unsewn cube with every face a one-face shell declared closed.
+    FaceShellsCube(_: Integer): RawDecodedModel
+        => 0.UnsewnCube.WithShells(6.MapRange(f => [f]));
+
+    // The cube's shell without face 0, declared closed.
+    OpenBoxCube(_: Integer): RawDecodedModel
+        => RawDecodedModel.Witness_RawUnitCube.WithShells([[1, 2, 3, 4, 5]]);
+
+    //==
+    // # Counting
+
+    // Whether every edge shell s cites is cited by exactly two of its coedges.
+    EveryEdgeCitedTwice(m: BrepModel, s: Integer): Boolean
+    {
+        var t = m.EdgeUseTable(ShellIndex(s));
+        return m.EdgesOfShell(ShellIndex(s)).All(e => t.UseCountIn(e) == 2);
+    }
+
+    // How many of the diagnostics carry the code.
+    CountOf(ds: Array<Diagnostic>, code: String): Integer
+        => ds.Reduce(0, (n, d) => d.Code == code ? n + 1 : n);
+
+    // Whether the repair is a vertex merge.
+    IsVertexMerge(r: StepRepair): Boolean
+        => match (r) {
+            MergedInto(vertex, rawVertex) => true;
+            DroppedZeroLengthEdge(rawEdge) => false;
+            Skipped => false;
+        };
+
+    // How many repairs are vertex merges.
+    VertexMergeCount(rs: Array<RepairRecord>): Integer
+        => rs.Reduce(0, (n, r) => IsVertexMerge(r.Repair) ? n + 1 : n);
+
+    // The diagnostics with the code.
+    WithCode(ds: Array<Diagnostic>, code: String): Array<Diagnostic>
+        => ds.FlatMap(d => d.Code == code ? [d] : ds.Take(0));
+
+    //==
+    // # Laws
+
+    // The unsewn cube: the library leaves every edge cited once; sewing gives 8 vertices and 12
+    // edges, each cited twice, with 16 vertex merges (repairs and diagnostics), 12 edge merges,
+    // and no shell reported open; every merge's kept vertex is in the sewn model at the merged
+    // vertex's position.
+    Law_V1Jody_UnsewnCubeSewsBack(_: Integer): Boolean
+    {
+        var raw = 0.UnsewnCube;
+        var before = raw.PrepareModel;
+        var after = raw.PrepareModelRepaired;
+        var m = after.Model;
+        return raw.Model.Vertices.Count == 24 && raw.Model.Edges.Count == 24
+            && before.Model.EdgeUseTable(ShellIndex(0)).UseCountIn(BrepEdgeIndex(0)) == 1
+            && m.Vertices.Count == 8 && m.Edges.Count == 12
+            && m.EveryEdgeCitedTwice(0)
+            && after.Map.Repairs.VertexMergeCount == 16
+            && after.Diagnostics.CountOf("STEP-SHELL-VERTEX-SEWN") == 16
+            && after.Diagnostics.CountOf("STEP-SHELL-EDGE-SEWN") == 12
+            && after.Diagnostics.CountOf("STEP-CLOSED-SHELL-OPEN") == 0
+            && after.Map.Repairs.All(r => raw.Model.KeptVertexCoincides(m, r.Repair));
+    }
+
+    // Whether a vertex merge's kept vertex exists in the sewn model and lies within the length
+    // tolerance of the merged vertex of the model before sewing; true for any other repair.
+    KeptVertexCoincides(before: BrepModel, after: BrepModel, r: StepRepair): Boolean
+        => match (r) {
+            MergedInto(vertex, rawVertex) => after.Vertices.IsValidIndex(vertex)
+                ? before.Vertices[rawVertex.Value].Point.Coincident(after.Vertices[vertex.Value].Point, after.Tolerances.Length)
+                : false;
+            DroppedZeroLengthEdge(rawEdge) => true;
+            Skipped => true;
+        };
+
+    // One-face shells declared closed: nothing is sewn across shells; each of the 6 shells is
+    // reported open with 4 once-cited edges, and every one of the 24 edges names a twin's shell.
+    Law_V1Jody_FaceShellsReportedNotSewn(_: Integer): Boolean
+    {
+        var after = 0.FaceShellsCube.PrepareModelRepaired;
+        var open = after.Diagnostics.WithCode("STEP-CLOSED-SHELL-OPEN");
+        var edges = after.Diagnostics.WithCode("STEP-CLOSED-SHELL-EDGE-CITED-ONCE");
+        return after.Model.Vertices.Count == 24 && after.Model.Edges.Count == 24
+            && after.Diagnostics.CountOf("STEP-SHELL-EDGE-SEWN") == 0
+            && open.Count == 6 && open.All(d => d.Measure == 4.0)
+            && edges.Count == 24 && edges.All(d => d.Measure >= 0.0 && d.Measure < 6.0);
+    }
+
+    // The cube's shell without a face, declared closed: one open shell with 4 once-cited edges,
+    // none with a twin; nothing merged.
+    Law_V1Jody_OpenBoxReported(_: Integer): Boolean
+    {
+        var after = 0.OpenBoxCube.PrepareModelRepaired;
+        var open = after.Diagnostics.WithCode("STEP-CLOSED-SHELL-OPEN");
+        var edges = after.Diagnostics.WithCode("STEP-CLOSED-SHELL-EDGE-CITED-ONCE");
+        return open.Count == 1 && open[0].Measure == 4.0
+            && edges.Count == 4 && edges.All(d => d.Measure.IsFinite.Not || d.Measure < 0.0 || d.Measure != d.Measure)
+            && after.Diagnostics.CountOf("STEP-SHELL-VERTEX-SEWN") == 0;
+    }
+
+    // Three points in a row 0.6 tolerances apart are one coincidence class, but only the second
+    // merges into the first; the third, 1.2 tolerances from the first, stays.
+    Law_V1Jody_NoChainedMerge(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var t = m.Tolerances.Length.Value;
+        var roots = m.StarRoots([Point3D(0.0, 0.0, 0.0), Point3D(0.6 * t, 0.0, 0.0), Point3D(1.2 * t, 0.0, 0.0)]);
+        return roots[0] == 0 && roots[1] == 0 && roots[2] == 2;
+    }
+
+    // On every raw witness, preparing with sewing gives the library's model and no sewing
+    // diagnostic.
+    Law_V1Jody_SewingKeepsRawWitnesses(raw: RawDecodedModel): Boolean
+    {
+        var after = raw.PrepareModelRepaired;
+        return after.Model.SameModel(raw.PrepareModel.Model)
+            && after.Diagnostics.CountOf("STEP-SHELL-VERTEX-SEWN") == 0
+            && after.Diagnostics.CountOf("STEP-SHELL-EDGE-SEWN") == 0;
+    }
+}

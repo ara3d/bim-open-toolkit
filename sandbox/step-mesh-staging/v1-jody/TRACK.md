@@ -1,7 +1,7 @@
 # v1-jody: small closed B-spline loops of the M2-JODY-W377 files discretized and meshed
 
-Ticket: TKT-431, TKT-453, TKT-414
-Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, J5 in 3cc7edb4
+Ticket: TKT-431, TKT-453, TKT-414, TKT-467, TKT-470
+Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, J5 in 3cc7edb4 | ready: J6, J7
 
 ## Chunks
 
@@ -10,6 +10,8 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, 
 | J1 | TKT-431 | The 24 one-edge plane loops of the two M2-JODY-W377 files discretized: a B-spline written unclamped in periodic form is decided closed from its record | 2 h |
 | J2 | TKT-453 | A closed span whose ends coincide fails the segment test, so small closed loops are not meshed as triangles | 1 h |
 | J4 | (supervisor's performance finding) | The other `Count.Range.Take(0)` empties replaced by one layer-0 helper, `Integer.NoIndices` (J4.patch) | 1 h |
+| J6 | TKT-467 | Sew vertices and edges within each declared-closed shell, and report every declared-closed shell left open (supervisor's option A) | 2 h |
+| J7 | TKT-470 | Remove zero-thickness double sheets (two coincident plane faces of opposite sense bounding the same edges, which no other face cites), report the ones kept | 2 h |
 | J5 | TKT-414 | NINA-B222's 16 surface-curve edges that give 0 segments discretize, and an edge the discretizer refuses is reported | 2 h |
 | J3 | (supervisor's performance finding) | Reduced and ChangedSensePositions build a filter's empty case as `[k].Take(0)`, not an eagerly built `n.Range.Take(0)`: prepare no longer O(V^2 + E^2) | 1 h |
 
@@ -49,6 +51,13 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, 
   - Corpus, C# regenerated from toolkit ab717770 without and with J5 wired in (0 degraded bodies each), harness `all ... 120 --path host --parallel`, all 88 files done in both: 87 files identical in every edge's segment count, every face's path, triangles and quads, and the mesh digest. NINA-B222: the 16 edges discretize (1 to 18 segments), its 26 undiscretized faces mesh (13 by CDT, 13 by grid), its 145 shells all close with 0 boundary edges, and edges 1241 and 1459, which the discretizer gives 2 segments in both runs, are no longer refined to 96 and 64 for the faces around the unmeshed ones (probe). Corpus totals: undiscretized faces 26 to 0, zero-segment edges 16 to 0, meshed faces 192,404 to 192,433 of 192,457, fully meshed files 81 to 82.
   - Not done here: the host (bim-open-data `StepPlatoMesher`) does not ask for layer 8's edge diagnostics, so an undiscretized edge still reaches the corpus tables as a bare 0 there; see Requests.
 
+- J6 (TKT-467), see the commit, about 4 h against 2 h (a probe that found the twins in other bodies, the supervisor's decision, and a first version whose merges of already-manifold edge pairs broke CEL/LENA-R8). Sewing within each declared-closed shell along its open boundary only: coincident boundary vertices merged without chaining (`StarRoots`: each merged vertex within the tolerance of the one kept), then boundary edges on one vertex pair whose curves agree (each middle point on the other's arc), coedges redirected and reversed where the twins run opposite ways; every merge a RepairRecord or a diagnostic, and earlier MergedInto records moved to the new numbering. Then every declared-closed shell still open is reported: STEP-CLOSED-SHELL-OPEN per shell (measure: its once-cited edges) and STEP-CLOSED-SHELL-EDGE-CITED-ONCE per edge (measure: a shell holding its twin, or unmeasured). Files: `shell-sewing.library.plato`, `shell-sewing.laws.plato`. No type added (contract requests below).
+  - Laws (block `V1JodyShellSewingLaws`, cpu64): 5 pass. The unit cube with every face's own vertex and edge records (24 and 24) is left all once-cited by the library and sewn back to 8 and 12, each edge cited twice, with 16 vertex and 12 edge merges recorded and each kept vertex at its merged vertex's position. The same faces as six one-face closed shells (THEO-P173's form) are not sewn across shells, and each shell is reported with its 4 edges, every edge naming a twin's shell. The cube's shell without one face is reported once with 4 edges and no twin. Three points 0.6 tolerances apart merge as the first two only. Every raw witness prepares to the library's model with no sewing diagnostic.
+  - Corpus: C# regenerated from toolkit 4c7e6143 without and with J6 and J7 wired into `PrepareModelWith` (0 degraded bodies each), harness `all ... 120 --path host --parallel` (bim-open-data 8677dd0): of the 87 files that finish in both runs (c211_case_with_odin_v1 runs over 120 s in the baseline), 86 are identical in every edge's segment count, every face's path, triangles and quads, and the mesh digest; M2_JODY-W5 and W6 CARD changes (J7). A probe over the prepared models of all 88 files counts the new diagnostics: sheets removed only in M2_JODY-W5 and W6 CARD (4 faces), none kept; nothing sewn in any file; declared-closed shells reported open in THEO-P173 (366 shells, 1,848 once-cited edges), MAYA-W260_REVC (3, 104), MAYA-W261_W271_REVC (1, 20) and MAYA-W266_W276_REVC (1, 20), every once-cited edge of a declared-closed shell in the corpus. So within-shell sewing, as the supervisor chose it, finds nothing to merge in the corpus: its effect is the reporting. A first version that also merged edges already cited by two faces merged 19 pairs in CEL/LENA-R8 (0 to 20 non-manifold and 0 to 40 misoriented mesh edges), 1 in ANNA-B4 (which then closed) and 1 in ODIN-W260 (boundary 17 to 13): filed as TKT-477.
+- J7 (TKT-470), see the commit, about 2 h against 2 h. `SheetsRemoved` (`double-sheets.library.plato`): in each shell, two faces with edge loops only that alone bound one edge set, on parallel planes facing opposite ways once senses and folds are counted, form a sheet; when no other face cites those edges, both faces and their loops are removed and each gets STEP-ZERO-THICKNESS-SHEET-REMOVED naming the other; otherwise both are kept with STEP-ZERO-THICKNESS-SHEET-KEPT. Vertices and edges keep their rows, so no repair index moves. The planes are not compared by origin: M2_JODY-W5 and W6 CARD's pairs are 1e-4 mm apart, far beyond the length tolerance, and the shared boundary is what makes them one sheet. No type added.
+  - Laws (block `V1JodyDoubleSheetsLaws`, cpu64): 4 pass. A sheet glued into the unit cube is kept by the library (8 faces) and removed (6 faces, each edge of the shell cited twice, two diagnostics naming each other); the same with its planes 1e-4 apart; a face doubled on its plane, whose edges the side faces also cite, is kept and reported twice; no raw witness reports a sheet.
+  - Corpus (the same runs as J6): M2_JODY-W5 and W6 CARD goes from 108 non-manifold and 216 misoriented edges and 195 of 197 shells closed to closed and oriented, 0 and 0, 197 of 197; its 6 sheet edges are cited by no face now; every other file is identical.
+
 ## Merge instructions
 
 J1 (TKT-431):
@@ -75,9 +84,15 @@ J5 (TKT-414):
 - `08-pipeline/pipeline.library.plato`, `UndiscretizedEdge(e)` => `UndiscretizedEdgeMeasured(m, e)` (message and measure), and `EdgeDiagnosticsInRange` calls it (`EdgeDiagnosticsInRangeV1`'s body); the IsTractableRange comment in `discretization-edge-domain.library.plato` that says layer 8 reports the refusal is then true.
 - `surface-curve-pcurve-domain.laws.plato` (block `V1JodySurfaceCurvePcurveDomainLaws`) into `08-pipeline` beside `pipeline-surface-curve-domain.laws.plato` (it reads `SurfaceCurveEdge`). After the rewire, the `EdgeDomainV1` comparisons and the library-side clauses (`ParameterPeriodOn(d) == 0`, `EdgeDomain` backward or [a, a], `CanDiscretizeInRange` accepting, `EdgeDiagnosticsInRange` empty) compare a function with itself or assert the old defect: keep the fixed-side clauses, drop `Law_V1Jody_EdgeDomainV1Unchanged`.
 
+J6 and J7 (TKT-467, TKT-470):
+- `shell-sewing.library.plato` (block `V1JodyShellSewing`) and `double-sheets.library.plato` (block `V1JodyDoubleSheets`) into `03-step`. In `PrepareModelWith`, `.Reduced.LoopsChained` => `.Reduced.LoopsChained.Sewn.SheetsRemoved` (the body of the staged `PrepareModelWithRepaired`); then delete `PrepareModelWithRepaired` and `PrepareModelRepaired` and point the laws at `PrepareModel`.
+- With the contract requests below applied, each staged diagnostic constructor becomes `Diagnose(StepDiagnosticCode.<Case>, where, measure)` with its message moved into `Diagnose`: `ShellVertexSewnDiagnostic` => `ShellVertexSewn`, `ShellEdgeSewnDiagnostic` => `ShellEdgeSewn`, `ClosedShellOpenDiagnostic` => `ClosedShellOpen`, `OnceCitedEdgeDiagnostic` => `ClosedShellEdgeCitedOnce`, `SheetDroppedDiagnostic` => `ZeroThicknessSheetRemoved`, `SheetKeptDiagnostic` => `ZeroThicknessSheetKept`. The codes' strings stay as staged (v1-proof's harness reads them).
+- `shell-sewing.laws.plato` and `double-sheets.laws.plato` into `08-pipeline` (they read layer 7's `Witness_UnitBox` and layer 3's raw witnesses). `LoopFaces`, `FaceEdgeIndices` and `DistinctSorted` stay in the library blocks, which both law files use. After the rewire, `Law_V1Jody_SewingKeepsRawWitnesses`'s `SameModel` clause compares a function with itself: keep its diagnostic clauses only.
+
 ## Contract requests
 
-- None.
+- J6, J7: six `StepDiagnosticCode` cases, `ShellVertexSewn`, `ShellEdgeSewn`, `ClosedShellOpen`, `ClosedShellEdgeCitedOnce`, `ZeroThicknessSheetRemoved`, `ZeroThicknessSheetKept`, with the codes STEP-SHELL-VERTEX-SEWN, STEP-SHELL-EDGE-SEWN, STEP-CLOSED-SHELL-OPEN, STEP-CLOSED-SHELL-EDGE-CITED-ONCE, STEP-ZERO-THICKNESS-SHEET-REMOVED, STEP-ZERO-THICKNESS-SHEET-KEPT and the staged messages and severities.
+- J6: a `StepRepair` case for an edge merge, `MergedEdgeInto(Edge: BrepEdgeIndex, RawEdge: BrepEdgeIndex)`, so a sewn edge is a RepairRecord as a sewn vertex is (today only its diagnostic records it); and a word in `MergedInto`'s comment that for a vertex merged by sewing, RawVertex is its index in the reduced model, not the decoder's.
 
 ## Requests to other tracks
 
@@ -106,6 +121,9 @@ J5 (TKT-414):
 | J5: probe and cause | 35 | 3 probe builds, 1 regeneration |
 | J5: staging and laws | 40 | 6 law runs |
 | J5: regeneration with the fix (one failed on my wiring script), NINA run, two whole-corpus runs | 60 | 2 regenerations, 2 builds, 176 file runs |
+| J6: probes (twins in other bodies, the corpus merges) | 50 | 5 probe builds |
+| J6 and J7: staging and laws | 90 | 12 law runs, 2 bisections of a circular-expression error |
+| J6 and J7: regenerations, builds and corpus runs | 120 | 5 regenerations, 6 builds, 4 whole-corpus runs, 1 diagnostics census |
 
 ## Lessons
 
@@ -115,4 +133,6 @@ J5 (TKT-414):
 - A witness copied from a corpus record does not reproduce a defect that turns on exact equality of evaluated points: the corpus edge's ends were equal, the copy's differed by rounding. A C# probe over the decoded model found that in one run; a witness built so equality holds by construction (a clamped loop) then showed the defect.
 - bim-open-data's `regen-step-brep.ps1` at 48420e3 reads `tools/shipped-program.txt` from the library commit, so it cannot regenerate a library commit from before that file; check out the script's commit that matches the library first.
 - A wiring script that splices a replacement by hand must not use `` in the replacement text: it wrote a literal `` into three library files of the scratch copy and cost one failed regeneration. Parse the edited files with the pinned CLI before regenerating.
+- A staged copy that the merge agent has already applied in the tree (J5's files beside the merged library) makes the next law run fail with a "Circular expression" and no location; compile a new chunk against a scratch staging folder holding only its own files until the merge commits and the old copies go.
+- Measure a repair on the whole corpus before calling it safe: J6's first version passed every law and was wrong in one file.
 - Plato's `&&` in a law did not short-circuit an index past an array's end; use `?:`.
