@@ -3,7 +3,7 @@
 //
 // One Check* function per proof type of face-meshing-proofs.types.plato,
 // each over this layer's own predicates (the oriented-region check reads
-// the claim of face-meshing.laws.plato's Law_UvHoleWindingNegative). A
+// the claim of face-meshing.laws.plato's UvHoleWindingNegative). A
 // property checked and found false is Fails, naming the predicate.
 //
 // Sections, in order:
@@ -37,11 +37,11 @@ library FaceMeshingProofs
 
     // True when the region's outer loop is positive in face f's chart and
     // every hole of three points or more negative: the claims of
-    // UvRegionWindingPositive and Law_UvHoleWindingNegative together.
+    // UvRegionWindingPositive and UvHoleWindingNegative together.
     // Precondition: m.IsFaceIntact(f).
     IsOrientedIn(m: BrepModel, f: BrepFaceIndex, r: UvRegion): Boolean
         => m.UvRegionWindingPositive(f, r)
-            && r.Holes.Count.Range.All(h => Law_UvHoleWindingNegative(m, f, r, h));
+            && r.Holes.Count.Range.All(h => m.UvHoleWindingNegative(f, r, h));
 
     // The region as an OrientedUvRegion of face f when it is oriented in
     // the face's chart; Fails when it is not, OutOfDomain when f is not

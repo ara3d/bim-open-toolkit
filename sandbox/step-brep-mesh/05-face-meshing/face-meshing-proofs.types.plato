@@ -34,7 +34,7 @@ type ClosedUvLoop
 
 // A region of face Face whose outer loop runs counter-clockwise and whose
 // holes run clockwise in the face's chart (UvRegionWindingPositive,
-// Law_UvHoleWindingNegative). Removes: the orientation re-decided inside the
+// UvHoleWindingNegative). Removes: the orientation re-decided inside the
 // triangulator with a different tolerance.
 type OrientedUvRegion
 {

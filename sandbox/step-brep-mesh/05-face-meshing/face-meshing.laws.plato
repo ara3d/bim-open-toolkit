@@ -155,12 +155,18 @@ library FaceMeshingLaws
     Law_UvRegionWindingPositive(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
         => m.CanRegion(f, d, c) ? m.UvRegionWindingPositive(f, m.RegionOf(f, d, c)) : true;
 
-    // Every hole of face f's region that is not a point hole has negative signed area in the
-    // face's chart.
-    Law_UvHoleWindingNegative(m: BrepModel, f: BrepFaceIndex, r: UvRegion, h: Integer): Boolean
+    // Hole h of face f's region, unless it is a point hole, has negative signed area in the
+    // face's chart: it runs clockwise about the face normal.
+    UvHoleWindingNegative(m: BrepModel, f: BrepFaceIndex, r: UvRegion, h: Integer): Boolean
         => (m.IsFaceIntact(f) && r.Holes.IsValidIndex(h))
             ? (r.Holes[h].Points.Count < 3 ? true : r.Holes[h].ChartSignedArea(m.IsChartMirrored(f)) < 0.0)
             : true;
+
+    // UvHoleWindingNegative on RegionOf's result, under RegionOf's precondition (F-54). With the
+    // region a free parameter the law held only of regions RegionOf makes, and the runner's
+    // generated regions broke it (TKT-481: a generated region drawn with the JODY W5/W6 witness).
+    Law_UvHoleWindingNegative(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria, h: Integer): Boolean
+        => m.CanRegion(f, d, c) ? m.UvHoleWindingNegative(f, m.RegionOf(f, d, c), h) : true;
 
     // Any two boundary segments of face f's region are farther apart than the region's parameter
     // tolerance, and consecutive ones do not fold back onto each other: every loop is simple and

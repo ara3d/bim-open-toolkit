@@ -31,6 +31,6 @@ spec OrientedUvRegion
     invariant m.IsFaceIntact(self.Face);
     invariant m.UvRegionWindingPositive(self.Face, self.Region);
     invariant forall (h: Integer) in self.Region.Holes.Count.Range :
-        Law_UvHoleWindingNegative(m, self.Face, self.Region, h);   // Law_OrientedUvRegionIffWindings
+        UvHoleWindingNegative(m, self.Face, self.Region, h);   // Law_OrientedUvRegionIffWindings
     constructor CheckOrientedUvRegion;
 }

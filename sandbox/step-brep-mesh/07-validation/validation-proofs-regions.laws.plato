@@ -111,7 +111,7 @@ library BrepCheckingProofsRegionsLaws
         var r = CatalogRegionAt(x, y, s);
         return CheckOrientedUvRegion(m, i, r).IsDecided
             == (m.IsFaceIntact(i)
-                ? (m.UvRegionWindingPositive(i, r) && r.Holes.Count.Range.All(h => Law_UvHoleWindingNegative(m, i, r, h)))
+                ? (m.UvRegionWindingPositive(i, r) && r.Holes.Count.Range.All(h => m.UvHoleWindingNegative(i, r, h)))
                 : false);
     }
 

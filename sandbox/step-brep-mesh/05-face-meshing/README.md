@@ -683,7 +683,7 @@ shared point. The seamed and the band regions both have 50 boundary points (two 
 the band's cut is one ruling, so it has no interior point); the sector patch has 14.
 
 Decision F-54 (2026-10-18): the laws over a value the library makes take the producer's inputs.
-`Law_UvRegionWindingPositive` and `Law_HoleInsideOuter` take `RegionOf`'s inputs under
+`Law_UvRegionWindingPositive`, `Law_UvHoleWindingNegative` (TKT-481) and `Law_HoleInsideOuter` take `RegionOf`'s inputs under
 `CanRegion`. `Law_TriangulationCornersInRange`, `Law_EveryPointIsACorner` and
 `Law_LiftKeepsPoints` take `FaceTriangulation`'s under `CanTriangulateFace`.
 `Law_LocalVertexInRange`, `Law_LocalVertexSurjective`, `Law_ProvenanceMatchesSource`,

@@ -164,7 +164,7 @@ library BrepCheckingFaceMeshing
     Check_UvRegionWindingPositive(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
         => CheckExact("Law_UvRegionWindingPositive", UvRegionWindingPositive(m, f, m.RegionOf(f, d, c)), Provenance.KernelFace(f));
 
-    // Law_UvHoleWindingNegative at every hole of face f's region. A model law
+    // UvHoleWindingNegative at every hole of face f's region. A model law
     // (an exact sign): Error.
     Check_UvHoleWindingNegative(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Check
         => m.Check_UvHoleWindingNegativeOnce(f, d, c);

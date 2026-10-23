@@ -126,7 +126,7 @@ library BrepCheckingFaceMeshingOnce
     {
         var r = m.RegionOf(f, d, c);
         return CheckAll("Law_UvHoleWindingNegative", r.Holes.Count,
-            h => Law_UvHoleWindingNegative(m, f, r, h),
+            h => UvHoleWindingNegative(m, f, r, h),
             h => Provenance.KernelFace(f));
     }
 

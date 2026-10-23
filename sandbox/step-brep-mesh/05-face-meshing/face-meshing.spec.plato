@@ -197,7 +197,7 @@ spec OrientRegion(m: BrepModel, f: BrepFaceIndex, r: UvRegion): UvRegion
     requires r.IsIndexedRegion;
     ensures result.NumberOfLoops == r.NumberOfLoops;
     ensures r.Outer.ChartSignedArea(m.IsChartMirrored(f)) != 0.0 ? UvRegionWindingPositive(m, f, result) : true;
-    ensures forall (h: Integer) in result.Holes.Count.Range: Law_UvHoleWindingNegative(m, f, result, h);
+    ensures forall (h: Integer) in result.Holes.Count.Range: UvHoleWindingNegative(m, f, result, h);
     measure r.BoundaryCount;
 }
 
@@ -209,7 +209,7 @@ spec RegionOf(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMes
     ensures result.IsIndexedRegion;
     ensures forall (k: Integer) in result.NumberOfLoops.Range: Law_RegionLoopClosesInPlane(m, f, result, k);
     ensures UvRegionWindingPositive(m, f, result);
-    ensures forall (h: Integer) in result.Holes.Count.Range: Law_UvHoleWindingNegative(m, f, result, h);
+    ensures forall (h: Integer) in result.Holes.Count.Range: UvHoleWindingNegative(m, f, result, h);
     ensures forall (k: Integer) in result.NumberOfLoops.Range:
         forall (i: Integer) in result.LoopAt(k).Points.Count.Range:
             Law_LoopPointLiftsToSharedPoint(m, f, d, result.LoopAt(k), i);
