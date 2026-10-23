@@ -9,6 +9,7 @@
 // Sections, in order:
 //  - The mitred fillet
 //  - The apex cone
+//  - The corner column
 
 library QuadsCurvedSidesLaws
 {
@@ -90,4 +91,14 @@ library QuadsCurvedSidesLaws
     // Whether face mesh fm has quads and every quad is within bound as both splits.
     QuadsGridWithin(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, bound: Number): Boolean
         => fm.Quads.Count > 0 && fm.Quads.Count.Range.All(q => m.QuadSplitsWithinV1(d, fm, q, bound));
+
+    //==
+    // # The corner column
+
+    // NIST CTC 01's face 19: a quarter cylinder whose foot is an arc then the B-spline where it
+    // meets the base fillet, two edges on one side (chunk Q2). The grid, after one round of
+    // floors per side, is within the bound.
+    Law_Quads_CornerColumnIsAGridWithin(_: Integer): Boolean
+        => BrepModel.Witness_Ctc01Face19.IsAGridWithinAfterFloors;
 }
+

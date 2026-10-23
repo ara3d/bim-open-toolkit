@@ -1,0 +1,58 @@
+// Extracted by step-corpus-harness extract (TKT-439) on 2026-10-22 from data/step-samples/nist/NIST-PMI-STEP-Files/AP203 geometry only/nist_ctc_01_asme1_rd.stp,
+// faces 19 of the prepared model with a ring of 0: 1 faces, 5 edges.
+// Witness face k is source face [19][k]. Meshed the host's way at chordal 1.0000000474974513:
+//   face 19 (witness face 0): cdt, 12 triangles, 0 quads in the file, cdt, 12 triangles, 0 quads in the witness, the same mesh
+// One open shell in a shell-set body holds the faces; tolerances and unit are the source model's.
+library CorpusWitnessCtc01Face19
+{
+    Witness_Ctc01Face19(_: BrepModel): BrepModel
+        => BrepModel(GeometrySet([
+                    BrepCurve.BSpline(BSplineCurveData(SplineBasis(3, KnotVector([
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.25,
+                                        0.25,
+                                        0.500000000000001,
+                                        0.500000000000001,
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0])), [
+                                Point3D(240.0, -130.0, -50.0),
+                                Point3D(241.727596362565, -131.295697271923, -50.0),
+                                Point3D(243.240231875828, -132.782854845519, -50.4328279131288),
+                                Point3D(245.783213118874, -135.957414817424, -51.7184343043951),
+                                Point3D(246.807587835729, -137.62706685744, -52.5676759306962),
+                                Point3D(249.250763774489, -142.820730997715, -55.4443285414877),
+                                Point3D(250.0, -146.403829362471, -57.725582470273),
+                                Point3D(250.0, -150.0, -60.0)], [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0])),
+                    BrepCurve.Circle(Frame3D(Point3D(225.0, -150.0, 0.0), Direction3D(Vector3D(1.0, 0.0, 0.0)), Direction3D(Vector3D(0.0, 1.0, 0.0)), Direction3D(Vector3D(0.0, 0.0, 1.0))), 25.0),
+                    BrepCurve.Circle(Frame3D(Point3D(225.0, -150.0, -50.0), Direction3D(Vector3D(1.0, 0.0, 0.0)), Direction3D(Vector3D(0.0, 1.0, 0.0)), Direction3D(Vector3D(0.0, 0.0, 1.0))), 25.0),
+                    BrepCurve.Line(Point3D(225.0, -125.0, -100.0), Vector3D(0.0, 0.0, -1.0)),
+                    BrepCurve.Line(Point3D(250.0, -150.0, -100.0), Vector3D(0.0, 0.0, -1.0))], [], [], [BrepSurface.Cylinder(Frame3D(Point3D(225.0, -150.0, -100.0), Direction3D(Vector3D(1.0, 0.0, 0.0)), Direction3D(Vector3D(0.0, 1.0, 0.0)), Direction3D(Vector3D(0.0, 0.0, 1.0))), 25.0)], []), [
+                BrepVertex(Point3D(225.0, -125.0, 0.0)),
+                BrepVertex(Point3D(250.0, -150.0, 0.0)),
+                BrepVertex(Point3D(225.0, -125.0, -50.0)),
+                BrepVertex(Point3D(240.0, -130.0, -50.0)),
+                BrepVertex(Point3D(250.0, -150.0, -60.0))], [
+                BrepEdge(BrepVertexIndex(1), BrepVertexIndex(0), CurveIndex(1), true),
+                BrepEdge(BrepVertexIndex(0), BrepVertexIndex(2), CurveIndex(3), true),
+                BrepEdge(BrepVertexIndex(3), BrepVertexIndex(2), CurveIndex(2), true),
+                BrepEdge(BrepVertexIndex(3), BrepVertexIndex(4), CurveIndex(0), true),
+                BrepEdge(BrepVertexIndex(1), BrepVertexIndex(4), CurveIndex(4), true)], [BrepLoop.EdgeLoop([
+                        Coedge(BrepEdgeIndex(2), EdgeOrientation.Reversed),
+                        Coedge(BrepEdgeIndex(3), EdgeOrientation.Forward),
+                        Coedge(BrepEdgeIndex(4), EdgeOrientation.Reversed),
+                        Coedge(BrepEdgeIndex(0), EdgeOrientation.Forward),
+                        Coedge(BrepEdgeIndex(1), EdgeOrientation.Forward)])], [BrepFace(SurfaceIndex(0), false, [FaceBound(BrepLoopIndex(0), true, true)])], [BrepShell([BrepFaceIndex(0)], false)], [BrepBody.ShellSet([ShellIndex(0)])], Tolerances(LengthTolerance(0.0508), AngleTolerance(Angle(1e-09)), ParameterTolerance(0.0508), ParameterTolerance(4.021286082643379e-05)), LengthUnit.Millimetre);
+}

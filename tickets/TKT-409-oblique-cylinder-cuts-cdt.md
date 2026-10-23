@@ -25,4 +25,4 @@ Found by TKT-405's verification (bim-open-data 376273f, PreferQuads on): with th
 ## Log
 
 - 2026-10-22: widened from the four ODIN-W160 faces after the owner asked for clean quads on CTC 01's base fillets. The four-sided test classed each boundary step as along u or along v, so any side running along neither (an ellipse on a cylinder) was refused; the fix finds corners by turning in the chart. Measurements in `sandbox/step-mesh-staging/quads/TRACK.md`.
-
+- 2026-10-23: Q2 (a side made of several edges, floors per side) and Q3 (a cone's apex as a pole side) staged; on the five comparison files the triangulated faces fall from 42, 31, 434, 154 (base) to 12, 26, 328, 24 on CTC 01, NINA-B400, ODIN-W160 and LILY-W131, every file closed and oriented, the contract holding, and CTC 01 closed for the first time. Overlaps TKT-502 (shared files; merge in sequence). Q4 (midpoint subdivision) not started.

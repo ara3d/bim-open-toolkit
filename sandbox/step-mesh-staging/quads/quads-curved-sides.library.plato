@@ -12,8 +12,10 @@
 // grid today changes. Otherwise it finds the corners by turning: a point of the outer loop where
 // the boundary turns by CornerTurn or more in the chart (u and v scaled by the face's mean speeds,
 // so a turn approximates the turn on the surface; exact on planes and cylinders). Four such
-// points, no holes, and each side one carrier (SideIsOneCarrier) or an expanded pole (SideIsPole:
-// a cone's apex given as a vertex loop, NIST CTC 01 faces 73 and 75) make the region four-sided.
+// points, no holes, and each side one carrier (SideIsOneCarrier), an expanded pole (SideIsPole:
+// a cone's apex given as a vertex loop, NIST CTC 01 faces 73 and 75), or a run of edges meeting at
+// vertices where the side bends by less than a corner (SideIsEdgeRun, chunk Q2) make the region
+// four-sided. A region with a side of several edges asks for floors per side (MatchingFloorsBySide).
 // GridUnlessFoldedOrCoarse still refuses a grid that folds or strays from the surface, so a
 // curved side the Coons blend handles badly falls back to the triangulation as before.
 //
@@ -64,7 +66,7 @@ library QuadsCurvedSides
     {
         var corners = r.Outer.TurningCorners(chart);
         return (r.Holes.IsEmpty && r.Outer.Points.Count >= 4 && corners.Count == 4)
-            ? (4.Range.All(k => r.SideIsOneCarrierOrPole(corners, k)) ? QuadSides.FourSided(corners) : QuadSides.NotFourSided)
+            ? (4.Range.All(k => r.SideIsOneCarrierOrPole(corners, k) || r.SideIsEdgeRun(corners, k)) ? QuadSides.FourSided(corners) : QuadSides.NotFourSided)
             : QuadSides.NotFourSided;
     }
 
@@ -94,6 +96,24 @@ library QuadsCurvedSides
     SideIsOneCarrierOrPole(r: UvRegion, corners: Array<VertexIndex>, k: Integer): Boolean
         => r.SideIsOneCarrier(corners, k) ? true : r.SideIsPole(corners, k);
 
+    // Whether side k is a run of model edges (chunk Q2): every point strictly inside it is a
+    // sample of an edge or a vertex where one edge of the side ends and the next begins, so the
+    // side bends there by less than CornerTurn. A corner column's foot, an arc then the B-spline
+    // where it meets a fillet (NIST CTC 01 faces 19, 29, 43, 53), is one such side.
+    SideIsEdgeRun(r: UvRegion, corners: Array<VertexIndex>, k: Integer): Boolean
+    {
+        var start = corners[k % 4].Value;
+        var count = r.SideSegmentCount(corners, k);
+        return (count - 1).Range.All(i =>
+            r.Outer.Sources.AtModulo(start + 1 + i).IsEdgeSampleSource
+                || r.Outer.Sources.AtModulo(start + 1 + i).IsAnyVertexSource);
+    }
+
+    // Whether every side of the four is one carrier or an expanded pole: the sides
+    // MatchingFloors was written for.
+    EverySideOneCarrierOrPole(r: UvRegion, corners: Array<VertexIndex>): Boolean
+        => 4.Range.All(k => r.SideIsOneCarrierOrPole(corners, k));
+
     // QuadSidesIn(r, tol) when it is four-sided; otherwise the sides found by turning in chart.
     QuadSidesCurvedIn(r: UvRegion, chart: FaceChart, tol: UvTolerance): QuadSides
     {
@@ -107,7 +127,31 @@ library QuadsCurvedSides
     // FaceQuadGridIn(f, d, r, tol, c) with curved sides allowed: the region's chart given, so
     // the turning test does not build it again.
     FaceQuadGridCurvedIn(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, chart: FaceChart, tol: UvTolerance, c: FaceMeshingCriteria): QuadGridOutcome
-        => c.PreferQuads ? m.QuadGridOnSides(f, d, r, c, r.QuadSidesCurvedIn(chart, tol)) : QuadGridOutcome.NoGrid;
+        => c.PreferQuads ? m.QuadGridOnSidesCurved(f, d, r, c, r.QuadSidesCurvedIn(chart, tol)) : QuadGridOutcome.NoGrid;
+
+    // QuadGridOnSides(f, d, r, c, sides), except that a region with a side of several edges asks
+    // for floors by MatchingFloorsBySide; every other region is QuadGridOnSides's, unchanged.
+    QuadGridOnSidesCurved(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, c: FaceMeshingCriteria, sides: QuadSides): QuadGridOutcome
+        => match (sides) {
+            NotFourSided => QuadGridOutcome.NoGrid;
+            FourSided(corners) => (r.EverySideOneCarrierOrPole(corners) || r.OppositeCountsMatch(corners))
+                ? m.QuadGridOnSides(f, d, r, c, sides)
+                : QuadGridOutcome.CountsDiffer(m.MatchingFloorsBySide(f, d, r, corners));
+        };
+
+    // The floors that match opposite sides when a side has several edges: for each side with
+    // fewer segments than the side across, the edge of its first segment (SideEdge) gets its
+    // current count plus the shortfall, so the side's total reaches the other's in one round. A
+    // side that is a whole edge gets the other side's count, as MatchingFloors gives it.
+    MatchingFloorsBySide(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, corners: Array<VertexIndex>): SegmentFloors
+    {
+        var counts = 4.MapRange(k => r.SideSegmentCount(corners, k));
+        var edges = 4.MapRange(k => m.SideEdge(f, d, r, corners, k));
+        return SegmentFloors(m.Edges.Count.MapRange(e => 4.Range.Reduce(0, (floor, k) =>
+            (edges[k] == e && counts[k] < counts[(k + 2) % 4])
+                ? floor.Max(d.ByEdge[e].SegmentCount + counts[(k + 2) % 4] - counts[k])
+                : floor)));
+    }
 
     //==
     // # The host's answers
