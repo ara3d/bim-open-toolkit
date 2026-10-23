@@ -6,7 +6,7 @@
 set -e
 LIB="$(cd "$(dirname "$0")/.." && pwd)"
 W="${1:-${TMPDIR:-/tmp}/compile-layers-00-08}"
-CLI="${2:-C:/Users/cdigg/.plato-cli/c8c83c8b/Plato.CLI.dll}"
+CLI="${2:-C:/Users/cdigg/.plato-cli/60134758/Plato.CLI.dll}"
 PLATO=/c/Users/cdigg/git/plato
 # The tiers, excluded stdlib names and layers come from shipped-program.txt, the one list plato_laws.py reads too.
 LIST="$(dirname "$0")/shipped-program.txt"
