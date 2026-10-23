@@ -103,118 +103,52 @@ library ModelMeshAssemblyOnceLaws
 
     //==
     // # Split laws, the split mesh bound once
+    //
+    // Each law guards on IsWellFormed, builds the split mesh once, and states its body, which is
+    // in mesh-split-once.library.plato (F6, TKT-486) so layer 7's checks can state it on one
+    // split mesh for all their samples.
 
     // Law_SplitHasAtLeastAsManyVertices.
     Law_SplitHasAtLeastAsManyVertices(mesh: ModelMesh): Boolean
-        => mesh.IsWellFormed
-            ? (mesh.IsEveryVertexReferenced ? mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count >= mesh.Positions.Count : true)
-            : true;
+        => mesh.IsWellFormed ? mesh.SplitHasAtLeastAsManyVerticesIn(mesh.ToSplitTriangleMesh3D) : true;
 
     // Law_SplitSplitsEachQuadInTwo.
     Law_SplitSplitsEachQuadInTwo(mesh: ModelMesh): Boolean
-        => mesh.IsWellFormed ? mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count == mesh.Triangles.Count + 2 * mesh.Quads.Count : true;
+        => mesh.IsWellFormed ? mesh.SplitSplitsEachQuadInTwoIn(mesh.ToSplitTriangleMesh3D) : true;
 
     // Law_SplitHasOneNormalPerVertex, the split mesh built once (twice in
     // the original).
     Law_SplitHasOneNormalPerVertex(mesh: ModelMesh): Boolean
-    {
-        if (!mesh.IsWellFormed)
-        {
-            return true;
-        }
-        var split = mesh.ToSplitTriangleMesh3D;
-        return split.Normals.Count == split.Mesh.Positions.Count;
-    }
+        => mesh.IsWellFormed ? mesh.ToSplitTriangleMesh3D.SplitHasOneNormalPerVertexIn : true;
 
     // Law_SplitHasOneUvPerVertex, the split mesh built once.
     Law_SplitHasOneUvPerVertex(mesh: ModelMesh): Boolean
-    {
-        if (!mesh.IsWellFormed)
-        {
-            return true;
-        }
-        var split = mesh.ToSplitTriangleMesh3D;
-        return split.Uvs.Count == split.Mesh.Positions.Count;
-    }
+        => mesh.IsWellFormed ? mesh.ToSplitTriangleMesh3D.SplitHasOneUvPerVertexIn : true;
 
     // Law_SplitHasOneSourcePerVertex, the split mesh built once.
     Law_SplitHasOneSourcePerVertex(mesh: ModelMesh): Boolean
-    {
-        if (!mesh.IsWellFormed)
-        {
-            return true;
-        }
-        var split = mesh.ToSplitTriangleMesh3D;
-        return split.SourceVertex.Count == split.Mesh.Positions.Count;
-    }
+        => mesh.IsWellFormed ? mesh.ToSplitTriangleMesh3D.SplitHasOneSourcePerVertexIn : true;
 
     // Law_SplitVertexKeepsItsSourcePosition, the split mesh built once
     // (four times in the original).
     Law_SplitVertexKeepsItsSourcePosition(mesh: ModelMesh, v: VertexIndex): Boolean
-    {
-        if (!mesh.IsWellFormed)
-        {
-            return true;
-        }
-        var split = mesh.ToSplitTriangleMesh3D;
-        return (split.Mesh.Positions.IsValidIndex(v) ? split.SourceVertex.IsValidIndex(v) : false)
-            ? mesh.PositionIs(split.SourceVertex[v], split.Mesh.Positions[v])
-            : true;
-    }
+        => mesh.IsWellFormed ? mesh.SplitVertexKeepsItsSourcePositionIn(mesh.ToSplitTriangleMesh3D, v) : true;
 
     // Law_SplitFollowsTheTriangulation, the split mesh built once.
     Law_SplitFollowsTheTriangulation(mesh: ModelMesh, k: Integer, s: Integer): Boolean
-    {
-        if (!mesh.IsWellFormed)
-        {
-            return true;
-        }
-        var split = mesh.ToSplitTriangleMesh3D;
-        return (split.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
-            ? split.SourceOfCorner(k, s).Value == mesh.CornerVertex(mesh.TriangulatedCorner(k, s)).Value
-            : true;
-    }
+        => mesh.IsWellFormed ? mesh.SplitFollowsTheTriangulationIn(mesh.ToSplitTriangleMesh3D, k, s) : true;
 
     // Law_SplitVertexCarriesItsCornerNormal, the split mesh built once
     // (three times in the original).
     Law_SplitVertexCarriesItsCornerNormal(mesh: ModelMesh, k: Integer, s: Integer): Boolean
-    {
-        if (!mesh.IsWellFormed)
-        {
-            return true;
-        }
-        var split = mesh.ToSplitTriangleMesh3D;
-        return (split.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
-            ? split.NormalIs(split.Mesh.Faces[k].At(s), mesh.CornerNormals, mesh.TriangulatedCorner(k, s))
-            : true;
-    }
+        => mesh.IsWellFormed ? mesh.SplitVertexCarriesItsCornerNormalIn(mesh.ToSplitTriangleMesh3D, k, s) : true;
 
     // Law_SplitVertexCarriesItsCornerUv, the split mesh built once.
     Law_SplitVertexCarriesItsCornerUv(mesh: ModelMesh, k: Integer, s: Integer): Boolean
-    {
-        if (!mesh.IsWellFormed)
-        {
-            return true;
-        }
-        var split = mesh.ToSplitTriangleMesh3D;
-        return (split.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
-            ? split.UvIs(split.Mesh.Faces[k].At(s), mesh.CornerUvs, mesh.TriangulatedCorner(k, s))
-            : true;
-    }
+        => mesh.IsWellFormed ? mesh.SplitVertexCarriesItsCornerUvIn(mesh.ToSplitTriangleMesh3D, k, s) : true;
 
     // Law_SplitVerticesDiffer, the split mesh built once (up to twelve
     // times in the original).
     Law_SplitVerticesDiffer(mesh: ModelMesh, a: VertexIndex, b: VertexIndex): Boolean
-    {
-        if (!mesh.IsWellFormed)
-        {
-            return true;
-        }
-        var split = mesh.ToSplitTriangleMesh3D;
-        return (a.Value != b.Value && split.HasVertexRecord(a) && split.HasVertexRecord(b))
-            ? (split.SourceVertex[a].Value != split.SourceVertex[b].Value
-                || split.Normals[a] != split.Normals[b]   // exact by construction
-                || split.Uvs[a] != split.Uvs[b])          // exact by construction
-            : true;
-    }
+        => mesh.IsWellFormed ? mesh.ToSplitTriangleMesh3D.SplitVerticesDifferIn(a, b) : true;
 }

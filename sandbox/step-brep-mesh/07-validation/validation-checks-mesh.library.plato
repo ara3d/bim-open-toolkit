@@ -597,51 +597,74 @@ library BrepCheckingMesh
     Check_PolygonMeshKeepsArea(mesh: ModelMesh): Check
         => CheckOnce("Law_PolygonMeshKeepsArea", Law_PolygonMeshKeepsArea(mesh));
 
+    // The ten split checks take the split mesh, built once for all ten by SplitSelfTestReport
+    // (validation-checks-reports.library.plato), and state each law's body
+    // (06-mesh/mesh-split-once.library.plato) on it: the same law name, samples and provenance
+    // as the per-sample forms they replace (F6, TKT-486), which are kept for their agreement law
+    // in validation-split-once.laws.plato. Where the mesh is not well formed every split law is
+    // vacuous, so the per-sample fold is NoSampleCheck, which these return there.
+
     // Law_SplitHasAtLeastAsManyVertices.
-    Check_SplitHasAtLeastAsManyVertices(mesh: ModelMesh): Check
-        => CheckOnce("Law_SplitHasAtLeastAsManyVertices", Law_SplitHasAtLeastAsManyVertices(mesh));
+    Check_SplitHasAtLeastAsManyVertices(mesh: ModelMesh, split: SplitTriangleMesh3D): Check
+        => CheckOnce("Law_SplitHasAtLeastAsManyVertices", mesh.IsWellFormed ? mesh.SplitHasAtLeastAsManyVerticesIn(split) : true);
 
     // Law_SplitSplitsEachQuadInTwo.
-    Check_SplitSplitsEachQuadInTwo(mesh: ModelMesh): Check
-        => CheckOnce("Law_SplitSplitsEachQuadInTwo", Law_SplitSplitsEachQuadInTwo(mesh));
+    Check_SplitSplitsEachQuadInTwo(mesh: ModelMesh, split: SplitTriangleMesh3D): Check
+        => CheckOnce("Law_SplitSplitsEachQuadInTwo", mesh.IsWellFormed ? mesh.SplitSplitsEachQuadInTwoIn(split) : true);
 
     // Law_SplitHasOneNormalPerVertex.
-    Check_SplitHasOneNormalPerVertex(mesh: ModelMesh): Check
-        => CheckOnce("Law_SplitHasOneNormalPerVertex", Law_SplitHasOneNormalPerVertex(mesh));
+    Check_SplitHasOneNormalPerVertex(mesh: ModelMesh, split: SplitTriangleMesh3D): Check
+        => CheckOnce("Law_SplitHasOneNormalPerVertex", mesh.IsWellFormed ? split.SplitHasOneNormalPerVertexIn : true);
 
     // Law_SplitHasOneUvPerVertex.
-    Check_SplitHasOneUvPerVertex(mesh: ModelMesh): Check
-        => CheckOnce("Law_SplitHasOneUvPerVertex", Law_SplitHasOneUvPerVertex(mesh));
+    Check_SplitHasOneUvPerVertex(mesh: ModelMesh, split: SplitTriangleMesh3D): Check
+        => CheckOnce("Law_SplitHasOneUvPerVertex", mesh.IsWellFormed ? split.SplitHasOneUvPerVertexIn : true);
 
     // Law_SplitHasOneSourcePerVertex.
-    Check_SplitHasOneSourcePerVertex(mesh: ModelMesh): Check
-        => CheckOnce("Law_SplitHasOneSourcePerVertex", Law_SplitHasOneSourcePerVertex(mesh));
+    Check_SplitHasOneSourcePerVertex(mesh: ModelMesh, split: SplitTriangleMesh3D): Check
+        => CheckOnce("Law_SplitHasOneSourcePerVertex", mesh.IsWellFormed ? split.SplitHasOneSourcePerVertexIn : true);
 
     // Law_SplitVertexKeepsItsSourcePosition at every split vertex.
-    Check_SplitVertexKeepsItsSourcePosition(mesh: ModelMesh): Check
-        => CheckAll("Law_SplitVertexKeepsItsSourcePosition", mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count,
-            v => Law_SplitVertexKeepsItsSourcePosition(mesh, VertexIndex(v)), v => Provenance.WholeInput);
+    Check_SplitVertexKeepsItsSourcePosition(mesh: ModelMesh, split: SplitTriangleMesh3D): Check
+        => mesh.IsWellFormed
+            ? CheckAll("Law_SplitVertexKeepsItsSourcePosition", split.Mesh.Positions.Count,
+                v => mesh.SplitVertexKeepsItsSourcePositionIn(split, VertexIndex(v)), v => Provenance.WholeInput)
+            : NoSampleCheck("Law_SplitVertexKeepsItsSourcePosition");
 
     // Law_SplitFollowsTheTriangulation at every split triangle and slot.
-    Check_SplitFollowsTheTriangulation(mesh: ModelMesh): Check
-        => CheckGrid("Law_SplitFollowsTheTriangulation", mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count, 3,
-            (k, s) => Law_SplitFollowsTheTriangulation(mesh, k, s), (k, s) => Provenance.WholeInput);
+    Check_SplitFollowsTheTriangulation(mesh: ModelMesh, split: SplitTriangleMesh3D): Check
+        => mesh.IsWellFormed
+            ? CheckGrid("Law_SplitFollowsTheTriangulation", split.Mesh.Faces.Count, 3,
+                (k, s) => mesh.SplitFollowsTheTriangulationIn(split, k, s), (k, s) => Provenance.WholeInput)
+            : NoSampleCheck("Law_SplitFollowsTheTriangulation");
 
     // Law_SplitVertexCarriesItsCornerNormal at every split triangle and slot.
-    Check_SplitVertexCarriesItsCornerNormal(mesh: ModelMesh): Check
-        => CheckGrid("Law_SplitVertexCarriesItsCornerNormal", mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count, 3,
-            (k, s) => Law_SplitVertexCarriesItsCornerNormal(mesh, k, s), (k, s) => Provenance.WholeInput);
+    Check_SplitVertexCarriesItsCornerNormal(mesh: ModelMesh, split: SplitTriangleMesh3D): Check
+        => mesh.IsWellFormed
+            ? CheckGrid("Law_SplitVertexCarriesItsCornerNormal", split.Mesh.Faces.Count, 3,
+                (k, s) => mesh.SplitVertexCarriesItsCornerNormalIn(split, k, s), (k, s) => Provenance.WholeInput)
+            : NoSampleCheck("Law_SplitVertexCarriesItsCornerNormal");
 
     // Law_SplitVertexCarriesItsCornerUv at every split triangle and slot.
-    Check_SplitVertexCarriesItsCornerUv(mesh: ModelMesh): Check
-        => CheckGrid("Law_SplitVertexCarriesItsCornerUv", mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count, 3,
-            (k, s) => Law_SplitVertexCarriesItsCornerUv(mesh, k, s), (k, s) => Provenance.WholeInput);
+    Check_SplitVertexCarriesItsCornerUv(mesh: ModelMesh, split: SplitTriangleMesh3D): Check
+        => mesh.IsWellFormed
+            ? CheckGrid("Law_SplitVertexCarriesItsCornerUv", split.Mesh.Faces.Count, 3,
+                (k, s) => mesh.SplitVertexCarriesItsCornerUvIn(split, k, s), (k, s) => Provenance.WholeInput)
+            : NoSampleCheck("Law_SplitVertexCarriesItsCornerUv");
 
-    // Law_SplitVerticesDiffer at every pair of split vertices (quadratic as
-    // written).
-    Check_SplitVerticesDiffer(mesh: ModelMesh): Check
-        => CheckGrid("Law_SplitVerticesDiffer", mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count, mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count,
-            (a, b) => Law_SplitVerticesDiffer(mesh, VertexIndex(a), VertexIndex(b)), (a, b) => Provenance.WholeInput);
+    // Law_SplitVerticesDiffer at every pair of split vertices, as one sample per split vertex
+    // sorted by source vertex (RecordsBySource): only vertices of one source vertex are
+    // compared, since vertices of different source vertices always differ. The fold is
+    // NoSampleCheck when every pair holds and the whole input's failing CheckExact otherwise, as
+    // the pairwise fold is.
+    Check_SplitVerticesDiffer(mesh: ModelMesh, split: SplitTriangleMesh3D): Check
+    {
+        var order = split.RecordsBySource;
+        return mesh.IsWellFormed
+            ? CheckAll("Law_SplitVerticesDiffer", order.Count,
+                j => split.DiffersFromLaterOfItsSource(order, j), j => Provenance.WholeInput)
+            : NoSampleCheck("Law_SplitVerticesDiffer");
+    }
 
     //==
     // # Helpers

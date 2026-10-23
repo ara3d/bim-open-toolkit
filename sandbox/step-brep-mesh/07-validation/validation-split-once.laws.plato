@@ -1,0 +1,208 @@
+//==
+// # The split mesh built once: laws (F6, TKT-486)
+//
+// Each new form agrees with the form it replaced, kept here as the reference and read by nothing
+// else: ToSplitTriangleMesh3D with ToSplitTriangleMesh3DReference (the quadratic build), each
+// Check_SplitX on a built split mesh with Check_SplitXPerSample (its law at every sample, the
+// split mesh rebuilt each time), and SplitVerticesDistinct with SplitVerticesDistinctPairwise.
+// The meshes are four literal ones: layer 6's unit tetrahedron and its reversal (every corner its
+// own split vertex), and a smooth tetrahedron without and with a seam (corners merge, so the
+// indexed grouping is tested). The split meshes for the pair claim are made to fail and to hold
+// (a repeated record next to its twin and apart from it, a seam pair, a record array shorter than
+// the positions); the runner's random split meshes are drawn too.
+//
+// Sections, in order:
+//  - References
+//  - Cases
+//  - Laws
+
+library SplitMeshOnceLaws
+{
+    //==
+    // # References
+
+    // ToSplitTriangleMesh3D as it was before F6: FirstMatchingCorner at every corner and
+    // PositionOfItem for each corner's split vertex, quadratic in the corner count.
+    ToSplitTriangleMesh3DReference(mesh: ModelMesh): SplitTriangleMesh3D
+    {
+        var count = mesh.CornerCount;
+        var firstOf = count.MapRange(c => mesh.FirstMatchingCorner(c));
+        var reps = count.Range.FlatMap(c => firstOf[c] == c ? [c] : Integer.NoIndices)
+            .Sort((a, b) => mesh.CornerVertex(CornerIndex(a)).Value < mesh.CornerVertex(CornerIndex(b)).Value
+                || (mesh.CornerVertex(CornerIndex(a)).Value == mesh.CornerVertex(CornerIndex(b)).Value && a <= b));
+        var splitOf = count.MapRange(c => reps.PositionOfItem(firstOf[c]));
+        var triangleCount = mesh.Triangles.Count + 2 * mesh.Quads.Count;
+        return SplitTriangleMesh3D(
+            TriangleMesh3D(
+                reps.Map(c => mesh.Positions[mesh.CornerVertex(CornerIndex(c))]),
+                triangleCount.MapRange(k => TriangleFace(
+                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 0).Value]),
+                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 1).Value]),
+                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 2).Value])))),
+            reps.Map(c => mesh.CornerNormals[c]),
+            reps.Map(c => mesh.CornerUvs[c]),
+            reps.Map(c => mesh.CornerVertex(CornerIndex(c))));
+    }
+
+    // The first corner, at or before c, of the same vertex with identical
+    // corner attributes: c's group's first corner.
+    FirstMatchingCorner(mesh: ModelMesh, c: Integer): Integer
+        => (c + 1).Range.Reduce(-1, (found, j) => found >= 0 ? found : (mesh.HaveIdenticalCorners(j, c) ? j : -1));
+
+    // Law_SplitVerticesDiffer at every pair of split vertices, as the check stated it before F6.
+    SplitVerticesDistinctPairwise(split: SplitTriangleMesh3D): Boolean
+        => split.Mesh.Positions.Count.Range.All(a => split.Mesh.Positions.Count.Range.All(
+            b => split.SplitVerticesDifferIn(VertexIndex(a), VertexIndex(b))));
+
+    // The ten split checks as they were before F6: each law at every sample, each law building
+    // the split mesh.
+    Check_SplitHasAtLeastAsManyVerticesPerSample(mesh: ModelMesh): Check
+        => CheckOnce("Law_SplitHasAtLeastAsManyVertices", Law_SplitHasAtLeastAsManyVertices(mesh));
+
+    Check_SplitSplitsEachQuadInTwoPerSample(mesh: ModelMesh): Check
+        => CheckOnce("Law_SplitSplitsEachQuadInTwo", Law_SplitSplitsEachQuadInTwo(mesh));
+
+    Check_SplitHasOneNormalPerVertexPerSample(mesh: ModelMesh): Check
+        => CheckOnce("Law_SplitHasOneNormalPerVertex", Law_SplitHasOneNormalPerVertex(mesh));
+
+    Check_SplitHasOneUvPerVertexPerSample(mesh: ModelMesh): Check
+        => CheckOnce("Law_SplitHasOneUvPerVertex", Law_SplitHasOneUvPerVertex(mesh));
+
+    Check_SplitHasOneSourcePerVertexPerSample(mesh: ModelMesh): Check
+        => CheckOnce("Law_SplitHasOneSourcePerVertex", Law_SplitHasOneSourcePerVertex(mesh));
+
+    Check_SplitVertexKeepsItsSourcePositionPerSample(mesh: ModelMesh): Check
+        => CheckAll("Law_SplitVertexKeepsItsSourcePosition", mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count,
+            v => Law_SplitVertexKeepsItsSourcePosition(mesh, VertexIndex(v)), v => Provenance.WholeInput);
+
+    Check_SplitFollowsTheTriangulationPerSample(mesh: ModelMesh): Check
+        => CheckGrid("Law_SplitFollowsTheTriangulation", mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count, 3,
+            (k, s) => Law_SplitFollowsTheTriangulation(mesh, k, s), (k, s) => Provenance.WholeInput);
+
+    Check_SplitVertexCarriesItsCornerNormalPerSample(mesh: ModelMesh): Check
+        => CheckGrid("Law_SplitVertexCarriesItsCornerNormal", mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count, 3,
+            (k, s) => Law_SplitVertexCarriesItsCornerNormal(mesh, k, s), (k, s) => Provenance.WholeInput);
+
+    Check_SplitVertexCarriesItsCornerUvPerSample(mesh: ModelMesh): Check
+        => CheckGrid("Law_SplitVertexCarriesItsCornerUv", mesh.ToSplitTriangleMesh3D.Mesh.Faces.Count, 3,
+            (k, s) => Law_SplitVertexCarriesItsCornerUv(mesh, k, s), (k, s) => Provenance.WholeInput);
+
+    Check_SplitVerticesDifferPerSample(mesh: ModelMesh): Check
+        => CheckGrid("Law_SplitVerticesDiffer", mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count, mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count,
+            (a, b) => Law_SplitVerticesDiffer(mesh, VertexIndex(a), VertexIndex(b)), (a, b) => Provenance.WholeInput);
+
+    //==
+    // # Cases
+
+    // The unit tetrahedron (layer 6's Witness_UnitTetrahedron) with one normal and one uv per
+    // vertex, so its three corners at each vertex form one split vertex; with seam, corner 6 (the
+    // first corner of triangle 2, at vertex 0) has another uv, so vertex 0 splits in two.
+    SmoothTetrahedron(_: ModelMesh, seam: Boolean): ModelMesh
+    {
+        var n0 = Direction3D(Vector3D(-1.0, -1.0, -1.0).Normalize);
+        var n1 = Direction3D(Vector3D(1.0, 0.0, 0.0));
+        var n2 = Direction3D(Vector3D(0.0, 1.0, 0.0));
+        var n3 = Direction3D(Vector3D(0.0, 0.0, 1.0));
+        var u0 = UvCoordinate(0.0, 0.0);
+        var u1 = UvCoordinate(1.0, 0.0);
+        var u2 = UvCoordinate(0.0, 1.0);
+        var u3 = UvCoordinate(1.0, 1.0);
+        var u6 = seam ? UvCoordinate(0.5, 0.5) : u0;
+        var tetra = ModelMesh.Witness_UnitTetrahedron;
+        return (tetra.Positions, tetra.Triangles, tetra.Quads,
+                [n0, n2, n1, n0, n1, n3, n0, n3, n2, n1, n2, n3],
+                [u0, u2, u1, u0, u1, u3, u6, u3, u2, u1, u2, u3],
+                tetra.ElementFace, tetra.VertexProvenance, tetra.Numbering);
+    }
+
+    // The four literal meshes, chosen by an Integer the runner exhausts.
+    SplitMeshWitnessAt(_: ModelMesh, k: Integer): ModelMesh
+    {
+        var i = ((k % 4) + 4) % 4;
+        return i < 2 ? ModelMesh.MeshWitnessAt(i) : ModelMesh.SmoothTetrahedron(i == 3);
+    }
+
+    // A split mesh of three positions and one triangle with the given records.
+    SplitOfThree(_: SplitTriangleMesh3D, normals: Array<Direction3D>, uvs: Array<UvCoordinate>, sources: Array<VertexIndex>): SplitTriangleMesh3D
+        => SplitTriangleMesh3D(
+            TriangleMesh3D([Point3D(0.0, 0.0, 0.0), Point3D(0.0, 0.0, 0.0), Point3D(1.0, 0.0, 0.0)],
+                [TriangleFace(VertexIndex(0), VertexIndex(1), VertexIndex(2))]),
+            normals, uvs, sources);
+
+    // Vertices 0 and 1 carry one record: the claim fails, at adjacent vertices.
+    Witness_SplitRepeatedRecord(_: SplitTriangleMesh3D): SplitTriangleMesh3D
+        => SplitTriangleMesh3D.SplitOfThree(
+            [Direction3D(Vector3D(0.0, 0.0, 1.0)), Direction3D(Vector3D(0.0, 0.0, 1.0)), Direction3D(Vector3D(0.0, 0.0, 1.0))],
+            [UvCoordinate(0.0, 0.0), UvCoordinate(0.0, 0.0), UvCoordinate(1.0, 0.0)],
+            [VertexIndex(0), VertexIndex(0), VertexIndex(1)]);
+
+    // Vertices 0 and 2 carry one record with vertex 1 of another source vertex between them: the
+    // claim fails, and only the sort brings the two together.
+    Witness_SplitRepeatedRecordApart(_: SplitTriangleMesh3D): SplitTriangleMesh3D
+        => SplitTriangleMesh3D.SplitOfThree(
+            [Direction3D(Vector3D(0.0, 0.0, 1.0)), Direction3D(Vector3D(0.0, 0.0, 1.0)), Direction3D(Vector3D(0.0, 0.0, 1.0))],
+            [UvCoordinate(0.0, 0.0), UvCoordinate(1.0, 0.0), UvCoordinate(0.0, 0.0)],
+            [VertexIndex(0), VertexIndex(1), VertexIndex(0)]);
+
+    // Vertices 0 and 1 share a source vertex and a normal but not a uv, as at a seam: the claim
+    // holds.
+    Witness_SplitSeamPair(_: SplitTriangleMesh3D): SplitTriangleMesh3D
+        => SplitTriangleMesh3D.SplitOfThree(
+            [Direction3D(Vector3D(0.0, 0.0, 1.0)), Direction3D(Vector3D(0.0, 0.0, 1.0)), Direction3D(Vector3D(0.0, 0.0, 1.0))],
+            [UvCoordinate(0.0, 0.0), UvCoordinate(1.0, 0.0), UvCoordinate(0.0, 0.0)],
+            [VertexIndex(0), VertexIndex(0), VertexIndex(1)]);
+
+    // Vertices 0 and 2 would repeat a record, but vertex 2 has no normal: it has no record, and
+    // the claim holds vacuously at it.
+    Witness_SplitShortRecords(_: SplitTriangleMesh3D): SplitTriangleMesh3D
+        => SplitTriangleMesh3D.SplitOfThree(
+            [Direction3D(Vector3D(0.0, 0.0, 1.0)), Direction3D(Vector3D(0.0, 0.0, 1.0))],
+            [UvCoordinate(0.0, 0.0), UvCoordinate(1.0, 0.0), UvCoordinate(0.0, 0.0)],
+            [VertexIndex(0), VertexIndex(1), VertexIndex(0)]);
+
+    //==
+    // # Laws
+
+    // The four literal meshes are well formed, so no law below is vacuous on them; the smooth
+    // tetrahedron has 4 split vertices, 5 with the seam.
+    Law_V1Faces_SplitMeshWitnessesAreReal(k: Integer): Boolean
+    {
+        var i = ((k % 4) + 4) % 4;
+        var mesh = ModelMesh.SplitMeshWitnessAt(i);
+        var expected = i < 2 ? 12 : (i == 2 ? 4 : 5);
+        return mesh.IsWellFormed && mesh.ToSplitTriangleMesh3D.Mesh.Positions.Count == expected;
+    }
+
+    // The indexed build gives the quadratic build's split mesh.
+    Law_V1Faces_SplitIndexedAgrees(k: Integer): Boolean
+        => ModelMesh.SplitMeshWitnessAt(k).ToSplitTriangleMesh3D == ModelMesh.SplitMeshWitnessAt(k).ToSplitTriangleMesh3DReference;
+
+    // Each check on the built split mesh gives its per-sample form's Check.
+    Law_V1Faces_SplitChecksAgreePerSample(k: Integer): Boolean
+    {
+        var mesh = ModelMesh.SplitMeshWitnessAt(k);
+        var split = mesh.ToSplitTriangleMesh3D;
+        return mesh.Check_SplitHasAtLeastAsManyVertices(split) == mesh.Check_SplitHasAtLeastAsManyVerticesPerSample
+            && mesh.Check_SplitSplitsEachQuadInTwo(split) == mesh.Check_SplitSplitsEachQuadInTwoPerSample
+            && mesh.Check_SplitHasOneNormalPerVertex(split) == mesh.Check_SplitHasOneNormalPerVertexPerSample
+            && mesh.Check_SplitHasOneUvPerVertex(split) == mesh.Check_SplitHasOneUvPerVertexPerSample
+            && mesh.Check_SplitHasOneSourcePerVertex(split) == mesh.Check_SplitHasOneSourcePerVertexPerSample
+            && mesh.Check_SplitVertexKeepsItsSourcePosition(split) == mesh.Check_SplitVertexKeepsItsSourcePositionPerSample
+            && mesh.Check_SplitFollowsTheTriangulation(split) == mesh.Check_SplitFollowsTheTriangulationPerSample
+            && mesh.Check_SplitVertexCarriesItsCornerNormal(split) == mesh.Check_SplitVertexCarriesItsCornerNormalPerSample
+            && mesh.Check_SplitVertexCarriesItsCornerUv(split) == mesh.Check_SplitVertexCarriesItsCornerUvPerSample
+            && mesh.Check_SplitVerticesDiffer(split) == mesh.Check_SplitVerticesDifferPerSample;
+    }
+
+    // The claim compared within each source vertex equals the claim at every pair.
+    Law_V1Faces_SplitVerticesDistinctAgrees(split: SplitTriangleMesh3D): Boolean
+        => split.SplitVerticesDistinct == split.SplitVerticesDistinctPairwise;
+
+    // The repeated-record witnesses fail the claim and the others hold it, so the agreement law
+    // sees both verdicts.
+    Law_V1Faces_SplitRepeatedRecordsFail(_: Integer): Boolean
+        => !SplitTriangleMesh3D.Witness_SplitRepeatedRecord.SplitVerticesDistinct
+            && !SplitTriangleMesh3D.Witness_SplitRepeatedRecordApart.SplitVerticesDistinct
+            && SplitTriangleMesh3D.Witness_SplitSeamPair.SplitVerticesDistinct
+            && SplitTriangleMesh3D.Witness_SplitShortRecords.SplitVerticesDistinct;
+}

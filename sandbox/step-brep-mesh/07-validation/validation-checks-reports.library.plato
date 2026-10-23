@@ -652,27 +652,36 @@ library BrepCheckingReports
                     "Polygon mesh has one face per element does not hold."),
                 ExactReport(mesh.Check_PolygonMeshKeepsArea,
                     "Polygon mesh keeps area does not hold."),
-                ExactReport(mesh.Check_SplitHasAtLeastAsManyVertices,
-                    "Split has at least as many vertices does not hold."),
-                ExactReport(mesh.Check_SplitSplitsEachQuadInTwo,
-                    "Split splits each quad in two does not hold."),
-                ExactReport(mesh.Check_SplitHasOneNormalPerVertex,
-                    "Split has one normal per vertex does not hold."),
-                ExactReport(mesh.Check_SplitHasOneUvPerVertex,
-                    "Split has one uv per vertex does not hold."),
-                ExactReport(mesh.Check_SplitHasOneSourcePerVertex,
-                    "Split has one source per vertex does not hold."),
-                ExactReport(mesh.Check_SplitVertexKeepsItsSourcePosition,
-                    "Split vertex keeps its source position does not hold."),
-                ExactReport(mesh.Check_SplitFollowsTheTriangulation,
-                    "Split follows the triangulation does not hold."),
-                ExactReport(mesh.Check_SplitVertexCarriesItsCornerNormal,
-                    "Split vertex carries its corner normal does not hold."),
-                ExactReport(mesh.Check_SplitVertexCarriesItsCornerUv,
-                    "Split vertex carries its corner uv does not hold."),
-                ExactReport(mesh.Check_SplitVerticesDiffer,
-                    "Split vertices differ does not hold.")]);
+                mesh.SplitSelfTestReport]);
         };
+
+    // The ten split entries of ModelMeshReport's SelfTestChecks, the split mesh built once for
+    // the ten (F6, TKT-486).
+    SplitSelfTestReport(mesh: ModelMesh): Report
+    {
+        var split = mesh.ToSplitTriangleMesh3D;
+        return MergeAll([
+            ExactReport(mesh.Check_SplitHasAtLeastAsManyVertices(split),
+                "Split has at least as many vertices does not hold."),
+            ExactReport(mesh.Check_SplitSplitsEachQuadInTwo(split),
+                "Split splits each quad in two does not hold."),
+            ExactReport(mesh.Check_SplitHasOneNormalPerVertex(split),
+                "Split has one normal per vertex does not hold."),
+            ExactReport(mesh.Check_SplitHasOneUvPerVertex(split),
+                "Split has one uv per vertex does not hold."),
+            ExactReport(mesh.Check_SplitHasOneSourcePerVertex(split),
+                "Split has one source per vertex does not hold."),
+            ExactReport(mesh.Check_SplitVertexKeepsItsSourcePosition(split),
+                "Split vertex keeps its source position does not hold."),
+            ExactReport(mesh.Check_SplitFollowsTheTriangulation(split),
+                "Split follows the triangulation does not hold."),
+            ExactReport(mesh.Check_SplitVertexCarriesItsCornerNormal(split),
+                "Split vertex carries its corner normal does not hold."),
+            ExactReport(mesh.Check_SplitVertexCarriesItsCornerUv(split),
+                "Split vertex carries its corner uv does not hold."),
+            ExactReport(mesh.Check_SplitVerticesDiffer(split),
+                "Split vertices differ does not hold.")]);
+    }
 
     // The checks of layer 6's laws that compare a mesh with the model it came
     // from, in one family.

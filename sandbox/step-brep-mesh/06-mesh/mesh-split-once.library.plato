@@ -1,53 +1,32 @@
 //==
-// # The split mesh built once, and built in n log n (F6, TKT-486): layer 6 part
+// # The split mesh built once, and built in n log n (F6, TKT-486)
 //
 // Layer 7's split checks called a layer 6 law at every sample (every split vertex, every
 // triangle slot, every pair of split vertices), and each law built ToSplitTriangleMesh3D, which
-// is itself quadratic in the corner count (FirstMatchingCorner scans every earlier corner, and
+// was itself quadratic in the corner count (FirstMatchingCorner scanned every earlier corner, and
 // PositionOfItem every representative). TKT-482's full sweep hung 20 minutes in
 // Witness_CounterboreMeshed's validation on it. This file has:
-//  - ToSplitTriangleMesh3DIndexed: the same split mesh, its corner groups found by sorting the
-//    corners by vertex and scanning each vertex's corners only, and its split vertex per corner
-//    by an inverse index.
+//  - The index ToSplitTriangleMesh3D (mesh-conversions.library.plato) builds with: its corner
+//    groups found by sorting the corners by vertex and scanning each vertex's corners only, and
+//    its split vertex per corner by an inverse index.
 //  - Each split law's body after the build, taking the built split mesh, so a law builds it once
-//    and a check once for all its samples (split-checks.library.plato).
+//    and a check once for all its samples (07-validation/validation-checks-mesh.library.plato).
 //  - SplitVerticesDistinct: Law_SplitVerticesDiffer at every pair, compared within each source
 //    vertex's copies after a sort by source vertex (two vertices of different source vertices
 //    always differ, so no other pair can fail).
 //
+// The quadratic forms these replace are kept, for their agreement laws only, in
+// 07-validation/validation-split-once.laws.plato.
+//
 // Sections, in order:
-//  - Indexed build
+//  - Index
 //  - Law bodies
 //  - Distinct split vertices
 
 library SplitMeshOnce
 {
     //==
-    // # Indexed build
-
-    // ToSplitTriangleMesh3D with FirstMatchingCorners for the per-corner FirstMatchingCorner and
-    // an inverse index for PositionOfItem: the same value, n log n in the corner count where
-    // corners per vertex are bounded.
-    ToSplitTriangleMesh3DIndexed(mesh: ModelMesh): SplitTriangleMesh3D
-    {
-        var count = mesh.CornerCount;
-        var firstOf = mesh.FirstMatchingCorners;
-        var reps = count.Range.FlatMap(c => firstOf[c] == c ? [c] : Integer.NoIndices)
-            .Sort((a, b) => mesh.ComesBeforeByVertex(a, b));
-        var positionOf = reps.InversePositions(count);
-        var splitOf = count.MapRange(c => positionOf[firstOf[c]]);
-        var triangleCount = mesh.Triangles.Count + 2 * mesh.Quads.Count;
-        return SplitTriangleMesh3D(
-            TriangleMesh3D(
-                reps.Map(c => mesh.Positions[mesh.CornerVertex(CornerIndex(c))]),
-                triangleCount.MapRange(k => TriangleFace(
-                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 0).Value]),
-                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 1).Value]),
-                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 2).Value])))),
-            reps.Map(c => mesh.CornerNormals[c]),
-            reps.Map(c => mesh.CornerUvs[c]),
-            reps.Map(c => mesh.CornerVertex(CornerIndex(c))));
-    }
+    // # Index
 
     // Whether corner a comes before or with corner b ordered by vertex, then by corner: the order
     // ToSplitTriangleMesh3D gives its split vertices.
@@ -160,12 +139,6 @@ library SplitMeshOnce
 
     //==
     // # Distinct split vertices
-
-    // Law_SplitVerticesDiffer at every pair of split vertices, as the check stated it:
-    // quadratic, kept for the agreement law.
-    SplitVerticesDistinctPairwise(split: SplitTriangleMesh3D): Boolean
-        => split.Mesh.Positions.Count.Range.All(a => split.Mesh.Positions.Count.Range.All(
-            b => split.SplitVerticesDifferIn(VertexIndex(a), VertexIndex(b))));
 
     // The split vertices that have a record, ordered by source vertex and then by index, so
     // the vertices of one source vertex are adjacent.
