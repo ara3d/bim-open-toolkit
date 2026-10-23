@@ -76,6 +76,16 @@ to merge into the library.
   premise, 0 mismatches). The generated C# of layers 00-08 at 9d014311 is byte-identical to
   c8c83c8b's apart from the header line (1,419 files and the runtime copies).
 
+- Side build at the regeneration pin with the law-runner caps (2026-10-22): Plato 60134758 with
+  only 5776a36e (TKT-479, busy wait) and d6eafae8 (TKT-485, witness cap) cherry-picked on top, as
+  df1e18b6 in a scratch clone (not pushed; reproduce with `git switch -c side 60134758` and
+  `git cherry-pick -x 5776a36e d6eafae8`, both apply cleanly). Neither touches writers, the
+  compiler, the runtime or the stdlib, and its CLI's C# for layers 00-08 (library 83a5da13)
+  matches the 60134758 regeneration in all 1,419 files. CLI: `C:\Users\cdigg\.plato-cli\60134758-cap\Plato.CLI.dll`;
+  server: `C:\Users\cdigg\.plato-cli\navmcp-60134758-cap-clean` (studio 6ea54603). Smoke-tested:
+  `--witness-budget=2` caps a slow witness on both backends and its law is an error naming it; the
+  server on a test port answered busy naming the holder and listed it in plato_law_status.
+
 ## Contract requests
 
 ## Requests to other tracks
