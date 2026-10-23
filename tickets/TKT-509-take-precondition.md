@@ -21,3 +21,40 @@ From v1-faces via the supervisor (2026-10-23): Take(1) on an empty array reads i
 ## Decision (supervisor, 2026-10-23)
 
 No TakeAtMost. Take keeps its stated precondition (0 <= n <= Count), and callers are fixed. The 11 constant-n call sites go to v1-faces to audit; F7 has already rebuilt the two at validation-checks-mesh.library.plato 403 and 409. The ticket stays open for the audit (box 1).
+
+
+## Audit (v1-faces, 2026-10-23)
+
+Constant n > 0 (15 calls, laws files included): F8 guards validation-checks-mesh.library.plato:403 and :409 (FirstElementFace); F8b gives the two o.Take(3) laws of pipeline-proofs-mesh-witness.laws.plato a premise of three outcomes, and states as a law that WholePoleSegment's samples.Take(samples.Count - 1) is in range (PoleSegmentSamplesAtLeast with least 3 returns at least 4 samples); the other 11 take a prefix of a literal of known size. The reasons per site are in sandbox/step-mesh-staging/v1-faces/TRACK.md (F8).
+
+Computed n, left for after version 1 (supervisor, 2026-10-23), each to be read for whether n can exceed the count or go negative:
+
+- `01-geometry/geometry.library.plato:582`: `extents.Take(i)`
+- `02-topology/topology.library.plato:1010`: `poly.Take(k)`
+- `04-discretization/discretization-work.library.plato:27`: `ts.Take(widest + 1)`
+- `05-face-meshing/face-meshing-lift.library.plato:108`: `keyedBuffer.Freeze().Take(keyedCount)`
+- `05-face-meshing/face-meshing-lift.library.plato:144`: `firstBuffer.Freeze().Take(next)`
+- `05-face-meshing/face-meshing.library.plato:110`: `ring.Take(at + 1)`
+- `05-face-meshing/face-meshing.library.plato:165`: `current.Take(ear)`
+- `05-face-meshing/face-meshing.library.plato:188`: `triangles.Take(at)`
+- `05-face-meshing/pole-segments.library.plato:160`: `samples.Take(samples.Count - 1)`
+- `05-face-meshing/triangulation-cdt-indexed.library.plato:220`: `ring.Take(at + 1)`
+- `06-mesh/mesh-components-given.library.plato:65`: `Counted(ComponentRootTables(lowest.Freeze().Take(size)`
+- `06-mesh/mesh-incidence.library.plato:198`: `component.Freeze().Take(elementCount)`
+- `06-mesh/mesh-incidence.library.plato:199`: `parent.Freeze().Take(elementCount)`
+- `06-mesh/mesh-incidence.library.plato:200`: `depth.Freeze().Take(elementCount)`
+- `06-mesh/mesh-masks.library.plato:45`: `mask.Freeze().Take(faceCount.Max(0)`
+- `06-mesh/mesh-masks.library.plato:156`: `seen.Freeze().Take(faceCount.Max(0)`
+- `07-validation/validation-defects.library.plato:286`: `[i].Take(FacesOf(ds[i])`
+- `07-validation/validation-defects.library.plato:296`: `[d].Take(ClassOf(d)`
+- `09-tooling/tooling-diff-helpers.library.plato:25`: `[d].Take(same ? 0 : 1)`
+- `09-tooling/tooling-dumps.library.plato:67`: `corners.Take(mesh.CornerNormals.Count == mesh.CornerCount ? corners.Count : 0)`
+- `09-tooling/tooling-dumps.library.plato:94`: `points.Take(fm.Normals.Count == fm.UvPoints.Count ? points.Count : 0)`
+- `09-tooling/tooling-law-runner-once.library.plato:41`: `NamedModel.ModelWitnesses.Take(NamedModel.PositiveWitnessCount)`
+- `09-tooling/tooling-law-runner-once.library.plato:227`: `PipelineWitnessRunsFrom(cs.Take(NamedModel.PositiveWitnessCount)`
+- `11-repair/repair-diagnosis.library.plato:27`: `[f].Take(keep(f)`
+- `11-repair/repair-diagnosis.library.plato:56`: `[f].Take(m.IsFaceInRange(f)`
+- `11-repair/repair-diagnosis.library.plato:201`: `[BoundSlot(b)].Take(keep(m.Faces[f].Bounds[b])`
+- `11-repair/repair-diagnosis.library.plato:222`: `[RepairAction.DeclareOpen(ShellIndex(s))].Take(m.UseCount(ShellIndex(s)`
+- `11-repair/repair-diagnosis.library.plato:273`: `ActionsOf(x).Take(ActionsOf(x)`
+- `11-repair/repair-indexed.library.plato:320`: `[RepairAction.DeclareOpen(ShellIndex(s))].Take(m.UseCountIndexed(ix, ShellIndex(s)`

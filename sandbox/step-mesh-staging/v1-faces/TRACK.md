@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1, F3, F3b, F2, F4b, P1, F5 in 289d5156 | dropped: F4a | handed over: P2 to v1-jody (J9, 3be261bd); cusps, planes and slits to v1-edges (E5) | TKT-466 diagnosed, closes with J9 | F6 merged in c567c6dd | F6b and F7 (TKT-486) ready to merge | F8 (TKT-509) ready to merge
+Status: merged: F1, F3, F3b, F2, F4b, P1, F5 in 289d5156 | dropped: F4a | handed over: P2 to v1-jody (J9, 3be261bd); cusps, planes and slits to v1-edges (E5) | TKT-466 diagnosed, closes with J9 | F6 merged in c567c6dd | F6b and F7 (TKT-486) ready to merge | F8 queued | F8b (TKT-509) ready to merge
 
 ## Chunks
 
@@ -128,7 +128,14 @@ Scratch state that is not in the repository: the regenerated C# and probe harnes
   - Safe while the runner draws no other case: `08-pipeline/pipeline-proofs-mesh-witness.laws.plato:75` and `:81` take `o.Take(3)` of each knock-out of a FaceOutcomesWitness, and the only one is the unit box's (6 outcomes; the runner reports 1 case, exhaustive). A generated FaceOutcomesWitness with fewer than 3 outcomes would throw there, and the law also reads o[0] to o[2].
   - Not audited (n not a constant, outside the request): the 29 calls such as `Take(i)`, `Take(at + 1)`, `Take(samples.Count - 1)` (pole-segments.library.plato:160 throws on an empty sample list if MapRange rejects -1).
 
+- F8b (TKT-509, supervisor's request, 2026-10-23): the three sites F8 called safe only by circumstance.
+  - `08-pipeline/pipeline-proofs-mesh-witness.laws.plato`, Law_MeshedFaceSetIffFacesMeshed and Law_MeshedFaceSetPairsFaces: o.Take(3) of every knock-out, safe only while the runner draws the unit box's six outcomes (TKT-446's generators can change that). `take-guards.patch` gives both a premise `w.Outcomes.Count >= 3`. `take-guards.laws.plato`: both laws on the unit box's outcomes cut to two (TwoFaceOutcomesCase, not a Witness_ so it does not join the runner's cases). Capped CLI: on HEAD the law errors with ArgumentOutOfRange; with the patch it passes, and StepToMeshProofsMeshWitnessLaws keeps its verdicts (all pass, the same case counts).
+  - `05-face-meshing/pole-segments.library.plato:160`, WholePoleSegment's samples.Take(samples.Count - 1): not guarded, since it cannot fail. PoleSegmentSamplesAtLeast(..., least) returns n + 1 samples with n = PoleStepCount(extent).Max(least), and the call passes least 3, so there are at least 4 samples and Take(Count - 1) takes at least 3, whatever the extent (an empty list cannot reach it). A guard there would be a branch no input takes; instead `Law_V1Faces_WholePoleSegmentSamplesHaveALast` states the count on the extents nearest to failing (zero, 1e-300, negative, one turn, not a number), so a change to the least count or to PoleStepCount that breaks it fails a law, not the meshing path. Passes, 14 cases exhaustive.
+  - The 29 calls with a computed n are listed in TKT-509 for after version 1.
+
 ## Merge instructions
+
+- F8b: `git apply -p1 sandbox/step-mesh-staging/v1-faces/take-guards.patch` (pipeline-proofs-mesh-witness.laws.plato), move `take-guards.laws.plato` into `08-pipeline`, then delete the patch.
 
 - F8: move `first-face.library.plato` into `06-mesh` (or `07-validation`) and `first-face.laws.plato` into `07-validation`; in `07-validation/validation-checks-mesh.library.plato` replace both `mesh.ElementFace.Take(1)` (lines 403 and 409) by `mesh.FirstElementFace`. If F7 merges first and deletes these two per-sample checks, keep the edit wherever their per-sample forms survive (F6 kept them as `*PerSample` in the laws file).
 

@@ -1,0 +1,32 @@
+diff -ru a/08-pipeline/pipeline-proofs-mesh-witness.laws.plato b/08-pipeline/pipeline-proofs-mesh-witness.laws.plato
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-proofs-mesh-witness.laws.plato	2026-10-23 11:35:29.079208500 -0400
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-proofs-mesh-witness.laws.plato	2026-10-23 11:35:29.257110000 -0400
+@@ -69,16 +69,21 @@
+         => w.OutcomeKnockOuts.All(o => CatalogFullyMeshedKeeps(o, CheckFullyMeshedModel(w.Discretized.Model, o)));
+ 
+     // CheckMeshedFaceSet over faces 0 to 2 succeeds exactly when their three outcomes are meshed,
+-    // on every knock-out.
++    // on every knock-out of a witness with at least three outcomes (o.Take(3) needs them).
+     Law_MeshedFaceSetIffFacesMeshed(w: FaceOutcomesWitness): Boolean
+-        => w.OutcomeKnockOuts.All(o =>
+-            CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], o.Take(3)).IsDecided
+-                == 3.Range.All(i => o[i].Mesh.IsEmptyFaceMesh.Not && o[i].HasBlockingRequest.Not));
++        => w.Outcomes.Count >= 3
++            ? w.OutcomeKnockOuts.All(o =>
++                CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], o.Take(3)).IsDecided
++                    == 3.Range.All(i => o[i].Mesh.IsEmptyFaceMesh.Not && o[i].HasBlockingRequest.Not))
++            : true;
+ 
+-    // A MeshedFaceSet pairs each face with its outcome, on every knock-out.
++    // A MeshedFaceSet pairs each face with its outcome, on every knock-out of a witness with at
++    // least three outcomes.
+     Law_MeshedFaceSetPairsFaces(w: FaceOutcomesWitness): Boolean
+-        => w.OutcomeKnockOuts.All(o =>
+-            CatalogMeshedFaceSetPairs(CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], o.Take(3))));
++        => w.Outcomes.Count >= 3
++            ? w.OutcomeKnockOuts.All(o =>
++                CatalogMeshedFaceSetPairs(CheckMeshedFaceSet([BrepFaceIndex(0), BrepFaceIndex(1), BrepFaceIndex(2)], o.Take(3))))
++            : true;
+ 
+     //==
+     // # The model mesh
