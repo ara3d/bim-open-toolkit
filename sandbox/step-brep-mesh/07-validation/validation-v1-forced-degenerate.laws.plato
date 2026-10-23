@@ -1,7 +1,7 @@
 // Laws of V1ForcedDegenerate (V1G-19), over the mesh of ANNA-B4 face 491's witness (Witness_AnnaB4Face491, one
 // zero-width face meshed as two triangles below the length tolerance) and its validation report under the host's
-// options at 1 mm, with the face's outcome diagnostics given: FACE-ZERO-WIDTH (as V1ZeroWidth reports it),
-// FACE-CUSP (as v1-edges' E5b will), and none.
+// options at 1 mm, with the face's outcome diagnostics given: FACE-ZERO-WIDTH (as V1ZeroWidth reports it), and
+// none. FACE-CUSP's real witness is V1GateCuspWitnessLaws' (08-pipeline/pipeline-corpus-witness-odin-w260-cusps).
 library V1ForcedDegenerateLaws
 {
     // The witness's mesh and validation report, split by ExplainedReport for one face whose outcome carries a
@@ -33,10 +33,6 @@ library V1ForcedDegenerateLaws
     // A face reported FACE-ZERO-WIDTH explains its forced degenerate elements and close vertices.
     Law_V1Gate_ZeroWidthExplainsDegenerateElements(_: Integer): Boolean
         => ExplainedByRow(ExplanationIndexOf("FACE-ZERO-WIDTH"));
-
-    // A face reported FACE-CUSP explains them the same way.
-    Law_V1Gate_CuspExplainsDegenerateElements(_: Integer): Boolean
-        => ExplainedByRow(ExplanationIndexOf("FACE-CUSP"));
 
     // The same degenerate elements on a face with no explaining diagnostic are still an Error.
     Law_V1Gate_UnexplainedDegenerateElementIsAnError(_: Integer): Boolean
