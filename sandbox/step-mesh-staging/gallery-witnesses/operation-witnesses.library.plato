@@ -35,7 +35,7 @@ library OperationWitnesses
     // # Pieces shared by the witnesses
 
     // A point of the profile plane z = 0.
-    At(x: Number, y: Number): Point3D
+    ProfilePoint(x: Number, y: Number): Point3D
         => Point3D(x, y, 0.0);
 
     // A full circle about +z at centre c, closed at c + (r, 0, 0).
@@ -192,24 +192,24 @@ library OperationWitnesses
     // A hexagonal prism, circumradius 1.2, height 2: six planes meeting at
     // 120 degrees. V = 12, E = 18, F = 8, L = 8, volume (3 sqrt 3 / 2) 1.44 * 2.
     Witness_Hexagon(_: BrepModel): BrepModel
-        => ExtrudeProfiles(6.MapRange(k => Straight(At(1.2 * Angle(k.ToNumber * Number.Pi / 3.0).Cos, 1.2 * Angle(k.ToNumber * Number.Pi / 3.0).Sin))), 6, 2.0, false);
+        => ExtrudeProfiles(6.MapRange(k => Straight(ProfilePoint(1.2 * Angle(k.ToNumber * Number.Pi / 3.0).Cos, 1.2 * Angle(k.ToNumber * Number.Pi / 3.0).Sin))), 6, 2.0, false);
 
     // An L bracket, 4 by 3 with arms 1.2 wide, 1 high: a concave prism whose
     // inner corner is a reflex vertex. V = 12, E = 18, F = 8, L = 8, volume 6.96.
     Witness_LBracket(_: BrepModel): BrepModel
-        => ExtrudeProfiles([Straight(At(0.0, 0.0)), Straight(At(4.0, 0.0)), Straight(At(4.0, 1.2)),
-            Straight(At(1.2, 1.2)), Straight(At(1.2, 3.0)), Straight(At(0.0, 3.0))], 6, 1.0, false);
+        => ExtrudeProfiles([Straight(ProfilePoint(0.0, 0.0)), Straight(ProfilePoint(4.0, 0.0)), Straight(ProfilePoint(4.0, 1.2)),
+            Straight(ProfilePoint(1.2, 1.2)), Straight(ProfilePoint(1.2, 3.0)), Straight(ProfilePoint(0.0, 3.0))], 6, 1.0, false);
 
     // The box 4 x 3 x 2 with one long edge chamfered 0.6: a seventh plane at
     // 45 degrees, tangent to nothing. V = 10, E = 15, F = 7, L = 7, volume 23.64.
     Witness_Chamfer(_: BrepModel): BrepModel
-        => ExtrudeProfiles([Straight(At(0.0, 0.0)), Straight(At(4.0, 0.0)), Straight(At(4.0, 2.4)),
-            Straight(At(3.4, 3.0)), Straight(At(0.0, 3.0))], 5, 2.0, false);
+        => ExtrudeProfiles([Straight(ProfilePoint(0.0, 0.0)), Straight(ProfilePoint(4.0, 0.0)), Straight(ProfilePoint(4.0, 2.4)),
+            Straight(ProfilePoint(3.4, 3.0)), Straight(ProfilePoint(0.0, 3.0))], 5, 2.0, false);
 
     // The corners of the box 4 x 3 with one long edge filleted at radius 0.6.
     FilletCorners(_: Integer): Array<ProfileCorner>
-        => [Straight(At(0.0, 0.0)), Straight(At(4.0, 0.0)), ArcTo(At(4.0, 2.4), At(3.4, 2.4), true),
-            Straight(At(3.4, 3.0)), Straight(At(0.0, 3.0))];
+        => [Straight(ProfilePoint(0.0, 0.0)), Straight(ProfilePoint(4.0, 0.0)), ArcTo(ProfilePoint(4.0, 2.4), ProfilePoint(3.4, 2.4), true),
+            Straight(ProfilePoint(3.4, 3.0)), Straight(ProfilePoint(0.0, 3.0))];
 
     // The box 4 x 3 x 2 with one long edge filleted at radius 0.6: a quarter
     // cylinder tangent to two planes. V = 10, E = 15, F = 7, L = 7, volume
@@ -227,16 +227,16 @@ library OperationWitnesses
     // concave quarter cylinder with its sense reversed. V = 14, E = 21, F = 9,
     // L = 9, volume 6.96 + 0.36 - 0.09 pi.
     Witness_InnerFillet(_: BrepModel): BrepModel
-        => ExtrudeProfiles([Straight(At(0.0, 0.0)), Straight(At(4.0, 0.0)), Straight(At(4.0, 1.2)),
-            ArcTo(At(1.8, 1.2), At(1.8, 1.8), false), Straight(At(1.2, 1.8)), Straight(At(1.2, 3.0)), Straight(At(0.0, 3.0))], 7, 1.0, false);
+        => ExtrudeProfiles([Straight(ProfilePoint(0.0, 0.0)), Straight(ProfilePoint(4.0, 0.0)), Straight(ProfilePoint(4.0, 1.2)),
+            ArcTo(ProfilePoint(1.8, 1.2), ProfilePoint(1.8, 1.8), false), Straight(ProfilePoint(1.2, 1.8)), Straight(ProfilePoint(1.2, 3.0)), Straight(ProfilePoint(0.0, 3.0))], 7, 1.0, false);
 
     // The box 4 x 3 x 1.5 with a stadium slot through it, 1.6 between the
     // centres of its 0.4-radius ends: two half cylinders and two planes bound
     // the hole. V = 16, E = 24, F = 10, L = 12, genus 1, volume
     // (12 - 1.28 - 0.16 pi) * 1.5.
     Witness_Slot(_: BrepModel): BrepModel
-        => ExtrudeProfiles([Straight(At(0.0, 0.0)), Straight(At(4.0, 0.0)), Straight(At(4.0, 3.0)), Straight(At(0.0, 3.0)),
-            ArcTo(At(1.2, 1.1), At(1.2, 1.5), false), Straight(At(1.2, 1.9)), ArcTo(At(2.8, 1.9), At(2.8, 1.5), false), Straight(At(2.8, 1.1))],
+        => ExtrudeProfiles([Straight(ProfilePoint(0.0, 0.0)), Straight(ProfilePoint(4.0, 0.0)), Straight(ProfilePoint(4.0, 3.0)), Straight(ProfilePoint(0.0, 3.0)),
+            ArcTo(ProfilePoint(1.2, 1.1), ProfilePoint(1.2, 1.5), false), Straight(ProfilePoint(1.2, 1.9)), ArcTo(ProfilePoint(2.8, 1.9), ProfilePoint(2.8, 1.5), false), Straight(ProfilePoint(2.8, 1.1))],
             4, 1.5, false);
 
     // A D-shaft: the unit cylinder of height 3 with a flat at x = 0.6. The
@@ -244,7 +244,7 @@ library OperationWitnesses
     // F = 4, L = 4, volume (pi - (theta - sin theta) / 2) * 3 with
     // theta = 2 acos 0.6, the flat's segment.
     Witness_DShaft(_: BrepModel): BrepModel
-        => ExtrudeProfiles([ArcTo(At(0.6, 0.8), At(0.0, 0.0), true), Straight(At(0.6, -0.8))], 2, 3.0, false);
+        => ExtrudeProfiles([ArcTo(ProfilePoint(0.6, 0.8), ProfilePoint(0.0, 0.0), true), Straight(ProfilePoint(0.6, -0.8))], 2, 3.0, false);
 
     //==
     // # Features on a box
@@ -530,7 +530,9 @@ library OperationWitnesses
     // (CrossHolePlusPoints, CrossHoleMinusPoints), within 3.5e-7 of both
     // cylinders. Vertices 0 (1, 0, 0), 1 (1, 0, 3), 2 and 3 the curves'
     // starts; curves and closed edges 0 the bottom circle, 1 the top, 2 the
-    // +x curve, 3 the -x curve. The band (surface 2) has four bounds: the two
+    // +x curve, 3 the -x curve, each closed and marked so by layer 3's
+    // ClosureMarks (a clamped B-spline is aperiodic, and without the mark a
+    // closed edge on it has an empty domain). The band (surface 2) has four bounds: the two
     // circles (loops 2, 3) and the two curves run backwards from the hole's
     // (4, 5); the hole's wall (surface 3, a cylinder about x with its sense
     // reversed) has loops 6 and 7. V = 4, E = 4, F = 4, L = 8, genus 1; the
@@ -543,15 +545,16 @@ library OperationWitnesses
         var plus = Integer.CrossHolePlusPoints;
         var minus = Integer.CrossHoleMinusPoints;
         var ones = plus.Count.MapRange(i => 1.0);
+        var g = GeometrySet(
+            [o.CircleAt(1.0), top.CircleAt(1.0),
+             BrepCurve.BSpline(BSplineCurveData(basis, plus, ones)),
+             BrepCurve.BSpline(BSplineCurveData(basis, minus, ones))],
+            [], [],
+            [BrepSurface.Plane(o.PlaneFacing(0)), BrepSurface.Plane(top.PlaneFacing(1)), BrepSurface.Cylinder(o.WorldFrameAt, 1.0),
+             BrepSurface.Cylinder(Point3D(0.0, 0.0, 1.5).FrameAt(Vector3D(0.0, 1.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(1.0, 0.0, 0.0)), 0.4)],
+            []);
         return ClosedSolidOf(
-            GeometrySet(
-                [o.CircleAt(1.0), top.CircleAt(1.0),
-                 BrepCurve.BSpline(BSplineCurveData(basis, plus, ones)),
-                 BrepCurve.BSpline(BSplineCurveData(basis, minus, ones))],
-                [], [],
-                [BrepSurface.Plane(o.PlaneFacing(0)), BrepSurface.Plane(top.PlaneFacing(1)), BrepSurface.Cylinder(o.WorldFrameAt, 1.0),
-                 BrepSurface.Cylinder(Point3D(0.0, 0.0, 1.5).FrameAt(Vector3D(0.0, 1.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(1.0, 0.0, 0.0)), 0.4)],
-                []),
+            g.WithClosures(g.ClosureMarks(Tolerances.Witness_Tolerances)),
             [BrepVertex(o.RimPoint(1.0)), BrepVertex(top.RimPoint(1.0)), BrepVertex(plus[0]), BrepVertex(minus[0])],
             [0.ClosedEdge(0), 1.ClosedEdge(1), 2.ClosedEdge(2), 3.ClosedEdge(3)],
             [0.Ring(false), 1.Ring(true), 0.Ring(true), 1.Ring(false), 2.Ring(false), 3.Ring(true), 2.Ring(true), 3.Ring(false)],
@@ -657,10 +660,10 @@ library OperationWitnesses
     // Operation witness k modulo the count (k may be negative, as the runner
     // draws it).
     OperationWitnessAt(_: BrepModel, k: Integer): BrepModel
-        => Integer.OperationWitnesses[((k % 22) + 22) % 22];
+        => Integer.OperationWitnessList[((k % 22) + 22) % 22];
 
     // Every operation witness, in the order above.
-    OperationWitnesses(_: Integer): Array<BrepModel>
+    OperationWitnessList(_: Integer): Array<BrepModel>
         => [BrepModel.Witness_Hexagon,
             BrepModel.Witness_LBracket,
             BrepModel.Witness_Chamfer,
