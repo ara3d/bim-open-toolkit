@@ -1,9 +1,9 @@
 ---
 id: TKT-484
 title: STEP mesher: a hole that crosses a periodic face's seam is left straddling the chart's cut, so the region is refused as not simple (Witness_CrossHole's band)
-status: open
+status: claimed
 depends_on: []
-owner:
+owner: v1-gate
 fence: [sandbox/step-brep-mesh/05-face-meshing/**]
 workflow: [W3]
 related: [TKT-324, TKT-468]
