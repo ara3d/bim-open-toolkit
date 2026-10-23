@@ -1,0 +1,147 @@
+//==
+// # Prepare once per model: agreement laws (TKT-503)
+//
+// Layer 8. A profile of PrepareModel over the u-blox corpus on 2026-10-22 (docs/plans/
+// step-mesher-prepare-speed-2026-10-22.md) found Sewn holding 85 to 95% of the stage: OnceCitedEdges
+// built an EdgeUseTable with buffers the size of the edge table for every declared-closed shell, and
+// SewnVertexRoots, SewnEdgeRoots and WithOpenShellsReported each asked for it once per shell, so
+// sewing cost about four times S x E (ELLA-W1: 429 shells by 20,684 edges). Loop chaining ran
+// ChainedCoedges twice per loop and the closure decision of a curve was made in Reduced and again
+// in ClosureMarks. Each repair keeps its reference beside it and takes a precomputed table: the laws
+// here compare the path PrepareModel now takes with the reference on every witness model, every
+// raw witness and the three sewing cubes of pipeline-shell-sewing.laws.plato.
+//
+// Sections, in order:
+//  - Comparing
+//  - The sewing input
+//  - Sewn as written before TKT-503
+//  - Sewing laws
+
+library PrepareSpeedLaws
+{
+    //==
+    // # Comparing
+
+    // Whether two index lists are one, element by element.
+    SameIndexLists(a: Array<Integer>, b: Array<Integer>): Boolean
+        => a.Corresponds(b, (x, y) => x == y);
+
+    // Whether two findings are one: the same code and measure, two unmeasured measures counting
+    // as the same.
+    SameFinding(a: Diagnostic, b: Diagnostic): Boolean
+        => a.Code == b.Code && (a.Measure == b.Measure || (a.Measure != a.Measure && b.Measure != b.Measure));
+
+    // Whether two raw models are one: SameRawModel (the model, map fields, units and factors),
+    // and the same findings in the same order, which SameRawModel leaves out.
+    AgreeWithFindings(a: RawDecodedModel, b: RawDecodedModel): Boolean
+        => a.SameRawModel(b) && a.Diagnostics.Corresponds(b.Diagnostics, (x, y) => x.SameFinding(y));
+
+    //==
+    // # The sewing input
+
+    // The raw model as Sewn receives it in PrepareModelWith under the standard policy: the
+    // tolerances set, reduced, chained.
+    SewingInput(raw: RawDecodedModel): RawDecodedModel
+    {
+        var size = raw.Model.ModelSize;
+        var extent = raw.Model.CoordinateExtent;
+        var policy = DecodePolicy.StandardPolicy;
+        var tolerances = ModelTolerances(raw.Units.UsedContextsOf(raw.Occurrences), raw.Model.Unit, size, extent, policy);
+        return raw.WithModel(raw.Model.WithTolerances(tolerances)).Reduced.LoopsChained;
+    }
+
+    // The three sewing witnesses of pipeline-shell-sewing.laws.plato, each as Sewn receives it.
+    SewingCubes(_: Integer): Array<RawDecodedModel>
+        => [0.UnsewnCube.SewingInput, 0.FaceShellsCube.SewingInput, 0.OpenBoxCube.SewingInput];
+
+    //==
+    // # Sewn as written before TKT-503
+
+    // Sewn as written before TKT-503: the once-cited edges of each shell asked for by each of
+    // SewnVertexRoots, SewnEdgeRoots and WithOpenShellsReportedReference, which are kept as
+    // references in step-shell-sewing.library.plato. Everything after the roots is as in Sewn.
+    SewnReference(raw: RawDecodedModel): RawDecodedModel
+    {
+        var m = raw.Model;
+        var roots = m.SewnVertexRoots;
+        var edgeRoots = m.SewnEdgeRoots(roots);
+        var mergedVertices = m.Vertices.Count.Range.FlatMap(v => roots[v] != v ? [v] : Integer.NoIndices);
+        var mergedEdges = m.Edges.Count.Range.FlatMap(e => edgeRoots[e] != e ? [e] : Integer.NoIndices);
+        var sewn = (mergedVertices.Count == 0 && mergedEdges.Count == 0) ? m : m.SewnModelWith(roots, edgeRoots);
+        var vertexAt = m.Vertices.Count.MapRange(v => roots[v] == v).Renumbering;
+        var edgeAt = m.Edges.Count.MapRange(e => edgeRoots[e] == e).Renumbering;
+        var s = raw.Sources;
+        var sources = KernelSources(
+            m.Vertices.Count.Range.FlatMap(v => roots[v] == v ? [s.Vertices[v]] : s.Vertices.Take(0)),
+            m.Edges.Count.Range.FlatMap(e => edgeRoots[e] == e ? [s.Edges[e]] : s.Edges.Take(0)),
+            s.Loops, s.Faces, s.Shells, s.Bodies, s.Curves, s.Curves2D, s.Pcurves, s.Surfaces);
+        var repairs = mergedVertices.Map(v => RepairRecord(s.Vertices[v], StepRepair.MergedInto(BrepVertexIndex(vertexAt[roots[v]]), BrepVertexIndex(v))))
+            .Concatenate(mergedEdges.Map(e => RepairRecord(s.Edges[e], StepRepair.MergedEdgeInto(BrepEdgeIndex(edgeAt[edgeRoots[e]]), BrepEdgeIndex(e)))));
+        var vertexFindings = mergedVertices.Map(v => Diagnose(StepDiagnosticCode.ShellVertexSewn,
+            Provenance.AtInstance(s.Vertices[v].Instance), m.Vertices[v].Point.Distance(m.Vertices[roots[v]].Point)));
+        var edgeFindings = mergedEdges.Map(e => Diagnose(StepDiagnosticCode.ShellEdgeSewn, Provenance.AtInstance(s.Edges[e].Instance), edgeAt[edgeRoots[e]].ToNumber));
+        var earlier = raw.Repairs.Map(r => RepairRecord(r.Source, r.Repair.WithKeptVertexMoved(roots, vertexAt)));
+        var sewnRaw = RawDecodedModel(sewn, raw.Occurrences, sources, raw.Folds, earlier.Concatenate(repairs),
+            raw.Units, raw.LengthFactor, raw.AngleFactor,
+            raw.Diagnostics.Concatenate(vertexFindings).Concatenate(edgeFindings));
+        return sewnRaw.WithOpenShellsReportedReference;
+    }
+
+    // WithOpenShellsReported as written before TKT-503: the uses from OnceCitedUses, once per
+    // shell.
+    WithOpenShellsReportedReference(raw: RawDecodedModel): RawDecodedModel
+    {
+        var m = raw.Model;
+        var uses = m.OnceCitedUses;
+        var twins = m.TwinShells(uses);
+        var openShells = DistinctSorted(uses.Map(u => u[1]));
+        var shellFindings = openShells.Map(s => Diagnose(StepDiagnosticCode.ClosedShellOpen,
+            Provenance.AtInstance(raw.Sources.Shells[s].Instance), uses.Reduce(0, (n, u) => u[1] == s ? n + 1 : n).ToNumber));
+        var edgeFindings = uses.Count.MapRange(i => Diagnose(StepDiagnosticCode.ClosedShellEdgeCitedOnce, Provenance.AtInstance(raw.Sources.Edges[uses[i][0]].Instance), twins[i] >= 0 ? twins[i].ToNumber : Number.Unmeasured));
+        return RawDecodedModel(m, raw.Occurrences, raw.Sources, raw.Folds, raw.Repairs, raw.Units, raw.LengthFactor, raw.AngleFactor,
+            raw.Diagnostics.Concatenate(shellFindings).Concatenate(edgeFindings));
+    }
+
+    //==
+    // # Sewing laws
+
+    // OnceCitedEdgesByShell has one row per shell, and row s is OnceCitedEdges(s).
+    OnceCitedEdgesByShellAgree(m: BrepModel): Boolean
+    {
+        var byShell = m.OnceCitedEdgesByShell;
+        return byShell.Count == m.Shells.Count
+            && m.Shells.Count.Range.All(s => byShell[s].SameIndexLists(m.OnceCitedEdges(ShellIndex(s))));
+    }
+
+    // The three Given readers, over the table, give what their references give per shell.
+    SewingTablesAgree(m: BrepModel): Boolean
+    {
+        var byShell = m.OnceCitedEdgesByShell;
+        var roots = m.SewnVertexRoots;
+        return m.SewnVertexRootsGiven(byShell).SameIndexLists(roots)
+            && m.SewnEdgeRootsGiven(roots, byShell).SameIndexLists(m.SewnEdgeRoots(roots))
+            && m.OnceCitedUsesGiven(byShell).Corresponds(m.OnceCitedUses, (a, b) => a.SameIndexLists(b));
+    }
+
+    // Sewn gives what SewnReference gives: the same raw model and findings.
+    SewnAgrees(input: RawDecodedModel): Boolean
+        => input.Sewn.AgreeWithFindings(input.SewnReference);
+
+    // On every witness model, the once-cited table has OnceCitedEdges(s) in row s.
+    Law_OnceCitedEdgesByShellAgree(m: BrepModel): Boolean
+        => m.OnceCitedEdgesByShellAgree;
+
+    // On every witness model, the roots and uses read from the table are the references'.
+    Law_SewingTablesAgree(m: BrepModel): Boolean
+        => m.SewingTablesAgree;
+
+    // On every raw witness, Sewn agrees with SewnReference.
+    Law_SewnAgreesWithReference(raw: RawDecodedModel): Boolean
+        => raw.SewingInput.SewnAgrees;
+
+    // On the three sewing cubes (16 vertex and 12 edge merges; six one-face shells reported open
+    // with twins; an open box with none), the table, the readers and Sewn agree with their
+    // references.
+    Law_SewingAgreesOnSewingCubes(_: Integer): Boolean
+        => 0.SewingCubes.All(c => c.Model.OnceCitedEdgesByShellAgree && c.Model.SewingTablesAgree && c.SewnAgrees);
+}

@@ -1,0 +1,156 @@
+diff --git a/sandbox/step-brep-mesh/01-geometry/bspline-inverse.laws.plato b/sandbox/step-brep-mesh/01-geometry/bspline-inverse.laws.plato
+index 8f4f1793..d6ba00c6 100644
+--- a/sandbox/step-brep-mesh/01-geometry/bspline-inverse.laws.plato
++++ b/sandbox/step-brep-mesh/01-geometry/bspline-inverse.laws.plato
+@@ -11,12 +11,67 @@
+ // not injective by construction.
+ //
+ // Sections, in order:
++//  - Best candidates
+ //  - Space curves
+ //  - Pcurves
+ //  - Surfaces
+ 
+ library BsplineInverseLaws
+ {
++    //==
++    // # Best candidates
++
++    // The Reduce BestCandidateCounted replaced (TKT-501): the best of the
++    // candidates, each compared by evaluating it and the best again.
++    BestCandidateReference(eval: Function1<Number, Point3D>, p: Point3D, candidates: Array<Number>): Number
++        => candidates.Reduce(candidates[0], (best, t) =>
++            eval(t).Distance(p) < eval(best).Distance(p) - ResolutionAt(eval(best).PositionVector.Length + p.PositionVector.Length).Value ? t : best);
++
++    // The Reduce BestProjectionCounted replaced (TKT-501).
++    BestProjectionReference(surface: BrepSurface, g: GeometrySet, p: Point3D, candidates: Array<UvCoordinate>): UvCoordinate
++        => candidates.Reduce(candidates[0], (b, uv) =>
++            surface.Eval(g, uv).Distance(p) < surface.Eval(g, b).Distance(p) - ResolutionAt(surface.Eval(g, b).PositionVector.Length + p.PositionVector.Length).Value ? uv : b);
++
++    // Five candidates around a parameter of curve fixture k, in order, with
++    // two repeated so a tie is among them.
++    CandidatesAround(k: Integer, t: Number): Array<Number>
++    {
++        var d = k.CurveFixture.Basis;
++        return [d.DomainAt(t.UnitFraction), d.DomainAt((t * 0.37).UnitFraction), d.DomainAt(t.UnitFraction), d.DomainAt((t + 0.5).UnitFraction), d.DomainAt((t * 0.37).UnitFraction)];
++    }
++
++    // BestCandidateCounted picks the candidate the Reduce picked, bit for
++    // bit, for a query point on or beside curve fixture k, and counts one
++    // evaluation per candidate.
++    Law_BestCandidateAgrees(k: Integer, t: Number, h: Number): Boolean
++    {
++        var g = k.CurveFixtureSet;
++        var c = CurveIndex(0);
++        var candidates = k.CandidatesAround(t);
++        var p = g.Eval(c, k.CurveFixture.Basis.DomainAt((t + 0.2).UnitFraction)) + Vector3D(0.0, 0.0, h.UnitFraction);
++        var counted = BestCandidateCounted(x => g.Eval(c, x), p, candidates);
++        return counted.Value == BestCandidateReference(x => g.Eval(c, x), p, candidates)
++            && counted.Work.Evaluations == candidates.Count;
++    }
++
++    // BestProjectionCounted picks the candidate the Reduce picked, bit for
++    // bit, for a point above surface fixture k, and counts one evaluation
++    // per candidate.
++    Law_BestProjectionAgrees(k: Integer, u: Number, v: Number, h: Number): Boolean
++    {
++        var g = k.SurfaceFixtureSet;
++        var s = SurfaceIndex(0);
++        var surface = g.SurfaceAt(s);
++        var d = g.Domain(s);
++        var a = d.SampleIn(UvCoordinate(u.UnitFraction, v.UnitFraction));
++        var b = d.SampleIn(UvCoordinate((u * 0.37).UnitFraction, (v + 0.5).UnitFraction));
++        var candidates = [a, b, a, UvCoordinate(d.U.Range.Start, d.V.Range.Start), b];
++        var p = g.Eval(s, d.SampleIn(UvCoordinate((u + 0.2).UnitFraction, v.UnitFraction))) + Vector3D(0.0, 0.0, h.UnitFraction);
++        var counted = surface.BestProjectionCounted(g, p, candidates);
++        return counted.Value == surface.BestProjectionReference(g, p, candidates)
++            && counted.Work.Evaluations == candidates.Count;
++    }
++
+     //==
+     // # Space curves
+ 
+diff --git a/sandbox/step-brep-mesh/01-geometry/bspline-inverse.library.plato b/sandbox/step-brep-mesh/01-geometry/bspline-inverse.library.plato
+index 9a47b383..ab40ba73 100644
+--- a/sandbox/step-brep-mesh/01-geometry/bspline-inverse.library.plato
++++ b/sandbox/step-brep-mesh/01-geometry/bspline-inverse.library.plato
+@@ -183,10 +183,33 @@ library BsplineInverse
+ 
+     // The best of the candidates, ascending: a later one replaces the best
+     // only when it is closer by more than rounding, so ties go to the
+-    // smaller parameter.
++    // smaller parameter. The best's point is carried, so each candidate is
++    // evaluated once (the Reduce it replaces evaluated the best twice per
++    // candidate; BsplineInverseLaws keeps it as BestCandidateReference).
++    // Work: one Evaluations per candidate. Precondition: candidates is not
++    // empty.
++    BestCandidateCounted(eval: Function1<Number, Point3D>, p: Point3D, candidates: Array<Number>): Counted<Number>
++    {
++        var best = candidates[0];
++        var bestPoint = eval(best);
++        var k = 1;
++        while (k < candidates.Count)
++        {
++            var t = candidates[k];
++            var point = eval(t);
++            if (point.Distance(p) < bestPoint.Distance(p) - ResolutionAt(bestPoint.PositionVector.Length + p.PositionVector.Length).Value)
++            {
++                best = t;
++                bestPoint = point;
++            }
++            k = k + 1;
++        }
++        return Counted(best, Evaluations(candidates.Count));
++    }
++
++    // BestCandidateCounted's value.
+     BestCandidate(eval: Function1<Number, Point3D>, p: Point3D, candidates: Array<Number>): Number
+-        => candidates.Reduce(candidates[0], (best, t) =>
+-            eval(t).Distance(p) < eval(best).Distance(p) - ResolutionAt(eval(best).PositionVector.Length + p.PositionVector.Length).Value ? t : best);
++        => BestCandidateCounted(eval, p, candidates).Value;
+ 
+     // A global minimizer of |X(t) - p| over the cuts' window: every sampled
+     // local minimum polished, then the best, ties to the smaller parameter.
+@@ -355,11 +378,39 @@ library BsplineInverse
+         var candidates = ds.Count.Range.FlatMap(k => ds.IsGridMinimum(us.Count, k)
+             ? [surface.PolishProjection(g, p, GridPoint(us, vs, k), w, radius)]
+             : [UvCoordinate(0.0, 0.0)].Take(0));
+-        var best = candidates.Reduce(candidates[0], (b, uv) =>
+-            surface.Eval(g, uv).Distance(p) < surface.Eval(g, b).Distance(p) - ResolutionAt(surface.Eval(g, b).PositionVector.Length + p.PositionVector.Length).Value ? uv : b);
+-        return surface.StartWhereFree(g, best, d).WrapSeams(d);
++        return surface.StartWhereFree(g, surface.BestProjection(g, p, candidates), d).WrapSeams(d);
+     }
+ 
++    // The best of the polished grid candidates, in grid order: a later one
++    // replaces the best only when it is closer by more than rounding, so
++    // ties go to the earlier grid sample. The best's point is carried, so
++    // each candidate is evaluated once (the Reduce it replaces evaluated
++    // the surface three times per candidate; BsplineInverseLaws keeps it as
++    // BestProjectionReference). Work: one Evaluations per candidate.
++    // Precondition: candidates is not empty.
++    BestProjectionCounted(surface: BrepSurface, g: GeometrySet, p: Point3D, candidates: Array<UvCoordinate>): Counted<UvCoordinate>
++    {
++        var best = candidates[0];
++        var bestPoint = surface.Eval(g, best);
++        var k = 1;
++        while (k < candidates.Count)
++        {
++            var uv = candidates[k];
++            var point = surface.Eval(g, uv);
++            if (point.Distance(p) < bestPoint.Distance(p) - ResolutionAt(bestPoint.PositionVector.Length + p.PositionVector.Length).Value)
++            {
++                best = uv;
++                bestPoint = point;
++            }
++            k = k + 1;
++        }
++        return Counted(best, Evaluations(candidates.Count));
++    }
++
++    // BestProjectionCounted's value.
++    BestProjection(surface: BrepSurface, g: GeometrySet, p: Point3D, candidates: Array<UvCoordinate>): UvCoordinate
++        => surface.BestProjectionCounted(g, p, candidates).Value;
++
+     // Body of layer 1's ProjectNearBySearch: damped, projected Gauss-Newton
+     // from the seed, inside a window of a quarter period either side of the
+     // seed in a periodic direction and the domain's range in a bounded one,

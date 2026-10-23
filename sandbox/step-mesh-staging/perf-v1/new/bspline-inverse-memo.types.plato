@@ -1,0 +1,81 @@
+//==
+// # Inverse-search memos
+//
+// TKT-501 and TKT-404 (finding 2 of docs/plans/step-mesher-algorithmic-
+// performance-2026-10-22.md): the part of a global inverse search that does
+// not depend on the query point, kept once per curve, pcurve or surface and
+// read by every query on it. A global search over a bounded domain samples
+// the entity at parameters fixed by the domain and its breaks (SearchWindow,
+// WindowCuts, PieceSamples), so the sample parameters and their points are
+// the same for every query; only the distances to the query point, the
+// candidates and their polish differ. On a domain with an infinite end the
+// window depends on the query point (SearchWindow's doubling), so no memo is
+// kept and each query samples as before.
+//
+// Sections, in order:
+//  - What is sampled
+//  - Curve memos
+//  - Surface memos
+//  - One memo per image
+
+//==
+// # What is sampled
+
+// The entity a curve memo samples: a space curve of the arena, evaluated as
+// its record (the form ClosestParameterBySearchBody evaluates), or a pcurve,
+// evaluated as its space point (the form PcurveClosestParameterBySearchBody
+// evaluates).
+type SearchSubject
+    = SpaceCurve(Curve: CurveIndex)
+    | ParameterCurve(Pcurve: PcurveIndex);
+
+//==
+// # Curve memos
+
+// The samples of a global curve search over a bounded domain: the search
+// domain (the curve's own domain for a space curve, PcurveSearchDomain for a
+// pcurve), the sample parameters (PieceSamples of the window's cuts) and the
+// subject's point at each. Points[i] is the subject evaluated at Samples[i],
+// so Samples[0] is the domain's range start and Points[0] its point. A memo
+// with no samples (NoCurveMemo) says the plain search is to be used: the
+// subject has a closed-form inverse, or its domain has an infinite end.
+type CurveSearchMemo
+{
+    Subject: SearchSubject;
+    Domain: CurveDomain;
+    Samples: Array<Number>;
+    Points: Array<Point3D>;
+}
+
+//==
+// # Surface memos
+
+// The grid of a global surface search over a domain bounded in both
+// directions: the surface's domain, the window (the domain's two ranges),
+// the sample parameters along u and v (PieceSamples of each direction's
+// cuts), the surface's point at each grid sample k (GridPoint(Us, Vs, k),
+// row by row as ProjectBySearchBody lays them out), and the polish radius
+// (one piece's width per direction). A memo with no samples
+// (NoSurfaceMemo) says the plain search is to be used: the surface has a
+// closed-form projection, or a direction has an infinite end.
+type SurfaceSearchMemo
+{
+    Domain: SurfaceDomain;
+    Window: SurfaceWindow;
+    Us: Array<Number>;
+    Vs: Array<Number>;
+    Points: Array<Point3D>;
+    Radius: Vector2D;
+}
+
+//==
+// # One memo per image
+
+// The memo an edge's bisection holds for one image of the edge (layer 4's
+// EdgeImage): a curve memo for an image with a pcurve, a surface memo for
+// one without, and Plain for an image the bisection cannot evaluate. Each
+// inner memo may itself say the plain search is to be used.
+type InverseMemo
+    = Plain
+    | OnCurve(Memo: CurveSearchMemo)
+    | OnSurface(Memo: SurfaceSearchMemo);
