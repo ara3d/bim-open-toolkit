@@ -1,0 +1,30 @@
+// A FACE-CUSP law over real cusp faces (V1G-20). The witness beside this file, Witness_OdinW260Face2615And2616, was
+// written by `step-corpus-harness extract ODIN-W260.STEP 2615,2616 <out> --ring 1` (bim-open-data 1093b2e, with
+// v1-edges' E5b): 11 faces, among them the cusp faces 2615 and 2616 (witness faces 7 and 8, 4 triangles each, as in
+// the file) and the slit face 2613 (witness face 6), which E5c will mesh and which reports its own error until then.
+library V1GateCuspWitnessLaws
+{
+    // The diagnostics of report r that ElementIsNotDegenerate and VerticesOfOneComponentAreApart give.
+    DegenerateFindings(r: Report): Array<Diagnostic>
+        => r.Diagnostics.FlatMap(d => (d.Code == "ElementIsNotDegenerate" || d.Code == "VerticesOfOneComponentAreApart") ? [d] : [d].Take(0));
+
+    // ODIN-W260's cusp faces 2615 and 2616, meshed by the host's options at 1 mm, each carry FACE-CUSP, and the
+    // degenerate elements their cusps force are explained, end to end through RunOutcomeFrom: ElementIsNotDegenerate
+    // fails, and every finding of the two checks is a Warning with FACE-CUSP's sentence (V1ForcedDegenerate); none
+    // is an Error.
+    Law_V1Gate_OdinW260CuspsExplainDegenerateElements(_: Integer): Boolean
+    {
+        var o = BrepModel.Witness_OdinW260Face2615And2616.MeshModel(HostMeshingOptions(1.0));
+        var row = ForcedDegenerateExplanations(0)[ExplanationIndexOf("FACE-CUSP")];
+        var found = DegenerateFindings(o.Report);
+        return o.Report.Diagnostics.Reduce(0, (n, d) => d.Code == "FACE-CUSP" ? n + 1 : n) == 2
+            && found.Any(d => d.Code == "ElementIsNotDegenerate")
+            && found.All(d => d.Severity == Severity.Warning
+                && (d.Code == "ElementIsNotDegenerate" ? d.Message == row.ElementMessage : d.Message == row.PairMessage));
+    }
+
+    // The number of the two checks' findings that are Errors on the witness: 0 when the law holds.
+    Measure_V1Gate_OdinW260CuspsExplainDegenerateElements(_: Integer): Integer
+        => DegenerateFindings(BrepModel.Witness_OdinW260Face2615And2616.MeshModel(HostMeshingOptions(1.0)).Report)
+            .Reduce(0, (n, d) => d.Severity == Severity.Error ? n + 1 : n);
+}

@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1), V1G-11 in 8a30a057, V1G-12 in c82a14a7, V1G-13 in f0fd91a3 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change, V1G-15 in 87ca2e47, V1G-15w in 544b8967, V1G-16 in af9417d8, V1G-17 in 5a637a9b, V1G-18 in a46b571d, V1G-19 in 2c1c5e97 (two exposed failures filed, see Findings), V1G-21 in 07019d14 (clears the first)
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1), V1G-11 in 8a30a057, V1G-12 in c82a14a7, V1G-13 in f0fd91a3 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change, V1G-15 in 87ca2e47, V1G-15w in 544b8967, V1G-16 in af9417d8, V1G-17 in 5a637a9b, V1G-18 in a46b571d, V1G-19 in 2c1c5e97 (two exposed failures filed, see Findings), V1G-21 in 07019d14 (clears the first) | ready: V1G-20
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -29,6 +29,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-18 | TKT-456 | the rest of finding 6: self-comparing agreement laws in layers 00-01, 02, 07, 09 and 11, and the orphan law helpers | 2 h |
 | V1G-19 | (corpus 2026-10-22 evening) | zero-width faces meshed with the triangles their boundary forces; one list of face diagnostics that explain forced degenerate elements | 2 h |
 | V1G-21 | TKT-480 | the collision agreement compares the colliding segments only; MeshRegionBody deleted | 1 h |
+| V1G-20 | (V1G-19 follow-up) | a FACE-CUSP law over ODIN-W260's real cusp faces 2615 and 2616 | 0.5 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -166,6 +167,9 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
   - Checks, compiled, budget 600 s, `git archive` copies of 6665bf03 (V1G-19 merged), classes UvRegionCollisionLaws, FaceMeshingLaws, FaceMeshingDomainOnceLaws, V1ZeroWidthLaws (50 laws): HEAD 48 pass, 2 fail (`Law_CollidingSegmentsAgreesOnModel` case 16, ANNA-B4; `Law_UvHoleWindingNegative` case 12, the JODY-W5/W6 hole, not this chunk's); with the patch 49 pass, 1 fail (the same JODY case). The copy compiles without `MeshRegionBody`, so nothing else read it. Mutation copy (the patch, and `SegmentCollides` made false): `Law_CollidingSegmentsAgreesOnModel`, `Law_CollidingSegmentsAgrees` and `Law_CollidingSegmentsAgreesOnCatalog` all fail, so the agreement left can fail.
   - The model law takes about 100 s of its own (98.8 s wall here, on a quiet machine), near the runner's 120 s cap, as before this chunk; in a loaded sweep it can still stop as a budget error.
   - Not mine: `Law_UvHoleWindingNegative` on the JODY-W5/W6 witness (a hole with non-negative signed area), the merge record's choice (b); filed by the merger as TKT-481.
+- V1G-20, about 40 min, after E5b (823a3dd2) and V1G-19 merged. `step-corpus-harness extract ODIN-W260.STEP 2615,2616 <out> --ring 1` (bim-open-data 1093b2e, E5b in its generated library) wrote `corpus-witness-odin-w260-cusps.library.plato` (`Witness_OdinW260Face2615And2616`): 11 faces, 51 edges; the cusp faces are witness faces 7 and 8, 4 triangles each, the same mesh as in the file; the slit face 2613 (E5c's) is among the neighbours and reports its own error, so the law constrains only the two degenerate checks. `v1-cusp-witness.laws.plato` (`V1GateCuspWitnessLaws`): `Law_V1Gate_OdinW260CuspsExplainDegenerateElements` meshes the witness by the host's options at 1 mm through the whole pipeline: two FACE-CUSP diagnostics, `ElementIsNotDegenerate` fires, and every finding of the two checks is a Warning with FACE-CUSP's sentence; the measure counts those findings that are Errors.
+  - It covers `Law_V1Gate_CuspExplainsDegenerateElements` (the synthetic outcome) and more: on a copy with `RunOutcomeFrom` calling `Validated` alone (the explanation unwired), the real law fails (measure 1) and the synthetic one still passes, since it calls `ExplainedReport` itself. So the synthetic law goes; the zero-width law keeps the helper `ExplainedByRow`.
+  - Checks, pinned CLI 60134758, csharp, cpu64, budget 600 s, `git archive` of 003e25c0 with the two files: V1GateCuspWitnessLaws and V1ForcedDegenerateLaws, 5 laws, 5 pass; unwired as above, the real law fails. (The warm server did not compile the working tree at the time: another session's untracked 08-pipeline/pipeline-operation-witnesses.library.plato calls `Witness_OpenBox` and `Witness_Tube`, not yet defined.)
 
 ## Gate and quality: every law of layer 5
 
@@ -506,6 +510,10 @@ V1G-8 (TKT-429):
 - In `JoinedByCut` (05-face-meshing/uv-regions.library.plato): `var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);` => `var end = m.BandEndCopy(f, a, i, b, j);`, and the function's comment says the cut ends at "the copy of b's point nearest it on the face's side (BandEndCopy)".
 - Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
 
+V1G-20:
+- Move `corpus-witness-odin-w260-cusps.library.plato` to `08-pipeline/pipeline-corpus-witness-odin-w260-cusps.library.plato` and `v1-cusp-witness.laws.plato` to `08-pipeline/pipeline-corpus-witness-odin-w260-cusps.laws.plato` (library `V1GateCuspWitnessLaws`).
+- In `07-validation/validation-v1-forced-degenerate.laws.plato`, delete `Law_V1Gate_CuspExplainsDegenerateElements` (the real law covers it); keep `ExplainedByRow`, which the zero-width law reads, and the file header's sentence naming FACE-CUSP becomes "FACE-CUSP's real witness is V1GateCuspWitnessLaws'".
+
 V1G-21 (TKT-480), on HEAD with V1G-19 merged (6665bf03 or later):
 - `git show 320cca75:sandbox/step-mesh-staging/v1-gate/v1g21-collide.patch | git apply -` at the toolkit root (08-pipeline/pipeline-collide.laws.plato, 05-face-meshing/face-meshing-collide.library.plato, uv-collide.library.plato, face-meshing-domain-once.library.plato). Then delete the patch file. Changes generated C#: `MeshRegionBody` leaves the shipped program if it was in it.
 
@@ -648,6 +656,8 @@ V1G-5 (triage):
 | V1G-19: the explaining-code rule, its laws, the regression (two compiles, a regeneration, 10 files) | 35 min, background | 3 |
 | V1G-21: the law, MeshRegionBody's readers, ticket, edits | 20 min | 0 |
 | V1G-21: base, patched and mutation copies, three fresh compiles | 6.5 min, background | 3 |
+| V1G-20: harness build at the pin, extract at ring 1 | 1 min, background | 1 build, 1 run |
+| V1G-20: the law; warm server (blocked by another session's untracked file), clean archive with the new CLI, unwired copy | 45 s, 2 min, 1.6 min | 3 |
 
 ## Lessons
 - `step-corpus-harness extract` with a ring of 0 gives a one-face model that a probe reaches in seconds (parse, prepare, SubModel, host discretization, then the library's own steps), where the whole c211 file took 6 minutes a run; extract once, then probe the witness.
