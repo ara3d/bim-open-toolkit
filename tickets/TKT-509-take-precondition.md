@@ -29,32 +29,32 @@ Constant n > 0 (15 calls, laws files included): F8 guards validation-checks-mesh
 
 Computed n, left for after version 1 (supervisor, 2026-10-23), each to be read for whether n can exceed the count or go negative:
 
-- `01-geometry/geometry.library.plato:582`: `extents.Take(i)`
-- `02-topology/topology.library.plato:1010`: `poly.Take(k)`
-- `04-discretization/discretization-work.library.plato:27`: `ts.Take(widest + 1)`
-- `05-face-meshing/face-meshing-lift.library.plato:108`: `keyedBuffer.Freeze().Take(keyedCount)`
-- `05-face-meshing/face-meshing-lift.library.plato:144`: `firstBuffer.Freeze().Take(next)`
-- `05-face-meshing/face-meshing.library.plato:110`: `ring.Take(at + 1)`
-- `05-face-meshing/face-meshing.library.plato:165`: `current.Take(ear)`
-- `05-face-meshing/face-meshing.library.plato:188`: `triangles.Take(at)`
-- `05-face-meshing/pole-segments.library.plato:160`: `samples.Take(samples.Count - 1)`
-- `05-face-meshing/triangulation-cdt-indexed.library.plato:220`: `ring.Take(at + 1)`
-- `06-mesh/mesh-components-given.library.plato:65`: `Counted(ComponentRootTables(lowest.Freeze().Take(size)`
-- `06-mesh/mesh-incidence.library.plato:198`: `component.Freeze().Take(elementCount)`
-- `06-mesh/mesh-incidence.library.plato:199`: `parent.Freeze().Take(elementCount)`
-- `06-mesh/mesh-incidence.library.plato:200`: `depth.Freeze().Take(elementCount)`
-- `06-mesh/mesh-masks.library.plato:45`: `mask.Freeze().Take(faceCount.Max(0)`
-- `06-mesh/mesh-masks.library.plato:156`: `seen.Freeze().Take(faceCount.Max(0)`
-- `07-validation/validation-defects.library.plato:286`: `[i].Take(FacesOf(ds[i])`
-- `07-validation/validation-defects.library.plato:296`: `[d].Take(ClassOf(d)`
-- `09-tooling/tooling-diff-helpers.library.plato:25`: `[d].Take(same ? 0 : 1)`
-- `09-tooling/tooling-dumps.library.plato:67`: `corners.Take(mesh.CornerNormals.Count == mesh.CornerCount ? corners.Count : 0)`
-- `09-tooling/tooling-dumps.library.plato:94`: `points.Take(fm.Normals.Count == fm.UvPoints.Count ? points.Count : 0)`
-- `09-tooling/tooling-law-runner-once.library.plato:41`: `NamedModel.ModelWitnesses.Take(NamedModel.PositiveWitnessCount)`
-- `09-tooling/tooling-law-runner-once.library.plato:227`: `PipelineWitnessRunsFrom(cs.Take(NamedModel.PositiveWitnessCount)`
-- `11-repair/repair-diagnosis.library.plato:27`: `[f].Take(keep(f)`
-- `11-repair/repair-diagnosis.library.plato:56`: `[f].Take(m.IsFaceInRange(f)`
-- `11-repair/repair-diagnosis.library.plato:201`: `[BoundSlot(b)].Take(keep(m.Faces[f].Bounds[b])`
-- `11-repair/repair-diagnosis.library.plato:222`: `[RepairAction.DeclareOpen(ShellIndex(s))].Take(m.UseCount(ShellIndex(s)`
-- `11-repair/repair-diagnosis.library.plato:273`: `ActionsOf(x).Take(ActionsOf(x)`
-- `11-repair/repair-indexed.library.plato:320`: `[RepairAction.DeclareOpen(ShellIndex(s))].Take(m.UseCountIndexed(ix, ShellIndex(s)`
+- `01-geometry/geometry.library.plato:582`: `=> extents.Take(i).SumOf;`
+- `02-topology/topology.library.plato:1010`: `=> poly.Take(k).Reduce(0, (n, b) => n + m.Loops[b.Loop].PolyLoopPointsOf.Count);`
+- `04-discretization/discretization-work.library.plato:27`: `ts = ts.Take(widest + 1).Concatenate([(ts[widest] + ts[widest + 1]) * 0.5]).Concatenate(ts.Skip(widest + 1));`
+- `05-face-meshing/face-meshing-lift.library.plato:108`: `var keyed = keyedBuffer.Freeze().Take(keyedCount);`
+- `05-face-meshing/face-meshing-lift.library.plato:144`: `var firsts = firstBuffer.Freeze().Take(next);`
+- `05-face-meshing/face-meshing.library.plato:110`: `: ring.Take(at + 1).Concatenate(loop).Concatenate([ring[at]]).Concatenate(ring.Skip(at + 1));`
+- `05-face-meshing/face-meshing.library.plato:165`: `current = current.Take(ear).Concatenate(current.Skip(ear + 1));`
+- `05-face-meshing/face-meshing.library.plato:188`: `return at < 0 ? triangles : triangles.Take(at).Concatenate(split).Concatenate(triangles.Skip(at + 1));`
+- `05-face-meshing/pole-segments.library.plato:160`: `return samples.Take(samples.Count - 1).ToUvLoop;`
+- `05-face-meshing/triangulation-cdt-indexed.library.plato:220`: `: ring.Take(at + 1).Concatenate(loop).Concatenate([ring[at]]).Concatenate(ring.Skip(at + 1)),`
+- `06-mesh/mesh-components-given.library.plato:65`: `return Counted(ComponentRootTables(lowest.Freeze().Take(size), below.Freeze()), Insertions(passes));`
+- `06-mesh/mesh-incidence.library.plato:198`: `var elementComponent = component.Freeze().Take(elementCount);`
+- `06-mesh/mesh-incidence.library.plato:199`: `var parents = parent.Freeze().Take(elementCount);`
+- `06-mesh/mesh-incidence.library.plato:200`: `var depths = depth.Freeze().Take(elementCount);`
+- `06-mesh/mesh-masks.library.plato:45`: `return mask.Freeze().Take(faceCount.Max(0));`
+- `06-mesh/mesh-masks.library.plato:156`: `return seen.Freeze().Take(faceCount.Max(0));`
+- `07-validation/validation-defects.library.plato:286`: `=> ds.Count.Range.FlatMap(i => [i].Take(FacesOf(ds[i]).Any(x => x.Value == f) ? 1 : 0));`
+- `07-validation/validation-defects.library.plato:296`: `DefectClass.AllClasses.Map(k => CountOf(ds.FlatMap(d => [d].Take(ClassOf(d) == k ? 1 : 0)).Count)),`
+- `09-tooling/tooling-diff-helpers.library.plato:25`: `=> [d].Take(same ? 0 : 1);`
+- `09-tooling/tooling-dumps.library.plato:67`: `corners.Take(mesh.CornerNormals.Count == mesh.CornerCount ? corners.Count : 0).Map(c => mesh.CornerNormals[c].Vector),`
+- `09-tooling/tooling-dumps.library.plato:94`: `points.Take(fm.Normals.Count == fm.UvPoints.Count ? points.Count : 0).Map(i => fm.Normals[i].Vector),`
+- `09-tooling/tooling-law-runner-once.library.plato:41`: `=> NamedModel.ModelWitnesses.Take(NamedModel.PositiveWitnessCount);`
+- `09-tooling/tooling-law-runner-once.library.plato:227`: `PipelineWitnessRunsFrom(cs.Take(NamedModel.PositiveWitnessCount), LawRun.PipelineMiddleRuns),`
+- `11-repair/repair-diagnosis.library.plato:27`: `=> m.Faces.Count.MapRange(i => BrepFaceIndex(i)).FlatMap(f => [f].Take(keep(f) ? 1 : 0));`
+- `11-repair/repair-diagnosis.library.plato:56`: `=> [f].Take(m.IsFaceInRange(f) ? 1 : 0);`
+- `11-repair/repair-diagnosis.library.plato:201`: `? m.Faces[f].Bounds.Count.Range.FlatMap(b => [BoundSlot(b)].Take(keep(m.Faces[f].Bounds[b]) ? 1 : 0))`
+- `11-repair/repair-diagnosis.library.plato:222`: `.FlatMap(s => [RepairAction.DeclareOpen(ShellIndex(s))].Take(m.UseCount(ShellIndex(s), e) > 0 ? 1 : 0))`
+- `11-repair/repair-diagnosis.library.plato:273`: `=> ActionsOf(x).Take(ActionsOf(x).Count > 0 ? 1 : 0);`
+- `11-repair/repair-indexed.library.plato:320`: `.FlatMap(s => [RepairAction.DeclareOpen(ShellIndex(s))].Take(m.UseCountIndexed(ix, ShellIndex(s), e) > 0 ? 1 : 0))`
