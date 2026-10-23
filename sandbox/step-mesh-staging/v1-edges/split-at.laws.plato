@@ -1,0 +1,96 @@
+//==
+// # Split points: laws (track v1-edges, chunk E5c, TKT-468)
+//
+// RefinementReason.SplitAt on a discretization (V1EdgesSplitAt) and from a face's T-touch
+// (V1EdgesTouchSplits). On the unit box: Refine inserts a requested parameter, ignores one
+// outside the edge, and a later refinement of the edge keeps the point. On SHO/ODIN-W260 face
+// 2613 with its ring (witness face 1; CorpusWitnessOdinTail2613), a rectangle whose zero-width
+// tail runs back through one of its vertices: the face asks for a split of the edge the tail runs
+// along, and the host's loop (FinalStateAnsweringBlocking at the chordal bound the witness was
+// extracted at) meshes it, the edge's discretization holding the split point, which the faces
+// citing that edge both mesh.
+//
+// Sections, in order:
+//  - Edges and outcomes
+//  - Laws
+
+library V1EdgesSplitAtLaws
+{
+    //==
+    // # Edges and outcomes
+
+    // The unit box's discretization at chordal 0.1.
+    SplitBoxDiscretizations(_: Integer): EdgeDiscretizations
+        => BrepModel.Witness_UnitBox.DiscretizeAll(DefaultMeshingOptions(0.1).Face.Discretization, SegmentFloors.NoFloors);
+
+    // A parameter of the unit box's edge 0 strictly between two of its samples: 0.3 of the way
+    // along its first segment.
+    SplitBoxParameter(_: Integer): Number
+    {
+        var ps = SplitBoxDiscretizations(0).ByEdge[0].Parameters;
+        return ps[0] + 0.3 * (ps[1] - ps[0]);
+    }
+
+    // Whether discretization d has parameter t exactly.
+    HasParameter(d: EdgeDiscretization, t: Number): Boolean
+        => d.Parameters.Any(p => p == t);
+
+    // The host's final state on m: the host's options at the witnesses' chordal bound, every face
+    // chosen, the blocking requests answered until none is pending or the rounds run out.
+    HostFinalState(m: BrepModel): PipelineState
+    {
+        var o = 1.0000000474974513.HostMeshingOptions;
+        var chosen = m.AllFaces;
+        var first = m.InitialState(o, chosen);
+        return m.FinalStateAnsweringBlocking(o, chosen, BlockingStateOf(first.Discretizations, first.Outcomes, chosen));
+    }
+
+    // Whether face mesh fm has a point on edge e at sample k of d.
+    HasEdgeSample(fm: FaceMesh, e: BrepEdgeIndex, k: Integer): Boolean
+        => fm.Sources.Any(s => s == UvPointSource.FromEdge(e, EdgeSampleIndex(k)));
+
+    //==
+    // # Laws
+
+    // Refine with a SplitAt request inserts the parameter on that edge and keeps every other edge;
+    // a parameter outside the edge is ignored; raising the edge's segment count by three (a line
+    // gains no point from a finer chordal) keeps the point and adds others.
+    Law_V1Edges_SplitAtInsertsAndKeeps(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var c = DefaultMeshingOptions(0.1).Face.Discretization;
+        var d = SplitBoxDiscretizations(0);
+        var t = SplitBoxParameter(0);
+        var split = m.Refine(d, [EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.SplitAt(t), c.Chordal, 0)], c);
+        var outside = m.Refine(d, [EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.SplitAt(1000.0), c.Chordal, 0)], c);
+        var finer = m.Refine(split, [EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.QuadCountMismatch, c.Chordal, split.ByEdge[0].SegmentCount + 3)], c);
+        return split.ByEdge[0].HasParameter(t) && split.ByEdge[0].Parameters.Count == d.ByEdge[0].Parameters.Count + 1
+            && d.ByEdge.Count.Range.All(e => e == 0 ? true : split.ByEdge[e].SameDiscretization(d.ByEdge[e]))
+            && outside.ByEdge[0].SameDiscretization(d.ByEdge[0])
+            && finer.ByEdge[0].HasParameter(t) && finer.ByEdge[0].Parameters.Count > split.ByEdge[0].Parameters.Count;
+    }
+
+    // ODIN-W260 face 2613 (witness face 1) asks for SplitAt on one edge and nothing else, with
+    // FACE-LOOP-TOUCHES-EDGE and no mesh.
+    Law_V1Edges_OdinTailRequestsSplit(_: Integer): Boolean
+    {
+        var o = BrepModel.Witness_OdinTail2613.WeaklySimpleOutcome(1);
+        return o.Requests.Count > 0 && o.Requests.All(q => q.Reason.ReasonName == "SplitAt")
+            && o.HasCode("FACE-LOOP-TOUCHES-EDGE") && o.Mesh.Triangles.Count == 0;
+    }
+
+    // After the host's loop, face 2613 meshes without an error; the edge it asked to split holds
+    // the split point, and every face citing that edge meshes it.
+    Law_V1Edges_OdinTailMeshesAfterSplit(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_OdinTail2613;
+        var ask = m.WeaklySimpleOutcome(1).Requests[0];
+        var t = ask.Reason.SplitParameterOf[0];
+        var s = m.HostFinalState;
+        var de = s.Discretizations.ByEdge[ask.Edge];
+        var k = de.Parameters.Count.Range.FlatMap(i => de.Parameters[i] == t ? [i] : [0].Take(0));
+        return s.Outcomes[1].IsMeshedWithoutError && k.Count == 1
+            && m.Faces.Count.Range.All(g => m.FaceEdges(BrepFaceIndex(g)).Any(x => x == ask.Edge)
+                ? s.Outcomes[g].Mesh.HasEdgeSample(ask.Edge, k[0]) : true);
+    }
+}

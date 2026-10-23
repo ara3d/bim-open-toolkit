@@ -1,0 +1,91 @@
+//==
+// # The split requests of a face's T-touches (track v1-edges, chunk E5c, TKT-468)
+//
+// Layer 05-face-meshing. MeshRegionWeaklySimple refuses a region in which an end of one boundary
+// segment lies inside another within rounding (a T-touch, V1EdgesWeaklySimple's NoEndInside):
+// meshed alone, the face would use the touching point where its neighbour across the touched
+// segment's model edge has none, and the shell would open (ELLA-W1 304 and 305: 42 gap edges, 21
+// inside a face). Here each T-touch on a segment that lies on a model edge of the face becomes a
+// blocking request, RefinementReason.SplitAt(t), t the touching point's parameter on that edge's
+// curve (its closest point, when that lies strictly inside the edge's parameter range). After
+// Refine inserts t (V1EdgesSplitAt), both faces have the point, the touch is an exact repeated
+// point, and the seed over repeated points (V1EdgesCdtSeedCopies) covers the face.
+//
+// Sections, in order:
+//  - Touching points
+//  - Requests
+
+library V1EdgesTouchSplits
+{
+    //==
+    // # Touching points
+
+    // The 3D point of a boundary point's source: a model vertex's point, or an edge sample's
+    // point; empty for a seam, pole or interior point, which has none on the model.
+    SourcePoint(m: BrepModel, d: EdgeDiscretizations, s: UvPointSource): Array<Point3D>
+        => match (s) {
+            FromVertex(v) => [m.Vertices[v].Point];
+            FromEdge(e, k) => [d.ByEdge[e].Points[k.Value]];
+            SeamCut(side, i) => [Point3D(0.0, 0.0, 0.0)].Take(0);
+            Pole(side, i) => [Point3D(0.0, 0.0, 0.0)].Take(0);
+            Interior => [Point3D(0.0, 0.0, 0.0)].Take(0);
+        };
+
+    // The positions on its loop of the ends of segment b that lie inside segment a within
+    // rounding (V1EdgesWeaklySimple's IsInsideSegment, in tolerance units, eps the merge
+    // distance): b.Index for its start, b.Index + 1 (modulo the loop) for its end.
+    EndsInside(r: UvRegion, tol: UvTolerance, eps: Number, a: RegionSegment, b: RegionSegment): Array<Integer>
+    {
+        var p = r.SegmentStart(a.Loop, a.Index).InToleranceUnits(tol);
+        var q = r.SegmentEnd(a.Loop, a.Index).InToleranceUnits(tol);
+        var n = r.LoopAt(b.Loop).Points.Count;
+        var starts = IsInsideSegment(p, q, r.SegmentStart(b.Loop, b.Index).InToleranceUnits(tol), eps) ? [b.Index] : [0].Take(0);
+        var ends = IsInsideSegment(p, q, r.SegmentEnd(b.Loop, b.Index).InToleranceUnits(tol), eps) ? [(b.Index + 1) % n] : [0].Take(0);
+        return starts.Concatenate(ends);
+    }
+
+    // The model edge of face f that segment i of loop k lies on (IsSegmentOn), as a one-element
+    // array; empty for a seam or pole segment.
+    SegmentEdge(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, k: Integer, i: Integer): Array<BrepEdgeIndex>
+        => m.FaceEdges(f).FlatMap(e => r.IsSegmentOn(m, d, e, k, i) ? [e] : BrepEdgeIndex.NoEdges).Take(1);
+
+    // The parameter of point p on edge e's curve, its closest point, as a one-element array when it
+    // lies strictly between the edge's first and last discretization parameters; empty otherwise.
+    SplitParameterFor(m: BrepModel, d: EdgeDiscretizations, e: BrepEdgeIndex, p: Point3D): Array<Number>
+    {
+        var ps = d.ByEdge[e].Parameters;
+        var t = m.Geometry.ClosestParameter(m.Edges[e].Curve, p);
+        return ps.Count >= 2 && (t - ps[0]) * (t - ps[ps.Count - 1]) < 0.0 ? [t] : [0.0].Take(0);
+    }
+
+    //==
+    // # Requests
+
+    // The SplitAt requests for face f's region r: for every pair of segments ConflictingSegments
+    // flags, each end of one lying inside the other on a model edge of f, a blocking request to
+    // split that edge at the end's point, chordal the edge criteria's own (the request asks for no
+    // finer polyline). Flagged pairs only: a T-touch flags both its segments.
+    TouchSplitRequests(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, tol: UvTolerance, c: FaceMeshingCriteria): Array<EdgeRefinementRequest>
+    {
+        var flags = r.ConflictingSegments(tol);
+        var eps = r.MergeDistanceInUnits(tol);
+        var segs = r.RegionSegments;
+        var flagged = flags.Count.Range.FlatMap(i => flags[i] ? [i] : [0].Take(0));
+        return flagged.FlatMap(x => flagged.FlatMap(y => x == y ? EdgeRefinementRequest.NoRequests
+            : r.EndsInside(tol, eps, segs[x], segs[y]).FlatMap(j =>
+                m.SegmentEdge(f, d, r, segs[x].Loop, segs[x].Index).FlatMap(e =>
+                    m.SourcePoint(d, r.LoopAt(segs[y].Loop).Sources[j]).FlatMap(p =>
+                        m.SplitParameterFor(d, e, p).Map(t =>
+                            EdgeRefinementRequest(e, RefinementReason.SplitAt(t), c.Discretization.Chordal, 0)))))));
+    }
+
+    // The blocking requests of a region MeshRegionWeaklySimple refuses (flags its
+    // ConflictingSegments): the self-intersection requests when two segments properly cross;
+    // else the SplitAt requests of its T-touches, or the self-intersection requests when no
+    // T-touch is on a model edge (a seam or pole segment touched).
+    RefusalRequests(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, tol: UvTolerance, c: FaceMeshingCriteria, flags: Array<Boolean>): Array<EdgeRefinementRequest>
+    {
+        var splits = r.CrossingSegments(tol).Any(x => x) ? EdgeRefinementRequest.NoRequests : m.TouchSplitRequests(f, d, r, tol, c);
+        return splits.Count > 0 ? splits : m.SelfIntersectionRequestsFrom(f, d, r, flags);
+    }
+}
