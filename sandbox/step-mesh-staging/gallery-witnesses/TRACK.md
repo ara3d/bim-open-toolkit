@@ -1,7 +1,7 @@
 # gallery-witnesses: one Plato witness per first-level CAD operation, for the mesher gallery and the law sweeps
 
 Ticket: TKT-482
-Status: ready: G1
+Status: ready: G1; merge stopped 2026-10-22 (see "Merge attempt, 2026-10-22")
 
 ## Chunks
 
@@ -21,6 +21,13 @@ Status: ready: G1
 - `pipeline-operation-witnesses.library.plato` => `sandbox/step-brep-mesh/08-pipeline/`
 - No wiring edit: nothing in the library is changed; the files only add values and laws. Every `Witness_*(_: BrepModel)` here becomes a case of the 157 laws over BrepModel, and every `Witness_*Meshed` a case of the MeshedWitness laws, so the merge's full sweep is the first run of those over these witnesses.
 - `deps/bim-open-data` regenerates Ara3D.StepBrep from 2ab7ea1a (the files in the tree) for the gallery's run; after the merge, regenerate from the merge commit so the provenance line names it.
+
+## Merge attempt, 2026-10-22 (merger c08530a6)
+- On HEAD 39f8cada (v1-generators G1 to G3 and V1G-20 merged) plus the four files as instructed: layers 00 to 08 compile alone (CLI and stdlib 60134758), exit 0, 0 error lines.
+- The full compiled sweep (csharp, cpu64, 60 s budget, CLI 60134758, from git archive HEAD plus the files) did not get past the witness phase: after the C# compile (2 min) it ran 20 min on one core with no law reported, against 40 to 60 s for the witness phase of every earlier sweep. Two `dotnet-stack` dumps 1 min apart both show `MeshedWitness.Witness_CounterboreMeshed` -> `MeshedWitnessOf` -> `RunOutcomeFrom` -> `Validated` -> `ValidateModelMesh` -> `Check_SplitVerticesDiffer`. The runner's 120 s cap applies to laws, not to witnesses, so the sweep does not end. Stopped; the files went back to this folder, the library is unchanged.
+- Cause, a library cost defect that the larger witnesses expose, not a fault in them: `Check_SplitVerticesDiffer` (07-validation/validation-checks-mesh.library.plato:642) runs `Law_SplitVerticesDiffer` over every pair of split vertices, and that law (06-mesh/mesh-laws-once.laws.plato:207) rebuilds `mesh.ToSplitTriangleMesh3D` for each pair. With n split vertices the check costs about n^2 split-mesh builds. Earlier witnesses are small enough that it went unseen.
+- The fix belongs to the library, not to this track: build the split mesh once in `Check_SplitVerticesDiffer` and pass it to a form of the law that takes it, or check the exact (normal, uv) grouping per source vertex, which is linear. The merge waits for that fix, or for the supervisor's choice to merge with the meshed witnesses held back.
+- law_lint on this folder: one finding, `operation-witnesses.laws.plato:24` `Law_OperationWitnessHasStatedCounts` reads `.Shells[0]` whatever the guard before it says (the 12 others are HEAD's).
 
 ## Contract requests
 - None.
