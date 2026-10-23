@@ -87,3 +87,39 @@ after, then 4 as the write-up of what landed. 5 to 7 wait for the measurement af
   counts are higher.
 - The 16.4-minute compile with `--inline` doubled the compiler's own time; a regen with every pass on needs the
   compiler's cost measured too.
+
+## 6. Outcome of opportunity 1 (TKT-505, 2026-10-23)
+
+Plato `0786f567`, `dcd908f5` and `6ff8c4a7`; bim-open-data `1848845` (the regen script's `-CompilerFlags` and `-Loops`,
+the harness's allocated-bytes figure) and the pin move that follows it.
+
+- `TirRewrite.IsListType` accepts `Array<T>` and `IArray<T>`; the lowerer uses it at its four sites. `TirArrayMaterializer`
+  has no type-name check (section 3 overstated that). A test over `Array<T>` alone (`LoopLowererArrayTypeTests`) fails on
+  the old lowerer and passes now.
+- Once the lowerer fired on this library, its emission had five defects that stdlib-legacy never reached: the loop index
+  bound to a lambda parameter as a bare `int`; a `T[]` result where the rest of the body expects `IReadOnlyList<T>`; a
+  Reduce accumulator typed by its seed; a statement-bodied lambda inlined as an empty expression; a lambda parameter
+  declared as a loop local under an enclosing local of the same name. Then one semantic defect: a `MapRange` with a
+  negative count threw where the intrinsic gives the empty array. All fixed; `plato run` now takes `--loops` so the
+  differential sweep compiles the lowered arm.
+- Differential sweep over the shipped program (stdlib tiers and layers 00 to 08, cpu64, budget 20 s, 1,389 laws): plain
+  1,285 pass, 10 fail, 10 error, 78 obligation, 6 skipped, 0 mismatches; with `--loops` 1,286 pass, 10 fail, 9 error,
+  78 obligation, 6 skipped, 0 mismatches. The one change is a budget error that passed.
+- Regeneration with `--loops`: 1,503 files, 2,444 `for` loops in 337 of them, the stub check unchanged (30 stubs).
+  `Ara3D.Step.Mesher.Tests`: 33 pass, 6 skipped.
+- Measurement, `step-corpus-harness time <file> --path host --parallel --warmup`, five runs per arm alternating on an idle
+  machine, medians; allocated bytes over tables to assembly; digests identical in every run:
+
+| File | Arm | Allocated | Total ms | Edges ms | Faces ms | Refine ms |
+|---|---|---|---|---|---|---|
+| ODIN-W160 | plain (60134758) | 1,382 MB | 1,225 | 158 | 435 | 1 |
+| ODIN-W160 | `--loops` (6ff8c4a7) | 558 MB | 1,060 | 114 | 325 | 1 |
+| ELLA-W1 | plain | 3,457 MB | 2,712 | 608 | 324 | 66 |
+| ELLA-W1 | `--loops` | 1,638 MB | 2,848 | 620 | 260 | 48 |
+
+  Allocation falls by 60% and 53%. The faces stage is 25% and 20% faster; the totals (parse, decode and prepare included)
+  move by -13% and +5%, inside the run-to-run spread (ODIN-W160 899 to 1,402 ms, ELLA-W1 2,398 to 3,136 ms). The pin
+  moved to `6ff8c4a7` with `--loops`.
+- Left to opportunities 2 and 3: the lowerer still leaves call sites inside lambdas and conditionals alone, and every
+  `Map` and `MapRange` still allocates its result; the remaining 558 MB on ODIN-W160 is those arrays and the `FlatMap`
+  lists of section 2.
