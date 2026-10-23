@@ -4,9 +4,10 @@
 // Every whole-mesh value a self-test check of ModelMeshReport reads, built once per report
 // (SelfTestTablesOf): the component tables (incidence, components, edge table, per-component
 // counts, root tables), the reversed mesh and its edge table, the edge table's edges sorted, the
-// triangle and split meshes, the restriction to the faces of element 0 with its kept elements,
-// and the coincident vertex pairs, sorted too. Restricted and FirstFacesElements are the mesh
-// and no elements when the mesh is not well formed or has no element, where no sample reads them.
+// triangle and split meshes, the restriction to the face of element 0 with its kept elements, and
+// the coincident vertex pairs, sorted too: ten fields, the C# tuple cap (STY002). Restricted and
+// FirstFacesElements are the mesh and no elements when the mesh is not well formed or has no
+// element, where no sample reads them.
 type MeshSelfTestTables
     implements IValue
 {
@@ -16,7 +17,6 @@ type MeshSelfTestTables
     SortedEdges: Array<VertexPair>;
     Triangles: TriangleMesh3D;
     Split: SplitTriangleMesh3D;
-    FirstFaces: Array<BrepFaceIndex>;
     Restricted: ModelMesh;
     FirstFacesElements: Array<ElementIndex>;
     CoincidentPairs: Array<VertexPair>;

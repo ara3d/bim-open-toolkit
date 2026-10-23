@@ -31,9 +31,8 @@ library SelfTestTablesOnce
     {
         var tables = mesh.MeshComponentTablesOf;
         var reversed = mesh.Reversed;
-        var firstFaces = mesh.ElementFace.Take(1);
-        // RestrictedToFaces and ElementsOfFaces throw on a mesh with no element, where no
-        // sample reads them.
+        // ElementFace.Take(1) throws on a mesh with no element, where no sample reads the
+        // restriction, so it is built only for a well-formed mesh with an element.
         var restricts = mesh.IsWellFormed ? mesh.ElementCount > 0 : false;
         var pairs = mesh.CoincidentVertexPairs(tables.Components, tol);
         return MeshSelfTestTables(
@@ -43,9 +42,8 @@ library SelfTestTablesOnce
             tables.Edges.Edges.UndirectedEdges.SortedPairs,
             mesh.ToTriangleMesh3D,
             mesh.ToSplitTriangleMesh3D,
-            firstFaces,
-            restricts ? mesh.RestrictedToFaces(firstFaces) : mesh,
-            restricts ? mesh.ElementsOfFaces(firstFaces) : ElementIndex.NoElements,
+            restricts ? mesh.RestrictedToFaces(mesh.ElementFace.Take(1)) : mesh,
+            restricts ? mesh.ElementsOfFaces(mesh.ElementFace.Take(1)) : ElementIndex.NoElements,
             pairs,
             pairs.SortedPairs);
     }
