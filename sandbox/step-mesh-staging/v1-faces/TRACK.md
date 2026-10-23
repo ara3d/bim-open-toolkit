@@ -1,7 +1,7 @@
 # v1-faces: face-meshing defects that break the version 1 contract on curved faces
 
 Ticket: TKT-415, then TKT-401, then TKT-411
-Status: merged: F1, F3, F3b, F2, F4b, P1, F5 in 289d5156 | dropped: F4a | handed over: P2 to v1-jody (J9, 3be261bd); cusps, planes and slits to v1-edges (E5) | TKT-466 diagnosed, closes with J9 | F6 (TKT-486): split family ready to merge; Witness_CrossHoleMeshed still capped by the edge-table checks, waiting on the supervisor
+Status: merged: F1, F3, F3b, F2, F4b, P1, F5 in 289d5156 | dropped: F4a | handed over: P2 to v1-jody (J9, 3be261bd); cusps, planes and slits to v1-edges (E5) | TKT-466 diagnosed, closes with J9 | F6 (TKT-486) merged in c567c6dd; Witness_CrossHoleMeshed still capped by the edge-table checks (F7)
 
 ## Chunks
 
