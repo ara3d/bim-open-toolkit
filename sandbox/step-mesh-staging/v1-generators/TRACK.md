@@ -1,7 +1,7 @@
 # v1-generators: law-runner generators so model-validity laws see only values the library can make
 
 Ticket: TKT-446 (Plato runner rule), for TKT-423 (the 23 model-validity laws)
-Status: ready: G1, G2, G3
+Status: merged: G1 and G2 in 59cbe44c, G3 in e1670fcc
 
 Plato 7859fdce (TKT-446) added the rule: a bodied `Generate_X(seed: Integer): T`, or
 `Generate_X(_: T, seed: Integer): T`, makes the law runner draw every `T` from its generators and

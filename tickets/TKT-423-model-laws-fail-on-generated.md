@@ -1,7 +1,7 @@
 ---
 id: TKT-423
 title: STEP mesher: 23 model-validity laws of layers 0 and 1 fail on the runner's generated values, because they state a check over any value with no precondition
-status: claimed
+status: done
 depends_on: []
 owner: session 926ba8f2
 session: 926ba8f2-bca1-4ee8-ba05-864e69eba3b2
@@ -10,13 +10,14 @@ workflow: [W3]
 related: [TKT-418, TKT-356]
 created: 2026-10-22
 claimed: 2026-10-22
+closed: 2026-10-22
 kind: defect
 ---
 
 ## Acceptance criteria
 
-- [ ] Each of the 23 laws (listed below) either holds on every generated case or is restated over decoded witness values or behind the containing value's IsWellFormed, so the claim it makes about the library is checked and the runner's malformed values are not
-- [ ] reviews/verdicts-cpu64.tsv records the 23 as pass
+- [x] Each of the 23 laws (listed below) either holds on every generated case or is restated over decoded witness values or behind the containing value's IsWellFormed, so the claim it makes about the library is checked and the runner's malformed values are not
+- [x] reviews/verdicts-cpu64.tsv records the 23 as pass
 
 Found 2026-10-22 by the v1-gate track's triage (V1G-5, sandbox/step-mesh-staging/v1-gate/TRACK.md). The laws are the predicates of layer 7's model checks (comments say Model law or Convention law), for example Law_LengthTolerancePositive(t) => t.IsWellFormed. The runner builds a LengthTolerance through its constructor, so it draws 0 or -0.5 and the law fails; the library is not at fault. Laws: BrepFoundationLaws Law_AngleTolerancePositive, Law_CheckBoundIsNonNegative, Law_ClosedPeriodIsRangeLength, Law_FailedCheckHasDiagnostic, Law_HoldsExactlyWhenWithinBound, Law_LengthTolerancePositive, Law_LengthToleranceResolvable, Law_ParameterTolerancePositive, Law_WrapOnClosedDomainStaysInRange; BrepGeometryLaws Law_BSplineCurve2D{DegreePositive, DomainNonEmpty, KnotCount, KnotsNonDecreasing, WeightCount, WeightsPositive}, Law_BSplineCurve{DegreePositive, DomainNonEmpty, KnotCount, KnotsNonDecreasing, WeightCount, WeightsPositive}, Law_CurvePlacementOrthonormal, Law_SurfacePlacementOrthonormal (the last two noted in FINDINGS F-58: no guard on a positive angle tolerance). Gate kind: structure (input validity the gate laws rely on). Fence: none of the v1 tracks; supervisor.
 
@@ -44,3 +45,7 @@ The second box waits for three things: the supervisor merging the folder (merge 
 ## 2026-10-22: the TraversalDomain fix (v1-generators G3)
 
 The supervisor decided to keep `CurveDomain`'s invariant and fix the constructor. `sandbox/step-mesh-staging/v1-generators/traversal-domain.library.plato` stages `TraversalDomainConsistent`: a closed edge on a Closed domain gets the range `[first, first + period]` and the period `(first + period) - first`, that range's own length. Every other case is unchanged. `Generate_CurveDomain` now calls it, and `Law_ClosedPeriodIsRangeLength` passes, so all 23 laws pass in staging. The edge-domain law classes give the same verdicts with `TraversalDomain` wired to the replacement as without it: 244 laws, 195 pass, 1 fail (`Law_SegmentFloorMet`, TKT-424, in both), 42 obligations. Merge: `TraversalDomain` => `TraversalDomainConsistent` (v1-generators `TRACK.md`). The second box waits only for that merge, after the toolkit's Plato pin moves to 60134758.
+
+## 2026-10-22: merged (59cbe44c, e1670fcc)
+
+The generators are in layers 0, 2 and 3, and `TraversalDomain` keeps the invariant. Full compiled sweep on Plato 60134758 (csharp, cpu64, 60 s budget): 1478 laws, 1372 pass, all 23 of this ticket's laws among them; `reviews/verdicts-cpu64.tsv` is that sweep.
