@@ -1,0 +1,27 @@
+//==
+// # Operation witnesses: the profile corner
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file). The
+// one value the operation witnesses (operation-witnesses.library.plato) are
+// built from that no earlier layer has: a corner of a planar profile that
+// ExtrudeProfiles sweeps along z into a prism, so a chamfer, a fillet, a slot
+// or a D-shaft is a list of corners and not a table written by hand.
+//
+// Sections, in order:
+//  - The profile corner
+
+//==
+// # The profile corner
+
+// A corner of a profile in the plane z = 0 and the segment from it to the next
+// corner: a straight line when IsArc is false, else the arc about Centre that
+// turns counter-clockwise about +z (CounterClockwise) or clockwise. A profile
+// with one arc corner whose segment returns to itself is a full circle.
+type ProfileCorner
+    implements IValue
+{
+    Point: Point3D;
+    IsArc: Boolean;
+    Centre: Point3D;
+    CounterClockwise: Boolean;
+}

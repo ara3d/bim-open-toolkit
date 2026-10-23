@@ -1,0 +1,926 @@
+//==
+// # OperationWitnesses
+//
+// Layer 7 of the STEP B-rep to mesh design (README.md beside this file): one
+// witness per first-level CAD operation, the shapes a modeller makes in one
+// step and an exporter writes every day: a prism with a chamfer, a fillet or a
+// slot; a box with a blind hole, a boss, a counterbore, a countersink, a
+// spherical dimple or dome; a tube; a cylinder cut obliquely; a puck with a
+// rounded edge; a revolved barrel and cone; a cylinder with a crosswise hole;
+// a pyramid; a shelled box. BrepWitnesses holds the primitives each surface
+// kind is proved on; these hold the ways two surfaces meet: a circle on a
+// plane, an ellipse where a plane cuts a cylinder, a circle where a sphere or
+// a torus meets a plane or a cylinder, and a B-spline where two cylinders
+// meet, which has no rational form and is written as the approximation an
+// exporter writes (tools/cross_hole_spline.py). Every witness follows layer 3's
+// folding convention (each face normal out of the material, every bound
+// counter-clockwise about it), uses Witness_Tolerances and the metre, and is
+// one to four units across. Periodic faces are bounded by closed circles
+// alone, with no seam edge, as Parasolid-family exporters write them.
+// OperationWitnessAt picks one from an Integer and OperationFactsAt gives its
+// counts, genus and volume from closed forms (face areas are not stated).
+//
+// Sections, in order:
+//  - Pieces shared by the witnesses
+//  - Prisms from profiles
+//  - Features on a box
+//  - Solids of one curved face
+//  - The pyramid and the shelled box
+//  - Facts
+//  - Choosing a witness
+
+library OperationWitnesses
+{
+    //==
+    // # Pieces shared by the witnesses
+
+    // A point of the profile plane z = 0.
+    At(x: Number, y: Number): Point3D
+        => Point3D(x, y, 0.0);
+
+    // A full circle about +z at centre c, closed at c + (r, 0, 0).
+    CircleAt(c: Point3D, r: Number): BrepCurve
+        => BrepCurve.Circle(c.WorldFrameAt, r);
+
+    // The point where CircleAt(c, r) is closed.
+    RimPoint(c: Point3D, r: Number): Point3D
+        => c + Vector3D(r, 0.0, 0.0);
+
+    // An edge closed at vertex v on curve `curve`, same sense.
+    ClosedEdge(v: Integer, curve: Integer): BrepEdge
+        => BrepEdge(BrepVertexIndex(v), BrepVertexIndex(v), CurveIndex(curve), true);
+
+    // A loop of the one closed edge e, forwards or backwards.
+    Ring(e: Integer, forward: Boolean): BrepLoop
+        => BrepLoop.EdgeLoop([e.CoedgeOf(forward)]);
+
+    // Loop l as a bound the file marks outer, or as one it does not.
+    OuterBound(l: Integer): FaceBound
+        => FaceBound(BrepLoopIndex(l), true, true);
+    InnerBound(l: Integer): FaceBound
+        => FaceBound(BrepLoopIndex(l), true, false);
+
+    // A face on surface s, with the surface's sense or against it, bounded by
+    // loop l as stored.
+    RingFace(s: Integer, l: Integer, sense: Boolean): BrepFace
+        => BrepFace(SurfaceIndex(s), sense, [l.OuterBound]);
+
+    // A band, cap or annulus: a face on surface s bounded by loops a and b,
+    // neither marked outer.
+    TwoLoopFace(s: Integer, sense: Boolean, a: Integer, b: Integer): BrepFace
+        => BrepFace(SurfaceIndex(s), sense, [a.InnerBound, b.InnerBound]);
+
+    // One manifold solid of every face, in Witness_Tolerances and the metre.
+    ClosedSolidOf(g: GeometrySet, vertices: Array<BrepVertex>, edges: Array<BrepEdge>, loops: Array<BrepLoop>, faces: Array<BrepFace>): BrepModel
+        => BrepModel(g, vertices, edges, loops, faces,
+            [faces.Count.Range.ClosedShellOf],
+            [BrepBody.ManifoldSolid(ShellIndex(0))],
+            Tolerances.Witness_Tolerances,
+            LengthUnit.Metre);
+
+    //==
+    // # Prisms from profiles
+    //
+    // ExtrudeProfiles sweeps a profile of straight and arc corners
+    // (ProfileCorner, operation-witnesses.types.plato) from z = 0 to z = h.
+    // Corners 0 to n0 - 1 are the outer profile, counter-clockwise about +z;
+    // the rest, when any, one hole, clockwise. Vertices: bottom corner k, top
+    // corner n + k. Curves and edges: segment k at the bottom, n + k at the
+    // top, 2n + k the vertical at corner k, each from its corner to the next.
+    // Surfaces: 0 the top plane, 1 the bottom plane, 2 + k the side of
+    // segment k: a plane whose Z is the segment's right-hand normal, or for
+    // an arc a cylinder about its centre, or (extruded) a surface of linear
+    // extrusion of the bottom arc. Loops: 0 the top outer, 1 the bottom outer
+    // (the top's run backwards), with a hole 2 and 3 likewise, then one per
+    // side [bottom k+, vertical next+, top k-, vertical k-]. A cylinder's
+    // sense is its arc's turn (a convex corner turns counter-clockwise and the
+    // material is inside its circle); an extrusion surface's normal, the arc's
+    // tangent crossed with +z, already follows the turn, so its sense is true.
+    // V = 2n, E = 3n, F = n + 2, L = n + 2 (+ 2 with a hole), genus 0 (1 with
+    // a hole).
+
+    // A corner whose segment to the next corner is straight.
+    Straight(p: Point3D): ProfileCorner
+        => ProfileCorner(p, false, p, true);
+
+    // A corner whose segment to the next corner is the arc about centre that
+    // turns counter-clockwise about +z, or clockwise.
+    ArcTo(p: Point3D, centre: Point3D, counterClockwise: Boolean): ProfileCorner
+        => ProfileCorner(p, true, centre, counterClockwise);
+
+    // The corner after k: the outer profile holds corners 0 to n0 - 1, the
+    // hole the rest.
+    NextCorner(k: Integer, n0: Integer, n: Integer): Integer
+        => k + 1 == n0 ? 0 : (k + 1 == n ? n0 : k + 1);
+
+    // The curve of corner k's segment lifted to height z.
+    SegmentCurve(corners: Array<ProfileCorner>, k: Integer, n0: Integer, z: Number): BrepCurve
+    {
+        var a = corners[k];
+        var lift = Vector3D(0.0, 0.0, z);
+        return a.IsArc
+            ? ArcCurve(a.Point + lift, a.Centre + lift, a.CounterClockwise)
+            : (a.Point + lift).LineBetween(corners[NextCorner(k, n0, corners.Count)].Point + lift);
+    }
+
+    // The circle through p about centre c, turning counter-clockwise about
+    // +z or -z, closed at p.
+    ArcCurve(p: Point3D, c: Point3D, counterClockwise: Boolean): BrepCurve
+    {
+        var axis = counterClockwise ? Vector3D(0.0, 0.0, 1.0) : Vector3D(0.0, 0.0, -1.0);
+        var x = (p - c).Normalize;
+        return BrepCurve.Circle(c.FrameAt(x, axis.Cross(x), axis), (p - c).Length);
+    }
+
+    // The side surface of corner k's segment, for a prism of height h.
+    SideSurface(corners: Array<ProfileCorner>, k: Integer, n0: Integer, h: Number, extruded: Boolean): BrepSurface
+    {
+        var a = corners[k];
+        var up = Vector3D(0.0, 0.0, 1.0);
+        var d = (corners[NextCorner(k, n0, corners.Count)].Point - a.Point).Normalize;
+        return a.IsArc
+            ? (extruded
+                ? BrepSurface.LinearExtrusion(CurveIndex(k), Vector3D(0.0, 0.0, h))
+                : BrepSurface.Cylinder(a.Centre.WorldFrameAt, (a.Point - a.Centre).Length))
+            : BrepSurface.Plane(a.Point.FrameAt(d, up, d.Cross(up)));
+    }
+
+    // Whether the side face of corner k has its surface's sense.
+    SideSense(a: ProfileCorner, extruded: Boolean): Boolean
+        => a.IsArc.Not || extruded || a.CounterClockwise;
+
+    // The top and bottom loops of the hole, or none.
+    HoleLoops(n0: Integer, n: Integer): Array<BrepLoop>
+        => n0 < n
+            ? [BrepLoop.EdgeLoop((n - n0).MapRange(i => (n + n0 + i).CoedgeOf(true))),
+               BrepLoop.EdgeLoop((n - n0).MapRange(i => (n - 1 - i).CoedgeOf(false)))]
+            : [];
+
+    // The bounds of the top (loop 0) or bottom (loop 1) face, with the hole's.
+    CapBounds(outer: Integer, n0: Integer, n: Integer): Array<FaceBound>
+        => n0 < n ? [outer.OuterBound, (outer + 2).InnerBound] : [outer.OuterBound];
+
+    // The prism of height h over the corners, as the section above lays it out.
+    ExtrudeProfiles(corners: Array<ProfileCorner>, n0: Integer, h: Number, extruded: Boolean): BrepModel
+    {
+        var n = corners.Count;
+        var up = Vector3D(0.0, 0.0, h);
+        var sides = n0 < n ? 4 : 2;
+        return ClosedSolidOf(
+            GeometrySet(
+                n.MapRange(k => corners.SegmentCurve(k, n0, 0.0))
+                    .Concatenate(n.MapRange(k => corners.SegmentCurve(k, n0, h)))
+                    .Concatenate(n.MapRange(k => BrepCurve.Line(corners[k].Point, up))),
+                [],
+                [],
+                [BrepSurface.Plane(Point3D(0.0, 0.0, h).PlaneFacing(1)), BrepSurface.Plane(Point3D(0.0, 0.0, 0.0).PlaneFacing(0))]
+                    .Concatenate(n.MapRange(k => corners.SideSurface(k, n0, h, extruded))),
+                []),
+            n.MapRange(k => BrepVertex(corners[k].Point)).Concatenate(n.MapRange(k => BrepVertex(corners[k].Point + up))),
+            n.MapRange(k => BrepEdge(BrepVertexIndex(k), BrepVertexIndex(NextCorner(k, n0, n)), CurveIndex(k), true))
+                .Concatenate(n.MapRange(k => BrepEdge(BrepVertexIndex(n + k), BrepVertexIndex(n + NextCorner(k, n0, n)), CurveIndex(n + k), true)))
+                .Concatenate(n.MapRange(k => BrepEdge(BrepVertexIndex(k), BrepVertexIndex(n + k), CurveIndex(2 * n + k), true))),
+            [BrepLoop.EdgeLoop(n0.MapRange(i => (n + i).CoedgeOf(true))),
+             BrepLoop.EdgeLoop(n0.MapRange(i => (n0 - 1 - i).CoedgeOf(false)))]
+                .Concatenate(HoleLoops(n0, n))
+                .Concatenate(n.MapRange(k => BrepLoop.EdgeLoop(
+                    [k.CoedgeOf(true), (2 * n + NextCorner(k, n0, n)).CoedgeOf(true), (n + k).CoedgeOf(false), (2 * n + k).CoedgeOf(false)]))),
+            [BrepFace(SurfaceIndex(0), true, CapBounds(0, n0, n)), BrepFace(SurfaceIndex(1), true, CapBounds(1, n0, n))]
+                .Concatenate(n.MapRange(k => BrepFace(SurfaceIndex(2 + k), corners[k].SideSense(extruded), [(sides + k).OuterBound]))));
+    }
+
+    // A hexagonal prism, circumradius 1.2, height 2: six planes meeting at
+    // 120 degrees. V = 12, E = 18, F = 8, L = 8, volume (3 sqrt 3 / 2) 1.44 * 2.
+    Witness_Hexagon(_: BrepModel): BrepModel
+        => ExtrudeProfiles(6.MapRange(k => Straight(At(1.2 * Angle(k.ToNumber * Number.Pi / 3.0).Cos, 1.2 * Angle(k.ToNumber * Number.Pi / 3.0).Sin))), 6, 2.0, false);
+
+    // An L bracket, 4 by 3 with arms 1.2 wide, 1 high: a concave prism whose
+    // inner corner is a reflex vertex. V = 12, E = 18, F = 8, L = 8, volume 6.96.
+    Witness_LBracket(_: BrepModel): BrepModel
+        => ExtrudeProfiles([Straight(At(0.0, 0.0)), Straight(At(4.0, 0.0)), Straight(At(4.0, 1.2)),
+            Straight(At(1.2, 1.2)), Straight(At(1.2, 3.0)), Straight(At(0.0, 3.0))], 6, 1.0, false);
+
+    // The box 4 x 3 x 2 with one long edge chamfered 0.6: a seventh plane at
+    // 45 degrees, tangent to nothing. V = 10, E = 15, F = 7, L = 7, volume 23.64.
+    Witness_Chamfer(_: BrepModel): BrepModel
+        => ExtrudeProfiles([Straight(At(0.0, 0.0)), Straight(At(4.0, 0.0)), Straight(At(4.0, 2.4)),
+            Straight(At(3.4, 3.0)), Straight(At(0.0, 3.0))], 5, 2.0, false);
+
+    // The corners of the box 4 x 3 with one long edge filleted at radius 0.6.
+    FilletCorners(_: Integer): Array<ProfileCorner>
+        => [Straight(At(0.0, 0.0)), Straight(At(4.0, 0.0)), ArcTo(At(4.0, 2.4), At(3.4, 2.4), true),
+            Straight(At(3.4, 3.0)), Straight(At(0.0, 3.0))];
+
+    // The box 4 x 3 x 2 with one long edge filleted at radius 0.6: a quarter
+    // cylinder tangent to two planes. V = 10, E = 15, F = 7, L = 7, volume
+    // (11.64 + 0.09 pi) * 2.
+    Witness_Fillet(_: BrepModel): BrepModel
+        => ExtrudeProfiles(Integer.FilletCorners, 5, 2.0, false);
+
+    // Witness_Fillet with the fillet written as a surface of linear extrusion
+    // of its bottom arc, as some exporters write a swept face. Same counts
+    // and volume.
+    Witness_ExtrudedFillet(_: BrepModel): BrepModel
+        => ExtrudeProfiles(Integer.FilletCorners, 5, 2.0, true);
+
+    // The L bracket with its reflex corner filled by a fillet of radius 0.6: a
+    // concave quarter cylinder with its sense reversed. V = 14, E = 21, F = 9,
+    // L = 9, volume 6.96 + 0.36 - 0.09 pi.
+    Witness_InnerFillet(_: BrepModel): BrepModel
+        => ExtrudeProfiles([Straight(At(0.0, 0.0)), Straight(At(4.0, 0.0)), Straight(At(4.0, 1.2)),
+            ArcTo(At(1.8, 1.2), At(1.8, 1.8), false), Straight(At(1.2, 1.8)), Straight(At(1.2, 3.0)), Straight(At(0.0, 3.0))], 7, 1.0, false);
+
+    // The box 4 x 3 x 1.5 with a stadium slot through it, 1.6 between the
+    // centres of its 0.4-radius ends: two half cylinders and two planes bound
+    // the hole. V = 16, E = 24, F = 10, L = 12, genus 1, volume
+    // (12 - 1.28 - 0.16 pi) * 1.5.
+    Witness_Slot(_: BrepModel): BrepModel
+        => ExtrudeProfiles([Straight(At(0.0, 0.0)), Straight(At(4.0, 0.0)), Straight(At(4.0, 3.0)), Straight(At(0.0, 3.0)),
+            ArcTo(At(1.2, 1.1), At(1.2, 1.5), false), Straight(At(1.2, 1.9)), ArcTo(At(2.8, 1.9), At(2.8, 1.5), false), Straight(At(2.8, 1.1))],
+            4, 1.5, false);
+
+    // A D-shaft: the unit cylinder of height 3 with a flat at x = 0.6. The
+    // band is one arc face with four edges, the flat a plane. V = 4, E = 6,
+    // F = 4, L = 4, volume (pi - (theta - sin theta) / 2) * 3 with
+    // theta = 2 acos 0.6, the flat's segment.
+    Witness_DShaft(_: BrepModel): BrepModel
+        => ExtrudeProfiles([ArcTo(At(0.6, 0.8), At(0.0, 0.0), true), Straight(At(0.6, -0.8))], 2, 3.0, false);
+
+    //==
+    // # Features on a box
+    //
+    // Each is the box [0, 4] x [0, 3] x [0, 2] (BrepWitnesses' tables: corners
+    // 0 to 7, edges and lines 0 to 11, planes and loops 0 to 5) with a round
+    // feature centred on its top face at (2, 1.5, 2): the top face carries the
+    // feature's rim circle as an inner bound (loop 6, the rim run backwards),
+    // and the feature's faces follow. A hole's wall is a cylinder, cone or
+    // sphere with its sense reversed, since the material is outside it.
+
+    FeatureBoxCorners(_: Integer): Array<Point3D>
+        => Point3D(0.0, 0.0, 0.0).BoxCorners(4.0, 3.0, 2.0);
+    FeatureBoxPlanes(_: Integer): Array<BrepSurface>
+        => Point3D(0.0, 0.0, 0.0).BoxPlanes(4.0, 3.0, 2.0);
+    FeatureBoxVertices(_: Integer): Array<BrepVertex>
+        => Integer.FeatureBoxCorners.Map(p => BrepVertex(p));
+    FeatureBoxEdges(_: Integer): Array<BrepEdge>
+        => 8.Range.BoxEdges(0);
+    FeatureBoxLoops(_: Integer): Array<BrepLoop>
+        => 6.MapRange(k => 12.Range.BoxLoop(k));
+
+    // The point of the feature's axis at height z.
+    FeatureAxis(z: Number): Point3D
+        => Point3D(2.0, 1.5, z);
+
+    // The six box faces, the bottom (face 0) and top (face 1) with extra bounds.
+    BoxFacesWithRims(top: Array<FaceBound>, bottom: Array<FaceBound>): Array<BrepFace>
+        => [BrepFace(SurfaceIndex(0), true, [0.OuterBound].Concatenate(bottom)),
+            BrepFace(SurfaceIndex(1), true, [1.OuterBound].Concatenate(top)),
+            2.SingleLoopFace(2, true), 3.SingleLoopFace(3, true), 4.SingleLoopFace(4, true), 5.SingleLoopFace(5, true)];
+
+    // The box with a round blind hole, radius 0.6, 1.2 deep: the wall is a
+    // cylinder band (loops 7 the rim, 8 the floor circle backwards) with its
+    // sense reversed, the floor a disk (loop 9). V = 10, E = 14, F = 8,
+    // L = 10, volume 24 - 0.36 pi * 1.2.
+    Witness_BlindHole(_: BrepModel): BrepModel
+    {
+        var r = 0.6;
+        var rim = FeatureAxis(2.0);
+        var floor = FeatureAxis(0.8);
+        return ClosedSolidOf(
+            GeometrySet(Integer.FeatureBoxCorners.BoxCurves.Concatenate([rim.CircleAt(r), floor.CircleAt(r)]), [], [],
+                Integer.FeatureBoxPlanes.Concatenate([BrepSurface.Cylinder(floor.WorldFrameAt, r), BrepSurface.Plane(floor.PlaneFacing(1))]), []),
+            Integer.FeatureBoxVertices.Concatenate([BrepVertex(rim.RimPoint(r)), BrepVertex(floor.RimPoint(r))]),
+            Integer.FeatureBoxEdges.Concatenate([8.ClosedEdge(12), 9.ClosedEdge(13)]),
+            Integer.FeatureBoxLoops.Concatenate([12.Ring(false), 12.Ring(true), 13.Ring(false), 13.Ring(true)]),
+            BoxFacesWithRims([6.InnerBound], []).Concatenate([TwoLoopFace(6, false, 7, 8), RingFace(7, 9, true)]));
+    }
+
+    // The box with a round boss, radius 0.6, 1 high: the blind hole's three
+    // faces with every normal the other way. V = 10, E = 14, F = 8, L = 10,
+    // volume 24 + 0.36 pi.
+    Witness_Boss(_: BrepModel): BrepModel
+    {
+        var r = 0.6;
+        var rim = FeatureAxis(2.0);
+        var top = FeatureAxis(3.0);
+        return ClosedSolidOf(
+            GeometrySet(Integer.FeatureBoxCorners.BoxCurves.Concatenate([rim.CircleAt(r), top.CircleAt(r)]), [], [],
+                Integer.FeatureBoxPlanes.Concatenate([BrepSurface.Cylinder(rim.WorldFrameAt, r), BrepSurface.Plane(top.PlaneFacing(1))]), []),
+            Integer.FeatureBoxVertices.Concatenate([BrepVertex(rim.RimPoint(r)), BrepVertex(top.RimPoint(r))]),
+            Integer.FeatureBoxEdges.Concatenate([8.ClosedEdge(12), 9.ClosedEdge(13)]),
+            Integer.FeatureBoxLoops.Concatenate([12.Ring(false), 12.Ring(true), 13.Ring(false), 13.Ring(true)]),
+            BoxFacesWithRims([6.InnerBound], []).Concatenate([TwoLoopFace(6, true, 7, 8), RingFace(7, 9, true)]));
+    }
+
+    // The box with a counterbored through hole: radius 0.8 down to z = 1.4,
+    // then 0.4 through. Curves 12 to 15: the rim, the shoulder's outer and
+    // inner circles, the bottom circle. The wide band (loops 7, 8), the
+    // annular shoulder (9 outer, 10 inner) and the narrow band (11, 12); the
+    // bottom face carries the bottom circle (loop 13). V = 12, E = 16, F = 9,
+    // L = 14, genus 1, volume 24 - pi (0.64 * 0.6 + 0.16 * 1.4).
+    Witness_Counterbore(_: BrepModel): BrepModel
+    {
+        var r1 = 0.8;
+        var r2 = 0.4;
+        var rim = FeatureAxis(2.0);
+        var shoulder = FeatureAxis(1.4);
+        var bottom = FeatureAxis(0.0);
+        return ClosedSolidOf(
+            GeometrySet(
+                Integer.FeatureBoxCorners.BoxCurves.Concatenate([rim.CircleAt(r1), shoulder.CircleAt(r1), shoulder.CircleAt(r2), bottom.CircleAt(r2)]),
+                [], [],
+                Integer.FeatureBoxPlanes.Concatenate([BrepSurface.Cylinder(shoulder.WorldFrameAt, r1), BrepSurface.Plane(shoulder.PlaneFacing(1)), BrepSurface.Cylinder(bottom.WorldFrameAt, r2)]),
+                []),
+            Integer.FeatureBoxVertices.Concatenate([BrepVertex(rim.RimPoint(r1)), BrepVertex(shoulder.RimPoint(r1)), BrepVertex(shoulder.RimPoint(r2)), BrepVertex(bottom.RimPoint(r2))]),
+            Integer.FeatureBoxEdges.Concatenate([8.ClosedEdge(12), 9.ClosedEdge(13), 10.ClosedEdge(14), 11.ClosedEdge(15)]),
+            Integer.FeatureBoxLoops.Concatenate([12.Ring(false), 12.Ring(true), 13.Ring(false), 13.Ring(true), 14.Ring(false), 14.Ring(true), 15.Ring(false), 15.Ring(true)]),
+            BoxFacesWithRims([6.InnerBound], [13.InnerBound]).Concatenate([
+                TwoLoopFace(6, false, 7, 8),
+                BrepFace(SurfaceIndex(7), true, [9.OuterBound, 10.InnerBound]),
+                TwoLoopFace(8, false, 11, 12)]));
+    }
+
+    // The box with a countersunk through hole: a 45 degree cone from radius
+    // 0.8 at the top to 0.4 at z = 1.6, then a cylinder through. Curves 12 to
+    // 14: the rim, the throat, the bottom circle. The cone (loops 7, 8) and
+    // the band (9, 10); the bottom face carries loop 11. V = 11, E = 15,
+    // F = 8, L = 12, genus 1, volume 24 - pi 0.4 (0.64 + 0.32 + 0.16) / 3
+    // - 0.16 pi * 1.6.
+    Witness_Countersink(_: BrepModel): BrepModel
+    {
+        var r1 = 0.8;
+        var r2 = 0.4;
+        var rim = FeatureAxis(2.0);
+        var throat = FeatureAxis(1.6);
+        var bottom = FeatureAxis(0.0);
+        return ClosedSolidOf(
+            GeometrySet(
+                Integer.FeatureBoxCorners.BoxCurves.Concatenate([rim.CircleAt(r1), throat.CircleAt(r2), bottom.CircleAt(r2)]),
+                [], [],
+                Integer.FeatureBoxPlanes.Concatenate([BrepSurface.Cone(throat.WorldFrameAt, r2, (1.0).Atan), BrepSurface.Cylinder(bottom.WorldFrameAt, r2)]),
+                []),
+            Integer.FeatureBoxVertices.Concatenate([BrepVertex(rim.RimPoint(r1)), BrepVertex(throat.RimPoint(r2)), BrepVertex(bottom.RimPoint(r2))]),
+            Integer.FeatureBoxEdges.Concatenate([8.ClosedEdge(12), 9.ClosedEdge(13), 10.ClosedEdge(14)]),
+            Integer.FeatureBoxLoops.Concatenate([12.Ring(false), 12.Ring(true), 13.Ring(false), 13.Ring(true), 14.Ring(false), 14.Ring(true)]),
+            BoxFacesWithRims([6.InnerBound], [11.InnerBound]).Concatenate([TwoLoopFace(6, false, 7, 8), TwoLoopFace(7, false, 9, 10)]));
+    }
+
+    // The box with a spherical cap on its top: the sphere of radius 0.8
+    // centred `above` the top face (negative for a dimple) meets it in the
+    // circle of radius sqrt(0.64 - above^2); one face on the sphere, holding
+    // a pole, bounded by that circle alone (loop 7), with the sense given.
+    // V = 9, E = 13, F = 7, L = 8.
+    SphereCapOnBox(above: Number, sense: Boolean): BrepModel
+    {
+        var r = 0.8;
+        var rim = FeatureAxis(2.0);
+        var rimRadius = (r * r - above * above).Sqrt;
+        return ClosedSolidOf(
+            GeometrySet(Integer.FeatureBoxCorners.BoxCurves.Concatenate([rim.CircleAt(rimRadius)]), [], [],
+                Integer.FeatureBoxPlanes.Concatenate([BrepSurface.Sphere(FeatureAxis(2.0 + above).WorldFrameAt, r)]), []),
+            Integer.FeatureBoxVertices.Concatenate([BrepVertex(rim.RimPoint(rimRadius))]),
+            Integer.FeatureBoxEdges.Concatenate([8.ClosedEdge(12)]),
+            Integer.FeatureBoxLoops.Concatenate([12.Ring(false), 12.Ring(true)]),
+            BoxFacesWithRims([6.InnerBound], []).Concatenate([RingFace(6, 7, sense)]));
+    }
+
+    // The box with a spherical dimple 0.4 deep in its top: the sphere's centre
+    // 0.4 above the face, the cap below it holding the south pole, its sense
+    // reversed. Volume 24 - pi 0.16 (2.4 - 0.4) / 3.
+    Witness_SphereDimple(_: BrepModel): BrepModel
+        => SphereCapOnBox(0.4, false);
+
+    // The box with a spherical dome 0.4 high on its top: the dimple's cap the
+    // other way up, holding the north pole. Volume 24 + pi 0.16 (2.4 - 0.4) / 3.
+    Witness_SphereDome(_: BrepModel): BrepModel
+        => SphereCapOnBox(-0.4, true);
+
+    //==
+    // # Solids of one curved face
+    //
+    // Each stands on a disk at z = 0 and is bounded above by a disk or an
+    // elliptical cap; every curved face is a band between two closed curves
+    // with no seam, the lower curve run with u and the upper against it, as
+    // Witness_CylinderBand's.
+
+    // The disk at z = 0 of radius r (bottom plane, normal -z) and the disk at
+    // height h of radius rh (normal +z): surfaces 0 and 2, with surface 1 the
+    // band between; vertices 0 and 1, curves and closed edges 0 and 1; loops 0
+    // the bottom disk's, 1 and 2 the band's, 3 the top's.
+    Spool(band: BrepSurface, extraCurves: Array<BrepCurve>, r: Number, rh: Number, h: Number, sense: Boolean): BrepModel
+        => ClosedSolidOf(
+            GeometrySet([Point3D(0.0, 0.0, 0.0).CircleAt(r), Point3D(0.0, 0.0, h).CircleAt(rh)].Concatenate(extraCurves), [], [],
+                [BrepSurface.Plane(Point3D(0.0, 0.0, 0.0).PlaneFacing(0)), band, BrepSurface.Plane(Point3D(0.0, 0.0, h).PlaneFacing(1))], []),
+            [BrepVertex(Point3D(r, 0.0, 0.0)), BrepVertex(Point3D(rh, 0.0, h))],
+            [0.ClosedEdge(0), 1.ClosedEdge(1)],
+            [0.Ring(false), 0.Ring(true), 1.Ring(false), 1.Ring(true)],
+            [RingFace(0, 0, true), TwoLoopFace(1, sense, 1, 2), RingFace(2, 3, true)]);
+
+    // A tube: the cylinder of radius 1.2 and height 3 with a coaxial hole of
+    // radius 0.7. Two annular caps (loops 0 and 1 the top's, 2 and 3 the
+    // bottom's), the outer band (4, 5) and the inner band (6, 7) with its
+    // sense reversed. V = 4, E = 4, F = 4, L = 8, genus 1, volume
+    // pi (1.44 - 0.49) 3.
+    Witness_Tube(_: BrepModel): BrepModel
+    {
+        var ro = 1.2;
+        var ri = 0.7;
+        var h = 3.0;
+        var o = Point3D(0.0, 0.0, 0.0);
+        var top = Point3D(0.0, 0.0, h);
+        return ClosedSolidOf(
+            GeometrySet([o.CircleAt(ro), top.CircleAt(ro), o.CircleAt(ri), top.CircleAt(ri)], [], [],
+                [BrepSurface.Plane(top.PlaneFacing(1)), BrepSurface.Plane(o.PlaneFacing(0)), BrepSurface.Cylinder(o.WorldFrameAt, ro), BrepSurface.Cylinder(o.WorldFrameAt, ri)], []),
+            [BrepVertex(o.RimPoint(ro)), BrepVertex(top.RimPoint(ro)), BrepVertex(o.RimPoint(ri)), BrepVertex(top.RimPoint(ri))],
+            [0.ClosedEdge(0), 1.ClosedEdge(1), 2.ClosedEdge(2), 3.ClosedEdge(3)],
+            [1.Ring(true), 3.Ring(false), 0.Ring(false), 2.Ring(true), 0.Ring(true), 1.Ring(false), 2.Ring(false), 3.Ring(true)],
+            [BrepFace(SurfaceIndex(0), true, [0.OuterBound, 1.InnerBound]),
+             BrepFace(SurfaceIndex(1), true, [2.OuterBound, 3.InnerBound]),
+             TwoLoopFace(2, true, 4, 5),
+             TwoLoopFace(3, false, 6, 7)]);
+    }
+
+    // The unit cylinder cut by a plane through (0, 0, 2.4) tilted 30 degrees
+    // about y: the cut is an ellipse, semi-axes 1 / cos 30 and 1, on both the
+    // band and the cap. Vertices (1, 0, 0) and the ellipse's start
+    // (1, 0, 2.4 - tan 30). V = 2, E = 2, F = 3, L = 4, volume 2.4 pi (the
+    // height at the axis).
+    Witness_ObliqueCut(_: BrepModel): BrepModel
+    {
+        var theta = Angle(Number.Pi / 6.0);
+        var centre = Point3D(0.0, 0.0, 2.4);
+        var normal = Vector3D(theta.Sin, 0.0, theta.Cos);
+        var major = Vector3D(theta.Cos, 0.0, -theta.Sin);
+        var cap = centre.FrameAt(major, normal.Cross(major), normal);
+        return ClosedSolidOf(
+            GeometrySet([Point3D(0.0, 0.0, 0.0).CircleAt(1.0), BrepCurve.Ellipse(cap, 1.0 / theta.Cos, 1.0)], [], [],
+                [BrepSurface.Plane(Point3D(0.0, 0.0, 0.0).PlaneFacing(0)), BrepSurface.Cylinder(Point3D(0.0, 0.0, 0.0).WorldFrameAt, 1.0), BrepSurface.Plane(cap)], []),
+            [BrepVertex(Point3D(1.0, 0.0, 0.0)), BrepVertex(centre + major * (1.0 / theta.Cos))],
+            [0.ClosedEdge(0), 1.ClosedEdge(1)],
+            [0.Ring(false), 0.Ring(true), 1.Ring(false), 1.Ring(true)],
+            [RingFace(0, 0, true), TwoLoopFace(1, true, 1, 2), RingFace(2, 3, true)]);
+    }
+
+    // A puck of radius 1.5 and height 2 whose top edge is rounded at radius
+    // 0.4: a torus band (major 1.1, minor 0.4, centred at z = 1.6) between the
+    // cylinder band and the top disk of radius 1.1. Curves 0 to 2: the bottom
+    // circle, the knee circle at z = 1.6, the crown circle at z = 2. V = 3,
+    // E = 3, F = 4, L = 6, volume pi 2.25 * 1.6 + pi 1.21 * 0.4 + the quarter
+    // disc's ring by Pappus, (pi 0.16 / 4) 2 pi (1.1 + 1.6 / (3 pi)).
+    Witness_TorusFillet(_: BrepModel): BrepModel
+    {
+        var r = 1.5;
+        var f = 0.4;
+        var o = Point3D(0.0, 0.0, 0.0);
+        var knee = Point3D(0.0, 0.0, 1.6);
+        var crown = Point3D(0.0, 0.0, 2.0);
+        return ClosedSolidOf(
+            GeometrySet([o.CircleAt(r), knee.CircleAt(r), crown.CircleAt(r - f)], [], [],
+                [BrepSurface.Plane(o.PlaneFacing(0)), BrepSurface.Cylinder(o.WorldFrameAt, r),
+                 BrepSurface.Torus(knee.WorldFrameAt, r - f, f, TorusPart.Full), BrepSurface.Plane(crown.PlaneFacing(1))], []),
+            [BrepVertex(o.RimPoint(r)), BrepVertex(knee.RimPoint(r)), BrepVertex(crown.RimPoint(r - f))],
+            [0.ClosedEdge(0), 1.ClosedEdge(1), 2.ClosedEdge(2)],
+            [0.Ring(false), 0.Ring(true), 1.Ring(false), 1.Ring(true), 2.Ring(false), 2.Ring(true)],
+            [RingFace(0, 0, true), TwoLoopFace(1, true, 1, 2), TwoLoopFace(2, true, 3, 4), RingFace(3, 5, true)]);
+    }
+
+    // The barrel's profile: the circle in the xz plane through (1, 0, 0),
+    // (1.2, 0, 1.5) and (1, 0, 3), radius rho = (1.5^2 + 0.2^2) / 0.4 about
+    // (1.2 - rho, 0, 1.5), turning so that it rises at (1, 0, 0).
+    BarrelProfile(_: Integer): BrepCurve
+    {
+        var rho = (2.25 + 0.04) / 0.4;
+        var c = Point3D(1.2 - rho, 0.0, 1.5);
+        var z = Vector3D(0.0, -1.0, 0.0);
+        var x = (Point3D(1.0, 0.0, 0.0) - c).Normalize;
+        return BrepCurve.Circle(c.FrameAt(x, z.Cross(x), z), rho);
+    }
+
+    // A barrel: the profile arc revolved about z as a surface of revolution
+    // (curve 2), between disks of radius 1 at z = 0 and z = 3. V = 2, E = 2,
+    // F = 3, L = 4, volume by the shell integral of (cx + sqrt(rho^2 - t^2))^2
+    // over t in [-1.5, 1.5] (BarrelVolume).
+    Witness_RevolvedBarrel(_: BrepModel): BrepModel
+        => Spool(BrepSurface.Revolution(CurveIndex(2), InfiniteLine3D(Point3D(0.0, 0.0, 0.0), Direction3D(Vector3D(0.0, 0.0, 1.0)))),
+            [Integer.BarrelProfile], 1.0, 1.0, 3.0, true);
+
+    // pi times the integral of (cx + sqrt(rho^2 - t^2))^2 from -a to a, with
+    // a = 1.5: cx^2 2a + 2 cx (a sqrt(rho^2 - a^2) + rho^2 asin(a / rho))
+    // + 2 a rho^2 - 2 a^3 / 3.
+    BarrelVolume(_: Integer): Number
+    {
+        var rho = (2.25 + 0.04) / 0.4;
+        var cx = 1.2 - rho;
+        var a = 1.5;
+        return Number.Pi * (cx * cx * 2.0 * a
+            + 2.0 * cx * (a * (rho * rho - a * a).Sqrt + rho * rho * (a / rho).Asin.Radians)
+            + 2.0 * a * rho * rho - 2.0 * a * a * a / 3.0);
+    }
+
+    // A truncated cone, radius 1.2 at z = 0 to 0.6 at z = 2, written as a line
+    // revolved about z (curve 2), not as a conical surface. V = 2, E = 2,
+    // F = 3, L = 4, volume pi 2 (1.44 + 0.72 + 0.36) / 3.
+    Witness_RevolvedCone(_: BrepModel): BrepModel
+        => Spool(BrepSurface.Revolution(CurveIndex(2), InfiniteLine3D(Point3D(0.0, 0.0, 0.0), Direction3D(Vector3D(0.0, 0.0, 1.0)))),
+            [BrepCurve.Line(Point3D(1.2, 0.0, 0.0), Vector3D(-0.6, 0.0, 2.0))], 1.2, 0.6, 2.0, true);
+
+    // The unit cylinder of height 3 with a hole of radius 0.4 bored through
+    // it along x at mid height. The two curves where the hole meets the band
+    // are cubic B-splines through 97 points each of the true quartic
+    // (CrossHolePlusPoints, CrossHoleMinusPoints), within 3.5e-7 of both
+    // cylinders. Vertices 0 (1, 0, 0), 1 (1, 0, 3), 2 and 3 the curves'
+    // starts; curves and closed edges 0 the bottom circle, 1 the top, 2 the
+    // +x curve, 3 the -x curve. The band (surface 2) has four bounds: the two
+    // circles (loops 2, 3) and the two curves run backwards from the hole's
+    // (4, 5); the hole's wall (surface 3, a cylinder about x with its sense
+    // reversed) has loops 6 and 7. V = 4, E = 4, F = 4, L = 8, genus 1; the
+    // volume has no closed form.
+    Witness_CrossHole(_: BrepModel): BrepModel
+    {
+        var o = Point3D(0.0, 0.0, 0.0);
+        var top = Point3D(0.0, 0.0, 3.0);
+        var basis = SplineBasis(3, KnotVector(Integer.CrossHoleKnots));
+        var plus = Integer.CrossHolePlusPoints;
+        var minus = Integer.CrossHoleMinusPoints;
+        var ones = plus.Count.MapRange(i => 1.0);
+        return ClosedSolidOf(
+            GeometrySet(
+                [o.CircleAt(1.0), top.CircleAt(1.0),
+                 BrepCurve.BSpline(BSplineCurveData(basis, plus, ones)),
+                 BrepCurve.BSpline(BSplineCurveData(basis, minus, ones))],
+                [], [],
+                [BrepSurface.Plane(o.PlaneFacing(0)), BrepSurface.Plane(top.PlaneFacing(1)), BrepSurface.Cylinder(o.WorldFrameAt, 1.0),
+                 BrepSurface.Cylinder(Point3D(0.0, 0.0, 1.5).FrameAt(Vector3D(0.0, 1.0, 0.0), Vector3D(0.0, 0.0, 1.0), Vector3D(1.0, 0.0, 0.0)), 0.4)],
+                []),
+            [BrepVertex(o.RimPoint(1.0)), BrepVertex(top.RimPoint(1.0)), BrepVertex(plus[0]), BrepVertex(minus[0])],
+            [0.ClosedEdge(0), 1.ClosedEdge(1), 2.ClosedEdge(2), 3.ClosedEdge(3)],
+            [0.Ring(false), 1.Ring(true), 0.Ring(true), 1.Ring(false), 2.Ring(false), 3.Ring(true), 2.Ring(true), 3.Ring(false)],
+            [RingFace(0, 0, true), RingFace(1, 1, true),
+             BrepFace(SurfaceIndex(2), true, [2.InnerBound, 3.InnerBound, 4.InnerBound, 5.InnerBound]),
+             TwoLoopFace(3, false, 6, 7)]);
+    }
+
+    //==
+    // # The pyramid and the shelled box
+
+    // A square pyramid, base 3 x 3, apex 2.4 above its centre: four triangles
+    // share a vertex of valence four. Vertices 0 to 3 the base
+    // counter-clockwise, 4 the apex; edges 0 to 3 the base, 4 + k from base
+    // corner k to the apex; loops 0 the base (run backwards), 1 + k the side
+    // over base edge k. V = 5, E = 8, F = 5, L = 5, volume 7.2.
+    Witness_Pyramid(_: BrepModel): BrepModel
+    {
+        var base = [Point3D(0.0, 0.0, 0.0), Point3D(3.0, 0.0, 0.0), Point3D(3.0, 3.0, 0.0), Point3D(0.0, 3.0, 0.0)];
+        var apex = Point3D(1.5, 1.5, 2.4);
+        return ClosedSolidOf(
+            GeometrySet(
+                4.MapRange(k => base[k].LineBetween(base[(k + 1) % 4])).Concatenate(4.MapRange(k => base[k].LineBetween(apex))),
+                [], [],
+                [BrepSurface.Plane(Point3D(0.0, 0.0, 0.0).PlaneFacing(0))].Concatenate(4.MapRange(k => TrianglePlane(base[k], base[(k + 1) % 4], apex))),
+                []),
+            base.Map(p => BrepVertex(p)).Concatenate([BrepVertex(apex)]),
+            4.MapRange(k => BrepEdge(BrepVertexIndex(k), BrepVertexIndex((k + 1) % 4), CurveIndex(k), true))
+                .Concatenate(4.MapRange(k => BrepEdge(BrepVertexIndex(k), BrepVertexIndex(4), CurveIndex(4 + k), true))),
+            [BrepLoop.EdgeLoop([3.CoedgeOf(false), 2.CoedgeOf(false), 1.CoedgeOf(false), 0.CoedgeOf(false)])]
+                .Concatenate(4.MapRange(k => BrepLoop.EdgeLoop([k.CoedgeOf(true), (4 + (k + 1) % 4).CoedgeOf(true), (4 + k).CoedgeOf(false)]))),
+            5.MapRange(k => k.SingleLoopFace(k, true)));
+    }
+
+    // The plane through a, b and c with its normal on the side a counter-
+    // clockwise a b c faces, X along a b.
+    TrianglePlane(a: Point3D, b: Point3D, c: Point3D): BrepSurface
+    {
+        var x = (b - a).Normalize;
+        var z = (b - a).Cross(c - a).Normalize;
+        return BrepSurface.Plane(a.FrameAt(x, z.Cross(x), z));
+    }
+
+    // The box 4 x 3 x 2 shelled to a wall of 0.3 and open at the top: the
+    // outer box's tables, the cavity's box (corners 8 to 15, lines and edges
+    // 12 to 23, loops 6 to 11) with its bottom plane (surface 6) and side
+    // planes (7 to 10), the top face an annulus (its outer loop 1, its inner
+    // the cavity's top loop 7 run backwards), the floor on surface 6 reversed
+    // and the four walls on surfaces 7 to 10 reversed, as the through hole's.
+    // V = 16, E = 24, F = 11, L = 12, volume 24 - 3.4 * 2.4 * 1.7.
+    Witness_OpenBox(_: BrepModel): BrepModel
+    {
+        var o = Point3D(0.0, 0.0, 0.0);
+        var inner = Point3D(0.3, 0.3, 0.3);
+        return ClosedSolidOf(
+            GeometrySet(
+                o.BoxCorners(4.0, 3.0, 2.0).BoxCurves.Concatenate(inner.BoxCorners(3.4, 2.4, 1.7).BoxCurves),
+                [], [],
+                o.BoxPlanes(4.0, 3.0, 2.0).Concatenate(inner.BoxPlanes(3.4, 2.4, 1.7).Take(1)).Concatenate(inner.BoxPlanes(3.4, 2.4, 1.7).Skip(2)),
+                []),
+            o.BoxCorners(4.0, 3.0, 2.0).Concatenate(inner.BoxCorners(3.4, 2.4, 1.7)).Map(p => BrepVertex(p)),
+            8.Range.BoxEdges(0).Concatenate(8.MapRange(k => k + 8).BoxEdges(12)),
+            6.MapRange(k => 12.Range.BoxLoop(k)).Concatenate(6.MapRange(k => 12.MapRange(e => e + 12).BoxLoop(k))),
+            [0.SingleLoopFace(0, true),
+             BrepFace(SurfaceIndex(1), true, [1.OuterBound, FaceBound(BrepLoopIndex(7), false, false)]),
+             2.SingleLoopFace(2, true), 3.SingleLoopFace(3, true), 4.SingleLoopFace(4, true), 5.SingleLoopFace(5, true),
+             6.SingleLoopFace(6, false)]
+                .Concatenate(4.MapRange(k => (k + 7).SingleLoopFace(k + 8, false))));
+    }
+
+    //==
+    // # Facts
+    //
+    // Counts, genus and volume from closed forms, in OperationWitnessAt's
+    // order; no face areas (the oracle laws check the oracles against each
+    // other).
+
+    // Counts, a genus and a volume, as one shell's WitnessFacts.
+    OperationFacts(v: Integer, e: Integer, f: Integer, l: Integer, genus: Integer, volumes: Array<Number>): WitnessFacts
+        => WitnessFacts([ShellCounts(v, e, f, l)], [genus], [], volumes);
+
+    // The D-shaft's volume: the unit disc less the segment cut by x = 0.6,
+    // times the height 3.
+    DShaftVolume(_: Integer): Number
+    {
+        var theta = (0.6).Acos.Radians * 2.0;
+        return (Number.Pi - 0.5 * (theta - Angle(theta).Sin)) * 3.0;
+    }
+
+    //==
+    // # Choosing a witness
+    //
+    // The operation witnesses in a fixed order, so a law can quantify over
+    // them with an Integer: 0 hexagon, 1 L bracket, 2 chamfer, 3 fillet,
+    // 4 extruded fillet, 5 inner fillet, 6 slot, 7 D-shaft, 8 pyramid,
+    // 9 blind hole, 10 boss, 11 counterbore, 12 countersink, 13 dimple,
+    // 14 dome, 15 open box, 16 tube, 17 oblique cut, 18 torus fillet,
+    // 19 revolved barrel, 20 revolved cone, 21 cross hole.
+
+    OperationWitnessCount(_: BrepModel): Integer
+        => 22;
+
+    // Operation witness k modulo the count (k may be negative, as the runner
+    // draws it).
+    OperationWitnessAt(_: BrepModel, k: Integer): BrepModel
+        => Integer.OperationWitnesses[((k % 22) + 22) % 22];
+
+    // Every operation witness, in the order above.
+    OperationWitnesses(_: Integer): Array<BrepModel>
+        => [BrepModel.Witness_Hexagon,
+            BrepModel.Witness_LBracket,
+            BrepModel.Witness_Chamfer,
+            BrepModel.Witness_Fillet,
+            BrepModel.Witness_ExtrudedFillet,
+            BrepModel.Witness_InnerFillet,
+            BrepModel.Witness_Slot,
+            BrepModel.Witness_DShaft,
+            BrepModel.Witness_Pyramid,
+            BrepModel.Witness_BlindHole,
+            BrepModel.Witness_Boss,
+            BrepModel.Witness_Counterbore,
+            BrepModel.Witness_Countersink,
+            BrepModel.Witness_SphereDimple,
+            BrepModel.Witness_SphereDome,
+            BrepModel.Witness_OpenBox,
+            BrepModel.Witness_Tube,
+            BrepModel.Witness_ObliqueCut,
+            BrepModel.Witness_TorusFillet,
+            BrepModel.Witness_RevolvedBarrel,
+            BrepModel.Witness_RevolvedCone,
+            BrepModel.Witness_CrossHole];
+
+    // The facts of operation witness k, in the same order.
+    OperationFactsAt(_: WitnessFacts, k: Integer): WitnessFacts
+        => Integer.OperationFactsList[((k % 22) + 22) % 22];
+
+    // The facts of every operation witness, in the same order.
+    OperationFactsList(_: Integer): Array<WitnessFacts>
+    {
+        var pi = Number.Pi;
+        return [OperationFacts(12, 18, 8, 8, 0, [1.5 * (3.0).Sqrt * 1.44 * 2.0]),
+            OperationFacts(12, 18, 8, 8, 0, [6.96]),
+            OperationFacts(10, 15, 7, 7, 0, [23.64]),
+            OperationFacts(10, 15, 7, 7, 0, [(11.64 + 0.09 * pi) * 2.0]),
+            OperationFacts(10, 15, 7, 7, 0, [(11.64 + 0.09 * pi) * 2.0]),
+            OperationFacts(14, 21, 9, 9, 0, [6.96 + 0.36 - 0.09 * pi]),
+            OperationFacts(16, 24, 10, 12, 1, [(12.0 - 1.28 - 0.16 * pi) * 1.5]),
+            OperationFacts(4, 6, 4, 4, 0, [Integer.DShaftVolume]),
+            OperationFacts(5, 8, 5, 5, 0, [7.2]),
+            OperationFacts(10, 14, 8, 10, 0, [24.0 - 0.36 * pi * 1.2]),
+            OperationFacts(10, 14, 8, 10, 0, [24.0 + 0.36 * pi]),
+            OperationFacts(12, 16, 9, 14, 1, [24.0 - pi * (0.64 * 0.6 + 0.16 * 1.4)]),
+            OperationFacts(11, 15, 8, 12, 1, [24.0 - pi * 0.4 * 1.12 / 3.0 - 0.16 * pi * 1.6]),
+            OperationFacts(9, 13, 7, 8, 0, [24.0 - pi * 0.16 * 2.0 / 3.0]),
+            OperationFacts(9, 13, 7, 8, 0, [24.0 + pi * 0.16 * 2.0 / 3.0]),
+            OperationFacts(16, 24, 11, 12, 0, [24.0 - 3.4 * 2.4 * 1.7]),
+            OperationFacts(4, 4, 4, 8, 1, [pi * 0.95 * 3.0]),
+            OperationFacts(2, 2, 3, 4, 0, [pi * 2.4]),
+            OperationFacts(3, 3, 4, 6, 0, [pi * 2.25 * 1.6 + pi * 1.21 * 0.4 + (pi * 0.16 / 4.0) * Number.Tau * (1.1 + 1.6 / (3.0 * pi))]),
+            OperationFacts(2, 2, 3, 4, 0, [Integer.BarrelVolume]),
+            OperationFacts(2, 2, 3, 4, 0, [pi * 2.0 * 2.52 / 3.0]),
+            OperationFacts(4, 4, 4, 8, 1, [])];
+    }
+
+    //==
+    // # The cross hole's splines
+    //
+    // Written by tools/cross_hole_spline.py at its defaults (R 1, r 0.4, h 3,
+    // N 96) and pasted; rerun it and paste when the hole changes.
+
+    // The clamped knot vector both curves share (R 1.0, r 0.4, h 3.0, N 96), every knot written out.
+    CrossHoleKnots(_: Integer): Array<Number>
+        => [0.000000000000, 0.000000000000, 0.000000000000, 0.000000000000, 0.020626553407, 0.030959287706, 0.041313646619, 0.051694138325, 0.062103280875, 0.072541460797, 0.083006963628, 0.093496161389, 0.104003830111, 0.114523563395, 0.125048245239, 0.135570546122, 0.146083409424, 0.156580499706, 0.167056589382, 0.177507865425, 0.187932142741, 0.198328975783, 0.208699664848, 0.219047158504, 0.229375858684, 0.239691340044, 0.250000000000, 0.260308659956, 0.270624141316, 0.280952841496, 0.291300335152, 0.301671024217, 0.312067857259, 0.322492134575, 0.332943410618, 0.343419500294, 0.353916590576, 0.364429453878, 0.374951754761, 0.385476436605, 0.395996169889, 0.406503838611, 0.416993036372, 0.427458539203, 0.437896719125, 0.448305861675, 0.458686353381, 0.469040712294, 0.479373446593, 0.489690742336, 0.500000000000, 0.510309257664, 0.520626553407, 0.530959287706, 0.541313646619, 0.551694138325, 0.562103280875, 0.572541460797, 0.583006963628, 0.593496161389, 0.604003830111, 0.614523563395, 0.625048245239, 0.635570546122, 0.646083409424, 0.656580499706, 0.667056589382, 0.677507865425, 0.687932142741, 0.698328975783, 0.708699664848, 0.719047158504, 0.729375858684, 0.739691340044, 0.750000000000, 0.760308659956, 0.770624141316, 0.780952841496, 0.791300335152, 0.801671024217, 0.812067857259, 0.822492134575, 0.832943410618, 0.843419500294, 0.853916590576, 0.864429453878, 0.874951754761, 0.885476436605, 0.895996169889, 0.906503838611, 0.916993036372, 0.927458539203, 0.937896719125, 0.948305861675, 0.958686353381, 0.969040712294, 0.979373446593, 1.000000000000, 1.000000000000, 1.000000000000, 1.000000000000];
+    // The curve on the +x side; its farthest point lies 3.5e-07 off a cylinder.
+    CrossHolePlusPoints(_: Integer): Array<Point3D>
+        => [Point3D(0.916515138991, 0.400000000000, 1.500000000000),
+            Point3D(0.916513145832, 0.400001499277, 1.517467505302),
+            Point3D(0.917271431235, 0.398277596134, 1.543683224968),
+            Point3D(0.919721089910, 0.392585397992, 1.578137522022),
+            Point3D(0.922243810667, 0.386631896534, 1.603655741419),
+            Point3D(0.925402134742, 0.379022922147, 1.628725637976),
+            Point3D(0.929135376709, 0.369792039906, 1.653239845153),
+            Point3D(0.933372885820, 0.358979558925, 1.677093812841),
+            Point3D(0.938035665806, 0.346632345588, 1.700186182428),
+            Point3D(0.943038221823, 0.332803542223, 1.722419092075),
+            Point3D(0.948290393750, 0.317552326905, 1.743698467079),
+            Point3D(0.953699172596, 0.300943674002, 1.763934301241),
+            Point3D(0.959170446643, 0.283048118433, 1.783040940907),
+            Point3D(0.964610650593, 0.263941514006, 1.800937374643),
+            Point3D(0.969928295836, 0.243704780652, 1.817547528565),
+            Point3D(0.975035369172, 0.222423635964, 1.832800565026),
+            Point3D(0.979848593860, 0.200188307785, 1.846631181692),
+            Point3D(0.984290552362, 0.177093224991, 1.858979908011),
+            Point3D(0.988290673985, 0.153236683408, 1.869793396163),
+            Point3D(0.991786092909, 0.128720483228, 1.879024703259),
+            Point3D(0.994722382797, 0.103649533840, 1.886633560612),
+            Point3D(0.997054173595, 0.078131422218, 1.892586624322),
+            Point3D(0.998745654588, 0.052275942400, 1.896857699609),
+            Point3D(0.999770965938, 0.026194586308, 1.899427929819),
+            Point3D(1.000114479154, 0.000000000000, 1.900285940485),
+            Point3D(0.999770965938, -0.026194586308, 1.899427929819),
+            Point3D(0.998745654588, -0.052275942400, 1.896857699609),
+            Point3D(0.997054173595, -0.078131422218, 1.892586624322),
+            Point3D(0.994722382797, -0.103649533840, 1.886633560612),
+            Point3D(0.991786092909, -0.128720483228, 1.879024703259),
+            Point3D(0.988290673985, -0.153236683408, 1.869793396163),
+            Point3D(0.984290552362, -0.177093224991, 1.858979908011),
+            Point3D(0.979848593860, -0.200188307785, 1.846631181692),
+            Point3D(0.975035369172, -0.222423635964, 1.832800565026),
+            Point3D(0.969928295836, -0.243704780652, 1.817547528565),
+            Point3D(0.964610650593, -0.263941514006, 1.800937374643),
+            Point3D(0.959170446643, -0.283048118433, 1.783040940907),
+            Point3D(0.953699172595, -0.300943674003, 1.763934301241),
+            Point3D(0.948290393753, -0.317552326902, 1.743698467078),
+            Point3D(0.943038221810, -0.332803542232, 1.722419092078),
+            Point3D(0.938035665853, -0.346632345552, 1.700186182419),
+            Point3D(0.933372885642, -0.358979559058, 1.677093812876),
+            Point3D(0.929135377367, -0.369792039410, 1.653239845025),
+            Point3D(0.925402132302, -0.379022923982, 1.628725638450),
+            Point3D(0.922243819709, -0.386631889732, 1.603655739661),
+            Point3D(0.919721056373, -0.392585423219, 1.578137528542),
+            Point3D(0.917882834716, -0.396857091962, 1.552280801186),
+            Point3D(0.916765187199, -0.399427798217, 1.526197273224),
+            Point3D(0.916390163609, -0.400285989399, 1.500000000000),
+            Point3D(0.916765187199, -0.399427798217, 1.473802726776),
+            Point3D(0.917882834716, -0.396857091962, 1.447719198814),
+            Point3D(0.919721056373, -0.392585423219, 1.421862471458),
+            Point3D(0.922243819709, -0.386631889732, 1.396344260339),
+            Point3D(0.925402132302, -0.379022923982, 1.371274361550),
+            Point3D(0.929135377367, -0.369792039410, 1.346760154975),
+            Point3D(0.933372885642, -0.358979559058, 1.322906187124),
+            Point3D(0.938035665853, -0.346632345552, 1.299813817581),
+            Point3D(0.943038221810, -0.332803542232, 1.277580907922),
+            Point3D(0.948290393753, -0.317552326902, 1.256301532922),
+            Point3D(0.953699172595, -0.300943674003, 1.236065698759),
+            Point3D(0.959170446643, -0.283048118433, 1.216959059093),
+            Point3D(0.964610650593, -0.263941514006, 1.199062625357),
+            Point3D(0.969928295836, -0.243704780652, 1.182452471435),
+            Point3D(0.975035369172, -0.222423635964, 1.167199434974),
+            Point3D(0.979848593860, -0.200188307785, 1.153368818308),
+            Point3D(0.984290552362, -0.177093224991, 1.141020091989),
+            Point3D(0.988290673985, -0.153236683408, 1.130206603837),
+            Point3D(0.991786092909, -0.128720483228, 1.120975296741),
+            Point3D(0.994722382797, -0.103649533840, 1.113366439388),
+            Point3D(0.997054173595, -0.078131422218, 1.107413375678),
+            Point3D(0.998745654588, -0.052275942400, 1.103142300391),
+            Point3D(0.999770965938, -0.026194586308, 1.100572070181),
+            Point3D(1.000114479154, -0.000000000000, 1.099714059515),
+            Point3D(0.999770965938, 0.026194586308, 1.100572070181),
+            Point3D(0.998745654588, 0.052275942400, 1.103142300391),
+            Point3D(0.997054173595, 0.078131422218, 1.107413375678),
+            Point3D(0.994722382797, 0.103649533840, 1.113366439388),
+            Point3D(0.991786092909, 0.128720483228, 1.120975296741),
+            Point3D(0.988290673985, 0.153236683408, 1.130206603837),
+            Point3D(0.984290552362, 0.177093224991, 1.141020091989),
+            Point3D(0.979848593860, 0.200188307785, 1.153368818308),
+            Point3D(0.975035369172, 0.222423635964, 1.167199434974),
+            Point3D(0.969928295836, 0.243704780652, 1.182452471435),
+            Point3D(0.964610650593, 0.263941514006, 1.199062625357),
+            Point3D(0.959170446643, 0.283048118433, 1.216959059093),
+            Point3D(0.953699172596, 0.300943674002, 1.236065698759),
+            Point3D(0.948290393750, 0.317552326905, 1.256301532921),
+            Point3D(0.943038221823, 0.332803542223, 1.277580907925),
+            Point3D(0.938035665806, 0.346632345588, 1.299813817572),
+            Point3D(0.933372885820, 0.358979558925, 1.322906187159),
+            Point3D(0.929135376709, 0.369792039906, 1.346760154847),
+            Point3D(0.925402134742, 0.379022922147, 1.371274362024),
+            Point3D(0.922243810667, 0.386631896534, 1.396344258581),
+            Point3D(0.919721089910, 0.392585397992, 1.421862477978),
+            Point3D(0.917271431235, 0.398277596134, 1.456316775032),
+            Point3D(0.916513145832, 0.400001499277, 1.482532494698),
+            Point3D(0.916515138991, 0.400000000000, 1.500000000000)];
+    // The curve on the -x side; its farthest point lies 3.5e-07 off a cylinder.
+    CrossHoleMinusPoints(_: Integer): Array<Point3D>
+        => [Point3D(-0.916515138991, 0.400000000000, 1.500000000000),
+            Point3D(-0.916513145832, 0.400001499277, 1.517467505302),
+            Point3D(-0.917271431235, 0.398277596134, 1.543683224968),
+            Point3D(-0.919721089910, 0.392585397992, 1.578137522022),
+            Point3D(-0.922243810667, 0.386631896534, 1.603655741419),
+            Point3D(-0.925402134742, 0.379022922147, 1.628725637976),
+            Point3D(-0.929135376709, 0.369792039906, 1.653239845153),
+            Point3D(-0.933372885820, 0.358979558925, 1.677093812841),
+            Point3D(-0.938035665806, 0.346632345588, 1.700186182428),
+            Point3D(-0.943038221823, 0.332803542223, 1.722419092075),
+            Point3D(-0.948290393750, 0.317552326905, 1.743698467079),
+            Point3D(-0.953699172596, 0.300943674002, 1.763934301241),
+            Point3D(-0.959170446643, 0.283048118433, 1.783040940907),
+            Point3D(-0.964610650593, 0.263941514006, 1.800937374643),
+            Point3D(-0.969928295836, 0.243704780652, 1.817547528565),
+            Point3D(-0.975035369172, 0.222423635964, 1.832800565026),
+            Point3D(-0.979848593860, 0.200188307785, 1.846631181692),
+            Point3D(-0.984290552362, 0.177093224991, 1.858979908011),
+            Point3D(-0.988290673985, 0.153236683408, 1.869793396163),
+            Point3D(-0.991786092909, 0.128720483228, 1.879024703259),
+            Point3D(-0.994722382797, 0.103649533840, 1.886633560612),
+            Point3D(-0.997054173595, 0.078131422218, 1.892586624322),
+            Point3D(-0.998745654588, 0.052275942400, 1.896857699609),
+            Point3D(-0.999770965938, 0.026194586308, 1.899427929819),
+            Point3D(-1.000114479154, 0.000000000000, 1.900285940485),
+            Point3D(-0.999770965938, -0.026194586308, 1.899427929819),
+            Point3D(-0.998745654588, -0.052275942400, 1.896857699609),
+            Point3D(-0.997054173595, -0.078131422218, 1.892586624322),
+            Point3D(-0.994722382797, -0.103649533840, 1.886633560612),
+            Point3D(-0.991786092909, -0.128720483228, 1.879024703259),
+            Point3D(-0.988290673985, -0.153236683408, 1.869793396163),
+            Point3D(-0.984290552362, -0.177093224991, 1.858979908011),
+            Point3D(-0.979848593860, -0.200188307785, 1.846631181692),
+            Point3D(-0.975035369172, -0.222423635964, 1.832800565026),
+            Point3D(-0.969928295836, -0.243704780652, 1.817547528565),
+            Point3D(-0.964610650593, -0.263941514006, 1.800937374643),
+            Point3D(-0.959170446643, -0.283048118433, 1.783040940907),
+            Point3D(-0.953699172595, -0.300943674003, 1.763934301241),
+            Point3D(-0.948290393753, -0.317552326902, 1.743698467078),
+            Point3D(-0.943038221810, -0.332803542232, 1.722419092078),
+            Point3D(-0.938035665853, -0.346632345552, 1.700186182419),
+            Point3D(-0.933372885642, -0.358979559058, 1.677093812876),
+            Point3D(-0.929135377367, -0.369792039410, 1.653239845025),
+            Point3D(-0.925402132302, -0.379022923982, 1.628725638450),
+            Point3D(-0.922243819709, -0.386631889732, 1.603655739661),
+            Point3D(-0.919721056373, -0.392585423219, 1.578137528542),
+            Point3D(-0.917882834716, -0.396857091962, 1.552280801186),
+            Point3D(-0.916765187199, -0.399427798217, 1.526197273224),
+            Point3D(-0.916390163609, -0.400285989399, 1.500000000000),
+            Point3D(-0.916765187199, -0.399427798217, 1.473802726776),
+            Point3D(-0.917882834716, -0.396857091962, 1.447719198814),
+            Point3D(-0.919721056373, -0.392585423219, 1.421862471458),
+            Point3D(-0.922243819709, -0.386631889732, 1.396344260339),
+            Point3D(-0.925402132302, -0.379022923982, 1.371274361550),
+            Point3D(-0.929135377367, -0.369792039410, 1.346760154975),
+            Point3D(-0.933372885642, -0.358979559058, 1.322906187124),
+            Point3D(-0.938035665853, -0.346632345552, 1.299813817581),
+            Point3D(-0.943038221810, -0.332803542232, 1.277580907922),
+            Point3D(-0.948290393753, -0.317552326902, 1.256301532922),
+            Point3D(-0.953699172595, -0.300943674003, 1.236065698759),
+            Point3D(-0.959170446643, -0.283048118433, 1.216959059093),
+            Point3D(-0.964610650593, -0.263941514006, 1.199062625357),
+            Point3D(-0.969928295836, -0.243704780652, 1.182452471435),
+            Point3D(-0.975035369172, -0.222423635964, 1.167199434974),
+            Point3D(-0.979848593860, -0.200188307785, 1.153368818308),
+            Point3D(-0.984290552362, -0.177093224991, 1.141020091989),
+            Point3D(-0.988290673985, -0.153236683408, 1.130206603837),
+            Point3D(-0.991786092909, -0.128720483228, 1.120975296741),
+            Point3D(-0.994722382797, -0.103649533840, 1.113366439388),
+            Point3D(-0.997054173595, -0.078131422218, 1.107413375678),
+            Point3D(-0.998745654588, -0.052275942400, 1.103142300391),
+            Point3D(-0.999770965938, -0.026194586308, 1.100572070181),
+            Point3D(-1.000114479154, -0.000000000000, 1.099714059515),
+            Point3D(-0.999770965938, 0.026194586308, 1.100572070181),
+            Point3D(-0.998745654588, 0.052275942400, 1.103142300391),
+            Point3D(-0.997054173595, 0.078131422218, 1.107413375678),
+            Point3D(-0.994722382797, 0.103649533840, 1.113366439388),
+            Point3D(-0.991786092909, 0.128720483228, 1.120975296741),
+            Point3D(-0.988290673985, 0.153236683408, 1.130206603837),
+            Point3D(-0.984290552362, 0.177093224991, 1.141020091989),
+            Point3D(-0.979848593860, 0.200188307785, 1.153368818308),
+            Point3D(-0.975035369172, 0.222423635964, 1.167199434974),
+            Point3D(-0.969928295836, 0.243704780652, 1.182452471435),
+            Point3D(-0.964610650593, 0.263941514006, 1.199062625357),
+            Point3D(-0.959170446643, 0.283048118433, 1.216959059093),
+            Point3D(-0.953699172596, 0.300943674002, 1.236065698759),
+            Point3D(-0.948290393750, 0.317552326905, 1.256301532921),
+            Point3D(-0.943038221823, 0.332803542223, 1.277580907925),
+            Point3D(-0.938035665806, 0.346632345588, 1.299813817572),
+            Point3D(-0.933372885820, 0.358979558925, 1.322906187159),
+            Point3D(-0.929135376709, 0.369792039906, 1.346760154847),
+            Point3D(-0.925402134742, 0.379022922147, 1.371274362024),
+            Point3D(-0.922243810667, 0.386631896534, 1.396344258581),
+            Point3D(-0.919721089910, 0.392585397992, 1.421862477978),
+            Point3D(-0.917271431235, 0.398277596134, 1.456316775032),
+            Point3D(-0.916513145832, 0.400001499277, 1.482532494698),
+            Point3D(-0.916515138991, 0.400000000000, 1.500000000000)];
+}
