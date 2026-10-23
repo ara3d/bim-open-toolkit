@@ -1,7 +1,7 @@
 # v1-gate: layer 5 meets the version 1 mesh contract, and plane faces take the no-refinement path
 
 Ticket: TKT-418 (with TKT-416), then TKT-349 with TKT-412, then TKT-399
-Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1), V1G-11 in 8a30a057, V1G-12 in c82a14a7, V1G-13 in f0fd91a3 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change, V1G-15 in 87ca2e47, V1G-15w in 544b8967, V1G-16 in af9417d8, V1G-17 in 5a637a9b, V1G-18 in a46b571d, V1G-19 in 2c1c5e97 (two exposed failures filed, see Findings)
+Status: merged: V1G-1 in 7a59273d, V1G-2 in e9d9586f, V1G-4 in 568541ff, V1G-3 in 959130d7, V1G-5 in 7c91b3b5, V1G-6 in 56d3216c, V1G-7 in 08b97f9e, V1G-8 in 966a5d35, V1G-10 in 6e355417 (its harness half in bim-open-data 66f0da1), V1G-11 in 8a30a057, V1G-12 in c82a14a7, V1G-13 in f0fd91a3 (partial: TKT-428's count criterion not met) | V1G-9: diagnosed, no library change, V1G-15 in 87ca2e47, V1G-15w in 544b8967, V1G-16 in af9417d8, V1G-17 in 5a637a9b, V1G-18 in a46b571d, V1G-19 in 2c1c5e97 (two exposed failures filed, see Findings) | ready: V1G-21 (TKT-480)
 
 The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (owner, 2026-10-21).
 
@@ -28,6 +28,7 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | V1G-17 | TKT-456 | agreement laws for the live insertion passes; self-comparing agreement laws in layers 04 to 05 | 2 h |
 | V1G-18 | TKT-456 | the rest of finding 6: self-comparing agreement laws in layers 00-01, 02, 07, 09 and 11, and the orphan law helpers | 2 h |
 | V1G-19 | (corpus 2026-10-22 evening) | zero-width faces meshed with the triangles their boundary forces; one list of face diagnostics that explain forced degenerate elements | 2 h |
+| V1G-21 | TKT-480 | the collision agreement compares the colliding segments only; MeshRegionBody deleted | 1 h |
 | V1G-3 | TKT-399 | the curved-face check laws on the sphere, torus and pinned torus: gate or quality; fix the gate ones | 2 h |
 
 ## Done
@@ -161,6 +162,10 @@ The contract is `sandbox/step-brep-mesh/README.md`, "Version 1 mesh contract" (o
 | moon_buggy | | closed and oriented, contract holds (no zero-width face) |
 
   - No other corpus file has a zero-width face (evening CSV), so no other file reaches the changed branch.
+- V1G-21 (TKT-480), about 45 min. Found by V1G-19's merge: `FaceCollisionsAgree` (08-pipeline/pipeline-collide.laws.plato) asked that `MeshRegionBody`, the pre-version-1 body (a colliding region gets `NotSimpleOutcome`), give `MeshRegion`'s outcome on a region that is not simple; `MeshRegion` is `MeshRegionOnceV1`, whose version 1 rules mesh a zero-width region, so `Law_CollidingSegmentsAgreesOnModel` failed on `Witness_AnnaB4Face491` (case 16). The comparison tested version 1's rules against a body the mesher no longer runs; what the collision index decides is the set of colliding segments. `FaceCollisionsAgree` now asks only `FlagsAgree` (CollidingSegments' grid flags against SegmentCollides' scan, segment by segment). `MeshRegionBody` had no other reader and is deleted (`NotSimpleOutcome`, read by `MeshRegionOnceV1`, and `MeshedOutcome`, a constructor of the face-meshing spec, stay); the comments that named it in uv-collide and face-meshing-domain-once are corrected. The edits are `v1g21-collide.patch` (4 files, 17 lines in, 31 out).
+  - Checks, compiled, budget 600 s, `git archive` copies of 6665bf03 (V1G-19 merged), classes UvRegionCollisionLaws, FaceMeshingLaws, FaceMeshingDomainOnceLaws, V1ZeroWidthLaws (50 laws): HEAD 48 pass, 2 fail (`Law_CollidingSegmentsAgreesOnModel` case 16, ANNA-B4; `Law_UvHoleWindingNegative` case 12, the JODY-W5/W6 hole, not this chunk's); with the patch 49 pass, 1 fail (the same JODY case). The copy compiles without `MeshRegionBody`, so nothing else read it. Mutation copy (the patch, and `SegmentCollides` made false): `Law_CollidingSegmentsAgreesOnModel`, `Law_CollidingSegmentsAgrees` and `Law_CollidingSegmentsAgreesOnCatalog` all fail, so the agreement left can fail.
+  - The model law takes about 100 s of its own (98.8 s wall here, on a quiet machine), near the runner's 120 s cap, as before this chunk; in a loaded sweep it can still stop as a budget error.
+  - Not mine: `Law_UvHoleWindingNegative` on the JODY-W5/W6 witness (a hole with non-negative signed area), the merge record's choice (b); filed by the merger as TKT-481.
 
 ## Gate and quality: every law of layer 5
 
@@ -501,6 +506,9 @@ V1G-8 (TKT-429):
 - In `JoinedByCut` (05-face-meshing/uv-regions.library.plato): `var end = m.SurfaceDomainOf(f).NearestUnwrapped(b.Points[j], start);` => `var end = m.BandEndCopy(f, a, i, b, j);`, and the function's comment says the cut ends at "the copy of b's point nearest it on the face's side (BandEndCopy)".
 - Move `BandEndCopy` and `UvDistance` (v1-band.library.plato) to `05-face-meshing/face-meshing-v1-band.library.plato` (library `V1Band`), and `Witness_TorusBand` to layer 7's witnesses beside `Witness_Torus` (07-validation/validation-witnesses.library.plato); `v1-band.laws.plato` goes to `07-validation/poles-band.laws.plato` (library `V1BandLaws`; it reads `PolesOptionsAt`).
 
+V1G-21 (TKT-480), on HEAD with V1G-19 merged (6665bf03 or later):
+- `git show <this commit>:sandbox/step-mesh-staging/v1-gate/v1g21-collide.patch | git apply -` at the toolkit root (08-pipeline/pipeline-collide.laws.plato, 05-face-meshing/face-meshing-collide.library.plato, uv-collide.library.plato, face-meshing-domain-once.library.plato). Then delete the patch file. Changes generated C#: `MeshRegionBody` leaves the shipped program if it was in it.
+
 V1G-19:
 - Move `v1-zero-width.library.plato` to `05-face-meshing/face-meshing-v1-zero-width.library.plato` (library `V1ZeroWidth`). In `MeshRegionOnceV1` (face-meshing-v1-pinch.library.plato): `(r.IsZeroWidthRegion(tol) ? f.ZeroWidthOutcome :` => `(r.IsZeroWidthRegion(tol) ? m.ZeroWidthMeshedOutcome(f, d, r) :`; its comment and `ZeroWidthOutcome`'s say a region with no width is meshed (V1ZeroWidth) and `ZeroWidthOutcome` is left for one with holes. Order with v1-edges' E5b (TKT-468), which replaces `MeshRegionOnceV1` by `MeshRegionWeaklySimple` (v1-edges/weakly-simple.library.plato): if E5b merges first, make the same replacement there instead, at both of its `f.ZeroWidthOutcome` calls (a crossing region with no width, and a zero-width region whose segments collide, the branch ANNA-B4 491 and ODIN-W260 2625 take); the rest of V1G-19 is unchanged. E5b's FACE-CUSP is a Warning on the face with code "FACE-CUSP" (its Measure the count of thin triangles); `ExplanationIndexOf` reads the code only, so it fits the list as it stands.
 - Move `v1-forced-degenerate.types.plato` and `v1-forced-degenerate.library.plato` to `07-validation/validation-v1-forced-degenerate.{types,library}.plato` (library `V1ForcedDegenerate`). In `RunOutcomeFrom` (08-pipeline/pipeline-run-states.library.plato): `m.Validated(mesh, o)` => `mesh.ExplainedReport(m.Tolerances, ExplanationsOfFaces(s.Outcomes), m.Validated(mesh, o))`; its comment says the two degenerate checks are split by the faces' explaining diagnostics.
@@ -638,6 +646,8 @@ V1G-5 (triage):
 | V1G-19: extracts of the two faces (each meshes its whole file) | 2 min, background | 2 |
 | V1G-19: wired copy, laws, regeneration and harness build; whole-file runs; probes of the validation errors | 25 min background, 6 min | 4 builds, 6 runs |
 | V1G-19: the explaining-code rule, its laws, the regression (two compiles, a regeneration, 10 files) | 35 min, background | 3 |
+| V1G-21: the law, MeshRegionBody's readers, ticket, edits | 20 min | 0 |
+| V1G-21: base, patched and mutation copies, three fresh compiles | 6.5 min, background | 3 |
 
 ## Lessons
 - `step-corpus-harness extract` with a ring of 0 gives a one-face model that a probe reaches in seconds (parse, prepare, SubModel, host discretization, then the library's own steps), where the whole c211 file took 6 minutes a run; extract once, then probe the witness.
