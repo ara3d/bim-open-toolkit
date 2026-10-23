@@ -522,3 +522,6 @@ Lessons for the process:
   - law_lint after the merge: the 12 findings of HEAD, none in E5b's files.
 - **J10 (TKT-481), merged in c807badb.** `Law_UvHoleWindingNegative(m, f, r, h)` took the region as a free parameter, so the law runner paired a witness model with a generated region unrelated to its faces (case 12: an outer loop with no points, holes at made-up coordinates); the claim is now `UvHoleWindingNegative` for its readers, and the law takes `RegionOf`'s inputs under `CanRegion`. This clears the second failure V1G-19's witnesses exposed (6665bf03): the law passes on 25 cases.
   - law_lint after the merge: the 12 findings of HEAD, none in J10's files.
+- **V1G-21 (TKT-480), merged in 07019d14.** `FaceCollisionsAgree` asks only that the grid's flags equal the scan's; `MeshRegionBody`, a pre-version-1 reference that disagreed with `MeshRegion` on every zero-width face, is gone. `Law_CollidingSegmentsAgreesOnModel` passes on its 26 cases, ANNA-B4 491 among them: the first failure V1G-19's witnesses exposed (6665bf03) clears, as J10 cleared the second.
+  - Adaptation finishing E5b's replacement: `MeshRegionOnceV1`, without a caller since E5b, is deleted; comments and README rows that named it name `MeshRegionWeaklySimple`. `NotSimpleOutcome` stays (two readers).
+  - law_lint after the merge: the 12 findings of HEAD, none in V1G-21's files.
