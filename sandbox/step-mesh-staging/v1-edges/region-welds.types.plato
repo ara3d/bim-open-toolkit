@@ -1,0 +1,15 @@
+//==
+// # An end of a segment that crosses another (track v1-edges, chunk E5d, TKT-468)
+//
+// Layer 05-face-meshing. CrossingVertexEnd names the end of one of two crossing boundary
+// segments that lies within the tolerance of the other: the segment the end belongs to (From),
+// the end's position on its loop (Position: From.Index for the start, the next position for the
+// end), and the segment it crosses (Crossed).
+
+type CrossingEnd
+    implements IValue
+{
+    From: RegionSegment;
+    Position: Integer;
+    Crossed: RegionSegment;
+}

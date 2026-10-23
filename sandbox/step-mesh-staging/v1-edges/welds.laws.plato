@@ -1,0 +1,62 @@
+//==
+// # Welds: laws (track v1-edges, chunk E5d, TKT-468)
+//
+// EdgeDiscretizations.Welds (V1EdgesWelds) and their readers (V1EdgesRegionWelds). On the unit box:
+// a weld survives a refinement round, its sample re-indexed to its parameter; a SplitAtVertex whose
+// vertex is farther than the length tolerance from the edge inserts the point and welds nothing.
+// On SHO/ODIN-W260 face 2613 with its ring (CorpusWitnessOdinTail2613, witness face 1), whose
+// zero-width tail runs back through one of its vertices: the face asks to split the edge at that
+// vertex and weld the new sample to it, and after the host's loop every face citing the edge meshes
+// the sample as the vertex (its source the vertex, none left on the edge's sample).
+//
+// Sections, in order:
+//  - Laws
+
+library V1EdgesWeldsLaws
+{
+    //==
+    // # Laws
+
+    // A weld of the unit box's edge 0 at sample 1 to vertex 0 (made directly: no vertex lies near an
+    // interior point of the box's edges) survives Refine raising that edge's segment count by
+    // three: one weld, at the sample whose parameter is the old sample's.
+    Law_V1Edges_WeldSurvivesRefinement(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var c = DefaultMeshingOptions(0.1).Face.Discretization;
+        var d0 = m.Refine(SplitBoxDiscretizations(0), [EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.SplitAt(SplitBoxParameter(0)), c.Chordal, 0)], c);
+        var d = EdgeDiscretizations(d0.ByEdge, [SampleWeld(BrepEdgeIndex(0), EdgeSampleIndex(1), WeldTarget.ToVertex(BrepVertexIndex(0)))]);
+        var r = m.Refine(d, [EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.QuadCountMismatch, c.Chordal, d.ByEdge[0].SegmentCount + 3)], c);
+        return r.Welds.Count == 1 && r.Welds[0].Edge == BrepEdgeIndex(0) && r.Welds[0].Target.TargetVertex.Any(v => v == BrepVertexIndex(0))
+            && r.ByEdge[0].Parameters[r.Welds[0].Sample.Value] == d.ByEdge[0].Parameters[1]
+            && r.ByEdge[0].Parameters.Count > d.ByEdge[0].Parameters.Count;
+    }
+
+    // A SplitAtVertex on the unit box's edge 0 whose vertex (vertex 6, a far corner) lies farther
+    // than the length tolerance from the split point inserts the point and makes no weld.
+    Law_V1Edges_WeldOnlyWithinTolerance(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_UnitBox;
+        var c = DefaultMeshingOptions(0.1).Face.Discretization;
+        var t = SplitBoxParameter(0);
+        var r = m.Refine(SplitBoxDiscretizations(0), [EdgeRefinementRequest(BrepEdgeIndex(0), RefinementReason.SplitAtVertex(t, BrepVertexIndex(6)), c.Chordal, 0)], c);
+        return r.ByEdge[0].HasParameter(t) && r.Welds.Count == 0;
+    }
+
+    // ODIN-W260 face 2613 asks for SplitAtVertex; after the host's loop the final discretizations
+    // weld the split sample to that vertex, face 2613 meshes without an error, and every face
+    // citing the edge has a point whose source is the vertex and none whose source is the sample.
+    Law_V1Edges_WeldedSampleIsItsVertex(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_OdinTail2613;
+        var ask = m.WeaklySimpleOutcome(1).Requests[0];
+        var v = ask.Reason.WeldTargetOf.FlatMap(x => x.TargetVertex);
+        var s = m.HostFinalState;
+        var welds = s.Discretizations.Welds.FlatMap(w => (w.Edge == ask.Edge && v.Count == 1 && w.Target.TargetVertex.Any(x => x == v[0])) ? [w] : SampleWeld.NoWelds);
+        return v.Count == 1 && welds.Count == 1 && s.Outcomes[1].IsMeshedWithoutError
+            && m.Faces.Count.Range.All(g => m.FaceEdges(BrepFaceIndex(g)).Any(x => x == ask.Edge)
+                ? (s.Outcomes[g].Mesh.Sources.Any(x => x == UvPointSource.FromVertex(v[0]))
+                    && s.Outcomes[g].Mesh.HasEdgeSample(ask.Edge, welds[0].Sample.Value).Not)
+                : true);
+    }
+}

@@ -1,0 +1,108 @@
+//==
+// # Welds: a sample of an edge that is a model vertex (track v1-edges, chunk E5d, TKT-468)
+//
+// Layer 04-discretization. A face whose loop crosses itself within the tolerance (c211's tangent
+// cusps, LENA-R8 258's near-coincident vertices) or touches an edge at one of its vertices
+// (ELLA-W1's comb teeth, E5c) is covered only when the vertex is a point of the touched edge's
+// polyline, at the vertex's own place: then the sliver beyond is a side run both ways, which the
+// seed over repeated points cancels. Face meshing asks for it with
+// RefinementReason.SplitAtVertex(Parameter, Vertex); Refine inserts the parameter (as SplitAt) and
+// records a weld, the edge, the sample and the vertex, in EdgeDiscretizations.Welds. Layer 5 reads
+// the welds twice: the region builder puts a welded sample at its vertex's point in the face's
+// parameters (SnappedToWelds), and Lift gives it the vertex as its source, so the assembly numbers
+// it as the vertex and the faces on either side share it (WithWeldedSources). A weld is made only
+// when the vertex lies within the model's length tolerance of the edge's point at the parameter;
+// later refinements keep it, the sample re-indexed (refinement inserts parameters and drops none).
+//
+// Sections, in order:
+//  - Welds
+//  - Welds after a refinement
+
+library V1EdgesWelds
+{
+    //==
+    // # Welds
+
+    // No welds.
+    NoWelds(_: SampleWeld): Array<SampleWeld>
+        => [SampleWeld(BrepEdgeIndex(0), EdgeSampleIndex(0), WeldTarget.ToVertex(BrepVertexIndex(0)))].Take(0);
+
+    // The discretizations byEdge, no sample welded.
+    WithoutWelds(byEdge: Array<EdgeDiscretization>): EdgeDiscretizations
+        => EdgeDiscretizations(byEdge, SampleWeld.NoWelds);
+
+    // What sample k of edge e is welded to, as a one-element array; empty when it is not.
+    WeldedTarget(d: EdgeDiscretizations, e: BrepEdgeIndex, k: EdgeSampleIndex): Array<WeldTarget>
+        => d.Welds.FlatMap(w => (w.Edge == e && w.Sample.Value == k.Value) ? [w.Target] : [WeldTarget.ToVertex(BrepVertexIndex(0))].Take(0));
+
+    //==
+    // # Welds after a refinement
+
+    // The index of the parameter of ps within eps of t, as a one-element array; empty when none is.
+    ParameterIndexNear(ps: Array<Number>, t: Number, eps: Number): Array<Integer>
+        => ps.Count.Range.FlatMap(i => (ps[i] - t).Abs <= eps ? [i] : [0].Take(0)).Take(1);
+
+    // What a split reason welds its new sample to, as a one-element array: the vertex of
+    // SplitAtVertex; empty for every other reason.
+    WeldTargetOf(r: RefinementReason): Array<WeldTarget>
+        => match (r) {
+            LoopSelfIntersects => [WeldTarget.ToVertex(BrepVertexIndex(0))].Take(0);
+            TooCoarseInParameterSpace => [WeldTarget.ToVertex(BrepVertexIndex(0))].Take(0);
+            QuadCountMismatch => [WeldTarget.ToVertex(BrepVertexIndex(0))].Take(0);
+            NoInteriorPointMeetsChordal(c) => [WeldTarget.ToVertex(BrepVertexIndex(0))].Take(0);
+            PoleAdjacency => [WeldTarget.ToVertex(BrepVertexIndex(0))].Take(0);
+            NeighbourDensity => [WeldTarget.ToVertex(BrepVertexIndex(0))].Take(0);
+            SplitAt(t) => [WeldTarget.ToVertex(BrepVertexIndex(0))].Take(0);
+            SplitAtVertex(t, v) => [WeldTarget.ToVertex(v)];
+        };
+
+    // The vertex of a weld target, as a one-element array; empty for a sample target.
+    TargetVertex(w: WeldTarget): Array<BrepVertexIndex>
+        => match (w) {
+            ToVertex(v) => [v];
+            ToSample(e, k) => [BrepVertexIndex(0)].Take(0);
+        };
+
+    // Target w with its sample re-indexed from d to refined (refinement keeps every parameter);
+    // empty when its parameter is gone.
+    TargetAfter(w: WeldTarget, d: EdgeDiscretizations, refined: Array<EdgeDiscretization>): Array<WeldTarget>
+        => match (w) {
+            ToVertex(v) => [w];
+            ToSample(e, k) => ParameterIndexNear(refined[e].Parameters, d.ByEdge[e].Parameters[k.Value], 0.0).Map(j => WeldTarget.ToSample(e, EdgeSampleIndex(j)));
+        };
+
+    // The point of weld target w: the vertex's, or the sample's in refined.
+    TargetPoint(m: BrepModel, w: WeldTarget, refined: Array<EdgeDiscretization>): Point3D
+        => match (w) {
+            ToVertex(v) => m.Vertices[v].Point;
+            ToSample(e, k) => refined[e].Points[k.Value];
+        };
+
+    // The welds of refined, d refined under requests: each weld of d with its samples re-indexed
+    // to where their parameters are in refined (refinement keeps every parameter), then a weld for
+    // every split request with a target whose parameter refined holds (within 1e-12 of the edge's
+    // span) and whose target lies within the model's length tolerance of that sample's point; one weld
+    // per sample, the first (a kept weld before a new one; a face asks once per direction of a
+    // touch, so a request comes twice).
+    WeldsAfter(m: BrepModel, d: EdgeDiscretizations, refined: Array<EdgeDiscretization>, requests: Array<EdgeRefinementRequest>): Array<SampleWeld>
+    {
+        var kept = d.Welds.FlatMap(w => ParameterIndexNear(refined[w.Edge].Parameters, d.ByEdge[w.Edge].Parameters[w.Sample.Value], 0.0)
+            .FlatMap(k => w.Target.TargetAfter(d, refined).Map(x => SampleWeld(w.Edge, EdgeSampleIndex(k), x))));
+        var made = requests.FlatMap(q => q.Reason.WeldTargetOf.FlatMap(x => q.Reason.SplitParameterOf.FlatMap(t =>
+            m.WeldAt(refined, refined[q.Edge], t, x))));
+        var all = kept.Concatenate(made);
+        return all.Count.Range.FlatMap(i => all.Take(i).Any(x => x.Edge == all[i].Edge && x.Sample.Value == all[i].Sample.Value) ? SampleWeld.NoWelds : [all[i]]);
+    }
+
+    // A weld of target x to the sample of discretization de at parameter t, as a one-element
+    // array: when de holds t (within 1e-12 of its span) at an interior sample and x's point (in
+    // refined) lies within the model's length tolerance of that sample's point; empty otherwise.
+    WeldAt(m: BrepModel, refined: Array<EdgeDiscretization>, de: EdgeDiscretization, t: Number, x: WeldTarget): Array<SampleWeld>
+    {
+        var ps = de.Parameters;
+        var eps = ps.Count >= 2 ? 1e-12 * (ps[ps.Count - 1] - ps[0]).Abs : 0.0;
+        return ParameterIndexNear(ps, t, eps).FlatMap(k =>
+            (k > 0 && k < ps.Count - 1 && m.TargetPoint(x, refined).Distance(de.Points[k]) <= m.Tolerances.Length.Value)
+                ? [SampleWeld(de.Edge, EdgeSampleIndex(k), x)] : SampleWeld.NoWelds);
+    }
+}
