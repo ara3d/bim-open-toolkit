@@ -13,7 +13,11 @@ server keeps its compilation between calls, so a run after a one-body edit takes
 instead of the 25 s a cold `plato run` compile takes (0.7 s with no edit, 12 s for the first
 call after the server starts; 2026-10-18). Prints type errors, one line per law and a summary;
 exits 1 on a type error or a law that fails, errors or is skipped, 2 when the server's answer is
-not understood.
+not understood, 3 when the server is busy: another request held the program past the wait
+(--wait, the server's --law-busy-wait otherwise, 60 s), or no answer came within --timeout. Then it
+prints the server's error, which names the request holding the program and its step, and what each
+program on the server is running (plato_law_status), and the caller can retry or use plato run
+(TKT-479).
 
 A skipped law is a failure unless --allow-skipped: the runner skips a law when it has no values
 for one of its parameter types, so the law checked nothing (TKT-434; 14 laws of
@@ -44,6 +48,7 @@ import json
 import os
 import re
 import sys
+import urllib.error
 import urllib.request
 
 URL = "http://127.0.0.1:8768/mcp"
@@ -140,15 +145,45 @@ def post(body, session=None):
     return payload, session
 
 
-def call(arguments):
-    """One plato_laws call on a fresh session: the server's data object, or None after printing an answer
+class ServerBusy(Exception):
+    """The server answered busy (another request holds the program past the wait), or did not answer within
+    --timeout; main prints who holds what and exits 3 (TKT-479)."""
+
+
+def print_status():
+    """What every program on the server is running, from plato_law_status (Plato 5776a36e, studio 6ea54603), which
+    answers at once even mid-run; a line saying so when the server is too old to have the tool or does not answer."""
+    try:
+        data = call({}, tool="plato_law_status", timeout=30)
+    except (OSError, ValueError) as e:
+        print(f"plato_law_status did not answer: {e}")
+        return
+    if not data or "programs" not in data:
+        print("plato_law_status is not available on this server (built before Plato 5776a36e)")
+        return
+    for p in data["programs"]:
+        running = f"{p['running']}; step {p['step']}, for {p['runningSeconds']:.0f} s" if p.get("running") else "idle"
+        print(f"server program: {running}  [{p['program']}]")
+    print(f"server: {data.get('workingSetMb')} MB working set, {data.get('cpuSeconds')} CPU s, "
+          f"{data.get('threads')} threads, {len(data['programs'])} of {data.get('maxPrograms')} programs kept")
+
+
+def call(arguments, tool="plato_laws", timeout=None):
+    """One call of a tool on a fresh session: the server's data object, or None after printing an answer
     that is not understood."""
-    _, session = post({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
-        "protocolVersion": "2025-03-26", "capabilities": {},
-        "clientInfo": {"name": "plato_laws.py", "version": "1"}}})
-    post({"jsonrpc": "2.0", "method": "notifications/initialized"}, session)
-    result, _ = post({"jsonrpc": "2.0", "id": 2, "method": "tools/call",
-                      "params": {"name": "plato_laws", "arguments": arguments}}, session)
+    global TIMEOUT
+    saved = TIMEOUT
+    if timeout is not None:
+        TIMEOUT = timeout
+    try:
+        _, session = post({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+            "protocolVersion": "2025-03-26", "capabilities": {},
+            "clientInfo": {"name": "plato_laws.py", "version": "1"}}})
+        post({"jsonrpc": "2.0", "method": "notifications/initialized"}, session)
+        result, _ = post({"jsonrpc": "2.0", "id": 2, "method": "tools/call",
+                          "params": {"name": tool, "arguments": arguments}}, session)
+    finally:
+        TIMEOUT = saved
     if result is None or "error" in result:
         print(json.dumps(result, indent=1))
         return None
@@ -164,10 +199,26 @@ def call(arguments):
 
 def run(arguments):
     """call, asked once more when it matched no law (TKT-427: the server can answer 0 laws once right
-    after an edit)."""
-    data = call(arguments)
+    after an edit). A busy answer, or no answer within --timeout, prints the server's error and what each of its
+    programs is running, then raises ServerBusy: the request holding the program is named, not just timed out."""
+    def once():
+        try:
+            data = call(arguments)
+        except (TimeoutError, urllib.error.URLError) as e:
+            if isinstance(e, urllib.error.URLError) and not isinstance(e.reason, TimeoutError):
+                raise
+            print(f"no answer within {TIMEOUT:g} s; the server keeps running the request")
+            print_status()
+            raise ServerBusy() from e
+        if data is not None and data.get("busy"):
+            for error in data.get("errors", []):
+                print(error)
+            print_status()
+            raise ServerBusy()
+        return data
+    data = once()
     if data is not None and arguments["filter"] != "none" and data.get("laws", 0) == 0:
-        data = call(arguments)
+        data = once()
     return data
 
 
@@ -276,6 +327,9 @@ def main():
                         help="write a tab-separated table: law, verdict, cases, how the cases were made, detail")
     parser.add_argument("--no-shipped-check", action="store_true",
                         help="skip the type check of the shipped program (layers 00 to 08 alone, shipped-program.txt)")
+    parser.add_argument("--wait", type=float, metavar="SECONDS",
+                        help="seconds to wait for a program another request is running on before the server answers "
+                             "busy (exit 3); the server's --law-busy-wait otherwise")
     parser.add_argument("--timeout", type=float, default=TIMEOUT,
                         help=f"seconds to wait for the server's answer; default {TIMEOUT}. The server keeps "
                              "running a request the client gave up on, so a full sweep needs a longer wait")
@@ -292,7 +346,7 @@ def main():
                  "profile": args.profile}
     if args.staging or args.library:
         arguments["folders"] = ",".join(folders)
-    for key in ("types", "report", "baseline", "budget", "backend"):
+    for key in ("types", "report", "baseline", "budget", "backend", "wait"):
         if getattr(args, key) is not None:
             arguments[key] = getattr(args, key)
     shipped_errors = 0 if args.no_shipped_check else check_shipped(library[-1], args.profile)
@@ -347,4 +401,7 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except ServerBusy:
+        sys.exit(3)
