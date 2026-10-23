@@ -1,0 +1,154 @@
+//==
+// # Weakly simple regions: laws (track v1-edges, chunk E5b, TKT-468)
+//
+// The simplicity test CrossingSegments and MeshRegionWeaklySimple (weakly-simple.library.plato).
+// On synthetic regions: the keyhole, the slit square and the tailed rectangle (V1EdgesCdtSeed
+// CopiesLaws) have no crossing although CollidingSegments flags the slit and the tail; a bowtie
+// crosses. On faces extracted from the corpus with step-corpus-harness extract, meshed at the
+// host's chordal bound (1.0000000474974513): SHO/ODIN-W260.STEP face 2613 with its ring
+// (witness faces 0 to 5 are source faces 2612, 2613, 2615, 2616, 2660, 2663): 2613 is a rectangle
+// with a zero-width tail (a T-touch, still refused until E5c), 2615 and 2616 needles thinner than
+// the tolerance, all three unmeshed today with FACE-LOOP-NOT-SIMPLE; and c211_case_with_odin_v1.step face 81, a needle that crosses
+// itself, which stays refused. The pinch rule restates V1G-6's two pinch laws: lobes of winding 0
+// or 1 are simple, the two malformed kinds (winding 2, winding -1) are refused.
+//
+// Sections, in order:
+//  - Regions and outcomes
+//  - Laws
+
+library V1EdgesWeaklySimpleLaws
+{
+    //==
+    // # Regions and outcomes
+
+    // The square [0, 2] x [0, 2] traversed as a bowtie: its second and fourth sides cross.
+    BowtieRegion(_: Integer): UvRegion
+        => UvRegion(PlainLoop([UvCoordinate(0.0, 0.0), UvCoordinate(2.0, 0.0), UvCoordinate(0.0, 2.0), UvCoordinate(2.0, 2.0)]),
+            [PlainLoop([UvCoordinate(0.0, 0.0)])].Take(0));
+
+    // Whether some flag is set.
+    AnyFlag(flags: Array<Boolean>): Boolean
+        => flags.Any(x => x);
+
+    // The keyhole with its triangle wound the same way as the square, so the triangle is covered
+    // twice (winding 2): malformed.
+    WindingTwoRegion(_: Integer): UvRegion
+        => UvRegion(PlainLoop([UvCoordinate(0.0, 0.0), UvCoordinate(1.5, 0.0), UvCoordinate(2.0, 1.0), UvCoordinate(1.0, 1.0), UvCoordinate(1.5, 0.0),
+                UvCoordinate(3.0, 0.0), UvCoordinate(3.0, 3.0), UvCoordinate(0.0, 3.0)]),
+            [PlainLoop([UvCoordinate(0.0, 0.0)])].Take(0));
+
+    // V1Pinch's OutsidePinchRegion with its triangle wound the other way (winding -1 there):
+    // malformed.
+    WindingMinusOneRegion(_: Integer): UvRegion
+        => UvRegion(PlainLoop([UvCoordinate(0.0, 0.0), UvCoordinate(1.0, 0.0), UvCoordinate(2.0, -0.5), UvCoordinate(1.5, -1.0), UvCoordinate(1.0, 0.0),
+                UvCoordinate(1.0, 1.0), UvCoordinate(0.0, 1.0)]),
+            [PlainLoop([UvCoordinate(0.0, 0.0)])].Take(0));
+
+    // Whether the seed covers r: the region's area, every boundary segment a side of exactly one
+    // triangle from its own start to a corner at its end's position (at a lobe wound the same way
+    // the end is the other copy of the pinch point), no triangle below the floor (SeedFactsHold
+    // without its count, which assumes holes that touch nothing).
+    SeedCovers(r: UvRegion): Boolean
+    {
+        var points = r.PlainPoints;
+        var next = r.NextBoundaryTable;
+        var tris = points.CdtSeedOverCopies(next);
+        var area = r.RegionArea(points);
+        return next.Count.Range.All(a => next[a] < 0 ? true : tris.HasSideToOnce(points, a, next[a]))
+            && (tris.TrianglesArea(points) - area).Abs <= 1e-9 * area.Abs
+            && tris.All(t => t.IsAboveAreaFloor(points));
+    }
+
+    // Whether exactly one triangle has a side from corner a to a corner at point b's position.
+    HasSideToOnce(tris: Array<TriangleFace>, points: Array<Point2D>, a: Integer, b: Integer): Boolean
+        => tris.Reduce(0, (n, t) => n + (t.CornerAfterIsAt(points, a, b) ? 1 : 0)) == 1;
+
+    // Whether triangle t has corner a, and the corner after it lies at point b's position.
+    CornerAfterIsAt(t: TriangleFace, points: Array<Point2D>, a: Integer, b: Integer): Boolean
+    {
+        var after = t.A.Value == a ? t.B.Value : (t.B.Value == a ? t.C.Value : (t.C.Value == a ? t.A.Value : -1));
+        return after < 0 ? false : (points[after].X == points[b].X && points[after].Y == points[b].Y);
+    }
+
+    // Face k of m meshed by MeshRegionWeaklySimple at the host's options of the witnesses.
+    WeaklySimpleOutcome(m: BrepModel, k: Integer): FaceMeshOutcome
+    {
+        var c = 0.WitnessHostOptions.Face;
+        return m.MeshRegionWeaklySimple(BrepFaceIndex(k), m.DiscretizeAllRanged(c.Discretization, SegmentFloors.NoFloors), c);
+    }
+
+    // Whether outcome o has a diagnostic with code.
+    HasCode(o: FaceMeshOutcome, code: String): Boolean
+        => o.Diagnostics.Any(x => x.Code == code);
+
+    // Whether outcome o has a mesh and no error.
+    IsMeshedWithoutError(o: FaceMeshOutcome): Boolean
+        => o.Mesh.Triangles.Count + o.Mesh.Quads.Count > 0 && o.Diagnostics.All(x => x.Severity != Severity.Error);
+
+    //==
+    // # Laws
+
+    // The keyhole, the slit square and the tailed rectangle have no crossing; the slit and the
+    // tail collide under SegmentsSeparatedV1's test; the bowtie crosses. The keyhole and the slit
+    // (its sides share their points) meet cleanly; the tail does not, its last side running
+    // through (0, 2) (a T-touch, refused until E5c).
+    Law_V1Edges_CrossingTestOnSynthetic(_: Integer): Boolean
+    {
+        var tol = PinchTolerance(0);
+        return KeyholeLoopRegion(0).CrossingSegments(tol).AnyFlag.Not && KeyholeLoopRegion(0).ConflictingSegments(tol).AnyFlag.Not
+            && SlitSquareRegion(0).CrossingSegments(tol).AnyFlag.Not && SlitSquareRegion(0).CollidingSegments(tol).AnyFlag
+            && SlitSquareRegion(0).ConflictingSegments(tol).AnyFlag.Not
+            && TailedRectangleRegion(0).CrossingSegments(tol).AnyFlag.Not && TailedRectangleRegion(0).CollidingSegments(tol).AnyFlag
+            && TailedRectangleRegion(0).ConflictingSegments(tol).AnyFlag
+            && BowtieRegion(0).CrossingSegments(tol).AnyFlag;
+    }
+
+    // ODIN-W260 faces 2615 and 2616 (witness faces 2 and 3), needles thinner than the tolerance:
+    // each meshes, without an error, with a FACE-CUSP warning.
+    Law_V1Edges_OdinNeedlesMeshWithCusp(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_OdinTail2613;
+        return m.WeaklySimpleOutcome(2).IsMeshedWithoutError && m.WeaklySimpleOutcome(2).HasCode("FACE-CUSP")
+            && m.WeaklySimpleOutcome(3).IsMeshedWithoutError && m.WeaklySimpleOutcome(3).HasCode("FACE-CUSP");
+    }
+
+    // ODIN-W260 face 2613 (witness face 1), a rectangle with a zero-width tail whose vertex lies
+    // inside the side the tail runs back along (a T-touch): refused, FACE-LOOP-NOT-SIMPLE and no
+    // mesh, until E5c splits that side's model edge at the vertex for this face and its neighbour.
+    Law_V1Edges_OdinTailWaitsForSplit(_: Integer): Boolean
+    {
+        var o = BrepModel.Witness_OdinTail2613.WeaklySimpleOutcome(1);
+        return o.HasCode("FACE-LOOP-NOT-SIMPLE") && o.Mesh.Triangles.Count == 0;
+    }
+
+    // c211 face 81, a needle that crosses itself within the tolerance: still refused, with
+    // FACE-LOOP-NOT-SIMPLE and no mesh (E5d resolves it).
+    Law_V1Edges_CrossingNeedleStaysRefused(_: Integer): Boolean
+    {
+        var o = BrepModel.Witness_C211Needle81.WeaklySimpleOutcome(0);
+        return o.HasCode("FACE-LOOP-NOT-SIMPLE") && o.Mesh.Triangles.Count == 0;
+    }
+
+    // Restates V1G-6's Law_V1Gate_KeyholesAreAcceptedAndOutsidePinchesAreNot and
+    // Law_V1Gate_TouchingLoopsStayNotSimple: LENA-R8 face 1349's keyholes, the keyhole loop, a
+    // lobe outside the loop wound the same way (OutsidePinchRegion, the shape of MAYA face 1599)
+    // and a hole touching the outer loop (PinchedHoleRegion) have no crossing, leave winding 0 or
+    // 1, and the seed covers each.
+    Law_V1Edges_PinchesOfWindingOneAreSimple(_: Integer): Boolean
+    {
+        var tol = PinchTolerance(0);
+        return LenaR8Face1349Region(0).RegionPinchesHaveWindingOne && LenaR8Face1349Region(0).CrossingSegments(LenaR8Face1349Tolerance(0)).AnyFlag.Not
+            && KeyholeLoopRegion(0).RegionPinchesHaveWindingOne && KeyholeLoopRegion(0).SeedCovers
+            && OutsidePinchRegion(0).RegionPinchesHaveWindingOne && OutsidePinchRegion(0).CrossingSegments(tol).AnyFlag.Not && OutsidePinchRegion(0).SeedCovers
+            && PinchedHoleRegion(0).RegionPinchesHaveWindingOne && PinchedHoleRegion(0).CrossingSegments(tol).AnyFlag.Not && PinchedHoleRegion(0).SeedCovers;
+    }
+
+    // A lobe wound the same way inside the loop (winding 2) and one wound the other way outside it
+    // (winding -1) are still malformed: no crossing, but a pinch that leaves winding 2 or -1.
+    Law_V1Edges_MalformedPinchesStayRefused(_: Integer): Boolean
+    {
+        var tol = PinchTolerance(0);
+        return WindingTwoRegion(0).CrossingSegments(tol).AnyFlag.Not && WindingTwoRegion(0).RegionPinchesHaveWindingOne.Not
+            && WindingMinusOneRegion(0).CrossingSegments(tol).AnyFlag.Not && WindingMinusOneRegion(0).RegionPinchesHaveWindingOne.Not;
+    }
+}
