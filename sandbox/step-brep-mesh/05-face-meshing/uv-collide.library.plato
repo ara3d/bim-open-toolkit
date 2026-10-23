@@ -10,8 +10,8 @@
 // covers, and only two segments that share a cell are tested, with the same predicate
 // (SegmentsSeparated) in the same two orders SegmentCollides uses, so the flags are exactly
 // SegmentCollides's answers. IsSimpleRegionIndexed and SelfIntersectionRequestsFrom read the
-// flags; MeshRegionBody (face-meshing-collide.library.plato) builds requests only for a region
-// that is not simple.
+// flags; MeshRegionWeaklySimple (face-meshing-weakly-simple.library.plato) builds requests only for a
+// region that is not simple.
 //
 // Why the grid misses no colliding pair: two segments are not separated only when an end of
 // one lies within one unit of the other, or they meet; then their grown boxes overlap, and

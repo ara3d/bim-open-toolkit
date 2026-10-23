@@ -3,9 +3,10 @@
 //
 // The count witness for CollidingSegmentsCounted (Law_WorkIsWithinSlope, layer 00, reads it),
 // and the laws that tie the grid to the all-pairs functions it replaces: the flags equal
-// SegmentCollides's answers segment by segment and MeshRegionBody equals MeshRegion
-// (IsSimpleRegionIndexed and SelfIntersectionRequestsFrom are IsSimpleRegion and
-// SelfIntersectionRequests, the same functions, so they are not compared, TKT-456). The shapes are built here, not as UvRegion witnesses, so the library's laws over
+// SegmentCollides's answers segment by segment (IsSimpleRegionIndexed and
+// SelfIntersectionRequestsFrom are IsSimpleRegion and SelfIntersectionRequests, the same
+// functions, so they are not compared, TKT-456; what a region's flags lead to is version 1's
+// MeshRegion rules, which the face-meshing laws state, so the outcome is not compared, TKT-480). The shapes are built here, not as UvRegion witnesses, so the library's laws over
 // a UvRegion do not run on regions that are not simple on purpose.
 //
 // Sections, in order:
@@ -143,17 +144,13 @@ library UvRegionCollisionLaws
     //==
     // # Agreement on models
 
-    // On face f's region: the flags equal SegmentCollides's; when the region is not simple,
-    // MeshRegionBody gives MeshRegion's outcome (a simple region reaches the same MeshedOutcome
-    // call in both, so it is not meshed twice here).
+    // On face f's region, what the collision index decides: the flags CollidingSegments finds on
+    // its grid are SegmentCollides's, segment by segment.
     FaceCollisionsAgree(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): Boolean
     {
         var r = m.RegionOf(f, d, c);
         var tol = m.RegionTolerance(f, m.ChartOf(f, r));
-        var flags = r.CollidingSegments(tol);
-        var simple = r.IsSimpleRegion(tol);
-        return r.FlagsAgree(tol, flags)
-            && (simple ? true : m.MeshRegionBody(f, d, c).SameFaceMeshOutcome(m.MeshRegion(f, d, c)));
+        return r.FlagsAgree(tol, r.CollidingSegments(tol));
     }
 
     // On every face of every model witness that has a region, discretized at a hundredth of the

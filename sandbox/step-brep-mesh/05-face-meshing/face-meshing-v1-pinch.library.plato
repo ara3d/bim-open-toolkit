@@ -153,25 +153,4 @@ library V1Pinch
     ZeroWidthOutcome(f: BrepFaceIndex): FaceMeshOutcome
         => f.UnmeshedOutcome("FACE-ZERO-WIDTH",
             "This face's boundary encloses no area wider than the model's tolerance (a sliver or a strip); it is not meshed, and refining its edges would not change that.");
-
-    //==
-    // # Meshing a region
-
-    // MeshRegionOnce under the version 1 rules: a region that collides (under SegmentsSeparatedV1,
-    // once wired) and has no width is meshed by ZeroWidthMeshedOutcome (V1ZeroWidth), with the triangles
-    // its boundary forces; one that collides otherwise is refused as
-    // MeshRegionOnce refuses it; one whose pinches are not all keyholes gets MalformedPinchOutcome;
-    // the rest is meshed.
-    MeshRegionOnceV1(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): FaceMeshOutcome
-    {
-        var dom = m.SurfaceDomainOf(f);
-        var raw = m.UnorientedRegionOfIn(f, dom, d, c);
-        var r = m.OrientRegion(f, raw);
-        var chart = m.ChartOf(f, r);
-        var tol = m.RegionToleranceIn(f, dom, chart);
-        var flags = r.CollidingSegments(tol);
-        return flags.Any(x => x)
-            ? (r.IsZeroWidthRegion(tol) ? m.ZeroWidthMeshedOutcome(f, d, r) : f.NotSimpleOutcome(m.SelfIntersectionRequestsFrom(f, d, r, flags)))
-            : (r.RegionPinchesAreKeyholes ? m.MeshedOutcomeIn(f, d, raw, r, chart, tol, c) : f.MalformedPinchOutcome);
-    }
 }

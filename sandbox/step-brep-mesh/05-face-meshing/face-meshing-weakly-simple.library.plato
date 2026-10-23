@@ -1,7 +1,7 @@
 //==
 // # Weakly simple regions: the simplicity test and FACE-CUSP (track v1-edges, chunk E5b, TKT-468)
 //
-// Layer 05-face-meshing. MeshRegionOnceV1 refuses a region when two of its boundary segments come
+// Layer 05-face-meshing. Before E5b, MeshRegionOnceV1 (deleted with V1G-21) refused a region when two of its boundary segments come
 // within one tolerance unit of each other anywhere but at a shared end (SegmentsSeparatedV1), so a
 // loop whose vertex touches another side (ELLA-W1 304 and 305's comb spikes, 1e-18 off), whose
 // last side runs back over its first (ODIN-W260 2613's tail), or that narrows to a needle thinner
@@ -161,7 +161,7 @@ library V1EdgesWeaklySimple
     //==
     // # Meshing a region
 
-    // MeshRegionOnceV1 with the simplicity test ConflictingSegments: a region with no width is meshed by
+    // The version 1 region mesher with the simplicity test ConflictingSegments: a region with no width is meshed by
     // ZeroWidthMeshedOutcome (V1ZeroWidth) when it has a crossing or a T-touch, or when its segments collide
     // under SegmentsSeparatedV1; any other region with a crossing or a T-touch is refused with
     // FACE-LOOP-NOT-SIMPLE and the self-intersection requests; one with a pinch that leaves winding 2 or -1 gets

@@ -9,7 +9,7 @@
 // passes both down: the domain into the unwrap, the tolerance into the collision test and the
 // insertion pass (chunk R1's RefineToSurfaceByInsertionBuilt takes it as tol: UvTolerance once
 // R1 merges; TRACK.md). Each function here is the library function of the same name without
-// "In" (or MeshRegionBody), with the domain or the tolerance passed instead of rebuilt: the same
+// "In" (or the pre-version-1 MeshRegion body), with the domain or the tolerance passed instead of rebuilt: the same
 // values, bit for bit.
 //
 // Sections, in order:
@@ -150,7 +150,7 @@ library FaceMeshingDomainOnce
             advisory.Map(q => q.RequestDiagnostic).Concatenate(m.ReversalDiagnostics(f, raw)));
     }
 
-    // MeshRegionBody with face f's surface domain built once, the region tolerance built once
+    // The pre-version-1 MeshRegion body with face f's surface domain built once, the region tolerance built once
     // from it, and both passed down: the same outcome, bit for bit.
     MeshRegionOnce(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): FaceMeshOutcome
     {
