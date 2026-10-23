@@ -6,7 +6,8 @@
 // mesh is not well formed, the laws that read Restricted or FirstFacesElements are vacuous at
 // every sample, as in the per-sample form. SelfTestReportOnce is ModelMeshReport's SelfTestChecks
 // family with every entry in its place and its message, the tables built once; F6's ten split
-// entries read the tables' split mesh, so SplitSelfTestReport is no longer needed.
+// entries read the tables' split mesh, so SplitSelfTestReport (F6, merged in c567c6dd) is no
+// longer needed.
 //
 // Sections, in order:
 //  - Edge table checks
@@ -244,25 +245,25 @@ library SelfTestChecksOnce
                 "Polygon mesh has one face per element does not hold."),
             ExactReport(mesh.Check_PolygonMeshKeepsArea,
                 "Polygon mesh keeps area does not hold."),
-            ExactReport(mesh.Check_SplitHasAtLeastAsManyVerticesIn(t.Split),
+            ExactReport(mesh.Check_SplitHasAtLeastAsManyVertices(t.Split),
                 "Split has at least as many vertices does not hold."),
-            ExactReport(mesh.Check_SplitSplitsEachQuadInTwoIn(t.Split),
+            ExactReport(mesh.Check_SplitSplitsEachQuadInTwo(t.Split),
                 "Split splits each quad in two does not hold."),
-            ExactReport(mesh.Check_SplitHasOneNormalPerVertexIn(t.Split),
+            ExactReport(mesh.Check_SplitHasOneNormalPerVertex(t.Split),
                 "Split has one normal per vertex does not hold."),
-            ExactReport(mesh.Check_SplitHasOneUvPerVertexIn(t.Split),
+            ExactReport(mesh.Check_SplitHasOneUvPerVertex(t.Split),
                 "Split has one uv per vertex does not hold."),
-            ExactReport(mesh.Check_SplitHasOneSourcePerVertexIn(t.Split),
+            ExactReport(mesh.Check_SplitHasOneSourcePerVertex(t.Split),
                 "Split has one source per vertex does not hold."),
-            ExactReport(mesh.Check_SplitVertexKeepsItsSourcePositionIn(t.Split),
+            ExactReport(mesh.Check_SplitVertexKeepsItsSourcePosition(t.Split),
                 "Split vertex keeps its source position does not hold."),
-            ExactReport(mesh.Check_SplitFollowsTheTriangulationIn(t.Split),
+            ExactReport(mesh.Check_SplitFollowsTheTriangulation(t.Split),
                 "Split follows the triangulation does not hold."),
-            ExactReport(mesh.Check_SplitVertexCarriesItsCornerNormalIn(t.Split),
+            ExactReport(mesh.Check_SplitVertexCarriesItsCornerNormal(t.Split),
                 "Split vertex carries its corner normal does not hold."),
-            ExactReport(mesh.Check_SplitVertexCarriesItsCornerUvIn(t.Split),
+            ExactReport(mesh.Check_SplitVertexCarriesItsCornerUv(t.Split),
                 "Split vertex carries its corner uv does not hold."),
-            ExactReport(mesh.Check_SplitVerticesDifferIn(t.Split),
+            ExactReport(mesh.Check_SplitVerticesDiffer(t.Split),
                 "Split vertices differ does not hold.")]);
     }
 

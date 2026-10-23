@@ -12,7 +12,7 @@ type MeshSelfTestTables
     implements IValue
 {
     Tables: MeshComponentTables;
-    Reversed: ModelMesh;
+    ReversedMesh: ModelMesh;
     ReversedEdges: MeshEdgeTable;
     SortedEdges: Array<VertexPair>;
     Triangles: TriangleMesh3D;

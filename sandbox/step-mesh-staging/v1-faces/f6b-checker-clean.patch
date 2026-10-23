@@ -1,0 +1,151 @@
+diff -ru a/07-validation/validation-split-once.laws.plato b/07-validation/validation-split-once.laws.plato
+--- a/sandbox/step-brep-mesh/07-validation/validation-split-once.laws.plato	2026-10-23 11:02:10.732191500 -0400
++++ b/sandbox/step-brep-mesh/07-validation/validation-split-once.laws.plato	2026-10-23 11:02:11.259801400 -0400
+@@ -177,21 +177,22 @@
+     Law_V1Faces_SplitIndexedAgrees(k: Integer): Boolean
+         => ModelMesh.SplitMeshWitnessAt(k).ToSplitTriangleMesh3D == ModelMesh.SplitMeshWitnessAt(k).ToSplitTriangleMesh3DReference;
+ 
+-    // Each check on the built split mesh gives its per-sample form's Check.
++    // Each check on the built split mesh gives its per-sample form's Check (layer 0's Identical:
++    // Check has no ==).
+     Law_V1Faces_SplitChecksAgreePerSample(k: Integer): Boolean
+     {
+         var mesh = ModelMesh.SplitMeshWitnessAt(k);
+         var split = mesh.ToSplitTriangleMesh3D;
+-        return mesh.Check_SplitHasAtLeastAsManyVertices(split) == mesh.Check_SplitHasAtLeastAsManyVerticesPerSample
+-            && mesh.Check_SplitSplitsEachQuadInTwo(split) == mesh.Check_SplitSplitsEachQuadInTwoPerSample
+-            && mesh.Check_SplitHasOneNormalPerVertex(split) == mesh.Check_SplitHasOneNormalPerVertexPerSample
+-            && mesh.Check_SplitHasOneUvPerVertex(split) == mesh.Check_SplitHasOneUvPerVertexPerSample
+-            && mesh.Check_SplitHasOneSourcePerVertex(split) == mesh.Check_SplitHasOneSourcePerVertexPerSample
+-            && mesh.Check_SplitVertexKeepsItsSourcePosition(split) == mesh.Check_SplitVertexKeepsItsSourcePositionPerSample
+-            && mesh.Check_SplitFollowsTheTriangulation(split) == mesh.Check_SplitFollowsTheTriangulationPerSample
+-            && mesh.Check_SplitVertexCarriesItsCornerNormal(split) == mesh.Check_SplitVertexCarriesItsCornerNormalPerSample
+-            && mesh.Check_SplitVertexCarriesItsCornerUv(split) == mesh.Check_SplitVertexCarriesItsCornerUvPerSample
+-            && mesh.Check_SplitVerticesDiffer(split) == mesh.Check_SplitVerticesDifferPerSample;
++        return Identical(mesh.Check_SplitHasAtLeastAsManyVertices(split), mesh.Check_SplitHasAtLeastAsManyVerticesPerSample)
++            && Identical(mesh.Check_SplitSplitsEachQuadInTwo(split), mesh.Check_SplitSplitsEachQuadInTwoPerSample)
++            && Identical(mesh.Check_SplitHasOneNormalPerVertex(split), mesh.Check_SplitHasOneNormalPerVertexPerSample)
++            && Identical(mesh.Check_SplitHasOneUvPerVertex(split), mesh.Check_SplitHasOneUvPerVertexPerSample)
++            && Identical(mesh.Check_SplitHasOneSourcePerVertex(split), mesh.Check_SplitHasOneSourcePerVertexPerSample)
++            && Identical(mesh.Check_SplitVertexKeepsItsSourcePosition(split), mesh.Check_SplitVertexKeepsItsSourcePositionPerSample)
++            && Identical(mesh.Check_SplitFollowsTheTriangulation(split), mesh.Check_SplitFollowsTheTriangulationPerSample)
++            && Identical(mesh.Check_SplitVertexCarriesItsCornerNormal(split), mesh.Check_SplitVertexCarriesItsCornerNormalPerSample)
++            && Identical(mesh.Check_SplitVertexCarriesItsCornerUv(split), mesh.Check_SplitVertexCarriesItsCornerUvPerSample)
++            && Identical(mesh.Check_SplitVerticesDiffer(split), mesh.Check_SplitVerticesDifferPerSample);
+     }
+ 
+     // The claim compared within each source vertex equals the claim at every pair.
+diff -ru a/08-pipeline/pipeline-attainable.laws.plato b/08-pipeline/pipeline-attainable.laws.plato
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-attainable.laws.plato	2026-10-23 11:02:11.069520300 -0400
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-attainable.laws.plato	2026-10-23 11:02:11.260801300 -0400
+@@ -36,11 +36,12 @@
+         var attainable = n.MapRange(f => m.RefineToSurfaceByInsertionIndexed(BrepFaceIndex(f), regions[f], charts[f], cdt[f], c));
+         var referenceFaces = n.MapRange(f => m.Lift(BrepFaceIndex(f), d, reference[f]));
+         var attainableFaces = n.MapRange(f => m.Lift(BrepFaceIndex(f), d, attainable[f]));
+-        return CappedWitness(name, m, capped, c, d, regions, charts, cdt, reference, attainable,
++        return CappedWitness(name, m, capped, c, d,
++            n.MapRange(f => CappedFace(regions[f], reference[f], attainable[f],
++                m.Lift(BrepFaceIndex(f), d, m.RefineToSurface(BrepFaceIndex(f), regions[f], charts[f], cdt[f], c)),
++                m.MeshFace(BrepFaceIndex(f), d, c).Mesh)),
+             m.AssembleModelMesh(referenceFaces, m.NumberMeshVertices(d, referenceFaces)),
+-            m.AssembleModelMesh(attainableFaces, m.NumberMeshVertices(d, attainableFaces)),
+-            n.MapRange(f => m.Lift(BrepFaceIndex(f), d, m.RefineToSurface(BrepFaceIndex(f), regions[f], charts[f], cdt[f], c))),
+-            n.MapRange(f => m.MeshFace(BrepFaceIndex(f), d, c).Mesh));
++            m.AssembleModelMesh(attainableFaces, m.NumberMeshVertices(d, attainableFaces)));
+     }
+ 
+     // The quarter cylinder of radius 1 and height 4 at chordal 4: minimum length 0.4, its arcs
+@@ -73,7 +74,7 @@
+     // RefineToSurfaceByInsertion of the constrained Delaunay triangulation, so the reference before
+     // the merge and the attainable refinement after it.
+     Law_CappedPathIsMeshFace(w: CappedWitness): Boolean
+-        => w.Model.Faces.Count.Range.All(f => SameFaceMesh(w.Wired[f], w.Library[f]));
++        => w.Model.Faces.Count.Range.All(f => SameFaceMesh(w.Faces[f].Wired, w.Faces[f].Library));
+ 
+     //==
+     // # Agreement on the triangulated witnesses
+@@ -135,9 +136,9 @@
+     // of a capped witness: SideNormalsTurn on the library's, SideNormalsTurnAttainable on the
+     // attainable one.
+     ReferenceLeftover(w: CappedWitness): Integer
+-        => w.Model.Faces.Count.Range.Reduce(0, (n, f) => n + w.Model.SideNormalsTurnCount(BrepFaceIndex(f), w.Regions[f], w.Reference[f], w.Criteria));
++        => w.Model.Faces.Count.Range.Reduce(0, (n, f) => n + w.Model.SideNormalsTurnCount(BrepFaceIndex(f), w.Faces[f].Region, w.Faces[f].Reference, w.Criteria));
+     AttainableLeftover(w: CappedWitness): Integer
+-        => w.Model.Faces.Count.Range.Reduce(0, (n, f) => n + w.Model.SideNormalsTurnAttainableCount(BrepFaceIndex(f), w.Regions[f], w.Attainable[f], w.Criteria));
++        => w.Model.Faces.Count.Range.Reduce(0, (n, f) => n + w.Model.SideNormalsTurnAttainableCount(BrepFaceIndex(f), w.Faces[f].Region, w.Faces[f].Attainable, w.Criteria));
+ 
+     // On a capped witness the attainable refinement leaves fewer triangles flagged by its test
+     // than the library's leaves flagged by SideNormalsTurn, and none where nothing is capped.
+@@ -153,7 +154,7 @@
+     // At the fine bound it leaves none.
+     Law_CappedWitnessesShowTheDefect(w: CappedWitness): Boolean
+         => w.Model.Faces.Count.Range.Any(f =>
+-            w.Model.SideNormalsTurnCount(BrepFaceIndex(f), w.Regions[f], w.Reference[f], w.Criteria) > 0) == w.Capped;
++            w.Model.SideNormalsTurnCount(BrepFaceIndex(f), w.Faces[f].Region, w.Faces[f].Reference, w.Criteria) > 0) == w.Capped;
+ 
+     //==
+     // # Capped models
+@@ -176,12 +177,12 @@
+     // counts are the measure, not a claim.
+     Law_RefinementsMeetChordalFromOneStart(w: CappedWitness): Boolean
+         => w.Model.Faces.Count.Range.All(f =>
+-            w.CappedFaceWithinChordal(w.Model.Lift(BrepFaceIndex(f), w.Discretizations, w.Reference[f]))
+-                && w.CappedFaceWithinChordal(w.Model.Lift(BrepFaceIndex(f), w.Discretizations, w.Attainable[f])));
++            w.CappedFaceWithinChordal(w.Model.Lift(BrepFaceIndex(f), w.Discretizations, w.Faces[f].Reference))
++                && w.CappedFaceWithinChordal(w.Model.Lift(BrepFaceIndex(f), w.Discretizations, w.Faces[f].Attainable)));
+ 
+     // The attainable refinement's triangles less the library's, over every face of w.
+     Measure_RefinementsMeetChordalFromOneStart(w: CappedWitness): Integer
+-        => w.Model.Faces.Count.Range.Reduce(0, (n, f) => n + w.Attainable[f].Triangles.Count - w.Reference[f].Triangles.Count);
++        => w.Model.Faces.Count.Range.Reduce(0, (n, f) => n + w.Faces[f].Attainable.Triangles.Count - w.Faces[f].Reference.Triangles.Count);
+ 
+     // The model mesh assembled from the attainable refinement is closed and consistently
+     // oriented, with the Euler characteristic of the library's: the change is per face and leaves
+diff -ru a/08-pipeline/pipeline-attainable.types.plato b/08-pipeline/pipeline-attainable.types.plato
+--- a/sandbox/step-brep-mesh/08-pipeline/pipeline-attainable.types.plato	2026-10-23 11:02:10.914859200 -0400
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-attainable.types.plato	2026-10-23 11:02:11.260801300 -0400
+@@ -8,12 +8,10 @@
+ // arcs' segment counts, which is where the two refinements differ; at a fine bound they agree.
+ // Capped is true when the chordal bound is coarse enough that the cap binds on some arc.
+ // Not generatable: it holds a BrepModel, so the runner exhausts the Witness_* list.
+-// Invariants: Discretizations is Model.DiscretizeAll(Criteria.Discretization, NoFloors);
+-// Regions[f] is Model.RegionOf(f, Discretizations, Criteria) and Charts[f] its chart; Cdt[f] is
+-// Regions[f].TriangulateRegionCdt(Charts[f]); Reference[f] and Attainable[f] refine Cdt[f];
+-// ReferenceMesh and AttainableMesh are the faces lifted and assembled as MeshModel assembles them;
+-// Wired[f] is the lift of the library's RefineToSurfaceByInsertion of Cdt[f], whichever refinement
+-// it calls, and Library[f] is Model.MeshFace(f, Discretizations, Criteria).Mesh.
++// Invariants: Discretizations is Model.DiscretizeAll(Criteria.Discretization, NoFloors); Faces[f]
++// is face f (CappedFace); ReferenceMesh and AttainableMesh are the faces' Reference and Attainable
++// lifted and assembled as MeshModel assembles them. Eight fields: the generated TupleN surface caps
++// at ten (STY002), so the per-face values are one record per face.
+ type CappedWitness
+ {
+     Name: String;
+@@ -21,13 +19,20 @@
+     Capped: Boolean;
+     Criteria: FaceMeshingCriteria;
+     Discretizations: EdgeDiscretizations;
+-    Regions: Array<UvRegion>;
+-    Charts: Array<FaceChart>;
+-    Cdt: Array<UvTriangulation>;
+-    Reference: Array<UvTriangulation>;
+-    Attainable: Array<UvTriangulation>;
++    Faces: Array<CappedFace>;
+     ReferenceMesh: ModelMesh;
+     AttainableMesh: ModelMesh;
+-    Wired: Array<FaceMesh>;
+-    Library: Array<FaceMesh>;
++}
++
++// Face f of a capped witness w. Region is w.Model.RegionOf(f, w.Discretizations, w.Criteria);
++// Reference and Attainable refine the constrained Delaunay triangulation of Region in its chart;
++// Wired is the lift of the library's RefineToSurfaceByInsertion of that triangulation, whichever
++// refinement it calls, and Library is w.Model.MeshFace(f, w.Discretizations, w.Criteria).Mesh.
++type CappedFace
++{
++    Region: UvRegion;
++    Reference: UvTriangulation;
++    Attainable: UvTriangulation;
++    Wired: FaceMesh;
++    Library: FaceMesh;
+ }

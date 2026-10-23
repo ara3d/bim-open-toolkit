@@ -63,8 +63,9 @@ library SelfTestTablesOnceLaws
     EmptyMeshCase(_: ModelMesh): ModelMesh
         => ([], [], [], [], [], [], [], MeshVertexNumbering(0, [0], [0]));
 
-    // Whether two reports have the same checks and diagnostics, in order.
+    // Whether two reports have the same checks and diagnostics, in order (layer 0's Identical:
+    // Check and Diagnostic have no ==).
     IsSameReport(a: Report, b: Report): Boolean
-        => (a.Checks.Count == b.Checks.Count ? a.Checks.Count.Range.All(i => a.Checks[i] == b.Checks[i]) : false)
-            && (a.Diagnostics.Count == b.Diagnostics.Count ? a.Diagnostics.Count.Range.All(i => a.Diagnostics[i] == b.Diagnostics[i]) : false);
+        => (a.Checks.Count == b.Checks.Count ? a.Checks.Count.Range.All(i => Identical(a.Checks[i], b.Checks[i])) : false)
+            && (a.Diagnostics.Count == b.Diagnostics.Count ? a.Diagnostics.Count.Range.All(i => Identical(a.Diagnostics[i], b.Diagnostics[i])) : false);
 }

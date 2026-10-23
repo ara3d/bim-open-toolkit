@@ -113,7 +113,7 @@ library SelfTestTablesOnce
 
     ReversalPermutesCornersIn(mesh: ModelMesh, t: MeshSelfTestTables, e: ElementIndex, slot: Integer): Boolean
         => (mesh.IsElementInRange(e) ? (slot >= 0 && slot < mesh.ElementArity(e)) : false)
-            ? t.Reversed.ElementCorner(e, slot).Value
+            ? t.ReversedMesh.ElementCorner(e, slot).Value
                 == mesh.ElementCorner(e, ReversedSlot(mesh.ElementArity(e), slot)).Value
             : true;
 
@@ -121,7 +121,7 @@ library SelfTestTablesOnce
         => ((mesh.IsElementInRange(e) ? (slot >= 0 && slot < mesh.ElementArity(e)) : false)
                 ? mesh.HasValidCornerAttributes(e)
                 : false)
-            ? t.Reversed.CornerUvAt(e, slot)
+            ? t.ReversedMesh.CornerUvAt(e, slot)
                 == mesh.CornerUvAt(e, ReversedSlot(mesh.ElementArity(e), slot))   // exact by construction
             : true;
 
