@@ -44,10 +44,11 @@ library StepToMeshRunStates
         => MeshOutcomeOf(mesh, m.LoopReport(o, chosen, s).Merge(validation).Located(Provenance.WholeInput), s.Round);
 
     // RunOutcome(m, o, chosen) when s is FinalState(o, chosen), without running the loop again:
-    // the mesh assembled from s and validated at o.Level.
+    // the mesh assembled from s and validated at o.Level, the two degenerate-element checks split by the
+    // faces' explaining diagnostics (ExplainedReport, V1ForcedDegenerate).
     RunOutcomeFrom(m: BrepModel, o: MeshingOptions, chosen: Array<Boolean>, s: PipelineState): MeshOutcome
     {
         var mesh = m.AssembledMesh(s);
-        return m.OutcomeOfRun(o, chosen, s, mesh, m.Validated(mesh, o));
+        return m.OutcomeOfRun(o, chosen, s, mesh, mesh.ExplainedReport(m.Tolerances, ExplanationsOfFaces(s.Outcomes), m.Validated(mesh, o)));
     }
 }
