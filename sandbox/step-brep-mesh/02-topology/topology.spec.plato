@@ -116,7 +116,7 @@ spec EdgeDomain(m: BrepModel, e: BrepEdgeIndex): CurveDomain
     ensures result.Periodicity == match (m.Geometry.Domain(m.Edges[e].Curve).Periodicity) {
         Aperiodic => Periodicity.Aperiodic;
         Periodic(period) => Periodicity.Periodic(period);
-        Closed(period) => m.IsClosedEdge(e) ? Periodicity.Closed(period) : Periodicity.Aperiodic;
+        Closed(period) => m.IsClosedEdge(e) ? Periodicity.Closed(result.Range.End - result.Range.Start) : Periodicity.Aperiodic;   // the range's own length, within one ulp of period (TKT-423)
     };
     ensures result.Range.Start.IsFinite && result.Range.End.IsFinite;   // ClosestParameter is finite: no unbounded range (review F4a)
     ensures m.IsOnClosedCurve(e) ? Law_EdgeDomainIsForward(m, e) : true;

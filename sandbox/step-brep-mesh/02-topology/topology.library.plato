@@ -574,6 +574,10 @@ library BrepTopology
     // (review F4c). Periodicity: Periodic is a property of the formula and is
     // copied; Closed says the range's two ends are one point, so it is kept for
     // a closed edge, whose range is one period, and an open arc is Aperiodic.
+    // A closed edge's Closed period is its range's own length, (first + period)
+    // - first, not the curve's period: the two differ by up to one unit in the
+    // last place, and CurveDomain's invariant (Law_ClosedPeriodIsRangeLength)
+    // asks for the range length (v1-generators G3, TKT-423).
     // A parameter of a range that crosses a Closed curve's join is wrapped
     // into the curve's domain before evaluation (EdgeCurvePoint).
     TraversalDomain(d: CurveDomain, first: Number, last: Number, isClosed: Boolean): CurveDomain
@@ -583,7 +587,7 @@ library BrepTopology
                 NumberInterval(first, isClosed ? first + period : last.PeriodicRepresentativeAbove(first, period)),
                 d.Periodicity);
             Closed(period) => isClosed
-                ? CurveDomain(NumberInterval(first, first + period), d.Periodicity)
+                ? CurveDomain(NumberInterval(first, first + period), Periodicity.Closed((first + period) - first))
                 : CurveDomain(NumberInterval(first, last.PeriodicRepresentativeAbove(first, period)), Periodicity.Aperiodic);
         };
 
