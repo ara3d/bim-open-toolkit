@@ -1,0 +1,58 @@
+//==
+// # Curve domain generators
+//
+// A generator for the law runner (Plato TKT-446; see
+// tolerance-generators.library.plato beside this file). The library builds a
+// CurveDomain only through a few functions: FullTurnDomain, UnboundedDomain,
+// BoundedDomain, WithClosure, TorusVDomain (layers 0 and 1), and
+// TraversalDomain, the range an edge occupies on its curve (layer 2). This
+// draws every CurveDomain through them. Before, the runner built one field by
+// field: an inverted range, or a Closed period that is not the range's
+// length (TKT-423).
+
+library V1GeneratorsDomains
+{
+    // Eight kinds of domain over seeds mod 8, each with two sets of numbers:
+    // a full turn, the unbounded line, a bounded range, that range made
+    // Closed, a spindle torus's v domain, an arc on a full turn, a closed
+    // edge on a full turn, and an edge on a Closed spline domain (a closed
+    // edge below seed 8, an open arc across the join above).
+    Generate_CurveDomain(seed: Integer): CurveDomain
+    {
+        var k = seed % 8;
+        var i = seed < 8 ? seed : 15 - seed;
+        var a = i.V1GeneratorsDomainStart;
+        var w = i.V1GeneratorsDomainWidth;
+        var bounded = BoundedDomain(NumberInterval(a, a + w));
+        return k == 0
+            ? CurveDomain.FullTurnDomain
+            : (k == 1
+                ? CurveDomain.UnboundedDomain
+                : (k == 2
+                    ? bounded
+                    : (k == 3
+                        ? bounded.WithClosure(true)
+                        : (k == 4
+                            ? TorusVDomain(seed < 8 ? TorusPart.Apple : TorusPart.Lemon, 1.0, 1.0 + w.Min(2.0))
+                            : (k == 5
+                                ? TraversalDomain(CurveDomain.FullTurnDomain, a, a + w, false)
+                                : (k == 6
+                                    ? TraversalDomain(CurveDomain.FullTurnDomain, a, a, true)
+                                    : TraversalDomain(bounded.WithClosure(true), a + w * 0.75, a + w * 0.25, seed < 8)))))));
+    }
+
+    // Eight range starts: 0, negative, a lift past 2 pi, a large coordinate.
+    V1GeneratorsDomainStart(i: Integer): Number
+    {
+        var starts = [0.0, -3.7, 5.5, 1000.25, -0.5, 2.0, -12.0, 0.125];
+        return starts[i % 8];
+    }
+
+    // Eight positive range widths, from 1e-3 to 100; 0.3 and 0.1 are not
+    // dyadic, so a period derived from them does not survive (a + P) - a.
+    V1GeneratorsDomainWidth(i: Integer): Number
+    {
+        var widths = [1.0, 0.25, 6.283185307179586, 3.0, 1e-3, 100.0, 0.3, 0.1];
+        return widths[i % 8];
+    }
+}
