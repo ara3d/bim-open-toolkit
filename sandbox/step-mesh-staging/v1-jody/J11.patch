@@ -1,0 +1,307 @@
+diff --git a/sandbox/step-brep-mesh/03-step/README.md b/sandbox/step-brep-mesh/03-step/README.md
+index 9cce938..9acf2d9 100644
+--- a/sandbox/step-brep-mesh/03-step/README.md
++++ b/sandbox/step-brep-mesh/03-step/README.md
+@@ -34,6 +34,7 @@ P41, P42, P43 are ISO 10303-21, -41, -42, -43; AIM is the AP242 integrated schem
+ | `step-diagnostics.library.plato` | library | `StepDiagnostics` | `Diagnose` (severity, code, message per code), `CodeOf`, `HasCode` |
+ | `step-loop-chaining.library.plato` | library | `StepLoopChaining` | `LoopsChained` (run by `PrepareModelWith` after `Reduced`): an edge loop that does not chain head to tail is re-chained with the fewest sense changes, an arc on a wrapping curve written with its vertices the wrong way round is reversed (`STEP-EDGE-REVERSED`), any other change is a coedge flip (`STEP-COEDGE-SENSE-FLIPPED`); a loop no sense chains is kept (TKT-413, TKT-419) |
+ | `step-shell-sewing.library.plato` | library | `V1JodyShellSewing` | `Sewn` (run by `PrepareModelWith` after `LoopsChained`): within each declared-closed shell, coincident boundary vertices and once-cited edges on one vertex pair with agreeing curves are merged (`MergedInto`, `MergedEdgeInto`, `ShellVertexSewn`, `ShellEdgeSewn`); every declared-closed shell left open is reported (`ClosedShellOpen`, `ClosedShellEdgeCitedOnce`); `LoopFaces`, `FaceEdgeIndices`, `DistinctSorted` (TKT-467) |
++| `step-vertex-pairs.library.plato` | library | `StepVertexPairs` | `PairsWelded` (run by `PrepareModelWith` after `LoopsChained`, before `Sewn`): two vertices of a shell within the length tolerance of each other and of no other vertex of the shell, each on an edge that ends at the other, are merged (`MergedInto`, `VertexPairWelded`); a larger coincidence class is left as it is (TKT-493) |
+ | `step-double-sheets.library.plato` | library | `V1JodyDoubleSheets` | `SheetsRemoved` (run by `PrepareModelWith` after `Sewn`): two faces of a shell on one plane facing opposite ways that bound the same edges, which no other face cites, are removed with their loops (`ZeroThicknessSheetRemoved`); a pair whose edges others cite is kept and reported (`ZeroThicknessSheetKept`) (TKT-470) |
+ | `step-wrapped-spline-closure.library.plato` | library | `StepWrappedSplineClosure` | `IsWrappedForm` and its first-order estimate of the end gap (`WrappedEndGapEstimate`), which `EndsClosure` reads: an unclamped B-spline written in wrapped form is decided closed from its record (TKT-431) |
+ | `step.library.plato` | library | `StepReading` | `DecodeBrep`, `DecodeBrepWith` (now `PrepareModelWith` of `DecodeRaw`), the host obligation `DecodeRaw`, `PrepareModel` and its parts, the policy, units and tolerance, occurrences, provenance queries |
+diff --git a/sandbox/step-brep-mesh/03-step/step-diagnostics.library.plato b/sandbox/step-brep-mesh/03-step/step-diagnostics.library.plato
+index bb15071..8b73a10 100644
+--- a/sandbox/step-brep-mesh/03-step/step-diagnostics.library.plato
++++ b/sandbox/step-brep-mesh/03-step/step-diagnostics.library.plato
+@@ -76,6 +76,7 @@ library StepDiagnostics
+             ClosedShellEdgeCitedOnce => Diagnostic(Severity.Warning, "STEP-CLOSED-SHELL-EDGE-CITED-ONCE", "Only one face of a shell the file declares closed cites this edge. Measure is the index of another shell whose edge lies at the same two positions, or unmeasured when there is none.", where, measure);
+             ZeroThicknessSheetRemoved => Diagnostic(Severity.Warning, "STEP-ZERO-THICKNESS-SHEET-REMOVED", "This face and another of its shell lie on the same plane facing opposite ways and bound the same edges, which no other face cites: a sheet of zero thickness. Both faces were removed. Measure is the other face's index in the raw model.", where, measure);
+             ZeroThicknessSheetKept => Diagnostic(Severity.Warning, "STEP-ZERO-THICKNESS-SHEET-KEPT", "This face and another of its shell lie on the same plane facing opposite ways and bound the same edges, but other faces also cite those edges, so both were kept. Measure is the other face's index in the raw model.", where, measure);
++            VertexPairWelded => Diagnostic(Severity.Info, "STEP-VERTEX-PAIR-WELDED", "Two vertices of a shell lie within the length tolerance of each other and of no other vertex of the shell, each on an edge that ends at the other, and no edge or loop joint joins them; the later was merged into the earlier. Measure is the distance between them.", where, measure);
+             OrientationFolded => Diagnostic(Severity.Info, "STEP-ORIENTATION-FOLDED", "An oriented_face or oriented shell with orientation .F. was folded into its faces' flags.", where, measure);
+             FaceCitedTwice => Diagnostic(Severity.Warning, "STEP-FACE-CITED-TWICE", "A face is cited twice in one occurrence; the second citation reuses the first kernel face and its orientation.", where, measure);
+             InstanceSkipped => Diagnostic(Severity.Error, "STEP-INSTANCE-SKIPPED", "A reached instance could not be decoded and has no kernel element.", where, measure);
+@@ -149,6 +150,7 @@ library StepDiagnostics
+             ClosedShellEdgeCitedOnce => StepFindingSubject.AboutInstance;
+             ZeroThicknessSheetRemoved => StepFindingSubject.AboutInstance;
+             ZeroThicknessSheetKept => StepFindingSubject.AboutInstance;
++            VertexPairWelded => StepFindingSubject.AboutInstance;
+             OrientationFolded => StepFindingSubject.AboutInstance;
+             FaceCitedTwice => StepFindingSubject.AboutInstance;
+             InstanceSkipped => StepFindingSubject.AboutInstance;
+diff --git a/sandbox/step-brep-mesh/03-step/step-diagnostics.types.plato b/sandbox/step-brep-mesh/03-step/step-diagnostics.types.plato
+index 1a00000..ed841ee 100644
+--- a/sandbox/step-brep-mesh/03-step/step-diagnostics.types.plato
++++ b/sandbox/step-brep-mesh/03-step/step-diagnostics.types.plato
+@@ -74,6 +74,7 @@ type StepDiagnosticCode
+     | ClosedShellEdgeCitedOnce
+     | ZeroThicknessSheetRemoved
+     | ZeroThicknessSheetKept
++    | VertexPairWelded
+     | OrientationFolded
+     | FaceCitedTwice
+     | InstanceSkipped;
+diff --git a/sandbox/step-brep-mesh/03-step/step-shell-sewing.library.plato b/sandbox/step-brep-mesh/03-step/step-shell-sewing.library.plato
+index a47fdc3..1dc1519 100644
+--- a/sandbox/step-brep-mesh/03-step/step-shell-sewing.library.plato
++++ b/sandbox/step-brep-mesh/03-step/step-shell-sewing.library.plato
+@@ -289,10 +289,22 @@ library V1JodyShellSewing
+     // diagnostics of the shells left open. The raw model unchanged, but
+     // for those diagnostics, when nothing is merged. Precondition: raw.Model.IsEveryIndexInRange.
+     Sewn(raw: RawDecodedModel): RawDecodedModel
++    {
++        var roots = raw.Model.SewnVertexRoots;
++        return raw.WithMerges(roots, raw.Model.SewnEdgeRoots(roots), StepDiagnosticCode.ShellVertexSewn, StepDiagnosticCode.ShellEdgeSewn)
++            .WithOpenShellsReported;
++    }
++
++    // The raw model with the merges roots and edgeRoots name applied (each vertex v into roots[v],
++    // each edge e into edgeRoots[e]): the model renumbered (SewnModelWith), the sources of the
++    // removed vertices and edges dropped, one MergedInto repair per merged vertex then one
++    // MergedEdgeInto per merged edge, every earlier MergedInto's kept vertex moved to the new
++    // numbering, and one vertexCode diagnostic per merged vertex (Measure the distance merged)
++    // then one edgeCode diagnostic per merged edge (Measure the kept edge's index), in index
++    // order. The raw model's model as it is when nothing merges. Sewn and PairsWelded share it.
++    WithMerges(raw: RawDecodedModel, roots: Array<Integer>, edgeRoots: Array<Integer>, vertexCode: StepDiagnosticCode, edgeCode: StepDiagnosticCode): RawDecodedModel
+     {
+         var m = raw.Model;
+-        var roots = m.SewnVertexRoots;
+-        var edgeRoots = m.SewnEdgeRoots(roots);
+         var mergedVertices = m.Vertices.Count.Range.FlatMap(v => roots[v] != v ? [v] : Integer.NoIndices);
+         var mergedEdges = m.Edges.Count.Range.FlatMap(e => edgeRoots[e] != e ? [e] : Integer.NoIndices);
+         var sewn = (mergedVertices.Count == 0 && mergedEdges.Count == 0) ? m : m.SewnModelWith(roots, edgeRoots);
+@@ -305,14 +317,13 @@ library V1JodyShellSewing
+             s.Loops, s.Faces, s.Shells, s.Bodies, s.Curves, s.Curves2D, s.Pcurves, s.Surfaces);
+         var repairs = mergedVertices.Map(v => RepairRecord(s.Vertices[v], StepRepair.MergedInto(BrepVertexIndex(vertexAt[roots[v]]), BrepVertexIndex(v))))
+             .Concatenate(mergedEdges.Map(e => RepairRecord(s.Edges[e], StepRepair.MergedEdgeInto(BrepEdgeIndex(edgeAt[edgeRoots[e]]), BrepEdgeIndex(e)))));
+-        var vertexFindings = mergedVertices.Map(v => Diagnose(StepDiagnosticCode.ShellVertexSewn,
++        var vertexFindings = mergedVertices.Map(v => Diagnose(vertexCode,
+             Provenance.AtInstance(s.Vertices[v].Instance), m.Vertices[v].Point.Distance(m.Vertices[roots[v]].Point)));
+-        var edgeFindings = mergedEdges.Map(e => Diagnose(StepDiagnosticCode.ShellEdgeSewn, Provenance.AtInstance(s.Edges[e].Instance), edgeAt[edgeRoots[e]].ToNumber));
++        var edgeFindings = mergedEdges.Map(e => Diagnose(edgeCode, Provenance.AtInstance(s.Edges[e].Instance), edgeAt[edgeRoots[e]].ToNumber));
+         var earlier = raw.Repairs.Map(r => RepairRecord(r.Source, r.Repair.WithKeptVertexMoved(roots, vertexAt)));
+-        var sewnRaw = RawDecodedModel(sewn, raw.Occurrences, sources, raw.Folds, earlier.Concatenate(repairs),
++        return RawDecodedModel(sewn, raw.Occurrences, sources, raw.Folds, earlier.Concatenate(repairs),
+             raw.Units, raw.LengthFactor, raw.AngleFactor,
+             raw.Diagnostics.Concatenate(vertexFindings).Concatenate(edgeFindings));
+-        return sewnRaw.WithOpenShellsReported;
+     }
+ 
+     // An earlier repair with its kept vertex moved to the sewn model: a MergedInto's Vertex is an
+diff --git a/sandbox/step-brep-mesh/03-step/step-vertex-pairs.library.plato b/sandbox/step-brep-mesh/03-step/step-vertex-pairs.library.plato
+new file mode 100644
+index 0000000..768ef36
+--- /dev/null
++++ b/sandbox/step-brep-mesh/03-step/step-vertex-pairs.library.plato
+@@ -0,0 +1,82 @@
++//==
++// # Two touching vertices of one shell are welded (TKT-493, v1-jody J11)
++//
++// In CEL/LENA-R8.STEP face 258 two hole loops touch corner to corner twice: vertices 2516 and
++// 2517 lie 2.5e-6 apart, 2569 and 2570 6.3e-6 apart, under a length tolerance of 0.01, and each
++// also ends a wall edge from one shared vertex, so two pockets meet along a line. Reduced merges
++// only vertices an edge or a loop's head-to-tail joint brings together, so each pair stays two
++// records and face 258's region crosses itself within the tolerance (FACE-LOOP-NOT-SIMPLE).
++// Welding them inside the face instead makes the mesh edge between them belong to two model
++// edges; merging the two model vertices, with every edge kept, does not.
++//
++// PairsWelded merges, in each shell, two vertices that are each other's only vertex within the
++// length tolerance (their coincidence class has exactly two members), when each lies on the arc
++// of an edge that ends at the other. A class of three or more is left as it is: a chain of
++// coincident pairs can join vertices farther apart than the tolerance, and a raised tolerance
++// that merged wider classes joined distinct vertices in TKT-472's MAX and ZOE files. The later
++// vertex merges into the earlier; a vertex two shells would weld differently is welded once, by
++// the first shell. Each weld is a MergedInto repair and a VertexPairWelded diagnostic (Sewn's
++// WithMerges).
++//
++// Sections, in order:
++//  - Pairs
++//  - The raw model
++
++library StepVertexPairs
++{
++    //==
++    // # Pairs
++
++    // The positions, among coincidence roots (each item's class's first item), of the items whose
++    // class has exactly two members and that are not that class's first: the later member of
++    // every isolated pair.
++    IsolatedPairMembers(roots: Array<Integer>): Array<Integer>
++    {
++        var members = roots.Count.Range.FlatMap(k => roots[k] != k ? [k] : Integer.NoIndices);
++        var classOf = members.Map(k => roots[k]).Sort((a, b) => a <= b);
++        return members.FlatMap(k => classOf.Reduce(0, (n, r) => r == roots[k] ? n + 1 : n) == 1 ? [k] : Integer.NoIndices);
++    }
++
++    // Whether vertex a lies within the length tolerance of the arc of an edge of shell s that ends
++    // at vertex b and not at a, the arc's end points included (LiesOnEdgeArc, or within the
++    // tolerance of either end). For a pair within the tolerance of each other this holds as soon
++    // as b ends an edge that does not end at a: the rule's force is in the pair being isolated and
++    // joined by no edge.
++    LiesOnEdgeEndingAt(m: BrepModel, s: ShellIndex, a: Integer, b: Integer): Boolean
++        => m.EdgesOfShell(s).Any(e =>
++            ((m.Edges[e].Start.Value == b || m.Edges[e].End.Value == b) && m.Edges[e].Start.Value != a && m.Edges[e].End.Value != a)
++                ? (m.LiesOnEdgeArc(e, m.Vertices[a].Point)
++                    || m.Vertices[a].Point.Distance(m.Vertices[m.Edges[e].Start.Value].Point) <= m.Tolerances.Length.Value
++                    || m.Vertices[a].Point.Distance(m.Vertices[m.Edges[e].End.Value].Point) <= m.Tolerances.Length.Value)
++                : false);
++
++    // The welds shell s asks for, each [later vertex, earlier vertex]: the isolated coincident
++    // pairs among the vertices its edges reach, each lying on an edge that ends at the other.
++    ShellPairWelds(m: BrepModel, s: ShellIndex): Array<Array<Integer>>
++    {
++        var vs = DistinctSorted(m.EdgesOfShell(s).FlatMap(e => [m.Edges[e].Start.Value, m.Edges[e].End.Value]));
++        var roots = m.CoincidenceRootsByGrid(vs.Map(v => m.Vertices[v].Point));
++        return IsolatedPairMembers(roots).FlatMap(k =>
++            (m.LiesOnEdgeEndingAt(s, vs[k], vs[roots[k]]) && m.LiesOnEdgeEndingAt(s, vs[roots[k]], vs[k]))
++                ? [[vs[k], vs[roots[k]]]]
++                : [[0, 0]].Take(0));
++    }
++
++    // For every vertex, the vertex it is welded into, or itself: every shell's welds in shell
++    // order, the first for a vertex winning, none into a welded vertex.
++    PairWeldRoots(m: BrepModel): Array<Integer>
++        => FirstValidTargets(m.Vertices.Count, m.Shells.Count.Range.FlatMap(s => m.ShellPairWelds(ShellIndex(s))));
++
++    //==
++    // # The raw model
++
++    // The raw model with every isolated pair welded (WithMerges, no edge merged); the raw model as
++    // it is when no shell has such a pair. Precondition: raw.Model.IsEveryIndexInRange.
++    PairsWelded(raw: RawDecodedModel): RawDecodedModel
++    {
++        var roots = raw.Model.PairWeldRoots;
++        return roots.Count.Range.All(v => roots[v] == v)
++            ? raw
++            : raw.WithMerges(roots, raw.Model.Edges.Count.MapRange(e => e), StepDiagnosticCode.VertexPairWelded, StepDiagnosticCode.ShellEdgeSewn);
++    }
++}
+diff --git a/sandbox/step-brep-mesh/03-step/step.library.plato b/sandbox/step-brep-mesh/03-step/step.library.plato
+index c0eccd0..f4405b1 100644
+--- a/sandbox/step-brep-mesh/03-step/step.library.plato
++++ b/sandbox/step-brep-mesh/03-step/step.library.plato
+@@ -90,7 +90,7 @@ library StepReading
+         var size = raw.Model.ModelSize;
+         var extent = raw.Model.CoordinateExtent;
+         var tolerances = ModelTolerances(raw.Units.UsedContextsOf(raw.Occurrences), raw.Model.Unit, size, extent, policy);
+-        var reduced = raw.WithModel(raw.Model.WithTolerances(tolerances)).Reduced.LoopsChained.Sewn.SheetsRemoved;
++        var reduced = raw.WithModel(raw.Model.WithTolerances(tolerances)).Reduced.LoopsChained.PairsWelded.Sewn.SheetsRemoved;
+         var folds = reduced.Folds.Concatenate(reduced.MirrorFolds);
+         var folded = reduced.Model.WithFacesReversedMarked(FoldParity(folds, reduced.Model.Faces.Count));
+         var model = folded.WithGeometry(folded.Geometry.WithClosures(folded.Geometry.ClosureMarks(tolerances)));
+diff --git a/sandbox/step-brep-mesh/08-pipeline/pipeline-vertex-pairs.laws.plato b/sandbox/step-brep-mesh/08-pipeline/pipeline-vertex-pairs.laws.plato
+new file mode 100644
+index 0000000..a60fb18
+--- /dev/null
++++ b/sandbox/step-brep-mesh/08-pipeline/pipeline-vertex-pairs.laws.plato
+@@ -0,0 +1,94 @@
++//==
++// # Two touching vertices of one shell are welded: laws (TKT-493, v1-jody J11)
++//
++// The witness is CEL/LENA-R8 face 258's touching holes in miniature: a 10 by 10 square plane face
++// with two square holes, [2, 5]^2 and [5 - d, 8]^2, whose nearest corners overlap by d in x and
++// in y, d = 0.2 length tolerances, joined by no edge. The library leaves the two corners apart and
++// the face unmeshed (its loops cross within the tolerance); PairWeldRoots welds exactly that pair,
++// and the welded face, its holes sharing one vertex, meshes. A coincidence class of three is not welded. No positive
++// witness and no raw witness has a pair to weld.
++//
++// Sections, in order:
++//  - The witness
++//  - Laws
++
++library VertexPairLaws
++{
++    //==
++    // # The witness
++
++    // The corners of the face's three loops: the outer square counter-clockwise about +z, each
++    // hole clockwise.
++    TouchingHolesLoops(_: Integer, d: Number): Array<Array<Point3D>>
++        => [[Point3D(0.0, 0.0, 0.0), Point3D(10.0, 0.0, 0.0), Point3D(10.0, 10.0, 0.0), Point3D(0.0, 10.0, 0.0)],
++            [Point3D(2.0, 2.0, 0.0), Point3D(2.0, 5.0, 0.0), Point3D(5.0, 5.0, 0.0), Point3D(5.0, 2.0, 0.0)],
++            [Point3D(5.0 - d, 5.0 - d, 0.0), Point3D(5.0 - d, 8.0, 0.0), Point3D(8.0, 8.0, 0.0), Point3D(8.0, 5.0 - d, 0.0)]];
++
++    // A one-face model of the loops: one vertex per corner, one line edge per side, the face on the
++    // plane z = 0 in one open shell of a shell-set body, under the witness tolerances.
++    PolygonFaceModel(_: BrepModel, loops: Array<Array<Point3D>>): BrepModel
++    {
++        var first = Offsets(loops.Map(l => l.Count));
++        var points = loops.FlatMap(l => l);
++        var n = points.Count;
++        var next = loops.Count.Range.FlatMap(k => loops[k].Count.MapRange(i => first[k] + (i + 1) % loops[k].Count));
++        var curves = n.MapRange(v => BrepCurve.Line(points[v], points[next[v]] - points[v]));
++        var edges = n.MapRange(v => BrepEdge(BrepVertexIndex(v), BrepVertexIndex(next[v]), CurveIndex(v), true));
++        var bloops = loops.Count.MapRange(k => BrepLoop.EdgeLoop(loops[k].Count.MapRange(i => Coedge(BrepEdgeIndex(first[k] + i), EdgeOrientation.Forward))));
++        return BrepModel(
++            GeometrySet(curves, [], [], [BrepSurface.Plane(WorldFrameAt(Point3D(0.0, 0.0, 0.0)))], []),
++            points.Map(p => BrepVertex(p)), edges, bloops,
++            [BrepFace(SurfaceIndex(0), true, loops.Count.MapRange(k => FaceBound(BrepLoopIndex(k), true, k == 0)))],
++            [BrepShell([BrepFaceIndex(0)], false)],
++            [BrepBody.ShellSet([ShellIndex(0)])],
++            Tolerances.Witness_Tolerances, LengthUnit.Metre);
++    }
++
++    // The witness: the holes' nearest corners overlapping by 0.2 tolerances in x and in y.
++    TouchingHoles(_: BrepModel): BrepModel
++        => BrepModel.PolygonFaceModel(0.TouchingHolesLoops(0.2 * Tolerances.Witness_Tolerances.Length.Value));
++
++    // Whether face 0 of m meshes, its edges discretized and the face meshed by the host's options.
++    FaceZeroMeshes(m: BrepModel): Boolean
++    {
++        var o = HostMeshingOptions(0.01);
++        var d = m.DiscretizeAll(o.Face.Discretization, SegmentFloors.NoFloors);
++        return m.MeshFace(BrepFaceIndex(0), d, o.Face).Mesh.IsEmptyFaceMesh.Not;
++    }
++
++    //==
++    // # Laws
++
++    // The touching holes: PairWeldRoots welds exactly the second hole's first corner (vertex 8)
++    // into the first hole's third (vertex 6); the face does not mesh as written and meshes welded.
++    Law_V1Jody_TouchingHolesWelded(_: Integer): Boolean
++    {
++        var m = BrepModel.TouchingHoles;
++        var roots = m.PairWeldRoots;
++        var welded = m.SewnModelWith(roots, m.Edges.Count.MapRange(e => e));
++        return roots.Count.Range.All(v => v == 8 ? roots[v] == 6 : roots[v] == v)
++            && m.FaceZeroMeshes.Not
++            && welded.Vertices.Count == m.Vertices.Count - 1
++            && welded.FaceZeroMeshes;
++    }
++
++    // Only a class of exactly two is a pair: roots [0, 0, 2] give member 1, [0, 0, 0] none, and
++    // [0, 1, 1, 0] members 2 and 3.
++    Law_V1Jody_IsolatedPairsOnly(_: Integer): Boolean
++    {
++        var a = IsolatedPairMembers([0, 0, 2]);
++        var b = IsolatedPairMembers([0, 0, 0]);
++        var c = IsolatedPairMembers([0, 1, 1, 0]);
++        return (a.Count == 1 ? a[0] == 1 : false)
++            && b.Count == 0
++            && (c.Count == 2 ? c[0] == 2 && c[1] == 3 : false);
++    }
++
++    // No positive witness has a pair to weld.
++    Law_V1Jody_NoPairOnWitnesses(_: Integer): Boolean
++        => 10.Range.All(k => BrepModel.WitnessAt(k).PairWeldRoots.Count.Range.All(v => BrepModel.WitnessAt(k).PairWeldRoots[v] == v));
++
++    // No raw witness's preparation welds a pair.
++    Law_V1Jody_NoWeldInRawWitnesses(raw: RawDecodedModel): Boolean
++        => raw.PrepareModel.Diagnostics.All(x => x.Code != "STEP-VERTEX-PAIR-WELDED");
++}
+diff --git a/sandbox/step-brep-mesh/VOCABULARY.md b/sandbox/step-brep-mesh/VOCABULARY.md
+index 4c60462..f6a3275 100644
+--- a/sandbox/step-brep-mesh/VOCABULARY.md
++++ b/sandbox/step-brep-mesh/VOCABULARY.md
+@@ -1026,3 +1026,10 @@ the name review. One line per change; the layer READMEs' "Changes to the contrac
+   `SameConnectivity`, `RigidlyMoved`, `ScaledPoint`, `ScaledBy(m)`, `SameFaceMesh`,
+   `SameFaceMeshOutcome`, `Law_RequestsNameEdgesOfTheirFace` deleted for their owners' (fix wave);
+   `WithEveryFaceReversed` and the criteria `ScaledBy`s deleted or moved down (name review).
++- 2026-10-22, 3, `StepDiagnosticCode` gains `VertexPairWelded` (`STEP-VERTEX-PAIR-WELDED`, Info,
++  `AboutInstance`, Measure the distance merged): `PairsWelded` (step-vertex-pairs.library.plato),
++  run by `PrepareModelWith` after `LoopsChained` and before `Sewn`, merges two vertices of a shell
++  within the length tolerance of each other and of no other vertex of the shell, each on an edge
++  that ends at the other (CEL/LENA-R8 face 258's touching hole corners; TKT-493, J11). `Sewn`'s
++  raw-model rewrite becomes (new) `WithMerges(raw, roots, edgeRoots, vertexCode, edgeCode)`, which
++  both call.

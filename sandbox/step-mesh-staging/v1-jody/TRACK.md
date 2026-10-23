@@ -1,7 +1,7 @@
 # v1-jody: small closed B-spline loops of the M2-JODY-W377 files discretized and meshed
 
-Ticket: TKT-431, TKT-453, TKT-414, TKT-467, TKT-470, TKT-481
-Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, J5 in 3cc7edb4, J6 in ca659dbc, J7 in a39a1ad4, J8 in 57147e59, J10 in c807badb | ready, after E5d: J9
+Ticket: TKT-431, TKT-453, TKT-414, TKT-467, TKT-470, TKT-481, TKT-493
+Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, J5 in 3cc7edb4, J6 in ca659dbc, J7 in a39a1ad4, J8 in 57147e59, J10 in c807badb | ready, after E5d: J9 | decision: J11
 
 ## Chunks
 
@@ -10,6 +10,7 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, 
 | J1 | TKT-431 | The 24 one-edge plane loops of the two M2-JODY-W377 files discretized: a B-spline written unclamped in periodic form is decided closed from its record | 2 h |
 | J2 | TKT-453 | A closed span whose ends coincide fails the segment test, so small closed loops are not meshed as triangles | 1 h |
 | J4 | (supervisor's performance finding) | The other `Count.Range.Take(0)` empties replaced by one layer-0 helper, `Integer.NoIndices` (J4.patch) | 1 h |
+| J11 | TKT-493 | Merge two touching vertices of one shell within the tolerance (LENA-R8 face 258's hole corners) in PrepareModel | 2 h |
 | J10 | TKT-481 | Law_UvHoleWindingNegative fails on a generated region drawn with the JODY W5/W6 witness: find the cause, fix it or narrow the law | 1 h |
 | J9 | (supervisor, from v1-faces' P2) | A triangle that still folds after refinement with a side on a boundary segment asks for that edge to be refined (RefinementReason.FoldAgainstBoundary), and the host's loop answers it | 2 h |
 | J8 | (supervisor's follow-up to J6, J7) | One open-closed-shell diagnostic instead of two, and no unguarded read after && in J6's and J7's merged files | 1 h |
@@ -72,6 +73,8 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, 
 
 - J10 (TKT-481), see the commit, about 1 h against 1 h. Cause: the law's premise. `Law_UvHoleWindingNegative(m, f, r, h)` took the region as a free parameter, so the runner paired the witness model with a generated `UvRegion` unrelated to its faces; case 12's (an outer loop with no points, holes at made-up coordinates such as (2, -4.23), sources such as `FromEdge(BrepEdgeIndex(-3))`) has a hole that winds positively. Not the file's data: the JODY W5/W6 witness's real regions, at the host's 1 mm bound, have no holes at all (probe law on a patched copy). Not the closed B-spline unwrap either. Staged as `J10.patch` (11 hunks; `git apply --check` passes on 6665bf03): the restatement decision F-54 gave `Law_UvRegionWindingPositive`. The claim becomes `UvHoleWindingNegative(m, f, r, h)`, and `Law_UvHoleWindingNegative(m, f, d, c, h)` is that claim on `RegionOf`'s result under `CanRegion`; the claim's readers (the orientation proof in `face-meshing-proofs`, its spec and types, `face-meshing.spec`'s two ensures, layer 7's once-check and its comment, `validation-proofs-regions.laws`) call the claim; the layer 5 README's F-54 paragraph names the law.
   - Laws on the patched copy (`plato_laws --library`): `Law_UvHoleWindingNegative`, `Law_UvRegionWindingPositive`, `Law_HoleInsideOuter` and the seven laws of `BrepCheckingProofsRegionsLaws` (which read the claim) pass, 25 cases each.
+
+- J11 (TKT-493), about 4 h against 2 h, blocked on a decision: the welds the rule asks for make the mesh non-manifold. On C# regenerated from toolkit eb507dff with J11 wired in (Plato 6013475, 0 degraded bodies), CEL/LENA-R8 face 258 meshes (its 2,026 boundary edges beside an unmeshed face go to 0) but the file goes from 0 to 20 non-manifold and 0 to 40 misoriented edges and is no longer oriented. A probe of the welds: LENA-R8 has 20 isolated coincident vertex pairs in one shell, not 2; 18 of them are exactly coincident (distance 0), and one (539 into 500) is 0.0071 apart under the 0.01 tolerance. All but that one are pockets touching along a line, as 2516/2517 and 2569/2570 are: each vertex of the pair ends a wall edge from one shared top vertex (2540 to 2516 between faces 1477 and 1478, 2540 to 2517 between faces 1369 and 1370). Welding the pair makes the two wall edges run between the same two vertices along one line, each cited by two faces, so the mesh edge on that line has four faces: one non-manifold edge per weld. Left unwelded, the walls keep separate bottom vertices and the mesh is manifold; only face 258's region crosses itself, because its two hole corners lie within the tolerance. So no merge of model vertices gives both a meshed face 258 and 0 non-manifold edges: the touching corners have to stay two vertices, and the crossing has to be resolved inside face 258's region (v1-edges' E5d, which the E5d prototype already resolves for LENA-R8 258: 4 crossings to 0, an exact cover). Staged for the record as `J11.patch` (not to merge): `PairsWelded` (step-vertex-pairs.library.plato), `Sewn`'s raw rewrite shared as `WithMerges`, the code `VertexPairWelded`, and four laws that pass on a patched copy (the hand-built touching-holes witness welds and meshes; only classes of two are pairs; no positive or raw witness welds).
 
 ## Merge instructions
 
@@ -152,6 +155,7 @@ J10:
 | J9: draft review, patch, witness extraction, laws on a patched copy | 60 | 3 law runs, 1 extraction |
 | J9: regenerations, builds, c211 and two whole-corpus runs, probe of faces 92 and 93 | 90 | 2 regenerations, 3 builds, 176 file runs |
 | J10: case 12, the cause, patch, laws and a probe on a patched copy | 30 | 3 law runs |
+| J11: probes, staging, laws (two rounds), a regeneration and LENA-R8 on both builds, a probe of the welds | 150 | 4 law runs, 2 regenerations, 4 builds, 2 file runs; two corpus runs stopped |
 
 ## Lessons
 
@@ -163,4 +167,5 @@ J10:
 - A wiring script that splices a replacement by hand must not use `` in the replacement text: it wrote a literal `` into three library files of the scratch copy and cost one failed regeneration. Parse the edited files with the pinned CLI before regenerating.
 - A staged copy that the merge agent has already applied in the tree (J5's files beside the merged library) makes the next law run fail with a "Circular expression" and no location; compile a new chunk against a scratch staging folder holding only its own files until the merge commits and the old copies go.
 - Measure a repair on the whole corpus before calling it safe: J6's first version passed every law and was wrong in one file.
+- Run the one file a repair targets before the corpus: J11's LENA-R8 run showed the rule's own check failing in a minute, while two corpus runs were already queued.
 - Plato's `&&` in a law did not short-circuit an index past an array's end; use `?:`.
