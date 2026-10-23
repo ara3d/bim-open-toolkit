@@ -515,3 +515,5 @@ Lessons for the process:
   - Two failures exposed by V1G-19's witnesses, pre-existing (both fail on dc53dacf with only the two witness files added): `Law_CollidingSegmentsAgreesOnModel`, because `FaceCollisionsAgree`'s reference, `MeshRegionBody`, predates the version 1 rules and disagrees with `MeshRegion` on any zero-width face (ticket for v1-gate); `Law_UvHoleWindingNegative`, case 12, a JODY W5/W6 witness model that the shifted sample reaches (ticket for v1-reliability). The supervisor files both.
   - The merge first went back to the track on these two failures (6c565001) and came in on the supervisor's word once they were shown to be exposed, not caused.
   - law_lint after the merge: the 12 findings of HEAD, none in V1G-19's files.
+- **F5 (TKT-323), merged in 289d5156.** `Law_EulerPoincareEvenAndBounded` drew random shell indices and its manifold premise (0eb11cd2) held on 1 of 25 cases; `EulerPoincareWitnessLaws` (07-validation/euler-cases.laws.plato) states the premise and the law on every shell of 13 closed manifold witness models, both passing on all 13.
+  - law_lint after the merge: the 12 findings of HEAD, none in F5's files.
