@@ -4,9 +4,9 @@
 // SelfTestReportOnce gives ModelMeshReport's SelfTestChecks family check for check and
 // diagnostic for diagnostic on the four literal meshes of split-once.laws.plato
 // (SplitMeshWitnessAt: the unit tetrahedron, its reversal, a smooth tetrahedron, the same with a
-// seam), and the two replaced scans agree with theirs: ContainsSorted with Any on random pair
-// arrays, the indexed side counts and direction sums with the scans at every listed edge of the
-// four meshes.
+// seam) and on the empty mesh, and the two replaced scans agree with theirs: ContainsSorted with
+// Any on random pair arrays, the indexed side counts and direction sums with the scans at every
+// listed edge of the four meshes.
 //
 // Sections, in order:
 //  - Laws
@@ -21,6 +21,16 @@ library SelfTestTablesOnceLaws
     Law_V1Faces_SelfTestReportOnceAgrees(k: Integer): Boolean
     {
         var mesh = ModelMesh.SplitMeshWitnessAt(k);
+        var tol = mesh.ResolutionTolerances;
+        return mesh.SelfTestReportOnce(tol).IsSameReport(
+            mesh.ModelMeshReport(tol, MeshQualityThresholds.CubitAcceptable, CheckFamily.SelfTestChecks));
+    }
+
+    // The same on the mesh with nothing in it, where a check has no sample and the tables must
+    // not read an element (the pipeline validates empty witnesses, Law_PipelineWitnessRunsMeshOncePerWitness).
+    Law_V1Faces_SelfTestReportOnceAgreesOnEmptyMesh(_: Integer): Boolean
+    {
+        var mesh = ModelMesh.EmptyMeshCase;
         var tol = mesh.ResolutionTolerances;
         return mesh.SelfTestReportOnce(tol).IsSameReport(
             mesh.ModelMeshReport(tol, MeshQualityThresholds.CubitAcceptable, CheckFamily.SelfTestChecks));
@@ -48,6 +58,10 @@ library SelfTestTablesOnceLaws
 
     //==
     // # Helpers
+
+    // A mesh with no vertex, element or face.
+    EmptyMeshCase(_: ModelMesh): ModelMesh
+        => ([], [], [], [], [], [], [], MeshVertexNumbering(0, [0], [0]));
 
     // Whether two reports have the same checks and diagnostics, in order.
     IsSameReport(a: Report, b: Report): Boolean

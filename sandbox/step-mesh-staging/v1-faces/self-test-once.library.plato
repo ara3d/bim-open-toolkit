@@ -32,7 +32,9 @@ library SelfTestTablesOnce
         var tables = mesh.MeshComponentTablesOf;
         var reversed = mesh.Reversed;
         var firstFaces = mesh.ElementFace.Take(1);
-        var wellFormed = mesh.IsWellFormed;
+        // RestrictedToFaces and ElementsOfFaces throw on a mesh with no element, where no
+        // sample reads them.
+        var restricts = mesh.IsWellFormed ? mesh.ElementCount > 0 : false;
         var pairs = mesh.CoincidentVertexPairs(tables.Components, tol);
         return MeshSelfTestTables(
             tables,
@@ -42,13 +44,13 @@ library SelfTestTablesOnce
             mesh.ToTriangleMesh3D,
             mesh.ToSplitTriangleMesh3D,
             firstFaces,
-            wellFormed ? mesh.RestrictedToFaces(firstFaces) : mesh,
-            wellFormed ? mesh.ElementsOfFaces(firstFaces) : ElementIndex.NoElements,
+            restricts ? mesh.RestrictedToFaces(firstFaces) : mesh,
+            restricts ? mesh.ElementsOfFaces(firstFaces) : ElementIndex.NoElements,
             pairs,
             pairs.SortedPairs);
     }
 
-    // No elements: the kept elements of a mesh that is not well formed.
+    // No elements: the kept elements of a mesh that is not well formed or has no element.
     NoElements(_: ElementIndex): Array<ElementIndex>
         => 0.MapRange(k => ElementIndex(k));
 
