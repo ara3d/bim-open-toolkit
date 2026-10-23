@@ -1,0 +1,16 @@
+//==
+// # The face of element 0, or none (F8, TKT-509)
+//
+// Plato's Take(n) requires 0 <= n <= Count and does not clamp (stdlib primitives: "The first n
+// elements. Precondition: 0 <= n <= Count."). Check_RestrictionKeepsEachElementFace and
+// Check_RestrictionKeepsEachCorner pass mesh.ElementFace.Take(1) to their law at every element
+// sample, before the law's IsWellFormed guard, so a mesh with an element and no element faces (one
+// that is not well formed) read index 0 of an empty array. FirstElementFace is the same prefix
+// where there is one, and no face where there is none; the laws are vacuous there.
+
+library FirstElementFaces
+{
+    // The face of element 0 as a one-face array, or no face when the mesh lists none.
+    FirstElementFace(mesh: ModelMesh): Array<BrepFaceIndex>
+        => mesh.ElementFace.Count > 0 ? mesh.ElementFace.Take(1) : mesh.ElementFace;
+}

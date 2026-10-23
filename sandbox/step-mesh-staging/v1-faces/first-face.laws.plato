@@ -1,0 +1,38 @@
+//==
+// # The face of element 0, or none: laws (F8, TKT-509)
+//
+// The two restriction checks on the smallest mesh that reached the unguarded Take(1): one
+// triangle and no element faces. Before F8 both threw (ArgumentOutOfRange); with the checks
+// reading FirstElementFace both hold, their laws being vacuous on a mesh that is not well formed.
+
+library FirstElementFacesLaws
+{
+    // One triangle on three points, with no element face, no corner attributes and no vertex
+    // provenance: not well formed.
+    TriangleWithoutFaces(_: ModelMesh): ModelMesh
+        => ([Point3D(0.0, 0.0, 0.0), Point3D(1.0, 0.0, 0.0), Point3D(0.0, 1.0, 0.0)],
+            [TriangleFace(VertexIndex(0), VertexIndex(1), VertexIndex(2))],
+            [], [], [], [], [], MeshVertexNumbering(3, [3], [3]));
+
+    // The case is what it claims: one element, no element face, not well formed.
+    Law_V1Faces_TriangleWithoutFacesIsTheCase(_: Integer): Boolean
+        => ModelMesh.TriangleWithoutFaces.ElementCount == 1
+            && ModelMesh.TriangleWithoutFaces.ElementFace.Count == 0
+            && !ModelMesh.TriangleWithoutFaces.IsWellFormed;
+
+    // FirstElementFace is Take(1) where there is a face, and no face otherwise.
+    Law_V1Faces_FirstElementFaceIsThePrefix(k: Integer): Boolean
+    {
+        var mesh = ModelMesh.MeshWitnessAt(k);
+        return mesh.FirstElementFace.Count == 1 && mesh.FirstElementFace[0] == mesh.ElementFace[0]
+            && ModelMesh.TriangleWithoutFaces.FirstElementFace.Count == 0;
+    }
+
+    // Check_RestrictionKeepsEachElementFace on the case: holds, where it threw.
+    Law_V1Faces_RestrictionKeepsEachElementFaceOnNoFaces(_: Integer): Boolean
+        => ModelMesh.TriangleWithoutFaces.Check_RestrictionKeepsEachElementFace.Holds;
+
+    // Check_RestrictionKeepsEachCorner on the case: holds, where it threw.
+    Law_V1Faces_RestrictionKeepsEachCornerOnNoFaces(_: Integer): Boolean
+        => ModelMesh.TriangleWithoutFaces.Check_RestrictionKeepsEachCorner.Holds;
+}
