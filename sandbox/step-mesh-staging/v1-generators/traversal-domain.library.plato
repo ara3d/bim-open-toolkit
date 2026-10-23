@@ -1,0 +1,34 @@
+//==
+// # Edge traversal domains that keep CurveDomain's invariant
+//
+// A replacement for layer 2's TraversalDomain (02-topology/topology.library.plato).
+// The original gives a closed edge on a Closed curve domain the range
+// [first, first + period] with Closed(period). In floating point
+// (first + period) - first is not always period: a closed edge from 0.2 on a
+// Closed domain of period 0.1 got CurveDomain([0.2, 0.30000000000000004],
+// Closed(0.1)), which breaks Law_ClosedPeriodIsRangeLength, CurveDomain's
+// declared invariant (TKT-423). This builds the range first and takes the
+// period as that range's own length, so the domain is consistent by
+// construction. The period moves by at most one unit in the last place, which
+// no tolerance can see. Every other case is unchanged.
+
+library V1GeneratorsTraversal
+{
+    // TraversalDomain, with a Closed closed-edge period that is its range's
+    // own length. The supervisor's decision of 2026-10-22: keep the invariant,
+    // fix the constructor.
+    TraversalDomainConsistent(d: CurveDomain, first: Number, last: Number, isClosed: Boolean): CurveDomain
+        => match (d.Periodicity) {
+            Aperiodic => CurveDomain(NumberInterval(first, isClosed ? first : last), d.Periodicity);
+            Periodic(period) => CurveDomain(
+                NumberInterval(first, isClosed ? first + period : last.PeriodicRepresentativeAbove(first, period)),
+                d.Periodicity);
+            Closed(period) => isClosed
+                ? NumberInterval(first, first + period).V1GeneratorsClosedOver
+                : CurveDomain(NumberInterval(first, last.PeriodicRepresentativeAbove(first, period)), Periodicity.Aperiodic);
+        };
+
+    // The Closed domain over r, its period r's own length.
+    V1GeneratorsClosedOver(r: NumberInterval): CurveDomain
+        => CurveDomain(r, Periodicity.Closed(r.End - r.Start));
+}

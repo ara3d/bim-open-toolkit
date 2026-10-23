@@ -1,7 +1,7 @@
 # v1-generators: law-runner generators so model-validity laws see only values the library can make
 
 Ticket: TKT-446 (Plato runner rule), for TKT-423 (the 23 model-validity laws)
-Status: ready: G1, G2
+Status: ready: G1, G2, G3
 
 Plato 7859fdce (TKT-446) added the rule: a bodied `Generate_X(seed: Integer): T`, or
 `Generate_X(_: T, seed: Integer): T`, makes the law runner draw every `T` from its generators and
@@ -60,24 +60,41 @@ Plato commit or later; the toolkit's Plato pin was not moved.
     `TraversalDomain` is at fault (TKT-423). `Law_WrapOnClosedDomainStaysInRange` holds on the
     same domain, within its slack.
 
+- G3 (TKT-423), about 0.5 h. The supervisor's decision (2026-10-22): keep `CurveDomain`'s invariant
+  and fix `TraversalDomain`. `traversal-domain.library.plato`, library `V1GeneratorsTraversal`:
+  `TraversalDomainConsistent`, the same as layer 2's `TraversalDomain` except that a closed edge
+  on a Closed domain builds its range `[first, first + period]` first and takes the period as that
+  range's own length, `(first + period) - first`: consistent by construction, at most one unit in
+  the last place away from the curve's period. `Generate_CurveDomain` now calls it.
+  - `Law_ClosedPeriodIsRangeLength` and `Law_V1Generators_DomainLawsOnEverySeed` pass (seed 7's
+    domain is now `CurveDomain([0.2, 0.30000000000000004], Closed(0.10000000000000003))`).
+  - Edge-domain laws: the twelve law classes that use `EdgeDomain` or `TraversalDomain`
+    (`TopologyLawsOnceLaws, BrepTopologyLaws, StepReadingLaws, EdgeDiscretizingLaws,
+    BrepCheckingLaws, BisectionCachedLaws, DiscretizationClosedSpanLaws, EdgeRangedLaws,
+    EdgeRefineIndexedLaws, SurfaceCurveDomainLaws, V1JodySurfaceCurvePcurveDomainLaws,
+    StepWrappedSplineClosureLaws`), plus `BrepFoundationLaws` and this folder's laws, on two
+    scratch copies of one library snapshot, one unchanged and one with `TraversalDomain` wired to
+    `TraversalDomainConsistent`: 244 laws, 195 pass, 1 fail, 42 obligation, 6 skipped in both,
+    and no verdict differs. The one failure is `EdgeDiscretizingLaws.Law_SegmentFloorMet` in both
+    copies (TKT-424); the 42 obligations are all `StepReadingLaws`. About 40 s per run.
+
 ## Merge instructions
 - Move `tolerance-generators.library.plato` and `check-report-generators.library.plato` into
   `sandbox/step-brep-mesh/00-foundation/`, `spline-generators.library.plato` into
   `01-geometry/`, and `domain-generators.library.plato` and `generator-seeds.laws.plato` into
-  `02-topology/` (the domain generator calls layer 2's `TraversalDomain`; the seed laws call it),
+  `02-topology/` together with `traversal-domain.library.plato` (the domain generator calls
+  `TraversalDomainConsistent`),
   unchanged, after the toolkit's Plato pin is at 7859fdce or later. Before that pin the
   `Generate_` functions are ordinary unused functions: harmless, but the laws still fail.
 - Rename the `Law_V1Generators_*` laws at merge as the staging rules say.
-- `Law_ClosedPeriodIsRangeLength` stays failing until `TraversalDomain` keeps the invariant
-  (TKT-423); do not drop seed 7's case to make it pass.
+- `TraversalDomain` (`02-topology/topology.library.plato`) => `TraversalDomainConsistent(d, first, last, isClosed)`,
+  or move the body in under the old name and point `Generate_CurveDomain` back at
+  `TraversalDomain`. Do not drop seed 7's case.
 - TKT-423's second box (verdicts-cpu64.tsv records the 23 as pass) waits for this merge and the
-  pin move, and for the `TraversalDomain` fix.
+  pin move to 60134758.
 
 ## Contract requests
 - none
 
 ## Requests to other tracks
-- supervisor, or the track that owns `02-topology`: make `TraversalDomain`'s closed-edge case on a
-  Closed domain keep `Law_ClosedPeriodIsRangeLength`, for example by building the period as
-  `(first + period) - first`, or decide that edge domains are outside the invariant and restate
-  it. Blocks TKT-423's last law, not this folder's merge.
+- none
