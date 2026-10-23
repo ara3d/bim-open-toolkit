@@ -1,7 +1,7 @@
 # v1-proof: the host meshes through layer 8's own refinement step and one definition of its options
 
 Ticket: TKT-454, TKT-436
-Status: merged: P6 in 6ed55e6e (host-after-merge.patch waits on the regeneration)
+Status: merged: P6 in 6ed55e6e, host patch applied in bim-open-data b2cfaf3; done: P7 and the harness items below; waiting: the queued items
 
 ## Done
 - P6, this commit, about 2.5 h against 2 h expected.
@@ -45,6 +45,19 @@ Status: merged: P6 in 6ed55e6e (host-after-merge.patch waits on the regeneration
     P6 change gives the same new digests). The scratch `PlatoRefinementTests`, Release, STEP_CORPUS set: 5 of 5 pass,
     among them `HostLoopIsLayer8Loop` on CAM and ANN-MB2: the host's loop (parts, every core) ends at the same round,
     discretizations, face meshes and pending count as layer 8's `FinalStateAnsweringBlocking` (Step in sequence).
+
+## Queued (each waits on another track; bim-open-data harness and host)
+
+- J5 (TKT-414), after its merge and regeneration: StepPlatoMesher collects layer 8's EdgeDiagnosticsInRange once per
+  file from the tables it builds, and the harness writes them into the edges CSV, so a refused edge is never a bare 0
+  (request in v1-jody/TRACK.md).
+- J6 (TKT-467), after its regeneration: a declared-closed shell with STEP-CLOSED-SHELL-OPEN (its Where mapped to the
+  kernel shell through DecodedModel.Map) counts as "declared closed, open in the file" and leaves both sides of the
+  closed-shells ratio; STEP-CLOSED-SHELL-EDGE-CITED-ONCE edges stay the file's; a column in step-corpus-table.py.
+- TKT-488 (v1-edges), once built: a boundary edge on an edge with STEP-EDGES-OVERLAP is the file's overlap, not
+  GapBetweenMeshedFaces or InsideFace (ELLA-W1's 210 gap and 30 inside-face edges).
+- V1G-19, after its regeneration: ContractCheck.ForcedDegenerateCodes reads layer 7's ForcedDegenerateExplanations
+  instead of its copy.
 
 ## Merge instructions
 
