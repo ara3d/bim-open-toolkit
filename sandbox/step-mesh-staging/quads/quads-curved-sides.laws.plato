@@ -1,0 +1,93 @@
+//==
+// # Four-sided regions whose sides curve in parameter space, laws (TKT-409, chunk Q1)
+//
+// NIST CTC 01's face 85, a radius-10 cylinder fillet whose one end is a 45 degree mitre (an
+// ellipse), extracted by the corpus harness: the straight-step test refuses it, the turning test
+// finds its four corners, and the grid on them is within the chordal bound at the host's options;
+// and face 73, a cone whose apex is a vertex loop.
+//
+// Sections, in order:
+//  - The mitred fillet
+//  - The apex cone
+
+library QuadsCurvedSidesLaws
+{
+    //==
+    // # The mitred fillet
+
+    // The host's face criteria at the chordal bound the harness meshed the source file at.
+    MitredFilletCriteria(_: Integer): FaceMeshingCriteria
+        => HostMeshingOptions(1.0).Face;
+
+    // The grid outcome on face 0 of model m under c with segment floors fl.
+    QuadsFaceGrid(m: BrepModel, c: FaceMeshingCriteria, fl: SegmentFloors): QuadGridOutcome
+    {
+        var f = BrepFaceIndex(0);
+        var d = m.DiscretizeAll(c.Discretization, fl);
+        var r = m.RegionOf(f, d, c);
+        var chart = m.ChartOf(f, r);
+        return m.FaceQuadGridCurvedIn(f, d, r, chart, m.RegionTolerance(f, chart), c);
+    }
+
+    // The floors a first grid attempt asks for: those of CountsDiffer, else none. One round, as
+    // the host's refinement loop answers a quad count request.
+    QuadsFloors(g: QuadGridOutcome): SegmentFloors
+        => match (g) {
+            NoGrid => SegmentFloors.NoFloors;
+            CountsDiffer(floors) => floors;
+            Grid(mesh) => SegmentFloors.NoFloors;
+        };
+
+    // The straight-step test refuses the mitred fillet: the failure the turning test answers.
+    Law_Quads_MitredFilletNotFourSidedByStraightSteps(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_Ctc01Face85;
+        var c = MitredFilletCriteria(0);
+        var f = BrepFaceIndex(0);
+        var r = m.RegionOf(f, m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors), c);
+        return m.QuadSidesOf(f, r).CornerCount == 0;
+    }
+
+    // Whether face 0 of model m takes the grid, after one round of matching floors, within the
+    // chordal bound (both splits of every quad, as the version 1 contract measures).
+    IsAGridWithinAfterFloors(m: BrepModel): Boolean
+    {
+        var c = MitredFilletCriteria(0);
+        var fl = m.QuadsFaceGrid(c, SegmentFloors.NoFloors).QuadsFloors;
+        var d = m.DiscretizeAll(c.Discretization, fl);
+        var bound = c.SurfaceChordal + m.Tolerances.Length.Value;
+        return match (m.QuadsFaceGrid(c, fl)) {
+            NoGrid => false;
+            CountsDiffer(floors) => false;
+            Grid(mesh) => m.QuadsGridWithin(d, m.Lift(BrepFaceIndex(0), d, mesh), bound);
+        };
+    }
+
+    // The turning test finds the mitred fillet's four corners, and the grid on them is kept.
+    Law_Quads_MitredFilletIsAGridWithin(_: Integer): Boolean
+        => BrepModel.Witness_Ctc01Face85.IsAGridWithinAfterFloors;
+
+    //==
+    // # The apex cone
+
+    // NIST CTC 01's face 73: a cone from a circle to its apex, the apex a vertex loop. Its region
+    // is the circle, a seam cut, the expanded pole and the cut back; the straight-step test
+    // refuses it because the pole side is copies of a vertex, no edge's carrier.
+    Law_Quads_ApexConeNotFourSidedByStraightSteps(_: Integer): Boolean
+    {
+        var m = BrepModel.Witness_Ctc01Face73;
+        var c = MitredFilletCriteria(0);
+        var f = BrepFaceIndex(0);
+        var r = m.RegionOf(f, m.DiscretizeAll(c.Discretization, SegmentFloors.NoFloors), c);
+        return m.QuadSidesOf(f, r).CornerCount == 0;
+    }
+
+    // With the pole side accepted, the cone takes the grid within the bound; Lift collapses the
+    // row at the apex.
+    Law_Quads_ApexConeIsAGridWithin(_: Integer): Boolean
+        => BrepModel.Witness_Ctc01Face73.IsAGridWithinAfterFloors;
+
+    // Whether face mesh fm has quads and every quad is within bound as both splits.
+    QuadsGridWithin(m: BrepModel, d: EdgeDiscretizations, fm: FaceMesh, bound: Number): Boolean
+        => fm.Quads.Count > 0 && fm.Quads.Count.Range.All(q => m.QuadSplitsWithinV1(d, fm, q, bound));
+}

@@ -1,0 +1,10 @@
+// Extracted by step-corpus-harness extract (TKT-439) on 2026-10-22 from data/step-samples/nist/NIST-PMI-STEP-Files/AP203 geometry only/nist_ctc_01_asme1_rd.stp,
+// faces 73 of the prepared model with a ring of 0: 1 faces, 1 edges.
+// Witness face k is source face [73][k]. Meshed the host's way at chordal 1.0000000474974513:
+//   face 73 (witness face 0): cdt, 189 triangles, 0 quads in the file, cdt, 189 triangles, 0 quads in the witness, the same mesh
+// One open shell in a shell-set body holds the faces; tolerances and unit are the source model's.
+library CorpusWitnessCtc01Face73
+{
+    Witness_Ctc01Face73(_: BrepModel): BrepModel
+        => BrepModel(GeometrySet([BrepCurve.Circle(Frame3D(Point3D(-30.0, -80.0, -25.0), Direction3D(Vector3D(0.0, 0.0, 1.0)), Direction3D(Vector3D(-1.0, 0.0, 0.0)), Direction3D(Vector3D(0.0, -1.0, 0.0))), 10.0)], [], [], [BrepSurface.Cone(Frame3D(Point3D(-30.0, -80.0, -25.0), Direction3D(Vector3D(0.0, 0.0, -1.0)), Direction3D(Vector3D(1.0, 0.0, 0.0)), Direction3D(Vector3D(0.0, -1.0, 0.0))), 10.0, Angle(1.0297442586766545))], []), [BrepVertex(Point3D(-30.0, -80.0, -15.0)), BrepVertex(Point3D(-30.0, -73.9913938097244, -25.0))], [BrepEdge(BrepVertexIndex(0), BrepVertexIndex(0), CurveIndex(0), true)], [BrepLoop.VertexLoop(BrepVertexIndex(1)), BrepLoop.EdgeLoop([Coedge(BrepEdgeIndex(0), EdgeOrientation.Forward)])], [BrepFace(SurfaceIndex(0), false, [FaceBound(BrepLoopIndex(1), true, false), FaceBound(BrepLoopIndex(0), true, false)])], [BrepShell([BrepFaceIndex(0)], false)], [BrepBody.ShellSet([ShellIndex(0)])], Tolerances(LengthTolerance(0.0508), AngleTolerance(Angle(1e-09)), ParameterTolerance(0.0508), ParameterTolerance(4.021286082643379e-05)), LengthUnit.Millimetre);
+}

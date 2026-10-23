@@ -1,0 +1,131 @@
+//==
+// # Four-sided regions whose sides curve in parameter space (TKT-409, chunk Q1)
+//
+// Layer 05-face-meshing. QuadSidesIn finds corners where a boundary step changes from a run along
+// u to a run along v, so it refuses any face with a side that runs along neither: a cylinder
+// fillet cut by a 45 degree mitre is four-sided, but the mitre's ellipse is a sinusoid in the
+// cylinder's (u, v), and the face falls to the refined triangulation (NIST CTC 01's base
+// fillets, faces 85 to 98; ODIN-W160's faces 3364, 3398, 3414 and 3431). QuadGrid's Coons
+// interpolation takes curved sides as they are, so only the test is narrow.
+//
+// QuadSidesCurvedIn keeps QuadSidesIn's answer whenever it is four-sided, so no face that has a
+// grid today changes. Otherwise it finds the corners by turning: a point of the outer loop where
+// the boundary turns by CornerTurn or more in the chart (u and v scaled by the face's mean speeds,
+// so a turn approximates the turn on the surface; exact on planes and cylinders). Four such
+// points, no holes, and each side one carrier (SideIsOneCarrier) or an expanded pole (SideIsPole:
+// a cone's apex given as a vertex loop, NIST CTC 01 faces 73 and 75) make the region four-sided.
+// GridUnlessFoldedOrCoarse still refuses a grid that folds or strays from the surface, so a
+// curved side the Coons blend handles badly falls back to the triangulation as before.
+//
+// Sections, in order:
+//  - Turning
+//  - Four-sided regions
+//  - The grid
+//  - The host's answers
+
+library QuadsCurvedSides
+{
+    //==
+    // # Turning
+
+    // The smallest turn, in radians, that makes a point of a loop a corner: 30 degrees. A
+    // sampled edge turns by at most the angle its chordal bound allows per segment, well under
+    // this; the corners of a mitred fillet turn by 45 degrees or more.
+    CornerTurn(_: Integer): Number
+        => 30.0.Degrees.Radians;
+
+    // The step from a to b in chart units: u and v scaled by the chart's mean speeds.
+    ChartStep(chart: FaceChart, a: UvCoordinate, b: UvCoordinate): Vector2D
+        => Vector2D((b.U - a.U) * chart.ScaleU, (b.V - a.V) * chart.ScaleV);
+
+    // The turn, in radians in [0, pi], at point i of loop l in the chart: the angle between the
+    // step arriving at i and the step leaving it. Zero when either step has no length.
+    TurnAt(l: UvLoop, chart: FaceChart, i: Integer): Number
+    {
+        var n = l.Points.Count;
+        var a = chart.ChartStep(l.Points.AtModulo(i + n - 1), l.Points[i]);
+        var b = chart.ChartStep(l.Points[i], l.Points.AtModulo(i + 1));
+        var cross = a.X * b.Y - a.Y * b.X;
+        var dot = a.X * b.X + a.Y * b.Y;
+        return (a.X == 0.0 && a.Y == 0.0) || (b.X == 0.0 && b.Y == 0.0) ? 0.0 : Atan2Radians(cross.Abs, dot);
+    }
+
+    // The points of loop l that turn by CornerTurn or more in the chart, in loop order.
+    TurningCorners(l: UvLoop, chart: FaceChart): Array<VertexIndex>
+        => l.Points.Count.Range.FlatMap(i =>
+            l.TurnAt(chart, i) >= CornerTurn(0) ? [VertexIndex(i)] : [VertexIndex(i)].Take(0));
+
+    //==
+    // # Four-sided regions
+
+    // Region r's four sides found by turning: four turning corners on an outer loop of four
+    // points or more, no holes, and each side one carrier or an expanded pole.
+    QuadSidesByTurn(r: UvRegion, chart: FaceChart): QuadSides
+    {
+        var corners = r.Outer.TurningCorners(chart);
+        return (r.Holes.IsEmpty && r.Outer.Points.Count >= 4 && corners.Count == 4)
+            ? (4.Range.All(k => r.SideIsOneCarrierOrPole(corners, k)) ? QuadSides.FourSided(corners) : QuadSides.NotFourSided)
+            : QuadSides.NotFourSided;
+    }
+
+    // The vertex s is a copy of, as an integer; -1 for any other source.
+    VertexNumberOf(s: UvPointSource): Integer
+        => match (s) {
+            FromVertex(v) => v.Value;
+            FromEdge(e, k) => -1;
+            SeamCut(side, k) => -1;
+            Pole(side, k) => -1;
+            Interior => -1;
+        };
+
+    // Whether side k of the outer loop is an expanded pole: it has inner points, and every point
+    // from its first corner to its last is a copy of one vertex (a cone's apex, given in the file
+    // as a vertex loop, comes out of ExpandedPoles as a run of copies of that vertex).
+    SideIsPole(r: UvRegion, corners: Array<VertexIndex>, k: Integer): Boolean
+    {
+        var start = corners[k % 4].Value;
+        var count = r.SideSegmentCount(corners, k);
+        var v = r.Outer.Sources.AtModulo(start).VertexNumberOf;
+        return count >= 2 && v >= 0
+            && (count + 1).Range.All(i => r.Outer.Sources.AtModulo(start + i).VertexNumberOf == v);
+    }
+
+    // SideIsOneCarrier, or an expanded pole (SideIsPole), which Lift collapses to its vertex.
+    SideIsOneCarrierOrPole(r: UvRegion, corners: Array<VertexIndex>, k: Integer): Boolean
+        => r.SideIsOneCarrier(corners, k) ? true : r.SideIsPole(corners, k);
+
+    // QuadSidesIn(r, tol) when it is four-sided; otherwise the sides found by turning in chart.
+    QuadSidesCurvedIn(r: UvRegion, chart: FaceChart, tol: UvTolerance): QuadSides
+    {
+        var straight = r.QuadSidesIn(tol);
+        return straight.CornerCount == 4 ? straight : r.QuadSidesByTurn(chart);
+    }
+
+    //==
+    // # The grid
+
+    // FaceQuadGridIn(f, d, r, tol, c) with curved sides allowed: the region's chart given, so
+    // the turning test does not build it again.
+    FaceQuadGridCurvedIn(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, chart: FaceChart, tol: UvTolerance, c: FaceMeshingCriteria): QuadGridOutcome
+        => c.PreferQuads ? m.QuadGridOnSides(f, d, r, c, r.QuadSidesCurvedIn(chart, tol)) : QuadGridOutcome.NoGrid;
+
+    //==
+    // # The host's answers
+
+    // Whether the host's refinement loop answers a request for reason x: a blocking one
+    // (IsBlocking), or a quad count mismatch, which lets a four-sided face whose opposite sides
+    // have different segment counts take the grid in the next round instead of the triangulation.
+    HostAnswers(x: RefinementReason): Boolean
+        => match (x) {
+            LoopSelfIntersects => x.IsBlocking;
+            TooCoarseInParameterSpace => x.IsBlocking;
+            QuadCountMismatch => true;
+            NoInteriorPointMeetsChordal(segment) => x.IsBlocking;
+            PoleAdjacency => x.IsBlocking;
+            NeighbourDensity => x.IsBlocking;
+        };
+
+    // The requests among rs the host's loop answers (HostAnswers).
+    HostAnsweredRequests(rs: Array<EdgeRefinementRequest>): Array<EdgeRefinementRequest>
+        => rs.FlatMap(q => q.Reason.HostAnswers ? [q] : EdgeRefinementRequest.NoRequests);
+}
