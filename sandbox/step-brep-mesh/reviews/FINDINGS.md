@@ -517,3 +517,6 @@ Lessons for the process:
   - law_lint after the merge: the 12 findings of HEAD, none in V1G-19's files.
 - **F5 (TKT-323), merged in 289d5156.** `Law_EulerPoincareEvenAndBounded` drew random shell indices and its manifold premise (0eb11cd2) held on 1 of 25 cases; `EulerPoincareWitnessLaws` (07-validation/euler-cases.laws.plato) states the premise and the law on every shell of 13 closed manifold witness models, both passing on all 13.
   - law_lint after the merge: the 12 findings of HEAD, none in F5's files.
+- **E5b (TKT-468), merged in 823a3dd2.** `MeshRegion` calls `MeshRegionWeaklySimple`: a region is refused only for a proper crossing beyond rounding or a T-touch (E5c's `SplitAt` will answer those), a pinch whose lobe sits at winding 0 or 1 is simple (V1G-6's keyhole rule folded in), and a meshed face with a triangle thinner than its tolerance carries FACE-CUSP. ODIN-W260 faces 2615 and 2616 mesh. V1G-19's zero-width meshing applies in both of its zero-width branches.
+  - `MeshRegionOnceV1` has no caller left and is kept while v1-gate's staged V1G-21 patch names it; `RegionPinchesAreKeyholes` stays for a V1PinchLaws law.
+  - law_lint after the merge: the 12 findings of HEAD, none in E5b's files.
