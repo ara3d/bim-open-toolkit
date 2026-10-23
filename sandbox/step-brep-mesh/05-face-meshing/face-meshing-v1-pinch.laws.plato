@@ -3,8 +3,9 @@
 //
 // Laws of v1-pinch.library.plato over the witnesses of v1-pinch.witnesses.plato: LENA-R8 face
 // 1349 and a square with a keyhole, each one loop through a vertex twice, are simple under
-// SegmentsSeparatedV1 and triangulate to a cover of their area; a hole that touches the outer loop
-// stays not simple; a pinch that runs on within the tolerance still collides; away from pinches the new rule is the library's; a strip thinner than
+// SegmentsSeparatedV1 and triangulate to a cover of their area; a pinch that runs on within the
+// tolerance still collides under it (since E5b MeshRegion's test is V1EdgesWeaklySimple's, whose laws
+// say which pinches are simple); away from pinches the new rule is the library's; a strip thinner than
 // the tolerance has no width.
 //
 // Sections, in order:
@@ -41,11 +42,6 @@ library V1PinchLaws
         return r.CoversRegion(chart, LenaR8Face1349Tolerance(0), r.TriangulateRegionCdt(chart));
     }
 
-    // A hole touching the outer loop at one shared vertex stays not simple: the pinch rule is for
-    // one loop through a vertex twice.
-    Law_V1Gate_TouchingLoopsStayNotSimple(_: Integer): Boolean
-        => PinchedHoleRegion(0).IsSimpleRegionV1(PinchTolerance(0)).Not;
-
     // The same keyhole written as one loop through (1.5, 0) twice is simple and triangulates to a
     // cover.
     Law_V1Gate_KeyholeLoopTriangulates(_: Integer): Boolean
@@ -68,12 +64,6 @@ library V1PinchLaws
     Law_V1Gate_PinchRuleAgreesAwayFromPinches(k: Integer): Boolean
         => StarCase(k).IsSimpleRegionV1(PlaneTolerance(0)) == StarCase(k).IsSimpleRegion(PlaneTolerance(0))
             && JaggedCase(k).IsSimpleRegionV1(PlaneTolerance(0)) == JaggedCase(k).IsSimpleRegion(PlaneTolerance(0));
-
-    // LENA-R8 face 1349's two pinches are keyholes; a square pinched to a triangle outside it,
-    // wound the same way (the shape of MAYA face 1599), is not.
-    Law_V1Gate_KeyholesAreAcceptedAndOutsidePinchesAreNot(_: Integer): Boolean
-        => LenaR8Face1349Region(0).RegionPinchesAreKeyholes
-            && OutsidePinchRegion(0).RegionPinchesAreKeyholes.Not;
 
     //==
     // # Zero width

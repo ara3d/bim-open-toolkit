@@ -147,25 +147,30 @@ library UvRegionCollisions
         var boxes = r.SegmentBoxes(tol);
         return boxes.Count == 0
             ? Counted([false].Take(0), Insertions(0))
-            : (boxes.All(b => b.Finite) ? r.CollidingSegmentsOnGrid(tol, boxes) : r.CollidingSegmentsAllPairs(tol, boxes));
+            : (boxes.All(b => b.Finite)
+                ? boxes.FlaggedSegmentsOnGrid((a, b) => r.SegmentsSeparatedAt(tol, a, b))
+                : boxes.FlaggedSegmentsAllPairs((a, b) => r.SegmentsSeparatedAt(tol, a, b)));
     }
 
     // The flags of CollidingSegmentsCounted.
     CollidingSegments(r: UvRegion, tol: UvTolerance): Array<Boolean>
         => r.CollidingSegmentsCounted(tol).Value;
 
-    // CollidingSegmentsCounted by testing every pair, as SegmentCollides does: the fallback for
-    // a region the grid cannot place. Counts n^2 pairs.
-    CollidingSegmentsAllPairs(r: UvRegion, tol: UvTolerance, boxes: Array<SegmentBox>): Counted<Array<Boolean>>
-        => Counted(boxes.Map(a => boxes.Any(b => r.SegmentsSeparatedAt(tol, a.Segment, b.Segment).Not)),
+    // One flag per box's segment: true when separated(it, another) fails for some other segment,
+    // found by testing every pair, as SegmentCollides does: the fallback for a region the grid
+    // cannot place. Counts n^2 pairs. separated is SegmentsSeparated for CollidingSegments and
+    // the no-crossing test for CrossingSegments (V1EdgesWeaklySimple).
+    FlaggedSegmentsAllPairs(boxes: Array<SegmentBox>, separated: Function2<RegionSegment, RegionSegment, Boolean>): Counted<Array<Boolean>>
+        => Counted(boxes.Map(a => boxes.Any(b => separated(a.Segment, b.Segment).Not)),
             Insertions(boxes.Count * boxes.Count));
 
-    // CollidingSegmentsCounted on the grid. Precondition: there is a box and every box is
-    // finite. Each pair sharing a cell is visited there and tested only in its first shared
-    // cell; each wide segment is visited with every other segment (a pair of two wide ones
-    // once). A test runs SegmentsSeparated in both orders, as SegmentCollides of each segment
-    // would, skipping an order whose first segment is already flagged.
-    CollidingSegmentsOnGrid(r: UvRegion, tol: UvTolerance, boxes: Array<SegmentBox>): Counted<Array<Boolean>>
+    // FlaggedSegmentsAllPairs on the grid. Precondition: there is a box and every box is finite,
+    // and separated fails only for two segments whose boxes overlap (true of SegmentsSeparated
+    // and of a crossing). Each pair sharing a cell is visited there and tested only in its first
+    // shared cell; each wide segment is visited with every other segment (a pair of two wide ones
+    // once). A test runs separated in both orders, as SegmentCollides of each segment would,
+    // skipping an order whose first segment is already flagged.
+    FlaggedSegmentsOnGrid(boxes: Array<SegmentBox>, separated: Function2<RegionSegment, RegionSegment, Boolean>): Counted<Array<Boolean>>
     {
         var n = boxes.Count;
         var h = boxes.GridCellSize;
@@ -201,14 +206,14 @@ library UvRegionCollisions
                     {
                         if (flags.At(i).Not)
                         {
-                            if (r.SegmentsSeparatedAt(tol, boxes[i].Segment, boxes[j].Segment).Not)
+                            if (separated(boxes[i].Segment, boxes[j].Segment).Not)
                             {
                                 flags = flags.Set(i, true);
                             }
                         }
                         if (flags.At(j).Not)
                         {
-                            if (r.SegmentsSeparatedAt(tol, boxes[j].Segment, boxes[i].Segment).Not)
+                            if (separated(boxes[j].Segment, boxes[i].Segment).Not)
                             {
                                 flags = flags.Set(j, true);
                             }
@@ -233,14 +238,14 @@ library UvRegionCollisions
                         visits = visits + 1;
                         if (flags.At(w).Not)
                         {
-                            if (r.SegmentsSeparatedAt(tol, boxes[w].Segment, boxes[t].Segment).Not)
+                            if (separated(boxes[w].Segment, boxes[t].Segment).Not)
                             {
                                 flags = flags.Set(w, true);
                             }
                         }
                         if (flags.At(t).Not)
                         {
-                            if (r.SegmentsSeparatedAt(tol, boxes[t].Segment, boxes[w].Segment).Not)
+                            if (separated(boxes[t].Segment, boxes[w].Segment).Not)
                             {
                                 flags = flags.Set(t, true);
                             }

@@ -161,10 +161,10 @@ library V1EdgesWeaklySimple
     //==
     // # Meshing a region
 
-    // MeshRegionOnceV1 with the simplicity test ConflictingSegments: a region with a crossing or a
-    // T-touch is refused as before (FACE-ZERO-WIDTH when it has no width, else
-    // FACE-LOOP-NOT-SIMPLE with the self-intersection requests); one with no width whose segments collide under
-    // SegmentsSeparatedV1 gets FACE-ZERO-WIDTH; one with a pinch that leaves winding 2 or -1 gets
+    // MeshRegionOnceV1 with the simplicity test ConflictingSegments: a region with no width is meshed by
+    // ZeroWidthMeshedOutcome (V1ZeroWidth) when it has a crossing or a T-touch, or when its segments collide
+    // under SegmentsSeparatedV1; any other region with a crossing or a T-touch is refused with
+    // FACE-LOOP-NOT-SIMPLE and the self-intersection requests; one with a pinch that leaves winding 2 or -1 gets
     // MalformedPinchOutcome; the rest is meshed, with FACE-CUSP when it has a cusp.
     MeshRegionWeaklySimple(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): FaceMeshOutcome
     {
@@ -175,9 +175,9 @@ library V1EdgesWeaklySimple
         var tol = m.RegionToleranceIn(f, dom, chart);
         var crossing = r.ConflictingSegments(tol);
         return crossing.Any(x => x)
-            ? (r.IsZeroWidthRegion(tol) ? f.ZeroWidthOutcome : f.NotSimpleOutcome(m.SelfIntersectionRequestsFrom(f, d, r, crossing)))
+            ? (r.IsZeroWidthRegion(tol) ? m.ZeroWidthMeshedOutcome(f, d, r) : f.NotSimpleOutcome(m.SelfIntersectionRequestsFrom(f, d, r, crossing)))
             : (r.IsZeroWidthRegion(tol)
-                ? (r.CollidingSegments(tol).Any(x => x) ? f.ZeroWidthOutcome : m.MeshedOutcomeIn(f, d, raw, r, chart, tol, c).WithCuspDiagnostic(f, tol))
+                ? (r.CollidingSegments(tol).Any(x => x) ? m.ZeroWidthMeshedOutcome(f, d, r) : m.MeshedOutcomeIn(f, d, raw, r, chart, tol, c).WithCuspDiagnostic(f, tol))
                 : (r.RegionPinchesHaveWindingOne ? m.MeshedOutcomeIn(f, d, raw, r, chart, tol, c).WithCuspDiagnostic(f, tol) : f.MalformedPinchOutcome));
     }
 }

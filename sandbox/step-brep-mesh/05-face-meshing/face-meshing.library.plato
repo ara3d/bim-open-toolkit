@@ -888,12 +888,13 @@ library FaceMeshing
             advisory.Map(q => q.RequestDiagnostic).Concatenate(m.ReversalDiagnostics(f, raw)));
     }
 
-    // Face f's region meshed, or refused: a region that is not simple gets an empty mesh and the
-    // blocking requests with their diagnostics, or one face error when no model edge is to blame;
-    // a region with no width gets FACE-ZERO-WIDTH and no request, and a loop pinched other than as
-    // a keyhole FACE-LOOP-NOT-SIMPLE (MeshRegionOnceV1, face-meshing-v1-pinch.library.plato).
+    // Face f's region meshed, or refused: a region whose segments properly cross gets an empty
+    // mesh and the blocking requests with their diagnostics, or one face error when no model edge
+    // is to blame; a region with no width gets FACE-ZERO-WIDTH and no request, and a loop pinched
+    // to a lobe of winding 2 or -1 FACE-LOOP-NOT-SIMPLE; a face with a triangle thinner than the
+    // tolerance carries FACE-CUSP (MeshRegionWeaklySimple, face-meshing-weakly-simple.library.plato).
     MeshRegion(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, c: FaceMeshingCriteria): FaceMeshOutcome
-        => m.MeshRegionOnceV1(f, d, c);
+        => m.MeshRegionWeaklySimple(f, d, c);
 
     // Face f meshed under criteria c, its edges discretized as d: the layer's entry point. A face
     // with a poly loop is not meshed (version 1); otherwise MeshRegion.

@@ -16,9 +16,11 @@
 //  - each piece of a chain is a side of the triangulation; a side run along both ways cancels
 //    (its winding number is zero), so it seeds no triangle of the region but still stops the
 //    flood: without that, ODIN-W260 2613's tail seeds the outside;
-//  - each corner of a kept triangle goes back on the copy of its vertex whose wedge (from the
-//    copy's next point counter-clockwise round to its previous point; the region lies on the left
-//    of its loops) holds the direction to the triangle's centroid.
+//  - each corner of a kept triangle goes back on the copy of its vertex whose side to its next
+//    point is the nearest clockwise from the direction to the triangle's centroid (the region
+//    lies on the left of its loops, so that side starts the sector holding the triangle; E5b,
+//    after a per-copy wedge from next to previous point left a lobe wound the same way, two
+//    pieces of face touching at a point, with no copy).
 // A region whose segments properly cross is outside this contract (E5b refuses it); a segment
 // that cannot be recovered there leaves the flood free to leak.
 //
@@ -32,7 +34,7 @@
 //  - Chains through vertices on a segment
 //  - The table of pieces
 //  - Removing slivers, keeping the region
-//  - Copies and wedges
+//  - Copies
 //  - The seed
 
 library V1EdgesCdtSeedCopies
@@ -326,48 +328,45 @@ library V1EdgesCdtSeedCopies
     }
 
     //==
-    // # Copies and wedges
+    // # Copies
 
-    // Whether direction d (from a vertex) lies in the wedge that turns counter-clockwise from
-    // direction o to direction q, ends left out. Directions o and q the same: the whole turn
-    // (a slit's or a tail's end). Opposite: the half turn on the left of o.
-    SeedInWedge(o: Vector2D, q: Vector2D, d: Vector2D): Boolean
+    // The counter-clockwise turn, in [0, 2 pi), from direction o to direction d.
+    SeedTurn(o: Vector2D, d: Vector2D): Number
     {
-        var oq = o.X * q.Y - o.Y * q.X;
-        var od = o.X * d.Y - o.Y * d.X;
-        var dq = d.X * q.Y - d.Y * q.X;
-        var qd = q.X * d.Y - q.Y * d.X;
-        var dout = d.X * o.Y - d.Y * o.X;
-        return oq > 0.0 ? (od > 0.0 && dq > 0.0)
-            : (oq < 0.0 ? (qd >= 0.0 && dout >= 0.0).Not
-            : (o.X * q.X + o.Y * q.Y < 0.0 ? od > 0.0 : true));
+        var a = (o.X * d.Y - o.Y * d.X).Atan2(o.X * d.X + o.Y * d.Y).Radians;
+        return a < 0.0 ? a + Number.Tau : a;
     }
 
-    // The copy of vertex v (a point i with placed[i] = v) whose wedge holds the direction from v
-    // to g: from i's next point counter-clockwise round to its previous point, both taken at their
-    // vertices. A copy on no segment holds every direction. v itself when no copy's wedge holds
-    // it (a crossing region) or v has one copy.
-    SeedCopyFacing(points: Array<Point2D>, next: Array<Integer>, prev: Array<Integer>, placed: Array<Integer>, copies: List<Integer>, v: Integer, g: Point2D): Integer
+    // The copy of vertex v (a point i with placed[i] = v) whose side to its next point is the
+    // nearest clockwise from the direction from v to g: the region lies on the left of its loops,
+    // so the sector about v that holds g starts at that side. A copy whose next point is v itself
+    // or that is on no segment is passed over; v itself when v has one copy or none qualifies.
+    // At a keyhole or a slit the sector's other side leaves the same copy; at a lobe wound the
+    // same way (two pieces of face touching at v) it leaves the other copy, and the triangle
+    // takes the first (both are on one model vertex, which the assembly numbers once).
+    SeedCopyFacing(points: Array<Point2D>, next: Array<Integer>, placed: Array<Integer>, copies: List<Integer>, v: Integer, g: Point2D): Integer
     {
         var first = copies.At(v);
         var last = copies.At(v + 1);
+        var c = points[v];
+        var d = Vector2D(g.X - c.X, g.Y - c.Y);
         var found = -1;
+        var least = Number.MaxValue;
         var k = first;
-        while (k < last && found < 0 && last - first > 1)
+        while (k < last && last - first > 1)
         {
             var i = copies.At(k);
-            if (next[i] < 0)
+            if (next[i] >= 0)
             {
-                found = i;
-            }
-            else
-            {
-                var c = points[v];
-                var o = points[placed[next[i]]];
-                var q = points[placed[prev[i]]];
-                if (SeedInWedge(Vector2D(o.X - c.X, o.Y - c.Y), Vector2D(q.X - c.X, q.Y - c.Y), Vector2D(g.X - c.X, g.Y - c.Y)))
+                if (placed[next[i]] != v)
                 {
-                    found = i;
+                    var o = points[placed[next[i]]];
+                    var turn = SeedTurn(Vector2D(o.X - c.X, o.Y - c.Y), d);
+                    if (turn < least)
+                    {
+                        least = turn;
+                        found = i;
+                    }
                 }
             }
             k = k + 1;
@@ -415,36 +414,14 @@ library V1EdgesCdtSeedCopies
         return table;
     }
 
-    // The point before each point on its loop: prev[next[a]] = a; -1 for a point on no segment.
-    SeedPreviousTable(next: Array<Integer>): Array<Integer>
-    {
-        var prev = new Buffer<Integer>(next.Count);
-        var k = 0;
-        while (k < next.Count)
-        {
-            prev = prev.Set(k, -1);
-            k = k + 1;
-        }
-        k = 0;
-        while (k < next.Count)
-        {
-            if (next[k] >= 0)
-            {
-                prev = prev.Set(next[k], k);
-            }
-            k = k + 1;
-        }
-        return prev.Freeze();
-    }
-
     //==
     // # The seed
 
     // The constrained Delaunay seed of the region whose boundary points are points (in the chart)
     // and whose boundary segments are next (NextBoundaryTable), weakly simple: points within
     // rounding of each other one vertex, a segment through a vertex a chain, a side run along
-    // both ways a constraint that seeds nothing, each corner on the copy whose wedge holds its
-    // triangle. Triangles over the point indices 0 to n - 1, counter-clockwise.
+    // both ways a constraint that seeds nothing, each corner on the copy whose side to its next
+    // point starts the sector holding its triangle. Triangles over the point indices 0 to n - 1, counter-clockwise.
     CdtSeedOverCopies(points: Array<Point2D>, next: Array<Integer>): Array<TriangleFace>
     {
         var n = points.Count;
@@ -500,24 +477,23 @@ library V1EdgesCdtSeedCopies
         var table = pieces.SeedPieceTable(n + 3);
         s = s.SeedWithoutSliversOf(cap, all, table, n);
         var inside = s.SeedInsideOf(cap, table);
-        var prev = next.SeedPreviousTable;
         var copies = at.SeedCopyTable(n);
         return s.At(0).Range.FlatMap(t =>
             (inside[t] && s.SeedCorner(t, 0) < n && s.SeedCorner(t, 1) < n && s.SeedCorner(t, 2) < n)
-                ? [s.SeedTriangleOnCopies(all, next, prev, at, copies, t)]
+                ? [s.SeedTriangleOnCopies(all, next, at, copies, t)]
                 : [TriangleOf(0, 0, 0)].Take(0));
     }
 
-    // Triangle t with each corner on the copy whose wedge holds the triangle's centroid.
-    SeedTriangleOnCopies(s: List<Integer>, points: Array<Point2D>, next: Array<Integer>, prev: Array<Integer>, placed: Array<Integer>, copies: List<Integer>, t: Integer): TriangleFace
+    // Triangle t with each corner on the copy SeedCopyFacing picks for the triangle's centroid.
+    SeedTriangleOnCopies(s: List<Integer>, points: Array<Point2D>, next: Array<Integer>, placed: Array<Integer>, copies: List<Integer>, t: Integer): TriangleFace
     {
         var a = s.SeedCorner(t, 0);
         var b = s.SeedCorner(t, 1);
         var c = s.SeedCorner(t, 2);
         var g = Point2D((points[a].X + points[b].X + points[c].X) / 3.0, (points[a].Y + points[b].Y + points[c].Y) / 3.0);
-        return TriangleOf(SeedCopyFacing(points, next, prev, placed, copies, a, g),
-            SeedCopyFacing(points, next, prev, placed, copies, b, g),
-            SeedCopyFacing(points, next, prev, placed, copies, c, g));
+        return TriangleOf(SeedCopyFacing(points, next, placed, copies, a, g),
+            SeedCopyFacing(points, next, placed, copies, b, g),
+            SeedCopyFacing(points, next, placed, copies, c, g));
     }
 
     // The seed of region r in its chart over repeated points: CdtSeedOverCopies over the region's
