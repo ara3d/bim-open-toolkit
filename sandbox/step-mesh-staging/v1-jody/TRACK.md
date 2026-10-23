@@ -1,6 +1,6 @@
 # v1-jody: small closed B-spline loops of the M2-JODY-W377 files discretized and meshed
 
-Ticket: TKT-431, TKT-453, TKT-414, TKT-467, TKT-470
+Ticket: TKT-431, TKT-453, TKT-414, TKT-467, TKT-470, TKT-481
 Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, J5 in 3cc7edb4, J6 in ca659dbc, J7 in a39a1ad4, J8 in 57147e59 | ready, after E5d: J9
 
 ## Chunks
@@ -10,6 +10,7 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, 
 | J1 | TKT-431 | The 24 one-edge plane loops of the two M2-JODY-W377 files discretized: a B-spline written unclamped in periodic form is decided closed from its record | 2 h |
 | J2 | TKT-453 | A closed span whose ends coincide fails the segment test, so small closed loops are not meshed as triangles | 1 h |
 | J4 | (supervisor's performance finding) | The other `Count.Range.Take(0)` empties replaced by one layer-0 helper, `Integer.NoIndices` (J4.patch) | 1 h |
+| J10 | TKT-481 | Law_UvHoleWindingNegative fails on a generated region drawn with the JODY W5/W6 witness: find the cause, fix it or narrow the law | 1 h |
 | J9 | (supervisor, from v1-faces' P2) | A triangle that still folds after refinement with a side on a boundary segment asks for that edge to be refined (RefinementReason.FoldAgainstBoundary), and the host's loop answers it | 2 h |
 | J8 | (supervisor's follow-up to J6, J7) | One open-closed-shell diagnostic instead of two, and no unguarded read after && in J6's and J7's merged files | 1 h |
 | J6 | TKT-467 | Sew vertices and edges within each declared-closed shell, and report every declared-closed shell left open (supervisor's option A) | 2 h |
@@ -69,6 +70,9 @@ Status: merged: J1 in 8af85727, J2 in 964adf85, J4 in fd3db478, J3 in bf3ac6c0, 
   - Laws, on a copy of the library with the patch applied (`plato_laws --library`): `Law_V1Jody_C211Strip45FoldResolved` (c211 face 45, extracted: its first pass has a flipped triangle and asks for a finer edge, the request stays pending in the host's loop, the final mesh has no flipped triangle and nothing pending) and `Law_V1Jody_NoFoldRequestOnWitnesses` pass, as do the host-options laws but one: `Law_V1Proof_WitnessOptionsMeshLikeTheHost` fails, as it does without the patch (its comment says it fails until a merge changes `WitnessOptions`).
   - Corpus, C# regenerated from 8b7a3fee without and with J9 (0 degraded bodies each), harness `all ... 300 --path host --parallel` (bim-open-data 7d017e3), all 88 files done in both: 86 identical in every edge's segment count, every face's outcome and the digest. POS/ANN-MB2 goes from 1 flipped element (contract broken) to 0 (contract holds), closed and oriented in both (edge 3327 from 8 to 16 segments; cone face 1466, TKT-466, which closes with J9). c211_case_with_odin_v1 goes from 5 flipped elements to 0 (contract holds), but faces 92 (a B-spline strip that folded) and 93 (a cylinder beside it) lose their meshes: once edges 288, 289 and 290 have 4 times their segments, the short segments near the vertex where the strip's two sides meet come closer than the parameter tolerance, and the faces end with FACE-LOOP-NOT-SIMPLE, as faces 81, 84 and 88 already do (v1-faces' cause 5, the tangent cusp; v1-edges' E5d is to resolve it). Boundary edges beside unmeshed faces 69 to 101; c211 takes 80 s instead of 37 s. Supervisor's decision (2026-10-22): land after E5d (flips against two holes would trade one contract break for another, and holes open a closed shell); J9 is the P2 implementation, v1-faces reviews it. v1-faces reviewed J9 against its draft (no gaps); the VOCABULARY.md entry now states that blocking withholds the mesh and answered-by-the-host keeps the request pending. The patch will be rebased after v1-edges' E5c, which edits the same matches (SplitAt's arm in IsAnsweredByHost is added then). Before it lands: re-run c211 on a regeneration with E5d, faces 92 and 93 meshed and no flipped element, and account for the c211 time (37 s to 80 s) if it stays.
 
+- J10 (TKT-481), see the commit, about 1 h against 1 h. Cause: the law's premise. `Law_UvHoleWindingNegative(m, f, r, h)` took the region as a free parameter, so the runner paired the witness model with a generated `UvRegion` unrelated to its faces; case 12's (an outer loop with no points, holes at made-up coordinates such as (2, -4.23), sources such as `FromEdge(BrepEdgeIndex(-3))`) has a hole that winds positively. Not the file's data: the JODY W5/W6 witness's real regions, at the host's 1 mm bound, have no holes at all (probe law on a patched copy). Not the closed B-spline unwrap either. Staged as `J10.patch` (11 hunks; `git apply --check` passes on 6665bf03): the restatement decision F-54 gave `Law_UvRegionWindingPositive`. The claim becomes `UvHoleWindingNegative(m, f, r, h)`, and `Law_UvHoleWindingNegative(m, f, d, c, h)` is that claim on `RegionOf`'s result under `CanRegion`; the claim's readers (the orientation proof in `face-meshing-proofs`, its spec and types, `face-meshing.spec`'s two ensures, layer 7's once-check and its comment, `validation-proofs-regions.laws`) call the claim; the layer 5 README's F-54 paragraph names the law.
+  - Laws on the patched copy (`plato_laws --library`): `Law_UvHoleWindingNegative`, `Law_UvRegionWindingPositive`, `Law_HoleInsideOuter` and the seven laws of `BrepCheckingProofsRegionsLaws` (which read the claim) pass, 25 cases each.
+
 ## Merge instructions
 
 J1 (TKT-431):
@@ -105,6 +109,9 @@ J8:
 
 J9:
 - `git apply sandbox/step-mesh-staging/v1-jody/J9.patch`, then delete J9.patch; regenerate. v1-edges' E5c adds `SplitAt` beside `FoldAgainstBoundary` in the same matches (`ReasonName`, `IsBlocking`, `IsAnsweredByHost`, `RequestDiagnostic`).
+
+J10:
+- `git apply sandbox/step-mesh-staging/v1-jody/J10.patch`, then delete J10.patch. The check's label in layer 7 (`CheckAll("Law_UvHoleWindingNegative", ...)`) is kept, as `Check_UvRegionWindingPositive` keeps its law's name.
 
 ## Contract requests
 
@@ -144,6 +151,7 @@ J9:
 | J8: search for the old code, patch, laws and lint on a patched copy | 25 | 2 law runs, 2 lint runs, 1 probe |
 | J9: draft review, patch, witness extraction, laws on a patched copy | 60 | 3 law runs, 1 extraction |
 | J9: regenerations, builds, c211 and two whole-corpus runs, probe of faces 92 and 93 | 90 | 2 regenerations, 3 builds, 176 file runs |
+| J10: case 12, the cause, patch, laws and a probe on a patched copy | 30 | 3 law runs |
 
 ## Lessons
 
