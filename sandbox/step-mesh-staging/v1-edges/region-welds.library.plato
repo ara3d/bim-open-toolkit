@@ -1,21 +1,19 @@
 //==
-// # Welded samples in regions and face meshes, and the requests that weld them (track v1-edges, chunk E5d, TKT-468)
+// # Welded samples in regions and face meshes (track v1-edges, chunk E5d-1, TKT-468)
 //
 // Layer 05-face-meshing. A weld (EdgeDiscretizations.Welds, V1EdgesWelds) says that a sample of an
-// edge's polyline is a model vertex. Two readers: the region builders put a welded sample at the
-// parameters of its vertex wherever the face's region holds that vertex (SnappedToWelds, applied by
-// UnorientedRegionOf and UnorientedRegionOfIn), so the vertex and the sample are one repeated point
-// and the sliver between them is a side run both ways, which CdtSeedOverCopies cancels; and Lift
-// gives a welded sample its vertex as its source (WithWeldedSources), so it lifts to the vertex's
-// point with the vertex's provenance, and the assembly numbers it as the vertex in every face
-// citing the edge. The requests: a crossing within the tolerance whose nearer end is a model vertex
-// asks for SplitAtVertex on the crossed segment's edge (CrossSplitRequests: c211's cusps, LENA-R8
-// 258's near-coincident vertices); a T-touch at a model vertex asks for it too (E5c's SplitAt
-// stays for a touching edge sample).
+// edge's polyline is another boundary point, a model vertex or another edge's sample. Two readers:
+// the region builders put a welded sample at the parameters of its target wherever the face's
+// region holds the target (SnappedToWelds, applied by UnorientedRegionOf and UnorientedRegionOfIn),
+// so the two are one repeated point and the sliver between them is a side run both ways, which
+// CdtSeedOverCopies cancels; and Lift gives a welded sample its target's source
+// (WithWeldedSources), so it lifts to the target's point with its provenance, and the assembly
+// numbers it as the target in every face citing the edge. No face asks for a weld in E5d-1: welds
+// from touches made a notch's overlapping edges one edge of four uses on ELLA-W1 (TKT-488), and
+// the supervisor kept E5d-1 to the machinery; E5d-2's crossings (c211's cusps) are the first users.
 //
 // Sections, in order:
 //  - Welds in regions and triangulations
-//  - Requests
 
 library V1EdgesRegionWelds
 {
@@ -65,64 +63,4 @@ library V1EdgesRegionWelds
     // the vertex's point and provenance; t itself when d welds nothing.
     WithWeldedSources(t: UvTriangulation, d: EdgeDiscretizations): UvTriangulation
         => d.Welds.Count == 0 ? t : UvTriangulation(t.Points, t.Sources.Map(s => d.WeldedSource(s)), t.Triangles, t.Quads);
-
-    //==
-    // # Requests
-
-    // The vertex of a source, as a one-element array; empty for every other source.
-    SourceVertex(s: UvPointSource): Array<BrepVertexIndex>
-        => match (s) {
-            FromVertex(v) => [v];
-            FromEdge(e, k) => [BrepVertexIndex(0)].Take(0);
-            SeamCut(side, i) => [BrepVertexIndex(0)].Take(0);
-            Pole(side, i) => [BrepVertexIndex(0)].Take(0);
-            Interior => [BrepVertexIndex(0)].Take(0);
-        };
-
-    // For segments a and b of r that properly cross: the end of either that is a model vertex,
-    // lies strictly inside the other segment's span and within one tolerance unit of it, the
-    // nearest such end, as a one-element array of (vertex position on its loop, crossed segment);
-    // empty when no end qualifies.
-    CrossingVertexEnd(r: UvRegion, tol: UvTolerance, a: RegionSegment, b: RegionSegment): Array<CrossingEnd>
-    {
-        var na = r.LoopAt(a.Loop).Points.Count;
-        var nb = r.LoopAt(b.Loop).Points.Count;
-        var ends = [CrossingEnd(b, b.Index, a), CrossingEnd(b, (b.Index + 1) % nb, a), CrossingEnd(a, a.Index, b), CrossingEnd(a, (a.Index + 1) % na, b)];
-        var near = ends.FlatMap(x => (r.LoopAt(x.From.Loop).Sources[x.Position].SourceVertex.Count == 1
-            && r.EndGap(tol, x) <= 1.0 && r.EndIsBetween(x)) ? [x] : [x].Take(0));
-        return near.Count == 0 ? near : [near.Skip(1).Reduce(near[0], (best, x) => r.EndGap(tol, x) < r.EndGap(tol, best) ? x : best)];
-    }
-
-    // The gap, in tolerance units, from the end of x to its crossed segment.
-    EndGap(r: UvRegion, tol: UvTolerance, x: CrossingEnd): Number
-        => r.LoopAt(x.From.Loop).Points[x.Position].PointSegmentGap(r.SegmentStart(x.Crossed.Loop, x.Crossed.Index), r.SegmentEnd(x.Crossed.Loop, x.Crossed.Index), tol);
-
-    // Whether the end of x projects strictly inside its crossed segment.
-    EndIsBetween(r: UvRegion, x: CrossingEnd): Boolean
-    {
-        var p = r.SegmentStart(x.Crossed.Loop, x.Crossed.Index);
-        var q = r.SegmentEnd(x.Crossed.Loop, x.Crossed.Index);
-        var e = r.LoopAt(x.From.Loop).Points[x.Position];
-        var along = (e.U - p.U) * (q.U - p.U) + (e.V - p.V) * (q.V - p.V);
-        return along > 0.0 && along < (q.U - p.U) * (q.U - p.U) + (q.V - p.V) * (q.V - p.V);
-    }
-
-    // The SplitAtVertex requests for face f's region r whose segments cross: for each pair of
-    // crossing segments (CrossingSegments flags both), the nearest model-vertex end within the
-    // tolerance of the other (CrossingVertexEnd), on a crossed segment that lies on a model edge
-    // of f, asks to split that edge at the vertex's closest parameter. Empty when some crossing
-    // has no such end (the face keeps the self-intersection requests).
-    CrossSplitRequests(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, tol: UvTolerance, c: FaceMeshingCriteria): Array<EdgeRefinementRequest>
-    {
-        var flags = r.CrossingSegments(tol);
-        var segs = r.RegionSegments;
-        var flagged = flags.Count.Range.FlatMap(i => flags[i] ? [i] : [0].Take(0));
-        var pairs = flagged.FlatMap(x => flagged.FlatMap(y => (x < y && r.SegmentsDoNotCross(tol, segs[x], segs[y]).Not) ? [x * segs.Count + y] : [0].Take(0)));
-        var asks = pairs.Map(p => r.CrossingVertexEnd(tol, segs[p / segs.Count], segs[p % segs.Count]).FlatMap(x =>
-            m.SegmentEdge(f, d, r, x.Crossed.Loop, x.Crossed.Index).FlatMap(e =>
-                r.LoopAt(x.From.Loop).Sources[x.Position].SourceVertex.FlatMap(v =>
-                    m.SplitParameterFor(d, e, m.Vertices[v].Point).Map(t =>
-                        EdgeRefinementRequest(e, RefinementReason.SplitAtVertex(t, v), c.Discretization.Chordal, 0))))));
-        return asks.All(a => a.Count > 0) ? asks.FlatMap(a => a) : EdgeRefinementRequest.NoRequests;
-    }
 }

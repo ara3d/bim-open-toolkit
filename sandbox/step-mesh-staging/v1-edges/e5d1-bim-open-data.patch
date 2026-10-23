@@ -1,0 +1,28 @@
+diff --git a/src/data/Ara3D.Step.Mesher/Plato/StepPlatoMesher.cs b/src/data/Ara3D.Step.Mesher/Plato/StepPlatoMesher.cs
+index 26cff0a..ec0025f 100644
+--- a/src/data/Ara3D.Step.Mesher/Plato/StepPlatoMesher.cs
++++ b/src/data/Ara3D.Step.Mesher/Plato/StepPlatoMesher.cs
+@@ -37,8 +37,8 @@ public static class StepPlatoMesher
+             o = o.WithRounds(rounds);
+         var tables = StepPlatoTables.Of(m);
+         var failures = new List<StepPlatoFailure>();
+-        var d = new EdgeDiscretizations(Rows(m.Edges.Count, i => tables.Discretized(m, new BrepEdgeIndex(i), o.Face.Discretization),
+-            (i, _) => new BrepEdgeIndex(i).Undiscretized(), StepPlatoFailure.Edge, failures));
++        var d = Rows(m.Edges.Count, i => tables.Discretized(m, new BrepEdgeIndex(i), o.Face.Discretization),
++            (i, _) => new BrepEdgeIndex(i).Undiscretized(), StepPlatoFailure.Edge, failures).WithoutWelds();
+         var outcomes = Rows(m.Faces.Count, i => tables.FaceOutcome(m, new BrepFaceIndex(i), d, o.Face),
+             (i, failure) => Unmeshed(new BrepFaceIndex(i), failure), StepPlatoFailure.Face, failures);
+         var final = tables.Refined(m, o, d, outcomes, failures);
+diff --git a/tools/step-corpus-harness/TimedMesh.cs b/tools/step-corpus-harness/TimedMesh.cs
+index ad2d319..ee54401 100644
+--- a/tools/step-corpus-harness/TimedMesh.cs
++++ b/tools/step-corpus-harness/TimedMesh.cs
+@@ -58,7 +58,7 @@ public sealed record TimedMesh(
+         var surfaces = m.AdjacentSurfaces(edgesByFace);
+         var (edges, edgesMs) = Clock.Time(() =>
+             Rows.Build(m.Edges.Count, parallel, i => m.Time(i, surfaces[i], criteria.Discretization, meshPath), new("edges", m.Edges.Count)));
+-        var first = new EdgeDiscretizations(edges.Select(e => e.Discretization).ToArray());
++        var first = edges.Select(e => e.Discretization).ToArray().WithoutWelds();
+         var (firstFaces, facesMs) = Clock.Time(() =>
+             Rows.Build(m.Faces.Count, parallel, i => m.Time(i, edgesByFace[i], first, criteria, meshPath), new("faces", m.Faces.Count)));
+         Progress.Report("refine");
