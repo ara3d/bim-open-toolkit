@@ -21,6 +21,7 @@ eleven algorithms bodies; the genus track (TKT-328) gave the last, `SharesCurveP
 | `topology.laws.plato` | library `BrepTopologyLaws`: 41 laws |
 | `topology.spec.plato` | invariants of `BrepModel` and `ShellCounts`, 13 function contracts, 4 theorems |
 | `topology-proofs.{types,library,spec}.plato` | library `BrepTopologyProofs`, section 4: `InRangeModel`, `ResolvableModel`, `ChainedLoop`, `ClosedShell`, `OrientedShell`, `ConnectedShell` and their `Decided*` sums, each built only by its `Check*` constructor; `IsDecided`; the `IToleranced` and `IHasProvenance` obligations. The 13 laws over them take layer 7's witnesses and are in `07-validation/validation-proofs-kernel.laws.plato` (catalog merge, proofs, 2026-10-20) |
+| `domain-generators.library.plato` | library `V1GeneratorsDomains`: `Generate_CurveDomain`, every `CurveDomain` the law runner draws built through `FullTurnDomain`, `UnboundedDomain`, `BoundedDomain`, `WithClosure`, `TorusVDomain` or `TraversalDomain`; here because it calls this layer's `TraversalDomain` (v1-generators G2, TKT-423, 2026-10-22) |
 
 ## The objects
 

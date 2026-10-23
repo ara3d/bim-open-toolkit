@@ -2,7 +2,7 @@
 // # Check and report generators
 //
 // Generators for the law runner (Plato TKT-446; see
-// tolerance-generators.library.plato beside this file). A Check is built only
+// 00-foundation/tolerance-generators.library.plato). A Check is built only
 // by CheckWithin, CheckExact, and WorseOf, and a Report only by Empty, Merge,
 // ReportOf, and Located (foundation-diagnostics.types.plato), so these draw
 // every Check and Report through those functions and nothing else. Before,

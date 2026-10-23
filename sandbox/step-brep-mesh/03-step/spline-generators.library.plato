@@ -2,7 +2,7 @@
 // # B-spline record generators
 //
 // Generators for the law runner (Plato TKT-446; see
-// tolerance-generators.library.plato beside this file). The decoder makes a
+// 00-foundation/tolerance-generators.library.plato). The decoder makes a
 // BSplineCurveData or BSplineCurve2DData from a b_spline_curve_with_knots
 // whose arguments pass constraints_param_b_spline (ConstraintsParamBSpline,
 // layer 3), by repeating each distinct knot by its multiplicity
@@ -70,6 +70,6 @@ library V1GeneratorsSplines
 
     // Every generated knot spec is one the decoder accepts: the generator
     // above draws only decodable records.
-    Law_V1Generators_KnotSpecsDecodable(): Boolean
+    Law_KnotSpecsDecodable(): Boolean
         => 16.MapRange(s => s.V1GeneratorsKnotSpec.ConstraintsParamBSpline && (s + 1).V1GeneratorsKnotSpec.ConstraintsParamBSpline).All(b => b);
 }
