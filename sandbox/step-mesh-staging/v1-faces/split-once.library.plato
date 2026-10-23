@@ -1,0 +1,208 @@
+//==
+// # The split mesh built once, and built in n log n (F6, TKT-486): layer 6 part
+//
+// Layer 7's split checks called a layer 6 law at every sample (every split vertex, every
+// triangle slot, every pair of split vertices), and each law built ToSplitTriangleMesh3D, which
+// is itself quadratic in the corner count (FirstMatchingCorner scans every earlier corner, and
+// PositionOfItem every representative). TKT-482's full sweep hung 20 minutes in
+// Witness_CounterboreMeshed's validation on it. This file has:
+//  - ToSplitTriangleMesh3DIndexed: the same split mesh, its corner groups found by sorting the
+//    corners by vertex and scanning each vertex's corners only, and its split vertex per corner
+//    by an inverse index.
+//  - Each split law's body after the build, taking the built split mesh, so a law builds it once
+//    and a check once for all its samples (split-checks.library.plato).
+//  - SplitVerticesDistinct: Law_SplitVerticesDiffer at every pair, compared within each source
+//    vertex's copies after a sort by source vertex (two vertices of different source vertices
+//    always differ, so no other pair can fail).
+//
+// Sections, in order:
+//  - Indexed build
+//  - Law bodies
+//  - Distinct split vertices
+
+library SplitMeshOnce
+{
+    //==
+    // # Indexed build
+
+    // ToSplitTriangleMesh3D with FirstMatchingCorners for the per-corner FirstMatchingCorner and
+    // an inverse index for PositionOfItem: the same value, n log n in the corner count where
+    // corners per vertex are bounded.
+    ToSplitTriangleMesh3DIndexed(mesh: ModelMesh): SplitTriangleMesh3D
+    {
+        var count = mesh.CornerCount;
+        var firstOf = mesh.FirstMatchingCorners;
+        var reps = count.Range.FlatMap(c => firstOf[c] == c ? [c] : Integer.NoIndices)
+            .Sort((a, b) => mesh.ComesBeforeByVertex(a, b));
+        var positionOf = reps.InversePositions(count);
+        var splitOf = count.MapRange(c => positionOf[firstOf[c]]);
+        var triangleCount = mesh.Triangles.Count + 2 * mesh.Quads.Count;
+        return SplitTriangleMesh3D(
+            TriangleMesh3D(
+                reps.Map(c => mesh.Positions[mesh.CornerVertex(CornerIndex(c))]),
+                triangleCount.MapRange(k => TriangleFace(
+                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 0).Value]),
+                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 1).Value]),
+                    VertexIndex(splitOf[mesh.TriangulatedCorner(k, 2).Value])))),
+            reps.Map(c => mesh.CornerNormals[c]),
+            reps.Map(c => mesh.CornerUvs[c]),
+            reps.Map(c => mesh.CornerVertex(CornerIndex(c))));
+    }
+
+    // Whether corner a comes before or with corner b ordered by vertex, then by corner: the order
+    // ToSplitTriangleMesh3D gives its split vertices.
+    ComesBeforeByVertex(mesh: ModelMesh, a: Integer, b: Integer): Boolean
+        => mesh.CornerVertex(CornerIndex(a)).Value < mesh.CornerVertex(CornerIndex(b)).Value
+            || (mesh.CornerVertex(CornerIndex(a)).Value == mesh.CornerVertex(CornerIndex(b)).Value && a <= b);
+
+    // FirstMatchingCorner at every corner. Corners matching c share its vertex, so after a sort
+    // by vertex and then corner, c's first match is the first corner of its vertex's run that
+    // matches it; c itself matches, so the scan ends at c at the latest.
+    FirstMatchingCorners(mesh: ModelMesh): Array<Integer>
+    {
+        var count = mesh.CornerCount;
+        var order = count.Range.Sort((a, b) => mesh.ComesBeforeByVertex(a, b));
+        var first = new Buffer<Integer>(count);
+        var runStart = 0;
+        var p = 0;
+        while (p < count)
+        {
+            if (p > 0)
+            {
+                if (mesh.CornerVertex(CornerIndex(order[p])).Value != mesh.CornerVertex(CornerIndex(order[p - 1])).Value)
+                {
+                    runStart = p;
+                }
+            }
+            var found = -1;
+            var q = runStart;
+            while (found < 0)
+            {
+                if (mesh.HaveIdenticalCorners(order[q], order[p]))
+                {
+                    found = order[q];
+                }
+                q = q + 1;
+            }
+            first = first.Set(order[p], found);
+            p = p + 1;
+        }
+        return first.Freeze();
+    }
+
+    // Entry i is the position of i in items, or -1 where i is not an item; items are distinct
+    // and in 0 to n - 1.
+    InversePositions(items: Array<Integer>, n: Integer): Array<Integer>
+    {
+        var at = new Buffer<Integer>(n);
+        var i = 0;
+        while (i < n)
+        {
+            at = at.Set(i, -1);
+            i = i + 1;
+        }
+        var j = 0;
+        while (j < items.Count)
+        {
+            at = at.Set(items[j], j);
+            j = j + 1;
+        }
+        return at.Freeze();
+    }
+
+    //==
+    // # Law bodies
+    //
+    // Each is the law of 06-mesh/mesh-laws-once.laws.plato of the same name without "In", after
+    // its IsWellFormed guard and its build.
+
+    SplitHasAtLeastAsManyVerticesIn(mesh: ModelMesh, split: SplitTriangleMesh3D): Boolean
+        => mesh.IsEveryVertexReferenced ? split.Mesh.Positions.Count >= mesh.Positions.Count : true;
+
+    SplitSplitsEachQuadInTwoIn(mesh: ModelMesh, split: SplitTriangleMesh3D): Boolean
+        => split.Mesh.Faces.Count == mesh.Triangles.Count + 2 * mesh.Quads.Count;
+
+    SplitHasOneNormalPerVertexIn(split: SplitTriangleMesh3D): Boolean
+        => split.Normals.Count == split.Mesh.Positions.Count;
+
+    SplitHasOneUvPerVertexIn(split: SplitTriangleMesh3D): Boolean
+        => split.Uvs.Count == split.Mesh.Positions.Count;
+
+    SplitHasOneSourcePerVertexIn(split: SplitTriangleMesh3D): Boolean
+        => split.SourceVertex.Count == split.Mesh.Positions.Count;
+
+    SplitVertexKeepsItsSourcePositionIn(mesh: ModelMesh, split: SplitTriangleMesh3D, v: VertexIndex): Boolean
+        => (split.Mesh.Positions.IsValidIndex(v) ? split.SourceVertex.IsValidIndex(v) : false)
+            ? mesh.PositionIs(split.SourceVertex[v], split.Mesh.Positions[v])
+            : true;
+
+    SplitFollowsTheTriangulationIn(mesh: ModelMesh, split: SplitTriangleMesh3D, k: Integer, s: Integer): Boolean
+        => (split.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
+            ? split.SourceOfCorner(k, s).Value == mesh.CornerVertex(mesh.TriangulatedCorner(k, s)).Value
+            : true;
+
+    SplitVertexCarriesItsCornerNormalIn(mesh: ModelMesh, split: SplitTriangleMesh3D, k: Integer, s: Integer): Boolean
+        => (split.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
+            ? split.NormalIs(split.Mesh.Faces[k].At(s), mesh.CornerNormals, mesh.TriangulatedCorner(k, s))
+            : true;
+
+    SplitVertexCarriesItsCornerUvIn(mesh: ModelMesh, split: SplitTriangleMesh3D, k: Integer, s: Integer): Boolean
+        => (split.Mesh.Faces.IsValidIndex(k) ? (s >= 0 && s < 3) : false)
+            ? split.UvIs(split.Mesh.Faces[k].At(s), mesh.CornerUvs, mesh.TriangulatedCorner(k, s))
+            : true;
+
+    SplitVerticesDifferIn(split: SplitTriangleMesh3D, a: VertexIndex, b: VertexIndex): Boolean
+        => (a.Value != b.Value && split.HasVertexRecord(a) && split.HasVertexRecord(b))
+            ? (split.SourceVertex[a].Value != split.SourceVertex[b].Value
+                || split.Normals[a] != split.Normals[b]   // exact by construction
+                || split.Uvs[a] != split.Uvs[b])          // exact by construction
+            : true;
+
+    //==
+    // # Distinct split vertices
+
+    // Law_SplitVerticesDiffer at every pair of split vertices, as the check stated it:
+    // quadratic, kept for the agreement law.
+    SplitVerticesDistinctPairwise(split: SplitTriangleMesh3D): Boolean
+        => split.Mesh.Positions.Count.Range.All(a => split.Mesh.Positions.Count.Range.All(
+            b => split.SplitVerticesDifferIn(VertexIndex(a), VertexIndex(b))));
+
+    // The split vertices that have a record, ordered by source vertex and then by index, so
+    // the vertices of one source vertex are adjacent.
+    RecordsBySource(split: SplitTriangleMesh3D): Array<Integer>
+        => split.Mesh.Positions.Count.Range
+            .FlatMap(v => split.HasVertexRecord(VertexIndex(v)) ? [v] : Integer.NoIndices)
+            .Sort((a, b) => split.SourceVertex[a].Value < split.SourceVertex[b].Value
+                || (split.SourceVertex[a].Value == split.SourceVertex[b].Value && a <= b));
+
+    // Whether the vertex at position j of order (RecordsBySource) differs from every later
+    // vertex of its source vertex. The run of its source vertex ends at the first later vertex
+    // of another source vertex.
+    DiffersFromLaterOfItsSource(split: SplitTriangleMesh3D, order: Array<Integer>, j: Integer): Boolean
+    {
+        var differs = true;
+        var inRun = true;
+        var k = j + 1;
+        while (inRun && k < order.Count)
+        {
+            if (split.SourceVertex[order[j]].Value != split.SourceVertex[order[k]].Value)
+            {
+                inRun = false;
+            }
+            else
+            {
+                differs = differs && split.SplitVerticesDifferIn(VertexIndex(order[j]), VertexIndex(order[k]));
+                k = k + 1;
+            }
+        }
+        return differs;
+    }
+
+    // Law_SplitVerticesDiffer at every pair of split vertices, compared within each source
+    // vertex only.
+    SplitVerticesDistinct(split: SplitTriangleMesh3D): Boolean
+    {
+        var order = split.RecordsBySource;
+        return order.Count.Range.All(j => split.DiffersFromLaterOfItsSource(order, j));
+    }
+}
