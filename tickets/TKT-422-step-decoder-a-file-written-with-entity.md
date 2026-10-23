@@ -1,7 +1,7 @@
 ---
 id: TKT-422
 title: STEP decoder: a file written with entity short names (CRTPNT, PLYLP, FCSRF) decodes to no faces; STEP Tools' clip.stp gives 0 faces
-status: claimed
+status: done
 depends_on: []
 owner: session 0d12cac2
 session: 0d12cac2-46fb-4ad4-b4ca-2a2a83bdf507
@@ -10,6 +10,7 @@ workflow: [W3]
 related: [TKT-305, TKT-323]
 created: 2026-10-22
 claimed: 2026-10-22
+closed: 2026-10-22
 kind: defect
 ---
 
