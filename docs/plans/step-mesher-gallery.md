@@ -39,11 +39,33 @@ The gallery was regenerated on the library generated from toolkit c47db0b3 (bim-
 
 Yesterday's ODIN-W260 sidecar came from a cold run, but JIT compilation cannot account for a 6 to 16 times drop on five separate faces. Six public samples were added. STEP Tools io1-tc-214 (the epic's AP214 criterion), NIST FTC 06 and STEP Tools cubcylso mesh closed. NIST CTC 01 and STEP Tools block lose faces to TKT-410; block's lines are wrapped in INTERSECTION_CURVE. The moon buggy's full spheres refine to about 19,000 triangles each, and its assembly has 180 misoriented edges; the gallery shows three of the spheres because the whole mesh exceeds the host's 16 MB file limit. STEP Tools clip.stp decodes to no faces because it uses entity short names (TKT-422). NASA's RASSOR did not finish its 78,659 edges in 150 s and is left out.
 
+## First-level operations, 2026-10-22 (evening)
+
+The owner asked for cases between the primitives and the whole parts: the operations a modeller makes in one step. They are Plato witnesses, not STEP files, so the library's laws run on them too (TKT-482; the Python STEP writer tried first covered the decoder but tested nothing, and was dropped). Twenty-two `Witness_<Name>` values in `sandbox/step-mesh-staging/gallery-witnesses/` (staged for the v1 supervisor's merge, TRACK.md there): hexagon, L bracket, chamfer, fillet, the same fillet as a surface of linear extrusion, inner fillet, slot, D-shaft, pyramid, blind hole, boss, counterbore, countersink, spherical dimple and dome, shelled open box, tube, oblique cut (an ellipse edge), torus-filleted puck, revolved barrel and cone (surfaces of revolution), and a cross hole whose two intersection curves are cubic B-splines through 97 points each (`tools/cross_hole_spline.py`; 3.5e-7 off the cylinders, inside the 1e-6 tolerance). Each states its counts, genus and volume; seven laws check them and each is a `MeshedWitness`.
+
+The gallery got an **operations** group whose verdicts come from the sidecar (`auto_verdict`: what did not mesh and why, else closed, oriented, contract), and a status table at the top: per group, cases, passes, faces meshed of drawn, triangles and face time. The run below used a scratch regeneration (2ab7ea1a's layers plus the staged files, Plato 60134758) built under `artifacts/`, never committed to bim-open-data, since the v1-close session owns the committed regeneration and its pin.
+
+| Group | Cases | Pass | Faces meshed | Triangles | Face time |
+|---|---|---|---|---|---|
+| Primitives | 10 | 9 | 59 / 59 | 13,488 | 12.3 s |
+| First-level operations | 22 | 21 | 143 / 144 | 5,578 | 19.9 s |
+| Real parts | 5 | 3 | 4,884 / 4,884 | 38,413 | 12.0 s |
+| Public samples | 6 | 3 | 346 / 360 | 130,528 | 27.8 s |
+| Failures | 12 | 0 | 25,504 / 27,906 | 126,179 | 72.9 s |
+| All | 55 | 36 | 30,936 / 33,353 | 314,186 | 144.9 s |
+
+Face time for witnesses and operations is a cold process each (no `--warmup`), so most of the 20 s is JIT: the parts themselves mesh in under 100 ms. What the operations found:
+
+- 21 of 22 mesh closed and oriented with the contract holding, the surfaces of revolution and linear extrusion among them (first time either is meshed in the gallery).
+- The cross hole's outer band, with two closed B-spline loops, is refused as not simple (the TKT-412 family): 3 of 4 faces mesh, 576 boundary edges. A closed edge on an aperiodic B-spline also needs layer 3's closure mark, or its domain is empty (`TraversalDomain`); the witness supplies it, as `PrepareModel` does for a file.
+- `Oracle_DivergenceVolume` returns NaN on a surface of revolution or linear extrusion (TKT-483): the volume law holds vacuously on those three until it is fixed; the other 19 match their closed forms.
+- Two compiler facts: a function named `At` becomes indexing in the C# (`3.4[2.4]`), and the law interpreter reads a function named like its own library as that library.
+
 ## How to regenerate
 
 ```
 dotnet build deps/bim-open-data/tools/step-corpus-harness -c Release --artifacts-path artifacts/builders/<id>
-python deps/bim-open-data/tools/step-corpus-harness/gallery-page.py run artifacts/step-gallery --harness <artifacts path>/bin/StepCorpusHarness/release/step-corpus-harness.exe
+python deps/bim-open-data/tools/step-corpus-harness/gallery-page.py run artifacts/step-gallery --harness <artifacts path>/bin/StepCorpusHarness/release/step-corpus-harness.exe   # --only o-Hexagon,... for the operations alone
 python deps/bim-open-data/tools/step-corpus-harness/gallery-page.py page artifacts/step-gallery --previous artifacts/step-gallery/<earlier run> --label "<library and date>"
 ```
 
