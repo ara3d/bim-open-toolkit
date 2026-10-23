@@ -20,10 +20,12 @@ library OperationWitnessesLaws
     //==
     // # Counts and genus
 
-    // Operation witness k has one shell with its stated raw counts.
+    // Operation witness k has one shell with its stated raw counts (the read
+    // of shell 0 is behind the count: Plato evaluates both sides of &&).
     Law_OperationWitnessHasStatedCounts(k: Integer): Boolean
         => BrepModel.OperationWitnessAt(k).Shells.Count == 1
-            && BrepModel.OperationWitnessAt(k).RawCounts(ShellIndex(0)) == WitnessFacts.OperationFactsAt(k).Shells[0];
+            ? BrepModel.OperationWitnessAt(k).RawCounts(ShellIndex(0)) == WitnessFacts.OperationFactsAt(k).Shells[0]
+            : false;
 
     // The stated counts of operation witness k imply its stated genus.
     Law_OperationWitnessStatedCountsImplyStatedGenus(k: Integer): Boolean
