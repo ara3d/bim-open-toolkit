@@ -531,3 +531,5 @@ Lessons for the process:
   - Note: the generators and their laws are in the shipped program's layers, so they reach the generated C#, as the layers' other laws do.
   - Baseline on 60134758 (HEAD 003e25c0) against the last c8c83c8b sweep (V1G-21): no verdict changed except `Law_ValidatedReportIffClean`, a budget error beside a concurrent compile, which passes in the next sweep. TKT-447's checked corner indexers changed no verdict.
   - law_lint on the staging folder: the 12 findings of HEAD, none in these files.
+- **V1G-20 (TKT-323), merged in 132104d2.** `Law_V1Gate_OdinW260CuspsExplainDegenerateElements` meshes an 11-face extract of ODIN-W260 around the cusp faces 2615 and 2616 through the whole pipeline: both carry FACE-CUSP, and every finding of the two degenerate checks is a Warning with FACE-CUSP's sentence. It replaces `Law_V1Gate_CuspExplainsDegenerateElements`, whose synthetic outcome passed even with the explanation unwired.
+  - law_lint after the merge: the 12 findings of HEAD, none in V1G-20's files (a 13th is in the gallery-witnesses staging folder, recorded with that merge).
