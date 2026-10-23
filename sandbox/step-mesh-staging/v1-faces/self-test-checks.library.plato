@@ -1,0 +1,275 @@
+//==
+// # The self-test checks over tables built once: layer 7 part (F7, TKT-486)
+//
+// Each Check_XIn is layer 7's Check_X reading a MeshSelfTestTables built once per report: the same
+// law name, the same samples in the same order, the same provenance, so the same Check. Where the
+// mesh is not well formed, the laws that read Restricted or FirstFacesElements are vacuous at
+// every sample, as in the per-sample form. SelfTestReportOnce is ModelMeshReport's SelfTestChecks
+// family with every entry in its place and its message, the tables built once; F6's ten split
+// entries read the tables' split mesh, so SplitSelfTestReport is no longer needed.
+//
+// Sections, in order:
+//  - Edge table checks
+//  - Reversal checks
+//  - Component checks
+//  - Restriction checks
+//  - Coincidence and triangulation checks
+//  - Report
+//  - Helpers
+
+library SelfTestChecksOnce
+{
+    //==
+    // # Edge table checks
+
+    Check_EdgeTableHasOneCountPerEdgeIn(t: MeshSelfTestTables): Check
+        => CheckOnce("EdgeTableHasOneCountPerEdge", EdgeTableHasOneCountPerEdge(t.Tables.Edges));
+
+    Check_EdgeTableHasOneDirectionSumPerEdgeIn(t: MeshSelfTestTables): Check
+        => CheckOnce("EdgeTableHasOneDirectionSumPerEdge", EdgeTableHasOneDirectionSumPerEdge(t.Tables.Edges));
+
+    Check_EdgeTableEdgeIsCanonicalIn(t: MeshSelfTestTables): Check
+        => t.CheckTableEdgesIn("EdgeTableEdgeIsCanonical", k => EdgeTableEdgeIsCanonical(t.Tables.Edges, k));
+
+    Check_EdgeTableIsStrictlySortedIn(t: MeshSelfTestTables): Check
+        => t.CheckTableEdgesIn("EdgeTableIsStrictlySorted", k => EdgeTableIsStrictlySorted(t.Tables.Edges, k));
+
+    Check_EdgeTableListsOnlyUsedEdgesIn(t: MeshSelfTestTables): Check
+        => t.CheckTableEdgesIn("EdgeTableListsOnlyUsedEdges", k => EdgeTableListsOnlyUsedEdges(t.Tables.Edges, k));
+
+    Check_EdgeTableCountsEveryProperSideIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => CheckOnce("Law_EdgeTableCountsEveryProperSide", t.Tables.Edges.ElementCounts.IntegerTotal == mesh.ProperSideCount);
+
+    Check_EdgeTableListsEveryProperSideIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => mesh.CheckMeshCorners("Law_EdgeTableListsEveryProperSide", (e, s) => mesh.EdgeTableListsEveryProperSideIn(t, e, s));
+
+    Check_EdgeTableCountMatchesItsSidesIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => t.CheckTableEdgesIn("Law_EdgeTableCountMatchesItsSides", k => mesh.EdgeTableCountMatchesItsSidesIn(t, k));
+
+    Check_EdgeTableDirectionSumMatchesItsSidesIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => t.CheckTableEdgesIn("Law_EdgeTableDirectionSumMatchesItsSides", k => mesh.EdgeTableDirectionSumMatchesItsSidesIn(t, k));
+
+    Check_DirectionSumIsBoundedByCountIn(t: MeshSelfTestTables): Check
+        => t.CheckTableEdgesIn("DirectionSumIsBoundedByCount", k => DirectionSumIsBoundedByCount(t.Tables.Edges, k));
+
+    Check_DirectionSumHasTheParityOfCountIn(t: MeshSelfTestTables): Check
+        => t.CheckTableEdgesIn("DirectionSumHasTheParityOfCount", k => DirectionSumHasTheParityOfCount(t.Tables.Edges, k));
+
+    Check_ReversalNegatesEveryDirectionSumIn(t: MeshSelfTestTables): Check
+        => t.CheckTableEdgesIn("Law_ReversalNegatesEveryDirectionSum", k => t.ReversalNegatesEveryDirectionSumIn(k));
+
+    Check_ClosedMeansEveryEdgeHasTwoSidesIn(t: MeshSelfTestTables): Check
+        => t.CheckTableEdgesIn("Law_ClosedMeansEveryEdgeHasTwoSides", k => Law_ClosedMeansEveryEdgeHasTwoSides(t.Tables.Edges, k));
+
+    Check_ManifoldMeansNoEdgeHasMoreThanTwoSidesIn(t: MeshSelfTestTables): Check
+        => t.CheckTableEdgesIn("Law_ManifoldMeansNoEdgeHasMoreThanTwoSides", k => Law_ManifoldMeansNoEdgeHasMoreThanTwoSides(t.Tables.Edges, k));
+
+    Check_OrientedExactlyWhenNoEdgeIsMisorientedIn(t: MeshSelfTestTables): Check
+        => CheckOnce("Law_OrientedExactlyWhenNoEdgeIsMisoriented", Law_OrientedExactlyWhenNoEdgeIsMisoriented(t.Tables.Edges));
+
+    //==
+    // # Reversal checks
+
+    Check_ReversalPermutesCornersIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => mesh.CheckMeshCorners("Law_ReversalPermutesCorners", (e, s) => mesh.ReversalPermutesCornersIn(t, e, s));
+
+    Check_ReversalMovesCornerUvWithCornerIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => mesh.CheckMeshCorners("Law_ReversalMovesCornerUvWithCorner", (e, s) => mesh.ReversalMovesCornerUvWithCornerIn(t, e, s));
+
+    //==
+    // # Component checks
+
+    Check_ElementCornersShareItsComponentIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => mesh.CheckMeshCorners("Law_ElementCornersShareItsComponent", (e, s) => mesh.ElementCornersShareItsComponentIn(t, e, s));
+
+    Check_ComponentEulerCharacteristicsAddUpIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => CheckOnce("Law_ComponentEulerCharacteristicsAddUp", t.Tables.MeshIsWellFormed
+            ? (t.Tables.Counts.Map(c => c.EulerCharacteristic).IntegerTotal
+                + t.Tables.Components.UnreferencedVertexCount
+                == mesh.EulerCharacteristic)
+            : true);
+
+    Check_EulerIsTwoMinusTwiceGenusMinusBoundaryCyclesIn(t: MeshSelfTestTables): Check
+        => t.Tables.Components.CheckComponentsGiven("Law_EulerIsTwoMinusTwiceGenusMinusBoundaryCycles",
+            c => Law_EulerIsTwoMinusTwiceGenusMinusBoundaryCycles(c.CountsIn(t.Tables.Counts)));
+
+    Check_VectorAreaVanishesIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => t.Tables.Components.CheckComponentsGiven("Law_VectorAreaVanishes", c => mesh.VectorAreaVanishesIn(t, c));
+
+    Check_ClosedComponentEulerIsTwoMinusTwiceGenusIn(t: MeshSelfTestTables): Check
+        => t.Tables.Components.CheckComponentsGiven("Law_ClosedComponentEulerIsTwoMinusTwiceGenus",
+            c => Law_ClosedComponentEulerIsTwoMinusTwiceGenus(c.CountsIn(t.Tables.Counts)));
+
+    //==
+    // # Restriction checks
+
+    // One law per face instead of per element (RestrictionKeepsTheElementsOfEachFace).
+    Check_RestrictionKeepsTheElementsOfTheFacesOnce(mesh: ModelMesh): Check
+    {
+        var holds = mesh.RestrictionKeepsTheElementsOfEachFace;
+        return mesh.CheckMeshElements("Law_RestrictionKeepsTheElementsOfTheFaces", e => holds[e.Value]);
+    }
+
+    Check_RestrictionKeepsEachElementFaceIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => mesh.CheckMeshElements("Law_RestrictionKeepsEachElementFace", k => mesh.RestrictionKeepsEachElementFaceIn(t, k.Value));
+
+    Check_RestrictionKeepsEachCornerIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => CheckGrid("Law_RestrictionKeepsEachCorner", mesh.ElementCount, 4,
+            (k, s) => mesh.RestrictionKeepsEachCornerIn(t, k, s), (k, s) => AtElement(k));
+
+    //==
+    // # Coincidence and triangulation checks
+
+    Check_ReportedPairIsCoincidentIn(mesh: ModelMesh, t: MeshSelfTestTables, tol: Tolerances): Check
+        => CheckAll("Law_ReportedPairIsCoincident", t.CoincidentPairs.Count,
+            k => mesh.ReportedPairIsCoincidentIn(t, k, tol.Length), k => Provenance.WholeInput);
+
+    Check_CoincidentPairIsReportedIn(mesh: ModelMesh, t: MeshSelfTestTables, tol: Tolerances): Check
+        => mesh.CheckMeshCorners("Law_CoincidentPairIsReported", (e, s) =>
+            mesh.CoincidentPairIsReportedIn(t, mesh.ElementCorner(e, s), mesh.ElementCorner(e, (s + 1) % mesh.ElementArity(e).Max(1)), tol.Length));
+
+    Check_TriangulatedCornerNamesTheTriangleCornerIn(mesh: ModelMesh, t: MeshSelfTestTables): Check
+        => CheckGrid("Law_TriangulatedCornerNamesTheTriangleCorner", t.Triangles.Faces.Count, 3,
+            (k, s) => mesh.TriangulatedCornerNamesTheTriangleCornerIn(t, k, s), (k, s) => Provenance.WholeInput);
+
+    //==
+    // # Report
+
+    // ModelMeshReport's SelfTestChecks family, entry for entry, over tables built once.
+    SelfTestReportOnce(mesh: ModelMesh, tol: Tolerances): Report
+    {
+        var t = mesh.SelfTestTablesOf(tol.Length);
+        return MergeAll([
+            ExactReport(mesh.Check_ReversalPermutesCornersIn(t),
+                "Reversal permutes corners does not hold."),
+            ExactReport(mesh.Check_ReversalMovesCornerUvWithCornerIn(t),
+                "Reversal moves corner uv with corner does not hold."),
+            ExactReport(mesh.Check_IndexOfSiteIsInRange,
+                "Index of site is in range does not hold."),
+            ExactReport(mesh.Check_SiteAtInvertsIndexOfSite,
+                "Site at inverts index of site does not hold."),
+            ExactReport(mesh.Check_IndexOfSiteInvertsSiteAt,
+                "Index of site inverts site at does not hold."),
+            ExactReport(mesh.Check_ModelVertexKeepsItsIndex,
+                "Model vertex keeps its index does not hold."),
+            ExactReport(t.Check_EdgeTableHasOneCountPerEdgeIn,
+                "Edge table has one count per edge does not hold."),
+            ExactReport(t.Check_EdgeTableHasOneDirectionSumPerEdgeIn,
+                "Edge table has one direction sum per edge does not hold."),
+            ExactReport(t.Check_EdgeTableEdgeIsCanonicalIn,
+                "Edge table edge is canonical does not hold."),
+            ExactReport(t.Check_EdgeTableIsStrictlySortedIn,
+                "Edge table is strictly sorted does not hold."),
+            ExactReport(t.Check_EdgeTableListsOnlyUsedEdgesIn,
+                "Edge table lists only used edges does not hold."),
+            ExactReport(mesh.Check_EdgeTableCountsEveryProperSideIn(t),
+                "Edge table counts every proper side does not hold."),
+            ExactReport(mesh.Check_EdgeTableListsEveryProperSideIn(t),
+                "Edge table lists every proper side does not hold."),
+            ExactReport(mesh.Check_EdgeTableCountMatchesItsSidesIn(t),
+                "Edge table count matches its sides does not hold."),
+            ExactReport(mesh.Check_EdgeTableDirectionSumMatchesItsSidesIn(t),
+                "Edge table direction sum matches its sides does not hold."),
+            ExactReport(t.Check_DirectionSumIsBoundedByCountIn,
+                "Direction sum is bounded by count does not hold."),
+            ExactReport(t.Check_DirectionSumHasTheParityOfCountIn,
+                "Direction sum has the parity of count does not hold."),
+            ExactReport(t.Check_ReversalNegatesEveryDirectionSumIn,
+                "Reversal negates every direction sum does not hold."),
+            ExactReport(t.Check_ClosedMeansEveryEdgeHasTwoSidesIn,
+                "Closed means every edge has two sides does not hold."),
+            ExactReport(t.Check_ManifoldMeansNoEdgeHasMoreThanTwoSidesIn,
+                "Manifold means no edge has more than two sides does not hold."),
+            ExactReport(t.Check_OrientedExactlyWhenNoEdgeIsMisorientedIn,
+                "Oriented exactly when no edge is misoriented does not hold."),
+            ExactReport(mesh.Check_ElementCornersShareItsComponentIn(t),
+                "Element corners share its component does not hold."),
+            ExactReport(mesh.Check_ComponentEulerCharacteristicsAddUpIn(t),
+                "Component Euler characteristics add up does not hold."),
+            ExactReport(t.Check_EulerIsTwoMinusTwiceGenusMinusBoundaryCyclesIn,
+                "Euler is two minus twice genus minus boundary cycles does not hold."),
+            ExactReport(mesh.Check_VectorAreaVanishesIn(t),
+                "A component's vector area does not vanish within its rounding bound."),
+            ExactReport(mesh.Check_RestrictionKeepsTheElementsOfTheFacesOnce,
+                "Restriction keeps the elements of the faces does not hold."),
+            ExactReport(mesh.Check_RestrictionKeepsEachElementFaceIn(t),
+                "Restriction keeps each element face does not hold."),
+            ExactReport(mesh.Check_RestrictionKeepsEachCornerIn(t),
+                "Restriction keeps each corner does not hold."),
+            ExactReport(mesh.Check_RestrictionToEveryFaceKeepsTheEulerCharacteristic,
+                "Restriction to every face keeps the Euler characteristic does not hold."),
+            ExactReport(t.Check_ClosedComponentEulerIsTwoMinusTwiceGenusIn,
+                "Closed component Euler is two minus twice genus does not hold."),
+            ExactReport(mesh.Check_ReversalNegatesSignedVolume,
+                "Reversal negates signed volume does not hold."),
+            ExactReport(ModelMesh.Check_OutwardTetrahedronHasPositiveVolume,
+                "Outward tetrahedron has positive volume does not hold."),
+            ExactReport(mesh.Check_QuadAngleDefectIsNotNegative,
+                "Quad angle defect is not negative does not hold."),
+            ExactReport(mesh.Check_ReportedPairIsCoincidentIn(t, tol),
+                "Reported pair is coincident does not hold."),
+            ExactReport(mesh.Check_CoincidentPairIsReportedIn(t, tol),
+                "Coincident pair is reported does not hold."),
+            ExactReport(mesh.Check_RadiusRatioIsAtLeastOne,
+                "Radius ratio is at least one does not hold."),
+            ExactReport(mesh.Check_AspectRatioIsAtLeastOne,
+                "Aspect ratio is at least one does not hold."),
+            ExactReport(ModelMesh.Check_EquilateralTriangleHasUnitRadiusRatio,
+                "Equilateral triangle has unit radius ratio does not hold."),
+            ExactReport(ModelMesh.Check_EquilateralTriangleHasUnitAspectRatio,
+                "Equilateral triangle has unit aspect ratio does not hold."),
+            ExactReport(ModelMesh.Check_UnitSquareHasZeroSkew,
+                "Unit square has zero skew does not hold."),
+            ExactReport(ModelMesh.Check_UnitSquareHasUnitScaledJacobian,
+                "Unit square has unit scaled jacobian does not hold."),
+            ExactReport(ModelMesh.Check_DartQuadIsNotConvex,
+                "Dart quad is not convex does not hold."),
+            ExactReport(mesh.Check_TriangleMeshKeepsPositions,
+                "Triangle mesh keeps positions does not hold."),
+            ExactReport(mesh.Check_TriangleMeshSplitsEachQuadInTwo,
+                "Triangle mesh splits each quad in two does not hold."),
+            ExactReport(mesh.Check_TriangulatedCornerNamesTheTriangleCornerIn(t),
+                "Triangulated corner names the triangle corner does not hold."),
+            ExactReport(mesh.Check_TriangleMeshKeepsArea,
+                "Triangle mesh keeps area does not hold."),
+            ExactReport(mesh.Check_QuadMeshIsOkExactlyWithoutTriangles,
+                "Quad mesh is ok exactly without triangles does not hold."),
+            ExactReport(mesh.Check_QuadMeshKeepsPositions,
+                "Quad mesh keeps positions does not hold."),
+            ExactReport(mesh.Check_QuadMeshKeepsAreaWhenOk,
+                "Quad mesh keeps area when ok does not hold."),
+            ExactReport(mesh.Check_PolygonMeshKeepsPositions,
+                "Polygon mesh keeps positions does not hold."),
+            ExactReport(mesh.Check_PolygonMeshHasOneFacePerElement,
+                "Polygon mesh has one face per element does not hold."),
+            ExactReport(mesh.Check_PolygonMeshKeepsArea,
+                "Polygon mesh keeps area does not hold."),
+            ExactReport(mesh.Check_SplitHasAtLeastAsManyVerticesIn(t.Split),
+                "Split has at least as many vertices does not hold."),
+            ExactReport(mesh.Check_SplitSplitsEachQuadInTwoIn(t.Split),
+                "Split splits each quad in two does not hold."),
+            ExactReport(mesh.Check_SplitHasOneNormalPerVertexIn(t.Split),
+                "Split has one normal per vertex does not hold."),
+            ExactReport(mesh.Check_SplitHasOneUvPerVertexIn(t.Split),
+                "Split has one uv per vertex does not hold."),
+            ExactReport(mesh.Check_SplitHasOneSourcePerVertexIn(t.Split),
+                "Split has one source per vertex does not hold."),
+            ExactReport(mesh.Check_SplitVertexKeepsItsSourcePositionIn(t.Split),
+                "Split vertex keeps its source position does not hold."),
+            ExactReport(mesh.Check_SplitFollowsTheTriangulationIn(t.Split),
+                "Split follows the triangulation does not hold."),
+            ExactReport(mesh.Check_SplitVertexCarriesItsCornerNormalIn(t.Split),
+                "Split vertex carries its corner normal does not hold."),
+            ExactReport(mesh.Check_SplitVertexCarriesItsCornerUvIn(t.Split),
+                "Split vertex carries its corner uv does not hold."),
+            ExactReport(mesh.Check_SplitVerticesDifferIn(t.Split),
+                "Split vertices differ does not hold.")]);
+    }
+
+    //==
+    // # Helpers
+
+    // CheckTableEdges over the tables' edge table.
+    CheckTableEdgesIn(t: MeshSelfTestTables, law: String, holds: Function1<UndirectedEdgeIndex, Boolean>): Check
+        => CheckAll(law, t.Tables.Edges.CountEdges, k => holds(UndirectedEdgeIndex(k)), k => Provenance.WholeInput);
+}
