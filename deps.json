@@ -21,7 +21,7 @@
   },
   "plato-brep": {
     "url": "https://github.com/cdiggins/plato-brep",
-    "commit": "d113d60f7f60fb0fad5306386e798b062b6776c2"
+    "commit": "4073de364596c531d3b0b6b692bd6ebee5095a37"
   },
   "ara3d-dataflow": {
     "url": "https://github.com/ara3d/ara3d-dataflow",
