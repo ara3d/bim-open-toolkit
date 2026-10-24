@@ -1,13 +1,14 @@
 ---
 id: TKT-495
 title: STEP mesher: measure an O(B log B) sweep-line (monotone) triangulation of plane faces against the CDT, and land it as the plane path if it is faster and breaks no contract
-status: open
+status: done
 depends_on: []
 owner:
 fence: [sandbox/step-mesh-staging/plane-sweep/**, docs/plans/step-mesher-plane-sweep-2026-10-22.md, sandbox/step-brep-mesh/05-face-meshing/triangulation-sweep*.plato, sandbox/step-brep-mesh/05-face-meshing/face-meshing-v1-plane.library.plato, deps/bim-open-data/src/data/Ara3D.StepBrep/**, deps.json]
 workflow: [W3]
 related: [TKT-323, TKT-349, TKT-468, TKT-462, TKT-405]
 created: 2026-10-22
+closed: 2026-10-23
 ---
 
 ## Acceptance criteria
@@ -25,3 +26,7 @@ The entry point takes a UV region with holes and its chart points, not only plan
 ## Verdict (2026-10-23)
 
 Not landed. At bim-open-data `2a74c53b` the CDT is 22% of plane face time (453 of 2,104 ms over 1,978 plane faces in 9 files); the sweep plus the CDT's own flips would cut plane face time 1.18 times, the raw sweep leaves 153 slivers in 62 faces, and it keeps 1 of the 11 E4/E5 seed laws. Numbers in `docs/plans/step-mesher-plane-sweep-2026-10-22.md`. The two remaining criteria are conditional on landing and do not apply.
+
+## Closed with criteria unmet
+
+2026-10-23: measured, not landed: the CDT is 22% of plane face time at pin 2a74c53b, so the sweep gives 1.18x and keeps 1 of 11 E4/E5 seed laws; the two landing criteria do not apply (docs/plans/step-mesher-plane-sweep-2026-10-22.md)
