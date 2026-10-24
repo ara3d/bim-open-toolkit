@@ -19,6 +19,7 @@ The brief above says what the project is for. A plan names the workflow it serve
 | What agents already know | `.claude/skills/bim-flow/`, `.claude/skills/ifc-ask/`; `.mcp.json` names the two MCP servers |
 | Runnable proof | `samples/*/` (each README lists its graphs and numbers), `gates/` (host and web smokes), `tests/` |
 | Where the dependencies come from | `deps.json` lists them, pinned by commit; `node deps.mjs` fills the git-ignored `deps/`. The 3D viewer's code is in `deps/bim-open-viewer`, a separate repository (`ara3d/bim-open-viewer`), and Gratify is in `deps/gratify`: change them, and `deps/bim-open-flow`, `deps/bim-open-data`, `deps/bim-open-schema`, `deps/bim-open-plot` (the chart and figure layer, `ara3d/bim-open-plot`, brand and research only as of 2026-10-11), `deps/ara3d-sdk`, and `deps/ara3d-dataflow`, in their own repositories, then update the pin |
+| The STEP mesher | Its own repository since 2026-10-23: `cdiggins/plato-brep`, the sibling checkout `C:\Users\cdigg\git\plato-brep`, which took `sandbox/step-brep-mesh`, `sandbox/step-mesh-staging`, the `step-*` plans, and tickets TKT-299 to TKT-510 with their history (its `docs/plans/move-from-toolkit-2026-10-23.md` records the mapping). The C# host `Ara3D.Step.Mesher` and the generated `Ara3D.StepBrep` stay in `deps/bim-open-data` until plato-brep's TKT-1000 decides their move |
 | Private data | The Snowdon model lives outside the repository (`BIMOPENFLOW.md` says where); `data/` is fetched by script and never committed |
 
 ## Working here
