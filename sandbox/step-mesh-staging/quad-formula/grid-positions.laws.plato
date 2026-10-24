@@ -1,0 +1,57 @@
+//==
+// # A grid with its nodes evaluated once: laws (TKT-502, chunk QF3)
+//
+// The positioned grid is QuadGrid bit for bit, with one position per point, and the outcome gated
+// on those positions is QuadGridOnSidesFormula's bit for bit, on every four-sided face of the grid
+// cases (the unit box, the flat and bumped patch solids, both cylinders, the sphere, the torus, the
+// cone).
+//
+// Sections, in order:
+//  - The grid
+//  - The outcome
+
+library GridPositionsLaws
+{
+    //==
+    // # The grid
+
+    // On every four-sided face of a grid case, the positioned grid's parameter-space grid is
+    // QuadGrid's, and it carries one position per point: the surface at that point.
+    Law_QuadFormula_PositionedGridIsQuadGrid(w: GridCase): Boolean
+        => w.FourSidedFaces.All(f => w.PositionedGridIsQuadGridOn(f, w.Model.RegionOf(f, w.Discretizations, w.Criteria)));
+
+    // Law_QuadFormula_PositionedGridIsQuadGrid on face f of case w, its region r.
+    PositionedGridIsQuadGridOn(w: GridCase, f: BrepFaceIndex, r: UvRegion): Boolean
+        => match (w.Model.QuadSidesOf(f, r)) {
+            NotFourSided => true;
+            FourSided(corners) => w.PositionedGridIsQuadGridAt(f, r, corners);
+        };
+
+    // The positioned grid of face f on region r with the given corners against QuadGrid.
+    PositionedGridIsQuadGridAt(w: GridCase, f: BrepFaceIndex, r: UvRegion, corners: Array<VertexIndex>): Boolean
+    {
+        var m = w.Model;
+        var g = m.QuadGridPositioned(f, r, corners, w.Criteria);
+        var s = m.SurfaceOf(f);
+        return g.Grid == m.QuadGrid(f, r, corners, w.Criteria)
+            && g.Positions.Count == g.Grid.Points.Count
+            && g.Positions.Count.Range.All(i => g.Positions[i] == m.Geometry.Eval(s, g.Grid.Points[i]));
+    }
+
+    //==
+    // # The outcome
+
+    // On every four-sided face of a grid case, the outcome gated on positions is the formula
+    // outcome, bit for bit.
+    Law_QuadFormula_PositionedGridAgrees(w: GridCase): Boolean
+        => w.FourSidedFaces.All(f => w.PositionedOutcomeAgreesOn(f, w.Model.RegionOf(f, w.Discretizations, w.Criteria)));
+
+    // Law_QuadFormula_PositionedGridAgrees on face f of case w, its region r.
+    PositionedOutcomeAgreesOn(w: GridCase, f: BrepFaceIndex, r: UvRegion): Boolean
+    {
+        var m = w.Model;
+        var sides = m.QuadSidesOf(f, r);
+        return m.QuadGridOnSidesPositioned(f, w.Discretizations, r, w.Criteria, sides)
+            == m.QuadGridOnSidesFormula(f, w.Discretizations, r, w.Criteria, sides);
+    }
+}
