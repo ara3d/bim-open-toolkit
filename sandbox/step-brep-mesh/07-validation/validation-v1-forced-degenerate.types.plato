@@ -1,9 +1,0 @@
-// A face diagnostic that explains degenerate elements the file's geometry forces (V1G-19): its code, and the
-// sentences a downgraded finding of each of the two checks carries, which name the code (Plato strings cannot be
-// composed, so each row holds its own).
-type ForcedDegenerateExplanation
-{
-    Code: String;
-    ElementMessage: String;
-    PairMessage: String;
-}

@@ -1,8 +1,0 @@
-//==
-// # A drawn triangle with edge-on to the surface is always refined: types (TKT-421, F4b)
-
-// A case for the edge-on-marks laws; Unused carries nothing (the laws read one fixed triangulation).
-type FlatMarksCase
-{
-    Unused: Integer;
-}

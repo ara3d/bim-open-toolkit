@@ -1,7 +1,0 @@
-TermLaws.Law_Term_BoundedAgreesOnConsistentModels	pass	
-TermLaws.Law_Term_BoundedDiscretizeReturnsOnOffSurfaceEdge	pass	
-TermLaws.Law_Term_BoundedDiscretizeWithinSegmentBound	pass	
-TermLaws.Law_Term_BoundedRefineReturnsOnOffSurfaceEdge	pass	
-TermLaws.Law_Term_OffSurfaceEdgeIsDiagnosed	pass	
-TermLaws.Law_Term_RaiseSearchEndsAtCap	pass	
-TermLaws.Law_Term_WiredMeshReportsOffSurfaceEdge	pass	

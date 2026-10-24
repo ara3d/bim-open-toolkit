@@ -1,9 +1,0 @@
-//==
-// # The pole-loop sphere meshes: types (TKT-411)
-
-// Witness_SphereByPoleLoops(1.0) meshed at chordal bound Chordal with the angular surface bound
-// off.
-type PoleLoopCase
-{
-    Chordal: Number;
-}

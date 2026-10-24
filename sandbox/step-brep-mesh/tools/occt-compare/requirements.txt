@@ -1,5 +1,0 @@
-cadquery-ocp==8.0.1.1.0
-numpy
-scipy
-trimesh==5.1.1
-rtree==1.4.1

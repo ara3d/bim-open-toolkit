@@ -1,9 +1,0 @@
-//==
-// # Euler-Poincare over the closed manifold witnesses: types (F5)
-
-// A witness model whose every shell is declared closed and a manifold, named for the verdict line.
-type ManifoldShellCase
-{
-    Name: String;
-    Model: BrepModel;
-}
