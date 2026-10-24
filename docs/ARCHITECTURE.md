@@ -130,6 +130,7 @@ add-in under `plugins/` and the BOS Browser under bim-open-data's `apps/`.
 
 - `Ara3D.IfcTypes` / `Ara3D.IfcLoader` — parsing and the entity/relation model (backed by web-ifc).
 - `Ara3D.Ifc.Mesher` — tessellation from the STEP geometry definitions, in C# with no native code; the web-ifc dependency is `Ara3D.IfcLoader`'s.
+- STEP product models use the separate pinned `deps/plato-brep` repository: entity model, EXPRESS types, decoder, mesher host, generated Plato C#, tests, regeneration, and corpus harness. Its `PlatoBrep.sln` builds the chain. The token parser comes from Ara3D SDK; `Ara3D.MeshKernel` remains shared in bim-open-data. Migration and verification: plato-brep's `docs/plans/move-from-toolkit-2026-10-23.md` (TKT-1000).
 - `Ara3D.Ifc.Editing` — **byte-exact** property-set editing: `IfcSourceFile` and
   `IfcEntitySpan` locate entities by byte range, `IfcPropertySetBuilder` composes new
   psets, `IfcDiff` and `IfcPatcher` splice them in. Everything you did not edit comes out
