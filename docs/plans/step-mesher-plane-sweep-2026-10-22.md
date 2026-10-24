@@ -8,7 +8,7 @@ constrained Delaunay triangulation (CDT), without breaking a contract.
 triangulator cannot make plane faces several times faster. Over 1,978 plane faces in 9 files, replacing the seed by
 the sweep plus the same Delaunay flips would cut plane face time from 2,104 ms to about 1,780 ms (1.18 times). The
 raw sweep also leaves slivers that fail the contract's degenerate measure, and it refuses the weakly simple regions
-the E4 and E5 seed laws require it to triangulate. The ticket's premise, seconds per heavy plane, was true at the
+the E4 and E5 seed laws require it to triangulate: as it stands it keeps 1 of their 11 laws. The ticket's premise, seconds per heavy plane, was true at the
 older pin and is gone: TKT-505's loop lowering made the CDT on TOBY-L4's 249-loop face 38 times faster.
 
 ## What was measured
@@ -109,7 +109,7 @@ Milliseconds; angles in degrees. "Raw slivers" are the sweep's before flips. All
 - **The cheap fix**: `DelaunayedIndexed` on the sweep's triangles, the flips the CDT already runs after its seed,
   removes every sliver (0 after flips) and gives the CDT's minimum angle on every face (no face below it). It costs
   84 ms of the 98 ms the sweep path takes, so the fix and the CDT's own flips are the same work. The sweep saves only
-  the seed's insertions.
+  the seed's insertions. The flips do not mend the seed laws, which test the seed before them.
 - Chordal accuracy cannot change: every triangulation of a plane face is exact.
 
 ## The E4 and E5 seed laws
