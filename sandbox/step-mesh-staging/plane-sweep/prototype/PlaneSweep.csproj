@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="C:\Users\cdigg\git\bim-open-toolkit\deps\bim-open-data\Directory.Build.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>plane-sweep</AssemblyName>
+    <RootNamespace>PlaneSweep</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\cdigg\git\bim-open-toolkit\deps\bim-open-data\src\data\Ara3D.Step.Mesher\Ara3D.Step.Mesher.csproj" />
+  </ItemGroup>
+
+</Project>
