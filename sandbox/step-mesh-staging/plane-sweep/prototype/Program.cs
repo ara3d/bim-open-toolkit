@@ -52,10 +52,11 @@ Parallel.For(0, m.Edges.Count, i =>
 var d = new EdgeDiscretizations(edgeRows);
 var tolLength = (double)m.Tolerances.Length.Value;
 
+const int Reps = 3;
 static double Ms(long start) => Stopwatch.GetElapsedTime(start).TotalMilliseconds;
 
 var rows = new List<string>();
-var header = "face,loops,points,holes3,regionMs,chartMs,collideMs,gridMs,cdtMs,liftMs,meshFaceMs,cdtTris,cdtMinAngle,cdtSlivers,cdtMinAlt,cdtGate,sweepMs,sweepTotalMs,sweepTris,sweepMinAngle,sweepSlivers,sweepMinAlt,sweepGate,sweepWhy,diagonals,flipsAfterSweepMs,tolLength";
+var header = "face,loops,points,holes3,regionMs,chartMs,collideMs,gridMs,cdtMs,liftMs,meshFaceMs,cdtTris,cdtMinAngle,cdtSlivers,cdtMinAlt,cdtGate,sweepMs,sweepTotalMs,sweepTris,sweepMinAngle,sweepSlivers,sweepMinAlt,sweepGate,sweepWhy,diagonals,flipsAfterSweepMs,tolLength,seedMs,flippedSlivers,flippedMinAngle,flippedGate";
 double sumCdt = 0, sumSweep = 0, sumMeshFace = 0;
 int faces = 0, fallbacks = 0, gateFails = 0;
 var ci = CultureInfo.InvariantCulture;
@@ -90,9 +91,14 @@ for (var pass = 0; pass < 2; pass++)
             t0 = Stopwatch.GetTimestamp();
             var grid = m.FaceQuadGridIn(f, d, r, tol, criteria);
             var gridMs = Ms(t0);
-            t0 = Stopwatch.GetTimestamp();
+            // The CDT and its seed, best of Reps runs each (the machine is shared).
             var cdt = r.TriangulateRegionCdt(chart);
-            var cdtMs = Ms(t0);
+            var cdtMs = double.MaxValue;
+            for (var rep = 0; rep < Reps; rep++) { t0 = Stopwatch.GetTimestamp(); cdt = r.TriangulateRegionCdt(chart); cdtMs = Math.Min(cdtMs, Ms(t0)); }
+            var chartPtsAll = new Point2D[r.BoundaryPoints().Count];
+            for (var k = 0; k < chartPtsAll.Length; k++) chartPtsAll[k] = chart.ChartPoint(r.BoundaryPoints()[k]);
+            var seedMs = double.MaxValue;
+            for (var rep = 0; rep < Reps; rep++) { t0 = Stopwatch.GetTimestamp(); r.CdtSeedOfRegionOverCopies(chartPtsAll); seedMs = Math.Min(seedMs, Ms(t0)); }
             t0 = Stopwatch.GetTimestamp();
             var lifted = m.Lift(f, d, cdt);
             var liftMs = Ms(t0);
@@ -124,13 +130,16 @@ for (var pass = 0; pass < 2; pass++)
             var cdtQ = Quality.Of(xs, ys, cdtTris);
             var cdtGate = Gate.Check(xs, ys, next, cdtTris, holes3);
 
-            t0 = Stopwatch.GetTimestamp();
             var sweepTris = Sweep.Triangulate(xs, ys, next, out var why, out var diagonals);
-            var sweepMs = Ms(t0);
+            var sweepMs = double.MaxValue;
+            for (var rep = 0; rep < Reps; rep++) { t0 = Stopwatch.GetTimestamp(); Sweep.Triangulate(xs, ys, next, out _, out _); sweepMs = Math.Min(sweepMs, Ms(t0)); }
+            t0 = Stopwatch.GetTimestamp();
             var sweepGate = sweepTris is null ? "fallback" : Gate.Check(xs, ys, next, sweepTris, holes3);
             var sweepTotalMs = Ms(t0);
             var sweepQ = sweepTris is null ? new Quality(0, 0, 0, 0, 0) : Quality.Of(xs, ys, sweepTris);
             double flipsMs = 0;
+            var flippedQ = new Quality(0, 0, 0, 0, 0);
+            var flippedGate = "";
             if (sweepTris is not null && sweepGate == "")
             {
                 var seed = new TriangleFace[sweepTris.Length / 3];
@@ -138,9 +147,13 @@ for (var pass = 0; pass < 2; pass++)
                     seed[k] = new TriangleFace(new VertexIndex(sweepTris[3 * k]), new VertexIndex(sweepTris[3 * k + 1]), new VertexIndex(sweepTris[3 * k + 2]));
                 var chartPts = new Point2D[n];
                 for (var k = 0; k < n; k++) chartPts[k] = chart.ChartPoint(pts[k]);
-                t0 = Stopwatch.GetTimestamp();
                 var flipped = nextTable.DelaunayedIndexed(chartPts, seed);
-                flipsMs = Ms(t0);
+                flipsMs = double.MaxValue;
+                for (var rep = 0; rep < Reps; rep++) { t0 = Stopwatch.GetTimestamp(); nextTable.DelaunayedIndexed(chartPts, seed); flipsMs = Math.Min(flipsMs, Ms(t0)); }
+                var ft = new int[flipped.Count * 3];
+                for (var k = 0; k < flipped.Count; k++) { ft[3 * k] = (int)flipped[k].A.Value; ft[3 * k + 1] = (int)flipped[k].B.Value; ft[3 * k + 2] = (int)flipped[k].C.Value; }
+                flippedQ = Quality.Of(xs, ys, ft);
+                flippedGate = Gate.Check(xs, ys, next, ft, holes3);
             }
             if (pass == 0) continue;
             if (dumpDir is not null && (sweepTris is null || sweepGate != ""))
@@ -159,6 +172,7 @@ for (var pass = 0; pass < 2; pass++)
                 sweepMs.ToString("F3", ci), sweepTotalMs.ToString("F3", ci),
                 sweepQ.Triangles.ToString(), sweepQ.MinAngleDeg.ToString("G4", ci), sweepQ.Slivers.ToString(), sweepQ.MinAltitude.ToString("G4", ci), Quote(sweepGate), Quote(why),
                 diagonals.ToString(), flipsMs.ToString("F3", ci), tolLength.ToString("G4", ci),
+                seedMs.ToString("F3", ci), flippedQ.Slivers.ToString(), flippedQ.MinAngleDeg.ToString("G4", ci), Quote(flippedGate),
             }));
         }
         catch (Exception ex)
