@@ -128,15 +128,6 @@ library AnalyticGridFormulaLaws
             ? w.FourSidedFaces.Count > 0 && w.FourSidedFaces.All(f => w.GridKeptAtFloorsOn(f, w.Model.RegionOf(f, w.Discretizations, w.Criteria)))
             : true;
 
-    // On the sphere, once its pole segments are sampled at the formula's u count (chunk QF4,
-    // PoleFormula), the formula asks floors of its seam meridian, and with the seam discretized at
-    // them the keep gate keeps the face's grid. Holds only with ExpandedPoles wired to
-    // ExpandedPolesFormula (TRACK.md, QF4's merge instructions).
-    Law_QuadFormula_SphereGridKeptAtFormulaFloors(w: GridCase): Boolean
-        => w.Name == "Sphere"
-            ? w.FourSidedFaces.Count > 0 && w.FourSidedFaces.All(f => w.GridKeptAtFloorsOn(f, w.Model.RegionOf(f, w.Discretizations, w.Criteria)))
-            : true;
-
     // Law_QuadFormula_TorusGridKeptAtFormulaFloors on face f of case w, its region r: the outcome
     // at the boundary's counts asks floors; the outcome at those floors is a kept grid.
     GridKeptAtFloorsOn(w: GridCase, f: BrepFaceIndex, r: UvRegion): Boolean

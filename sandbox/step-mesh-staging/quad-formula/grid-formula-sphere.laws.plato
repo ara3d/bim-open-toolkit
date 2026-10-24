@@ -1,0 +1,35 @@
+//==
+// # The sphere takes the grid at the formula's counts: law (TKT-502, chunk QF4)
+//
+// The sphere witness (one face, one seam meridian, two poles) is four-sided only when an expanded
+// pole counts as a side, which the quads track's QuadSidesCurvedIn gives (TKT-409, chunk Q3), so
+// this law needs that track merged first (quads-curved-sides.library.plato), and ExpandedPoles wired
+// to ExpandedPolesFormula (this track's QF4). Then the pole sides carry the formula's u count, the
+// face asks the formula's v count of its seam, and with the seam discretized at it the keep gate
+// (ElementWithinChordal on every element and both splits of every quad) keeps the grid.
+
+library AnalyticGridFormulaSphereLaws
+{
+    // On the sphere, the outcome at the boundary's counts asks floors, and the outcome at those
+    // floors is a kept grid.
+    Law_QuadFormula_SphereGridKeptAtFormulaFloors(w: GridCase): Boolean
+        => w.Name == "Sphere" ? w.SphereGridKeptAtFloors(BrepFaceIndex(0)) : true;
+
+    // The grid outcome of face f of model m under discretizations d, with curved and pole sides
+    // allowed (QuadSidesCurvedIn, QuadGridOnSidesCurved), as the host meshes it.
+    CurvedOutcomeAt(w: GridCase, d: EdgeDiscretizations, f: BrepFaceIndex): QuadGridOutcome
+    {
+        var m = w.Model;
+        var r = m.RegionOf(f, d, w.Criteria);
+        var chart = m.ChartOf(f, r);
+        return m.QuadGridOnSidesCurved(f, d, r, w.Criteria, r.QuadSidesCurvedIn(chart, m.RegionToleranceIn(f, m.SurfaceDomainOf(f), chart)));
+    }
+
+    // Law_QuadFormula_SphereGridKeptAtFormulaFloors on face f of case w.
+    SphereGridKeptAtFloors(w: GridCase, f: BrepFaceIndex): Boolean
+        => match (w.CurvedOutcomeAt(w.Discretizations, f)) {
+            NoGrid => false;
+            CountsDiffer(floors) => w.CurvedOutcomeAt(w.Model.DiscretizeAll(w.Criteria.Discretization, floors), f).IsKeptGrid;
+            Grid(mesh) => false;
+        };
+}
