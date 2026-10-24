@@ -7,8 +7,8 @@
 // flat patch solid, the cylinders, the cone) every four-sided face's boundary already carries the
 // formula's counts, and on every grid case a face that keeps its grid today keeps the same grid.
 // The gain: on the torus, whose grid the gate refuses at the boundary's counts, the formula's
-// floors are asked, and with the edges raised to them the grid is kept and within the chordal
-// bound. The sphere witness is bounded by pole segments, which no floor reaches; chunk QF4 sizes
+// floors are asked of its two seam circles, and with the edges raised to them the keep gate (T1's
+// rule under ElementWithinChordal, the one chordal measure) keeps the grid. The sphere witness is bounded by pole segments, which no floor reaches; chunk QF4 sizes
 // those.
 //
 // Sections, in order:
@@ -121,16 +121,15 @@ library AnalyticGridFormulaLaws
     // # The torus takes the grid with the formula's floors
 
     // On the torus, whose grid the gate refuses at the boundary's counts, the formula asks floors
-    // of the face's two circles, and with the edges discretized at those floors the face's grid is
-    // kept and its lifted mesh is within the chordal bound.
+    // of the face's seam circles, and with the edges discretized at those floors the keep gate
+    // (ElementWithinChordal on every element and both splits of every quad) keeps the face's grid.
     Law_QuadFormula_TorusGridKeptAtFormulaFloors(w: GridCase): Boolean
         => w.Name == "Torus"
             ? w.FourSidedFaces.All(f => w.GridKeptAtFloorsOn(f, w.Model.RegionOf(f, w.Discretizations, w.Criteria)))
             : true;
 
     // Law_QuadFormula_TorusGridKeptAtFormulaFloors on face f of case w, its region r: the outcome
-    // at the boundary's counts asks floors; the outcome at those floors is a kept grid within the
-    // bound.
+    // at the boundary's counts asks floors; the outcome at those floors is a kept grid.
     GridKeptAtFloorsOn(w: GridCase, f: BrepFaceIndex, r: UvRegion): Boolean
         => match (w.Model.QuadGridOnSidesFormula(f, w.Discretizations, r, w.Criteria, w.Model.QuadSidesOf(f, r))) {
             NoGrid => false;
@@ -138,29 +137,18 @@ library AnalyticGridFormulaLaws
             Grid(mesh) => false;
         };
 
-    // Whether face f of case w, its edges discretized at the floors, gets a grid within the bound.
+    // Whether face f of case w, its edges discretized at the floors, gets a grid the keep gate keeps.
     GridKeptWithFloors(w: GridCase, f: BrepFaceIndex, floors: SegmentFloors): Boolean
     {
         var m = w.Model;
         var d = m.DiscretizeAll(w.Criteria.Discretization, floors);
         var r = m.RegionOf(f, d, w.Criteria);
-        return w.KeptGridWithinAt(f, d, m.QuadGridOnSidesFormula(f, d, r, w.Criteria, m.QuadSidesOf(f, r)));
+        return m.QuadGridOnSidesFormula(f, d, r, w.Criteria, m.QuadSidesOf(f, r)).IsKeptGrid;
     }
 
-    // Whether g is a grid whose mesh, lifted with discretizations d, is within the chordal bound.
-    KeptGridWithinAt(w: GridCase, f: BrepFaceIndex, d: EdgeDiscretizations, g: QuadGridOutcome): Boolean
-        => match (g) {
-            NoGrid => false;
-            CountsDiffer(floors) => false;
-            Grid(mesh) => w.FaceMeshWithinChordalAt(d, w.Model.Lift(f, d, mesh));
-        };
-
-    // FaceMeshWithinChordal with the discretizations the mesh was lifted with.
-    FaceMeshWithinChordalAt(w: GridCase, d: EdgeDiscretizations, fm: FaceMesh): Boolean
-    {
-        var bound = w.Criteria.SurfaceChordal + w.Model.Tolerances.Length.Value;
-        return fm.ElementCount.Range.All(k =>
-            w.Model.ElementCoverageGap(d, fm, ElementIndex(k)) <= bound
-                && w.Model.ElementChordalDeviation(d, fm, ElementIndex(k)) <= bound);
-    }
+    // Whether g is a grid: the keep gate (GridUnlessFoldedOrCoarse, T1's rule) kept every element
+    // and both diagonal splits of every quad under ElementWithinChordal, the one chordal measure,
+    // so a kept grid is within the bound by that measure and no second measure is stated here.
+    IsKeptGrid(g: QuadGridOutcome): Boolean
+        => g.IsGridOutcome;
 }

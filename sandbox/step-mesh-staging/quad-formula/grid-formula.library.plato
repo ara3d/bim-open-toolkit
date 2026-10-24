@@ -125,17 +125,33 @@ library AnalyticGridFormula
         return 4.Range.All(k => r.SideSegmentCount(corners, k) >= r.SideFormulaCount(corners, counts, k));
     }
 
+    // The model edge side k of the four-sided outer loop runs along, seams included: the face edge
+    // whose discretization segment joins the side's first two points; -1 for a seam cut, a pole
+    // segment, or no edge. SideEdge leaves out a face's seam because raising a seam raises both of
+    // its uses, so it cannot match two opposite counts; the formula asks the same count of both
+    // uses (they run along one direction), so a seam can take the formula's floor.
+    FormulaSideEdge(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, corners: Array<VertexIndex>, k: Integer): Integer
+    {
+        var start = corners[k % 4].Value;
+        var a = r.Outer.Sources.AtModulo(start);
+        var b = r.Outer.Sources.AtModulo(start + 1);
+        var carriers = m.FaceEdges(f).FlatMap(e => m.IsDiscretizationSegment(d, e, a, b) ? [e.Value] : [e.Value].Take(0));
+        return carriers.Count == 0 ? -1 : carriers[0];
+    }
+
     // The floors a four-sided region asks for: for each side, the larger of the count across
-    // (MatchingFloors's rule: the opposite side's count when it is larger) and its direction's
-    // formula count, when the side carries fewer; the side's model edge (SideEdge) gets the floor,
-    // and a side with no edge (a seam use, a seam cut, a pole segment) asks nothing. One entry per
-    // model edge, built in one pass, so a face that asks pays the dense table once.
+    // (MatchingFloors's rule: the opposite side's count, when the side is a model edge that is not
+    // a seam) and its direction's formula count, when the side carries fewer; the side's model edge
+    // (FormulaSideEdge, seams included) gets the floor, and a side with no edge (a seam cut, a pole
+    // segment) asks nothing. One entry per model edge, built in one pass, so a face that asks pays
+    // the dense table once.
     GridFloors(m: BrepModel, f: BrepFaceIndex, d: EdgeDiscretizations, r: UvRegion, corners: Array<VertexIndex>, c: FaceMeshingCriteria): SegmentFloors
     {
         var formula = m.FormulaCountsOf(f, r, c);
         var have = 4.MapRange(k => r.SideSegmentCount(corners, k));
-        var wanted = 4.MapRange(k => have[(k + 2) % 4].Max(r.SideFormulaCount(corners, formula, k)));
-        var edges = 4.MapRange(k => m.SideEdge(f, d, r, corners, k));
+        var across = 4.MapRange(k => m.SideEdge(f, d, r, corners, k) >= 0 ? have[(k + 2) % 4] : 0);
+        var wanted = 4.MapRange(k => across[k].Max(r.SideFormulaCount(corners, formula, k)));
+        var edges = 4.MapRange(k => m.FormulaSideEdge(f, d, r, corners, k));
         return SegmentFloors(m.Edges.Count.MapRange(e => 4.Range.Reduce(0, (floor, k) =>
             (edges[k] == e && have[k] < wanted[k]) ? floor.Max(wanted[k]) : floor)));
     }
